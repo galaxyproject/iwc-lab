@@ -21,18 +21,28 @@ jobs:
     steps:
     - name: Identify token holder and token type
       run: |
-        headers=$(curl -sS -D - -o /dev/null -H "Authorization: token $TOKEN" \
-          https://api.github.com/user)
-        scopes=$(printf '%s' "$headers" | grep -i '^x-oauth-scopes:' || true)
+        curl -sS -D headers.txt -o body.json -H "Authorization: token $TOKEN" \
+          https://api.github.com/user
+        status=$(head -n1 headers.txt | awk '{print $2}')
+        echo "GET /user -> $status"
+
+        # A 401 also lacks x-oauth-scopes, so the classic/fine-grained question
+        # is only answerable once the credential itself is known to be good.
+        if [ "$status" != "200" ]; then
+          echo "the token is not a usable credential; token type is undeterminable"
+          python3 -c 'import json; print("api says:", json.load(open("body.json")).get("message"))'
+          exit 1
+        fi
+
+        python3 -c 'import json; print("authenticated as:", json.load(open("body.json"))["login"])'
+        scopes=$(grep -i '^x-oauth-scopes:' headers.txt || true)
         if [ -n "$scopes" ]; then
           echo "token type: CLASSIC PAT"
           echo "$scopes"
         else
-          echo "token type: FINE-GRAINED PAT (no x-oauth-scopes header)"
+          echo "token type: FINE-GRAINED PAT"
           echo "the bot owner must add $ORG to the token's resource owner / scope"
         fi
-        curl -sS -H "Authorization: token $TOKEN" https://api.github.com/user \
-          | python3 -c 'import json,sys; print("authenticated as:", json.load(sys.stdin).get("login"))'
 
     - name: Report organization membership state
       run: |
