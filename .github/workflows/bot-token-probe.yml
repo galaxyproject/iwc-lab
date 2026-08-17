@@ -1,0 +1,49 @@
+name: Bot token probe (one-off, read-only)
+
+# Manual, one-off diagnostic. Uses IWC_WORKFLOWS_BOT_TOKEN to report:
+#   1. which account the token authenticates as
+#   2. whether it is a classic or fine-grained PAT
+#   3. the bot's current membership state in the iwc-lab-workflows org
+#   4. whether the token can see the org's repositories
+# Makes no changes. Delete this workflow once the bot is an active org member.
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      ORG: iwc-lab-workflows
+      TOKEN: ${{ secrets.IWC_WORKFLOWS_BOT_TOKEN }}
+    steps:
+    - name: Identify token holder and token type
+      run: |
+        headers=$(curl -sS -D - -o /dev/null -H "Authorization: token $TOKEN" \
+          https://api.github.com/user)
+        scopes=$(printf '%s' "$headers" | grep -i '^x-oauth-scopes:' || true)
+        if [ -n "$scopes" ]; then
+          echo "token type: CLASSIC PAT"
+          echo "$scopes"
+        else
+          echo "token type: FINE-GRAINED PAT (no x-oauth-scopes header)"
+          echo "the bot owner must add $ORG to the token's resource owner / scope"
+        fi
+        curl -sS -H "Authorization: token $TOKEN" https://api.github.com/user \
+          | python3 -c 'import json,sys; print("authenticated as:", json.load(sys.stdin).get("login"))'
+
+    - name: Report organization membership state
+      run: |
+        curl -sS -H "Authorization: token $TOKEN" \
+          -H "Accept: application/vnd.github+json" \
+          "https://api.github.com/user/memberships/orgs/$ORG" \
+          | python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps({k: d.get(k) for k in ("state","role","message")}, indent=2))'
+
+    - name: Report visibility of organization repositories
+      run: |
+        code=$(curl -sS -o /dev/null -w '%{http_code}' \
+          -H "Authorization: token $TOKEN" \
+          "https://api.github.com/orgs/$ORG/repos?per_page=1")
+        echo "GET /orgs/$ORG/repos -> $code"
