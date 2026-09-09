@@ -11,8 +11,8 @@ The structure is as follows:
 * please, only use lower case and `-` in directory names.
 * workflow repository directories contain:
 
-  * at least one `.ga` workflow file, e.g., `consensus-from-variation.ga`;
-  * as many [Planemo test file](https://planemo.readthedocs.io/en/latest/test_format.html) as workflow files, with the same name as the workflow file, but with a `-tests.yml` extension, e.g., `consensus-from-variation-tests.yml`;
+  * at least one workflow file, either native Galaxy (`.ga`, e.g., `consensus-from-variation.ga`) or gxformat2 (`.gxwf.yml`, e.g., `consensus-from-variation.gxwf.yml`);
+  * as many [Planemo test file](https://planemo.readthedocs.io/en/latest/test_format.html) as workflow files, named by dropping the workflow file's **last** extension and appending `-tests.yml`. For `consensus-from-variation.ga` that is `consensus-from-variation-tests.yml`; for `consensus-from-variation.gxwf.yml` it is `consensus-from-variation.gxwf-tests.yml`, keeping the `.gxwf`. Planemo will not find a test file named any other way, and reports `WARNING: Workflow missing test cases` rather than failing, so a misnamed file leaves the workflow silently untested;
   * a `test-data` directory with the test data used by Planemo (optional);
   * a [Dockstore](https://dockstore.org) [metadata file](https://docs.dockstore.org/en/develop/getting-started/github-apps/github-apps.html#workflow-yml-file) named `.dockstore.yml`;
   * a `README.md` and a `CHANGELOG.md` file.

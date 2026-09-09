@@ -3,7 +3,6 @@
 iwc-lab-workflows GitHub organization, and optionally write the list of
 repository directories that need redeployment."""
 
-import json
 import os
 import subprocess
 import sys
@@ -16,16 +15,20 @@ ORG = "iwc-lab-workflows"
 
 
 def get_expected_release(repo_dir):
-    """Read .dockstore.yml and return (release, ga_path) from the first workflow's .ga file."""
+    """Read .dockstore.yml and return the release of the first workflow's descriptor.
+
+    The descriptor may be native Galaxy (.ga, JSON) or gxformat2 (YAML); YAML is a
+    superset of JSON, so one loader reads both.
+    """
     dockstore_path = repo_dir / ".dockstore.yml"
     with open(dockstore_path) as f:
         ds = yaml.safe_load(f)
     for wf in ds.get("workflows", []):
-        ga_path = repo_dir / wf["primaryDescriptorPath"].lstrip("/")
-        if ga_path.exists():
-            with open(ga_path) as g:
-                ga = json.load(g)
-            return ga.get("release")
+        descriptor_path = repo_dir / wf["primaryDescriptorPath"].lstrip("/")
+        if descriptor_path.exists():
+            with open(descriptor_path) as g:
+                descriptor = yaml.safe_load(g)
+            return descriptor.get("release")
     return None
 
 

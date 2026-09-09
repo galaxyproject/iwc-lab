@@ -1,0 +1,128 @@
+class: GalaxyWorkflow
+label: BigWig Replicates Averaging Workflow
+doc: Calculates average signal values across replicate BigWig files to generate a
+  single consolidated track. Requires input file identifiers formatted as "sample_name_replicateID".
+  The tool automatically groups files by sample name, computes the mean signal at
+  each position, and outputs consolidated BigWig files named after the common sample
+  prefix (without the replicate ID suffix).
+inputs:
+  Bigwig to average:
+    position:
+      top: 0.0
+      left: 0
+    doc: 'We assume the identifiers are like:
+
+      sample_name_replicateID'
+    optional: false
+    type: collection
+    collection_type: list
+  bin_size:
+    position:
+      top: 125.0
+      left: 16
+    doc: Bin size for normalized bigwig (usually 5bp is sufficient for RNA-seq and
+      50bp for ChIP/CUTandRUN/ATAC)
+    optional: false
+    type: int
+outputs:
+  average_bigwigs:
+    outputSource: average bigwigs from different replicates/outFileName
+steps:
+- id: _unlabeled_step_2
+  type: tool
+  tool_id: __APPLY_RULES__
+  tool_version: 1.1.0
+  position:
+    top: 11.5
+    left: 254
+  tool_state:
+    input:
+      __class__: ConnectedValue
+    rules:
+      mapping:
+      - collapsible_value:
+          __class__: RuntimeValue
+        columns:
+        - 1
+        - 2
+        connectable: true
+        editing: false
+        is_workflow: false
+        type: list_identifiers
+      rules:
+      - collapsible_value:
+          __class__: RuntimeValue
+        connectable: true
+        error: null
+        is_workflow: false
+        type: add_column_metadata
+        value: identifier0
+        warn: null
+      - collapsible_value:
+          __class__: RuntimeValue
+        connectable: true
+        error: null
+        expression: ^(.*)_([^_]*)$
+        is_workflow: false
+        replacement: \1
+        target_column: 0
+        type: add_column_regex
+        warn: null
+      - collapsible_value:
+          __class__: RuntimeValue
+        connectable: true
+        error: null
+        expression: ^(.*)_([^_]*)$
+        is_workflow: false
+        replacement: \2
+        target_column: 0
+        type: add_column_regex
+        warn: null
+  uuid: 5532681e-f2b3-415c-87e2-71d5eb982d62
+  in:
+    input:
+      source: Bigwig to average
+  out:
+    output:
+      hide: true
+- id: average bigwigs from different replicates
+  label: average bigwigs from different replicates
+  type: tool
+  tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/deeptools_bigwig_average/deeptools_bigwig_average/3.5.4+galaxy0
+  tool_version: 3.5.4+galaxy0
+  tool_shed_repository:
+    name: deeptools_bigwig_average
+    changeset_revision: 4a53856a5b85
+    owner: bgruening
+    tool_shed: toolshed.g2.bx.psu.edu
+  position:
+    top: 11.5
+    left: 474
+  tool_state:
+    advancedOpt:
+      showAdvancedOpt: 'yes'
+      __current_case__: 1
+      binSize:
+        __class__: ConnectedValue
+      skipNAs: false
+      scaleFactors: '1'
+      blackListFileName:
+        __class__: RuntimeValue
+    bigwigs:
+      __class__: ConnectedValue
+    outFileFormat: bigwig
+    region: ''
+  uuid: f63daf4e-ce9f-4301-be74-e4c263b6e88b
+  in:
+    advancedOpt|binSize:
+      source: bin_size
+    bigwigs:
+      source: _unlabeled_step_2
+  out: []
+creator:
+- name: Lucille Delisle
+  identifier: https://orcid.org/0000-0002-1964-4960
+  class: Person
+license: MIT
+release: '0.2'
+uuid: c6ed4b0e-d719-4997-9860-ba99488ec332
