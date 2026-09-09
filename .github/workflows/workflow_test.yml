@@ -190,7 +190,7 @@ jobs:
   deploy-report:
     name: Report deploy status
     needs: [deploy]
-    if: ${{ always() && needs.deploy.result != 'success' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' ) && github.repository_owner == 'galaxyproject' }}
+    if: ${{ always() && needs.deploy.result == 'failure' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' ) && github.repository_owner == 'galaxyproject' }}
     runs-on: ubuntu-latest
     # iwc uses secrets.PAT here; iwc-lab has no such secret, so comment as the
     # workflow's own token instead.
@@ -205,6 +205,7 @@ jobs:
       with:
         sha: ${{ github.event.after }}
     - name: Create comment
+      if: steps.getpr.outputs.number != ''
       uses: peter-evans/create-or-update-comment@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
