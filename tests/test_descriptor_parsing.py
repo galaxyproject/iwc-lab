@@ -10,6 +10,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(__file__).resolve().parent / "data"
@@ -52,6 +53,23 @@ def test_fixtures_are_not_discoverable_as_workflow_repos():
         if ".git" not in p.parts and p.relative_to(REPO_ROOT).parts[0] != "workflows"
     ]
     assert stray == [], f"deployable-looking repos outside workflows/: {stray}"
+
+
+def test_test_file_follows_planemo_naming(repo_dir):
+    """Planemo locates a workflow's tests by stripping the descriptor's last
+    extension and appending a test suffix (planemo.runnable._tests_path). So
+    example.ga pairs with example-tests.yml, but example.gxwf.yml pairs with
+    example.gxwf-tests.yml -- the .gxwf is kept. Naming a Format-2 test file on
+    the .ga convention leaves it undiscovered, which planemo reports as a
+    warning, not an error, so the workflow silently goes untested.
+    """
+    config = yaml.safe_load((repo_dir / ".dockstore.yml").read_text())
+    entry = config["workflows"][0]
+    descriptor = entry["primaryDescriptorPath"].lstrip("/")
+
+    expected = f"{descriptor.rsplit('.', 1)[0]}-tests.yml"
+    assert entry["testParameterFiles"] == [f"/{expected}"]
+    assert (repo_dir / expected).is_file()
 
 
 def test_expected_release_is_read(repo_dir):
