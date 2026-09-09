@@ -30,10 +30,28 @@ gen_crates = _load("gen_crates", "workflows/gen_crates.py")
 
 @pytest.fixture(params=["native-workflow", "format2-workflow"])
 def repo_dir(request, tmp_path):
-    """A workflow repo in each serialization, copied so crates are written to tmp."""
+    """A workflow repo in each serialization, copied so crates are written to tmp.
+
+    The fixtures ship their Dockstore config as ``dockstore.yml`` and it is
+    renamed on copy. Planemo treats any directory holding a ``.dockstore.yml``
+    as a workflow repository, so committing that name would put these fixtures
+    in ``repository-list`` and hand them to lint, test and deploy.
+    """
     dest = tmp_path / "average-bigwig-between-replicates"
     shutil.copytree(DATA_DIR / request.param, dest)
+    (dest / "dockstore.yml").rename(dest / ".dockstore.yml")
     return dest
+
+
+def test_fixtures_are_not_discoverable_as_workflow_repos():
+    """Guards the rename above: planemo discovers repos by .dockstore.yml, and
+    the deploy job feeds that list straight to `planemo workflow_upload`."""
+    stray = [
+        p.relative_to(REPO_ROOT)
+        for p in REPO_ROOT.rglob(".dockstore.yml")
+        if ".git" not in p.parts and p.relative_to(REPO_ROOT).parts[0] != "workflows"
+    ]
+    assert stray == [], f"deployable-looking repos outside workflows/: {stray}"
 
 
 def test_expected_release_is_read(repo_dir):
