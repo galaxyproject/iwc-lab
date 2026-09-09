@@ -1,0 +1,47 @@
+# iwc-lab addition, no upstream counterpart. workflow_test.yml carries
+# paths-ignore: 'scripts/**', so changes to the helper scripts are otherwise
+# never exercised by CI.
+name: Test repository scripts
+
+on:
+  # GitHub Actions does not expand YAML anchors, so these lists are duplicated.
+  push:
+    paths:
+      - 'scripts/**'
+      - 'workflows/gen_crates.py'
+      - 'workflows/requirements.txt'
+      - 'tests/**'
+      - '.github/workflows/test_scripts.yml'
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'workflows/gen_crates.py'
+      - 'workflows/requirements.txt'
+      - 'tests/**'
+      - '.github/workflows/test_scripts.yml'
+
+permissions: {}
+
+jobs:
+  pytest:
+    name: pytest
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11']
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Cache .cache/pip
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: pip_cache_py_${{ matrix.python-version }}_scripts_${{ hashFiles('workflows/requirements.txt') }}
+    - name: Install requirements
+      run: pip install -r workflows/requirements.txt pytest
+    - name: Run tests
+      run: pytest tests/ -v

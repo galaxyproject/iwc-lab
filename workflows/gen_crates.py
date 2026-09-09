@@ -28,13 +28,13 @@ command (any directory with a .shed.yml or .dockstore.yml file).
 
 Workflow repositories are expected to contain:
 
-- the .ga workflow file, e.g., "consensus-from-variation.ga";
+- the workflow file, either native Galaxy (e.g., "consensus-from-variation.ga")
+  or gxformat2 (e.g., "consensus-from-variation.gxwf.yml");
 - a Planemo test file with the same name as the workflow file, but with a
   "-test.yml" extension, e.g., "consensus-from-variation-test.yml".
 """
 
 import argparse
-import json
 import os
 import shutil
 import tempfile
@@ -173,9 +173,9 @@ class HubClient:
         return self.patch(f"/workflows/{wf_id}", payload=payload)
 
 
-def handle_creator(ga_json, crate, workflow):
+def handle_creator(descriptor, crate, workflow):
     try:
-        gh_creators = ga_json["creator"]
+        gh_creators = descriptor["creator"]
     except KeyError:
         return
     ro_creators = []
@@ -215,8 +215,10 @@ def add_workflow(
     wf_source = crate_dir / wf_id
     if not wf_source.is_file():
         return
+    # Native Galaxy descriptors are JSON and gxformat2 ones are YAML; since YAML
+    # is a superset of JSON, one loader reads either serialization.
     with open(wf_source) as f:
-        code = json.load(f)
+        code = yaml.load(f, Loader=Loader)
     workflow = crate.add_workflow(
         wf_source, wf_id, main=main, lang="galaxy", gen_cwl=False
     )
