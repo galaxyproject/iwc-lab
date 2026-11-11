@@ -205,7 +205,7 @@ steps:
     run:
       class: GalaxyUserTool
       id: csp2_choose_references
-      version: 0.1.0
+      version: 0.1.1
       name: CSP2 RefChooser
       description: choose reference isolates from a set of assemblies by assembly quality and mean Mash distance
       container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
@@ -213,7 +213,7 @@ steps:
         - filename: assemblies.tsv
           content: |
             ${
-              return inputs.assemblies.elements.map(function (element) {
+              return (inputs.assemblies.elements || inputs.assemblies).map(function (element) {
                 return element.element_identifier + "\t" + element.path;
               }).join("\n") + "\n";
             }
@@ -464,7 +464,7 @@ steps:
     run:
       class: GalaxyUserTool
       id: csp2_summarise_snpdiffs
-      version: 0.1.0
+      version: 0.1.1
       name: CSP2 snpdiffs summary
       description: tabulate the alignment summary and the assembly metrics recorded in the headers of a set of CSP2 snpdiffs files
       container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
@@ -472,7 +472,7 @@ steps:
         - filename: snpdiffs.tsv
           content: |
             ${
-              return inputs.snpdiffs.elements.map(function (element) {
+              return (inputs.snpdiffs.elements || inputs.snpdiffs).map(function (element) {
                 var pair = String(element.element_identifier);
                 var cut = pair.lastIndexOf(":");
                 return [pair, pair.substring(0, cut), pair.substring(cut + 1), element.path].join("\t");
@@ -571,7 +571,7 @@ steps:
     run:
       class: GalaxyUserTool
       id: csp2_snp_pipeline
-      version: 0.1.0
+      version: 0.1.1
       name: CSP2 SNP pipeline for one reference
       description: filter the SNPs of a set of CSP2 snpdiffs files against one reference and write SNP alignments, SNP lists and pairwise SNP distances
       container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
@@ -579,7 +579,7 @@ steps:
         - filename: snpdiffs.tsv
           content: |
             ${
-              return inputs.snpdiffs.elements.map(function (element) {
+              return (inputs.snpdiffs.elements || inputs.snpdiffs).map(function (element) {
                 var pair = String(element.element_identifier);
                 var cut = pair.lastIndexOf(":");
                 return [pair, pair.substring(0, cut), pair.substring(cut + 1), element.path].join("\t");
