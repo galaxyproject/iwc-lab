@@ -1,0 +1,892 @@
+class: GalaxyWorkflow
+label: CSP2 SNP distance analysis from assemblies
+doc: |-
+  This workflow runs the CFSAN SNP Pipeline 2 (CSP2, v.0.9.7.8) in SNP mode on a collection of bacterial genome assemblies to generate pairwise SNP distances, SNP alignments and an optional phylogenetic tree for each reference isolate. References are either named by the user or chosen automatically with RefChooser; every isolate is aligned against every reference with MUMmer, and CSP2's own scripts do the alignment parsing, quality filtering and SNP analysis.
+creator:
+  - class: Person
+    identifier: https://orcid.org/0000-0002-4882-5357
+    name: Dannon Baker
+license: MIT
+release: '0.1'
+inputs:
+  Query assemblies:
+    type: collection
+    collection_type: list
+    format:
+      - fasta
+    doc: "One uncompressed FASTA assembly per isolate; element identifier = isolate ID. This is the whole isolate pool: reference isolates must be in it too."
+  Reference isolate IDs:
+    type: string
+    optional: true
+    doc: Comma-separated element identifiers of Query assemblies to use as references. Leave empty to let RefChooser pick `Number of references to select` references.
+  Number of references to select:
+    type: int
+    optional: true
+    default: 1
+    doc: Only used when Reference isolate IDs is empty (source n_ref).
+  Minimum reference coverage (%):
+    type: float
+    optional: true
+    default: 85
+  Minimum alignment length:
+    type: int
+    optional: true
+    default: 500
+  Minimum alignment identity (%):
+    type: float
+    optional: true
+    default: 99
+  Reference contig edge distance:
+    type: int
+    optional: true
+    default: 150
+  Query contig edge distance:
+    type: int
+    optional: true
+    default: 150
+  SNP density windows:
+    type: string
+    optional: true
+    default: 1000,125,15
+    doc: Comma-separated window sizes; 0 disables density filtering.
+  Maximum SNPs per density window:
+    type: string
+    optional: true
+    default: 3,2,1
+    doc: Positionally paired with SNP density windows.
+  Maximum missing data per site (%):
+    type: float
+    optional: true
+    default: 50
+  Rescue query-edge SNPs:
+    type: boolean
+    optional: true
+    default: false
+  Build phylogenetic tree:
+    type: boolean
+    optional: true
+    default: true
+  IQ-TREE substitution model:
+    type: string
+    optional: true
+    default: MFP+MERGE+ASC
+  Ultrafast bootstrap replicates:
+    type: int
+    optional: true
+    default: 1000
+    doc: Leave empty for no ultrafast bootstrap (source bb; the source's 0 means unset).
+  Nonparametric bootstrap replicates:
+    type: int
+    optional: true
+    doc: Leave empty to use ultrafast bootstrap (source b; the source's default 0 means unset). When set, clear Ultrafast bootstrap replicates.
+outputs:
+  Reference IDs:
+    outputSource: Record reference IDs/output
+  SNPDiffs:
+    outputSource: Align pair and compile snpdiffs/snpdiffs
+  Raw MUMmer summary:
+    outputSource: Summarise snpdiffs/raw_mummer_summary
+  Isolate data:
+    outputSource: Summarise snpdiffs/isolate_data
+  SNP alignment:
+    outputSource: Per-reference SNP analysis/snpma
+  Preserved SNP alignment:
+    outputSource: Per-reference SNP analysis/snpma_preserved
+  SNP list:
+    outputSource: Per-reference SNP analysis/snplist
+  Preserved SNP list:
+    outputSource: Per-reference SNP analysis/snplist_preserved
+  Pairwise SNP distances:
+    outputSource: Per-reference SNP analysis/distance_pairwise
+  Preserved pairwise SNP distances:
+    outputSource: Per-reference SNP analysis/distance_pairwise_preserved
+  SNP distance matrix:
+    outputSource: Per-reference SNP analysis/distance_matrix
+  Preserved SNP distance matrix:
+    outputSource: Per-reference SNP analysis/distance_matrix_preserved
+  Reference screening:
+    outputSource: Per-reference SNP analysis/reference_screening
+  Phylogenetic tree:
+    outputSource: Build tree/treefile
+steps:
+  Reference isolate IDs to file:
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_text_file_with_recurring_lines/9.11+galaxy0
+    tool_version: 9.11+galaxy0
+    tool_shed_repository:
+      changeset_revision: 30b60202d990
+      name: text_processing
+      owner: bgruening
+      tool_shed: toolshed.g2.bx.psu.edu
+    doc: Write the optional comma-separated ID string to a one-line dataset (empty when not supplied).
+    in:
+      token_set_0|line: Reference isolate IDs
+    out:
+      - id: outfile
+    state:
+      token_set:
+        - repeat_select:
+            repeat_select_opts: user
+            times: 1
+  Split reference isolate IDs into lines:
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0
+    tool_version: 9.11+galaxy0
+    tool_shed_repository:
+      changeset_revision: 30b60202d990
+      name: text_processing
+      owner: bgruening
+      tool_shed: toolshed.g2.bx.psu.edu
+    doc: One unique isolate ID per line; an absent or blank string gives an empty dataset.
+    in:
+      infile: Reference isolate IDs to file/outfile
+    out:
+      - id: outfile
+    state:
+      code: |
+        BEGIN { FS = "," }
+        {
+            for (i = 1; i <= NF; i++) {
+                id = $i
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", id)
+                if (length(id) && !(id in seen)) {
+                    seen[id] = 1
+                    print id
+                }
+            }
+        }
+      variables: []
+  Count user-supplied reference IDs:
+    tool_id: wc_gnu
+    tool_version: 1.0.0
+    in:
+      input1: Split reference isolate IDs into lines/outfile
+    out:
+      - id: out_file1
+    state:
+      include_header: false
+      options:
+        - lines
+    doc: Counts the reference isolate IDs the user supplied, to decide whether references need to be chosen automatically.
+  Check whether no reference was supplied:
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0
+    tool_version: 9.11+galaxy0
+    tool_shed_repository:
+      changeset_revision: 30b60202d990
+      name: text_processing
+      owner: bgruening
+      tool_shed: toolshed.g2.bx.psu.edu
+    doc: Prints true when the user named no reference, so RefChooser must run.
+    in:
+      infile: Count user-supplied reference IDs/out_file1
+    out:
+      - id: outfile
+    state:
+      code: |
+        {
+            if ($1 == 0) {
+                print "true"
+            } else {
+                print "false"
+            }
+        }
+      variables: []
+  (Boolean) Choose references automatically:
+    tool_id: param_value_from_file
+    tool_version: 0.1.0
+    in:
+      input1: Check whether no reference was supplied/outfile
+    out:
+      - id: boolean_param
+    state:
+      param_type: boolean
+      remove_newlines: true
+    doc: True when no reference isolate IDs were supplied, which switches on RefChooser reference selection.
+  Choose references:
+    doc: RefChooser (source runRefChooser = mashSketch -> mashTriangle -> chooseRefs) as one authored user-defined tool running CSP2's own chooseRefs.py from the FDA image; runs only when no reference ID was supplied.
+    run:
+      class: GalaxyUserTool
+      id: csp2_choose_references
+      version: 0.1.0
+      name: CSP2 RefChooser
+      description: choose reference isolates from a set of assemblies by assembly quality and mean Mash distance
+      container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
+      configfiles:
+        - filename: assemblies.tsv
+          content: |
+            ${
+              return inputs.assemblies.elements.map(function (element) {
+                return element.element_identifier + "\t" + element.path;
+              }).join("\n") + "\n";
+            }
+      shell_command: |
+        mkdir -p mash &&
+        cd mash &&
+        tab=`printf '\t'` &&
+        slots=$GALAXY_SLOTS &&
+        if [ -z "$slots" ]; then slots=1; fi &&
+        while IFS="$tab" read -r id path; do
+          case "$id" in
+            ""|*[[:space:],/]*) echo "Isolate ID '$id' is empty or contains whitespace, ',' or '/'" >&2; exit 1 ;;
+          esac
+          ln -s "$path" "$id.fasta" &&
+          mash sketch -s 10000 -p 1 -o "$id.msh" "$id.fasta" || exit 1
+        done < ../assemblies.tsv &&
+        ls *.msh > Mash_Sketches.txt &&
+        mash triangle -p "$slots" -l Mash_Sketches.txt > Mash_Triangle &&
+        python /app/bin/chooseRefs.py --ref_count $(inputs.ref_count) --mash_triangle_file Mash_Triangle --trim_name "" > chosen_paths.txt &&
+        tr ',' '\n' < chosen_paths.txt | sed -e 's/\.fasta$//' -e '/^$/d' > ../reference_ids.txt
+      inputs:
+        - name: assemblies
+          type: data_collection
+          collection_type: list
+          format:
+            - fasta
+          label: Isolate assemblies
+          help: One uncompressed FASTA assembly per isolate. The element identifier is the isolate ID and must not contain whitespace, ',' or '/'.
+        - name: ref_count
+          type: integer
+          value: 1
+          min: 1
+          label: Number of references to select
+          help: CSP2 n_ref. The job fails when this exceeds the number of assemblies that pass the size, contig-count and N50 outlier filter.
+      outputs:
+        - name: reference_ids
+          type: data
+          format: txt
+          from_work_dir: reference_ids.txt
+          label: Chosen reference isolate IDs
+      help:
+        format: markdown
+        content: |
+          Runs the reference selection of CFSAN CSP2 v.0.9.7.8 (RefChooser) in one job:
+          `mash sketch -s 10000` for every assembly, `mash triangle` over the sketches, then CSP2's
+          own `chooseRefs.py`, which drops assembly outliers (length, contig count, N50) and picks
+          the requested number of references by N50 and mean Mash distance.
+
+          The output lists the chosen isolate IDs, one per line, in the order CSP2 chose them.
+    in:
+      assemblies: Query assemblies
+      ref_count: Number of references to select
+      when: (Boolean) Choose references automatically/boolean_param
+    out:
+      - id: reference_ids
+    when: $(inputs.when)
+  Resolve reference IDs:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: 0.2.0
+    tool_shed_repository:
+      changeset_revision: b19e21af9c52
+      name: pick_value
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    doc: RefChooser's list when it ran, otherwise the user-supplied list (never null, possibly empty only when RefChooser ran).
+    in:
+      style_cond|type_cond|pick_from_0|value: Choose references/reference_ids
+      style_cond|type_cond|pick_from_1|value: Split reference isolate IDs into lines/outfile
+    out:
+      - id: data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+          pick_from:
+            - {}
+            - {}
+  Select reference assemblies:
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.1.0
+    doc: Reference set = pool members whose identifier is in the resolved ID list; IDs matching nothing are dropped silently, as in the source.
+    in:
+      input: Query assemblies
+      how|filter_source: Resolve reference IDs/data_param
+    out:
+      - id: output_filtered
+      - id: output_discarded
+    state:
+      how:
+        how_filter: remove_if_absent
+  Record reference IDs:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_element_identifiers/collection_element_identifiers/0.0.3
+    tool_version: 0.0.3
+    tool_shed_repository:
+      changeset_revision: 3e27acfa4830
+      name: collection_element_identifiers
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    doc: IDs of the references actually present in the pool (source saveRefIDs / logs/Reference_IDs.txt).
+    in:
+      input_collection: Select reference assemblies/output_filtered
+    out:
+      - id: output
+  Pair isolates with references:
+    tool_id: __CROSS_PRODUCT_FLAT__
+    tool_version: 1.0.0
+    doc: Pool x references as two parallel flat lists keyed <query>:<reference> (source to_align = query_data.combine(reference_data)).
+    in:
+      input_a: Query assemblies
+      input_b: Select reference assemblies/output_filtered
+    out:
+      - id: output_a
+      - id: output_b
+    state:
+      join_identifier: ":"
+  List self-pair identifiers:
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0
+    tool_version: 9.11+galaxy0
+    tool_shed_repository:
+      changeset_revision: 30b60202d990
+      name: text_processing
+      owner: bgruening
+      tool_shed: toolshed.g2.bx.psu.edu
+    doc: One <reference>:<reference> line per reference, the identifiers of the self-comparisons.
+    in:
+      infile: Record reference IDs/output
+    out:
+      - id: outfile
+    state:
+      code: |
+        { print $0 ":" $0 }
+      variables: []
+  Drop self-pairs from query assemblies:
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.1.0
+    doc: Source alignGenomes filter (do not map an isolate to itself), query side.
+    in:
+      input: Pair isolates with references/output_a
+      how|filter_source: List self-pair identifiers/outfile
+    out:
+      - id: output_filtered
+      - id: output_discarded
+    state:
+      how:
+        how_filter: remove_if_present
+  Drop self-pairs from reference assemblies:
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.1.0
+    doc: Same filter, reference side, so the two lists stay element-wise parallel.
+    in:
+      input: Pair isolates with references/output_b
+      how|filter_source: List self-pair identifiers/outfile
+    out:
+      - id: output_filtered
+      - id: output_discarded
+    state:
+      how:
+        how_filter: remove_if_present
+  Align pair and compile snpdiffs:
+    doc: Source process runMUMmer, one job per <query>:<reference> pair (dnadiff, then CSP2 compileMUMmer.py unmodified) as one authored user-defined tool from the FDA image; both isolate IDs are read from the pair's element identifier.
+    run:
+      class: GalaxyUserTool
+      id: csp2_align_pair_snpdiffs
+      version: 0.1.1
+      name: CSP2 MUMmer alignment to snpdiffs
+      description: align one query assembly to one reference assembly with MUMmer dnadiff and compile a CSP2 snpdiffs file
+      container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
+      configfiles:
+        - filename: pair.txt
+          content: |
+            ${
+              var pair = String(inputs.query_fasta.element_identifier);
+              var cut = pair.lastIndexOf(":");
+              return [
+                pair,
+                String(inputs.reference_fasta.element_identifier),
+                pair.substring(0, cut),
+                pair.substring(cut + 1),
+                inputs.query_fasta.path,
+                inputs.reference_fasta.path
+              ].join("\n") + "\n";
+            }
+      shell_command: |
+        { IFS= read -r pair && IFS= read -r reference_pair && IFS= read -r query && IFS= read -r reference && IFS= read -r query_path && IFS= read -r reference_path; } < pair.txt &&
+        if [ "$pair" != "$reference_pair" ]; then echo "Query assembly '$pair' and reference assembly '$reference_pair' are not the same pair" >&2; exit 1; fi &&
+        case "$pair" in
+          *:*) ;;
+          *) echo "Pair identifier '$pair' is not <query isolate ID>:<reference isolate ID>" >&2; exit 1 ;;
+        esac &&
+        for id in "$query" "$reference"; do
+          case "$id" in
+            ""|*[[:space:],/]*) echo "Isolate ID '$id' from pair '$pair' is empty or contains whitespace, ',' or '/'" >&2; exit 1 ;;
+          esac
+        done &&
+        work=`pwd` &&
+        report_id="$query"__vs__"$reference" &&
+        mkdir -p fasta mummer snpdiffs tmp &&
+        ln -s "$query_path" "fasta/$query.fasta" &&
+        ln -s "$reference_path" "fasta/$reference.fasta" &&
+        cd mummer &&
+        dnadiff -p "$report_id" "$work/fasta/$reference.fasta" "$work/fasta/$query.fasta" &&
+        cd "$work" &&
+        python /app/bin/compileMUMmer.py --query "$query" --query_fasta "fasta/$query.fasta" --reference "$reference" --reference_fasta "fasta/$reference.fasta" --mummer_dir mummer --snpdiffs_dir snpdiffs --temp_dir tmp --log_file "$report_id.log" &&
+        cp "snpdiffs/$report_id.snpdiffs" pair.snpdiffs
+      inputs:
+        - name: query_fasta
+          type: data
+          format:
+            - fasta
+          label: Query assembly
+          help: Uncompressed FASTA assembly of the query isolate. Its element identifier must be `<query isolate ID>:<reference isolate ID>`; the IDs must not contain whitespace, ',' or '/', and the reference ID must not contain ':'.
+        - name: reference_fasta
+          type: data
+          format:
+            - fasta
+          label: Reference assembly
+          help: Uncompressed FASTA assembly of the reference isolate, from the list parallel to the query list, carrying the same `<query isolate ID>:<reference isolate ID>` element identifier.
+      outputs:
+        - name: snpdiffs
+          type: data
+          format: txt
+          from_work_dir: pair.snpdiffs
+          label: CSP2 snpdiffs
+      help:
+        format: markdown
+        content: |
+          Runs the pairwise alignment of CFSAN CSP2 v.0.9.7.8 (process `runMUMmer`) in one job:
+          `dnadiff -p <query>__vs__<reference> <reference> <query>`, then CSP2's own
+          `compileMUMmer.py`, which reads the dnadiff report, 1-to-1 coordinates and SNP files plus both
+          assemblies and writes one `.snpdiffs` file.
+
+          Meant to be mapped over two parallel lists of assemblies whose element identifiers are
+          `<query isolate ID>:<reference isolate ID>`; the two isolate IDs are read from that identifier,
+          split at the last ':'.
+
+          The snpdiffs file is tab-delimited text: one `#` header line with the isolate IDs, assembly
+          metrics and alignment summary, `##` lines for the aligned regions, then one line per SNP, indel
+          or invalid site. The header's assembly paths are the relative labels `fasta/<isolate ID>.fasta`,
+          identical for an isolate across jobs and runs; they do not resolve outside the job.
+    in:
+      query_fasta: Drop self-pairs from query assemblies/output_filtered
+      reference_fasta: Drop self-pairs from reference assemblies/output_filtered
+    out:
+      - id: snpdiffs
+  Summarise snpdiffs:
+    doc: Source process saveMUMmerLog (CSP2 saveSNPDiffs.py unmodified) over all snpdiffs in one job, as one authored user-defined tool from the FDA image.
+    run:
+      class: GalaxyUserTool
+      id: csp2_summarise_snpdiffs
+      version: 0.1.0
+      name: CSP2 snpdiffs summary
+      description: tabulate the alignment summary and the assembly metrics recorded in the headers of a set of CSP2 snpdiffs files
+      container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
+      configfiles:
+        - filename: snpdiffs.tsv
+          content: |
+            ${
+              return inputs.snpdiffs.elements.map(function (element) {
+                var pair = String(element.element_identifier);
+                var cut = pair.lastIndexOf(":");
+                return [pair, pair.substring(0, cut), pair.substring(cut + 1), element.path].join("\t");
+              }).join("\n") + "\n";
+            }
+      shell_command: |
+        tab=`printf '\t'` &&
+        mkdir -p snpdiffs &&
+        : > All_SNPDiffs.txt &&
+        while IFS="$tab" read -r pair query reference path; do
+          case "$pair" in
+            *:*) ;;
+            *) echo "snpdiffs identifier '$pair' is not <query isolate ID>:<reference isolate ID>" >&2; exit 1 ;;
+          esac
+          for id in "$query" "$reference"; do
+            case "$id" in
+              ""|*[[:space:],/]*) echo "Isolate ID '$id' from pair '$pair' is empty or contains whitespace, ',' or '/'" >&2; exit 1 ;;
+            esac
+          done
+          staged="snpdiffs/$query"__vs__"$reference.snpdiffs" &&
+          ln -s "$path" "$staged" &&
+          echo "$staged" >> All_SNPDiffs.txt || exit 1
+        done < snpdiffs.tsv &&
+        python /app/bin/saveSNPDiffs.py --snpdiffs_file All_SNPDiffs.txt --summary_file Raw_MUMmer_Summary.tsv --isolate_file Isolate_Data.tsv --trim_name "" --ref_id_file '$(inputs.reference_ids.path)'
+      inputs:
+        - name: snpdiffs
+          type: data_collection
+          collection_type: list
+          format:
+            - txt
+          label: CSP2 snpdiffs files
+          help: One snpdiffs file per aligned pair, at least one. Each element identifier must be `<query isolate ID>:<reference isolate ID>`; the IDs must not contain whitespace, ',' or '/', and the reference ID must not contain ':'.
+        - name: reference_ids
+          type: data
+          format:
+            - txt
+          label: Reference isolate IDs
+          help: One reference isolate ID per line. Isolates listed here are marked Reference in the isolate table, all others Query. May be empty.
+      outputs:
+        - name: raw_mummer_summary
+          type: data
+          format: tabular
+          from_work_dir: Raw_MUMmer_Summary.tsv
+          label: Raw MUMmer summary
+        - name: isolate_data
+          type: data
+          format: tabular
+          from_work_dir: Isolate_Data.tsv
+          label: Isolate data
+      help:
+        format: markdown
+        content: |
+          Runs the alignment summary of CFSAN CSP2 v.0.9.7.8 (process `saveMUMmerLog`) in one job: CSP2's own
+          `saveSNPDiffs.py` over every snpdiffs file. Only the `#` header line of each file is read.
+
+          **Raw MUMmer summary** has one row per snpdiffs file: the file path, both isolate IDs, the assembly
+          metrics of both isolates and the alignment summary (aligned bases and percentages, SNP, indel and
+          invalid-site counts), with the header fields as columns.
+
+          **Isolate data** has one row per isolate: isolate ID, whether it is a Reference or a Query, assembly
+          path, contig count, assembly bases, N50, N90, L50, L90 and SHA256.
+
+          Each file is staged as `<query>__vs__<reference>.snpdiffs`, the name CSP2 gives it, with both IDs
+          read from the element identifier split at the last ':'. The `SNPDiffs_File` and `Assembly_Path`
+          columns hold job-local paths.
+    in:
+      snpdiffs: Align pair and compile snpdiffs/snpdiffs
+      reference_ids: Record reference IDs/output
+    out:
+      - id: raw_mummer_summary
+      - id: isolate_data
+  Group snpdiffs by reference:
+    tool_id: __APPLY_RULES__
+    tool_version: 1.1.0
+    doc: Split <query>:<reference> on the last ':' into a list:list, reference outer, pair identifier inner (source groupTuple by reference).
+    in:
+      input: Align pair and compile snpdiffs/snpdiffs
+    out:
+      - id: output
+    state:
+      rules:
+        rules:
+          - type: add_column_metadata
+            value: identifier0
+          - type: add_column_regex
+            target_column: 0
+            expression: (.*):(.*)
+            replacement: \2
+        mapping:
+          - type: list_identifiers
+            columns:
+              - 1
+              - 0
+  Per-reference SNP analysis:
+    doc: Source process runSnpPipeline (CSP2 runSNPPipeline.py unmodified), one job per reference over that reference's snpdiffs, as one authored user-defined tool from the FDA image; the reference isolate ID is read from the inner element identifiers.
+    run:
+      class: GalaxyUserTool
+      id: csp2_snp_pipeline
+      version: 0.1.0
+      name: CSP2 SNP pipeline for one reference
+      description: filter the SNPs of a set of CSP2 snpdiffs files against one reference and write SNP alignments, SNP lists and pairwise SNP distances
+      container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
+      configfiles:
+        - filename: snpdiffs.tsv
+          content: |
+            ${
+              return inputs.snpdiffs.elements.map(function (element) {
+                var pair = String(element.element_identifier);
+                var cut = pair.lastIndexOf(":");
+                return [pair, pair.substring(0, cut), pair.substring(cut + 1), element.path].join("\t");
+              }).join("\n") + "\n";
+            }
+        - filename: settings.txt
+          content: |
+            ${
+              return [
+                String(inputs.density_windows),
+                String(inputs.max_snps),
+                inputs.rescue ? "rescue" : "norescue"
+              ].join("\n") + "\n";
+            }
+      shell_command: |
+        tab=`printf '\t'` &&
+        { IFS= read -r density_windows && IFS= read -r max_snps && IFS= read -r rescue; } < settings.txt &&
+        for list in "$density_windows" "$max_snps"; do
+          case "$list" in
+            ""|*[!0-9,]*|,*|*,|*,,*) echo "'$list' is not a comma-separated list of whole numbers" >&2; exit 1 ;;
+          esac
+        done &&
+        case "$rescue" in
+          rescue|norescue) ;;
+          *) echo "Unexpected rescue setting '$rescue'" >&2; exit 1 ;;
+        esac &&
+        mkdir -p snpdiffs out logs tmp &&
+        : > SNPDiffs.txt &&
+        reference_id="" &&
+        while IFS="$tab" read -r pair query reference path; do
+          case "$pair" in
+            *:*) ;;
+            *) echo "snpdiffs identifier '$pair' is not <query isolate ID>:<reference isolate ID>" >&2; exit 1 ;;
+          esac
+          for id in "$query" "$reference"; do
+            case "$id" in
+              ""|*[[:space:],/]*) echo "Isolate ID '$id' from pair '$pair' is empty or contains whitespace, ',' or '/'" >&2; exit 1 ;;
+            esac
+          done
+          if [ -z "$reference_id" ]; then reference_id="$reference"; fi
+          if [ "$reference" != "$reference_id" ]; then echo "snpdiffs '$pair' is against reference '$reference', but this job analyses reference '$reference_id'" >&2; exit 1; fi
+          staged="snpdiffs/$query"__vs__"$reference.snpdiffs" &&
+          ln -s "$path" "$staged" &&
+          echo "$staged" >> SNPDiffs.txt || exit 1
+        done < snpdiffs.tsv &&
+        python /app/bin/runSNPPipeline.py --reference_id "$reference_id" --output_directory out --snpdiffs_file SNPDiffs.txt --log_directory logs --min_cov $(inputs.min_cov) --min_len $(inputs.min_len) --min_iden $(inputs.min_iden) --ref_edge $(inputs.ref_edge) --query_edge $(inputs.query_edge) --density_windows "$density_windows" --max_snps "$max_snps" --trim_name "" --max_missing $(inputs.max_missing) --tmp_dir tmp --rescue "$rescue" &&
+        for table in Reference_Screening.tsv snp_distance_pairwise.tsv snp_distance_pairwise_preserved.tsv snp_distance_matrix.tsv snp_distance_matrix_preserved.tsv; do
+          if [ ! -s "out/$table" ]; then echo "runSNPPipeline.py finished without writing $table" >&2; exit 1; fi
+        done &&
+        for conditional in snpma.fasta snpma_preserved.fasta snplist.txt snplist_preserved.txt; do
+          if [ ! -e "out/$conditional" ]; then : > "out/$conditional"; fi
+        done
+      inputs:
+        - name: snpdiffs
+          type: data_collection
+          collection_type: list
+          format:
+            - txt
+          label: CSP2 snpdiffs files against one reference
+          help: One snpdiffs file per query aligned to the same reference, at least one. Each element identifier must be `<query isolate ID>:<reference isolate ID>` with the same reference ID throughout; the IDs must not contain whitespace, ',' or '/', and the reference ID must not contain ':'.
+        - name: min_cov
+          type: float
+          value: 85
+          min: 0
+          max: 100
+          label: Minimum reference coverage (%)
+          help: CSP2 min_cov. A query is analysed only if its alignments cover at least this percentage of the reference genome, before and after the length and identity filters.
+        - name: min_len
+          type: integer
+          value: 500
+          min: 0
+          label: Minimum alignment length
+          help: CSP2 min_len. SNPs are taken only from contig alignments at least this many bases long.
+        - name: min_iden
+          type: float
+          value: 99
+          min: 0
+          max: 100
+          label: Minimum alignment identity (%)
+          help: CSP2 min_iden. SNPs are taken only from contig alignments with at least this percent identity.
+        - name: ref_edge
+          type: integer
+          value: 150
+          min: 0
+          label: Reference contig edge distance
+          help: CSP2 ref_edge. SNPs within this many bases of the end of a reference contig are removed.
+        - name: query_edge
+          type: integer
+          value: 150
+          min: 0
+          label: Query contig edge distance
+          help: CSP2 query_edge. SNPs within this many bases of the end of a query contig are removed.
+        - name: density_windows
+          type: text
+          value: 1000,125,15
+          label: SNP density windows
+          help: CSP2 dwin. Comma-separated window sizes in bases; a window holding more SNPs than its entry in Maximum SNPs per density window is purged. Enter 0 to turn density filtering off.
+        - name: max_snps
+          type: text
+          value: 3,2,1
+          label: Maximum SNPs per density window
+          help: CSP2 wsnps. Comma-separated SNP counts, one per density window, in the same order.
+        - name: max_missing
+          type: float
+          value: 50
+          min: 0
+          max: 100
+          label: Maximum missing data per site (%)
+          help: CSP2 max_missing. The preserved outputs keep only SNP sites missing in at most this percentage of isolates. 100 makes the preserved outputs copies of the raw ones.
+        - name: rescue
+          type: boolean
+          value: false
+          label: Rescue query-edge SNPs
+          help: CSP2 rescue. Keep a SNP that lies near a query contig edge when the same site is found away from a contig edge in another query.
+      outputs:
+        - name: snpma
+          type: data
+          format: fasta
+          from_work_dir: out/snpma.fasta
+          label: SNP alignment
+        - name: snpma_preserved
+          type: data
+          format: fasta
+          from_work_dir: out/snpma_preserved.fasta
+          label: Preserved SNP alignment
+        - name: snplist
+          type: data
+          format: txt
+          from_work_dir: out/snplist.txt
+          label: SNP list
+        - name: snplist_preserved
+          type: data
+          format: txt
+          from_work_dir: out/snplist_preserved.txt
+          label: Preserved SNP list
+        - name: distance_pairwise
+          type: data
+          format: tabular
+          from_work_dir: out/snp_distance_pairwise.tsv
+          label: Pairwise SNP distances
+        - name: distance_pairwise_preserved
+          type: data
+          format: tabular
+          from_work_dir: out/snp_distance_pairwise_preserved.tsv
+          label: Preserved pairwise SNP distances
+        - name: distance_matrix
+          type: data
+          format: tabular
+          from_work_dir: out/snp_distance_matrix.tsv
+          label: SNP distance matrix
+        - name: distance_matrix_preserved
+          type: data
+          format: tabular
+          from_work_dir: out/snp_distance_matrix_preserved.tsv
+          label: Preserved SNP distance matrix
+        - name: reference_screening
+          type: data
+          format: tabular
+          from_work_dir: out/Reference_Screening.tsv
+          label: Reference screening
+      help:
+        format: markdown
+        content: |
+          Runs the SNP analysis of CFSAN CSP2 v.0.9.7.8 (process `runSnpPipeline`) for one reference in one
+          job: CSP2's own `runSNPPipeline.py` over every snpdiffs file aligned to that reference.
+
+          Each query is first screened against the reference (coverage, alignment length and identity); the
+          result for every query, passed or failed, is in **Reference screening**. SNPs of the queries that
+          pass are filtered (indels, invalid bases, duplicates, density windows, contig edges) and merged.
+
+          **SNP alignment** and **SNP list** hold every site that is a SNP in at least one query. The
+          **preserved** alignment and list keep only the sites that pass the missing-data limit; the tree is
+          built from the preserved alignment. **Pairwise SNP distances** and **SNP distance matrix** are given
+          for both sets and include the reference.
+
+          An alignment or SNP list is an empty dataset when no site qualifies: all four when no SNP survives
+          filtering, the two preserved ones when no SNP passes the missing-data limit. The distance tables are
+          still written, with zero distances.
+
+          The job fails when no query passes the screen against the reference.
+
+          Meant to be mapped over a list:list of snpdiffs grouped by reference. Each file is staged as
+          `<query>__vs__<reference>.snpdiffs`, with the IDs read from the element identifier split at the last
+          ':'; the reference ID must match the one in the snpdiffs headers.
+    in:
+      snpdiffs: Group snpdiffs by reference/output
+      min_cov: Minimum reference coverage (%)
+      min_len: Minimum alignment length
+      min_iden: Minimum alignment identity (%)
+      ref_edge: Reference contig edge distance
+      query_edge: Query contig edge distance
+      density_windows: SNP density windows
+      max_snps: Maximum SNPs per density window
+      max_missing: Maximum missing data per site (%)
+      rescue: Rescue query-edge SNPs
+    out:
+      - id: snpma
+      - id: snpma_preserved
+      - id: snplist
+      - id: snplist_preserved
+      - id: distance_pairwise
+      - id: distance_pairwise_preserved
+      - id: distance_matrix
+      - id: distance_matrix_preserved
+      - id: reference_screening
+  Select alignment sequence headers:
+    tool_id: Grep1
+    tool_version: 1.0.4
+    doc: Keep the '>' lines of each preserved alignment so sequences can be counted.
+    in:
+      input: Per-reference SNP analysis/snpma_preserved
+    out:
+      - id: out_file1
+    state:
+      invert: ""
+      keep_header: false
+      pattern: ^>
+  Count sequences per preserved alignment:
+    tool_id: wc_gnu
+    tool_version: 1.0.0
+    in:
+      input1: Select alignment sequence headers/out_file1
+    out:
+      - id: out_file1
+    state:
+      include_header: false
+      options:
+        - lines
+    doc: Counts the sequences in each reference's preserved SNP alignment, since a tree needs more than three.
+  Tabulate sequence counts by reference:
+    tool_id: toolshed.g2.bx.psu.edu/repos/nml/collapse_collections/collapse_dataset/5.1.0
+    tool_version: 5.1.0
+    tool_shed_repository:
+      changeset_revision: 90981f86000f
+      name: collapse_collections
+      owner: nml
+      tool_shed: toolshed.g2.bx.psu.edu
+    doc: One row per reference, reference ID then sequence count.
+    in:
+      input_list: Count sequences per preserved alignment/out_file1
+    out:
+      - id: output
+    state:
+      filename:
+        add_name: true
+        place_name: same_multiple
+      one_header: false
+  Keep references with enough sequences for a tree:
+    tool_id: Filter1
+    tool_version: 1.1.1
+    doc: IQ-TREE needs at least four sequences when bootstrapping (three otherwise); four is used for both.
+    in:
+      input: Tabulate sequence counts by reference/output
+    out:
+      - id: out_file1
+    state:
+      cond: c2 > 3
+      header_lines: 0
+  List references with enough sequences:
+    tool_id: Cut1
+    tool_version: 1.0.2
+    in:
+      input: Keep references with enough sequences for a tree/out_file1
+    out:
+      - id: out_file1
+    state:
+      columnList: c1
+      delimiter: T
+    doc: Lists the references whose preserved SNP alignment has enough sequences to build a tree.
+  Drop alignments too small for a tree:
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.1.0
+    doc: Removes references whose preserved alignment is empty or has fewer than four sequences.
+    in:
+      input: Per-reference SNP analysis/snpma_preserved
+      how|filter_source: List references with enough sequences/out_file1
+    out:
+      - id: output_filtered
+      - id: output_discarded
+    state:
+      how:
+        how_filter: remove_if_absent
+  Build tree:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/iqtree/iqtree/3.1.3+galaxy1
+    tool_version: 3.1.3+galaxy1
+    tool_shed_repository:
+      changeset_revision: "856173762903"
+      name: iqtree
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    doc: Source process runiqtree, one tree per reference; runs only when Build phylogenetic tree is true. The model string is passed to IQ-TREE unchanged; set at most one of the two bootstrap inputs.
+    in:
+      general_options|s: Drop alignments too small for a tree/output_filtered
+      modelling_parameters|automatic_model|cond_model|m: IQ-TREE substitution model
+      bootstrap_parameters|ultrafast_bootstrap|ufboot: Ultrafast bootstrap replicates
+      bootstrap_parameters|nonparametric_bootstrap|boot: Nonparametric bootstrap replicates
+      when: Build phylogenetic tree
+    out:
+      - id: treefile
+    when: $(inputs.when)
+    state:
+      general_options:
+        seqtype: DNA
+        short_alignments: true
+      modelling_parameters:
+        automatic_model:
+          cond_model:
+            opt_custommodel: "true"
+          merge_strategy:
+            merge: none
