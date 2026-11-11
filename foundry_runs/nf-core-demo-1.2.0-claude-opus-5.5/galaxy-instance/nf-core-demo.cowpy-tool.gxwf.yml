@@ -1,0 +1,174 @@
+class: GalaxyWorkflow
+label: nf-core/demo (Galaxy translation, cowpy XML tool)
+doc: 'Galaxy translation of nf-core/demo 1.2.0: per-FASTQ FastQC, optional seqtk quality
+
+  trimming, a cowpy ASCII-art step, and a MultiQC report aggregating FastQC results.
+
+  '
+license: MIT
+creator:
+- class: Organization
+  name: nf-core
+  url: https://github.com/nf-core/demo
+inputs:
+  reads:
+    type: collection
+    collection_type: list:paired_or_unpaired
+    format: fastqsanger.gz
+    doc: One element per samplesheet row, identifier <sample>_<run> (e.g. SAMPLE3_SE_sample1); paired rows carry forward/reverse, single-end rows a single unpaired dataset.
+    position:
+      left: 0
+      top: 0
+  skip_trim:
+    type: boolean
+    default: false
+    doc: Skip seqtk quality trimming (source params.skip_trim).
+    position:
+      left: 0
+      top: 180
+  multiqc_title:
+    type: string
+    optional: true
+    doc: Optional MultiQC report title (source params.multiqc_title).
+    position:
+      left: 0
+      top: 330
+outputs:
+  fastqc_html:
+    outputSource: fastqc/html_file
+  fastqc_raw:
+    outputSource: fastqc/text_file
+  trimmed_reads:
+    outputSource: seqtk_trim/default
+  cowpy_output:
+    outputSource: cowpy/cowpy_txt
+  multiqc_report:
+    outputSource: multiqc/html_report
+  multiqc_stats:
+    outputSource: multiqc/stats
+steps:
+  flatten_reads:
+    label: flatten_reads
+    doc: Split every paired/unpaired element into individual FASTQ datasets (source flattens fastqs per sample).
+    tool_id: __FLATTEN__
+    in:
+      input: reads
+    state:
+      join_identifier: _
+    out:
+    - id: output
+    position:
+      left: 260
+      top: 0
+  fastqc:
+    label: fastqc
+    doc: Per-file read QC (source FASTQC, ext.args --quiet).
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    in:
+      input_file: flatten_reads/output
+    out:
+    - id: html_file
+    - id: text_file
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      nogroup: false
+      kmers: 7
+    position:
+      left: 520
+      top: 0
+  seqtk_trim:
+    label: seqtk_trim
+    doc: Phred-based quality trimming per FASTQ (source SEQTK_TRIM, seqtk trimfq default args), gated by skip_trim.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/seqtk/seqtk_trimfq/1.5+galaxy0
+    tool_version: 1.5+galaxy0
+    in:
+      in_file: flatten_reads/output
+      skip_trim: skip_trim
+    when: $(!inputs.skip_trim)
+    out:
+    - id: default
+    tool_shed_repository:
+      changeset_revision: c8fb17965c7d
+      name: seqtk
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      mode:
+        mode_select: quality
+        q: 0.05
+        l: 30
+    position:
+      left: 520
+      top: 240
+  cowpy:
+    label: cowpy
+    doc: Render the fixed text "nf-core rules!" as ASCII-art cow (source COWPY, no inputs).
+    out:
+    - id: cowpy_txt
+    state:
+      message: nf-core rules!
+    tool_id: cowpy_say
+    tool_version: 1.1.5
+    position:
+      left: 860
+      top: 240
+  multiqc:
+    label: multiqc
+    doc: Aggregate FastQC results into one MultiQC report (source MULTIQC).
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+    tool_version: 1.35+galaxy5
+    in:
+      results_0|software_cond|output_0|input: fastqc/text_file
+      title: multiqc_title
+    out:
+    - id: html_report
+    - id: stats
+    tool_shed_repository:
+      changeset_revision: 94b6bea727ae
+      name: multiqc
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      results:
+      - software_cond:
+          software: fastqc
+          output:
+          - type: data
+      comment: ''
+      flat: false
+      export: false
+      png_plots: false
+    position:
+      left: 860
+      top: 0
+comments:
+- type: frame
+  title: Read QC and trimming
+  color: blue
+  contains_steps:
+  - flatten_reads
+  - fastqc
+  - seqtk_trim
+  position:
+  - 220
+  - -40
+  size:
+  - 560
+  - 520
+- type: frame
+  title: Reporting
+  color: green
+  contains_steps:
+  - multiqc
+  - cowpy
+  position:
+  - 820
+  - -40
+  size:
+  - 300
+  - 520

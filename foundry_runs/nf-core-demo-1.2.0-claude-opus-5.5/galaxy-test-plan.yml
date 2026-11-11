@@ -1,0 +1,257 @@
+plan_version: '1'
+source:
+  kind: nextflow
+  name: nf-core/demo 1.2.0
+  derived_from: test-evidence
+  notes: Translated from tests/default.nf.test::-profile test (selected primary candidate, real execution, snapshot assertions) and tests/default.nf.test.snap.
+workflow:
+  title: nf-core/demo (Galaxy translation)
+  label_source: draft
+  notes: Labels read from galaxy-workflow.gxwf.yml (concrete). Collection element identifiers after __FLATTEN__ assumed <element>_<forward|reverse|unpaired> (join_identifier "_").
+test_cases:
+- id: default-profile-test
+  doc: 'nf-core/demo -profile test: 2 paired-end + 2 single-end viralrecon amplicon FASTQ runs through FastQC, seqtk trimming, cowpy and MultiQC.'
+  derived_from: mixed
+  provenance: tests/default.nf.test test("-profile test"); conf/test.config input samplesheet_test_illumina_amplicon.csv
+  job_inputs:
+  - workflow_label: reads
+    label_status: resolved
+    description: Samplesheet rows as list:paired_or_unpaired; elements SAMPLE1_PE_sample1, SAMPLE2_PE_sample2, SAMPLE3_SE_sample1, SAMPLE3_SE_sample2
+    collection_shape: list:paired_or_unpaired
+    datatype: fastqsanger.gz
+    fixture:
+      storage: remote-url
+      location: null
+      checksum: null
+      provenance: Per-element remote URLs + SHA-1 in test-data-refs.json (resolved_by nextflow-to-test-data)
+  - workflow_label: skip_trim
+    label_status: resolved
+    description: Source default params.skip_trim=false (not overridden by the test profile) -> trimming runs.
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: 'false'
+      checksum: null
+      provenance: nextflow.config default; conf/test.config does not set it
+  - workflow_label: multiqc_title
+    label_status: resolved
+    description: Unset in source test (optional); omit from job.
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: params.multiqc_title default null
+  expected_outputs:
+  - workflow_label: cowpy_output
+    label_status: resolved
+    description: Deterministic ASCII-art cow; snapshot carries its md5.
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: cowpy.txt identical to nf-core output
+      expected_value: md5$9c8be9f4550989b40901f379cb1a605f
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: medium
+    - family: has_text
+      intent: speech bubble contains the message
+      expected_value: nf-core rules!
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: trimmed_reads
+    label_status: resolved
+    description: seqtk trimfq output per FASTQ file; snapshot carries md5s of the nf-core gz outputs.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: element_count
+      intent: one trimmed FASTQ per input FASTQ file (6)
+      expected_value: 6
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: high
+    - family: checksum
+      intent: trimmed reads match nf-core output SAMPLE1_PE_sample1_R1.fastq.gz (snapshot md5)
+      expected_value: md5$7dd2fd0d542d9259d9aed53550907fae
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: SAMPLE1_PE_sample1_forward
+      evidence: test-evidence
+      confidence: low
+    - family: checksum
+      intent: trimmed reads match nf-core output SAMPLE1_PE_sample1_R2.fastq.gz (snapshot md5)
+      expected_value: md5$1995fe8488384d801807805f26ceca8a
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: SAMPLE1_PE_sample1_reverse
+      evidence: test-evidence
+      confidence: low
+    - family: checksum
+      intent: trimmed reads match nf-core output SAMPLE2_PE_sample2_R1.fastq.gz (snapshot md5)
+      expected_value: md5$05dba9c26396cbdbe0e6da26f037106e
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: SAMPLE2_PE_sample2_forward
+      evidence: test-evidence
+      confidence: low
+    - family: checksum
+      intent: trimmed reads match nf-core output SAMPLE2_PE_sample2_R2.fastq.gz (snapshot md5)
+      expected_value: md5$63d5e4ac37927c2ecec4b74d2ff99a10
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: SAMPLE2_PE_sample2_reverse
+      evidence: test-evidence
+      confidence: low
+    - family: checksum
+      intent: trimmed reads match nf-core output SAMPLE3_SE_sample1_R1.fastq.gz (snapshot md5)
+      expected_value: md5$7dd2fd0d542d9259d9aed53550907fae
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: SAMPLE3_SE_sample1_unpaired
+      evidence: test-evidence
+      confidence: low
+    - family: checksum
+      intent: trimmed reads match nf-core output SAMPLE3_SE_sample2_R1.fastq.gz (snapshot md5)
+      expected_value: md5$05dba9c26396cbdbe0e6da26f037106e
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: SAMPLE3_SE_sample2_unpaired
+      evidence: test-evidence
+      confidence: low
+  - workflow_label: fastqc_html
+    label_status: resolved
+    description: FastQC HTML report per FASTQ (nf stable_paths list 6 html files; content ignored via .nftignore).
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: element_count
+      intent: one report per FASTQ file
+      expected_value: 6
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: report is a FastQC report
+      expected_value: FastQC
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: SAMPLE1_PE_sample1_forward
+      evidence: intent
+      confidence: high
+  - workflow_label: fastqc_raw
+    label_status: resolved
+    description: FastQC raw data text per FASTQ (fed to MultiQC).
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: element_count
+      intent: one raw-data file per FASTQ file
+      expected_value: 6
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: raw data has basic statistics module
+      expected_value: Total Sequences
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: SAMPLE3_SE_sample1_unpaired
+      evidence: intent
+      confidence: high
+  - workflow_label: multiqc_report
+    label_status: resolved
+    description: MultiQC HTML (nftignored upstream; smoke check).
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_text
+      intent: report includes FastQC section
+      expected_value: FastQC
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: multiqc_stats
+    label_status: resolved
+    description: MultiQC general stats table; upstream md5 not portable (different MultiQC version and sample naming).
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_text
+      intent: stats table lists a flattened sample element
+      expected_value: SAMPLE1_PE_sample1
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+unresolved:
+- kind: assertion
+  description: nf-core snapshot md5s for *.fastq.gz may be computed by nf-test over decompressed content, and Galaxy seqtk_trimfq output compression is unverified; checksum assertions on trimmed_reads may
+    not match even when reads are identical.
+  blocking: false
+  suggested_resolution: If checksum fails at run time, replace with has_n_lines on decompressed content or compare against downloaded nf-core outputs.
+- kind: output-label
+  description: Flattened element identifiers (<element>_forward/reverse/unpaired) are assumed from __FLATTEN__ join_identifier "_"; confirm on first run.
+  blocking: false
+  suggested_resolution: Read identifiers from the planemo run output and adjust element_identifier keys.
+omissions:
+- target: pipeline_info/nf_core_demo_software_mqc_versions.yml (versions_yml capture)
+  reason: No Galaxy workflow output; Galaxy records tool versions per job.
+  category: out-of-scope
+- target: MultiQC plots and multiqc_data/* other than general stats
+  reason: Listed in tests/.nftignore upstream; images and parquet/json vary across runs.
+  category: nondeterministic
+- target: skip_trim=true branch
+  reason: No upstream nf-test exercises it; deferred.
+  category: out-of-scope
+warnings:
+- code: untranslatable-snapshot
+  message: multiqc_general_stats.txt / multiqc_fastqc.txt md5s from the snapshot are not portable to the Galaxy MultiQC wrapper (1.35 vs 1.34, different sample identifiers).
+  path: tests/default.nf.test.snap

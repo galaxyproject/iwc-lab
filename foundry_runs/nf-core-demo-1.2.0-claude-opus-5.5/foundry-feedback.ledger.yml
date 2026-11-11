@@ -1,0 +1,501 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-demo-galaxy
+  status: complete
+  phases:
+    - { n: 1, kind: mold, skill: summarize-nextflow, status: done, feedback_checked: true }
+    - { n: 2, kind: mold, skill: nextflow-summary-to-galaxy-reference-data, status: done, feedback_checked: true }
+    - { n: 3, kind: mold, skill: nextflow-summary-to-galaxy-interface, status: done, feedback_checked: true }
+    - { n: 4, kind: mold, skill: nextflow-summary-to-galaxy-data-flow, status: done, feedback_checked: true }
+    - { n: 5, kind: mold, skill: compare-against-iwc-exemplar, status: done, feedback_checked: true }
+    - { n: 6, kind: mold, skill: nextflow-summary-to-galaxy-template, status: done, feedback_checked: true }
+    - { n: 7, kind: mold, skill: advance-galaxy-draft-step, status: done, iterations: 4, feedback_checked: true }
+    - { n: 8, kind: branch, pattern: test-data-resolution, selected: nextflow-to-test-data, status: done, feedback_checked: true }
+    - { n: 9, kind: mold, skill: nextflow-test-to-galaxy-test-plan, status: done, feedback_checked: true }
+    - { n: 10, kind: mold, skill: implement-galaxy-workflow-test, status: done, feedback_checked: true }
+    - { n: 11, kind: mold, skill: validate-galaxy-workflow, status: done, feedback_checked: true }
+    - { n: 12, kind: mold, skill: run-workflow-test, status: done, feedback_checked: true }
+    - { n: 13, kind: mold, skill: debug-galaxy-workflow-output, status: done, feedback_checked: true }
+entries:
+  - id: summarize-nextflow-cli-edges-tokenize-multiline-call-args
+    raised_by: summarize-nextflow
+    observed_in: &obs1
+      mold: summarize-nextflow
+      path: content/molds/summarize-nextflow/index.md
+      revision: 18
+      content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+      foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+    subject:
+      kind: cli-command
+      label: foundry summarize-nextflow workflow edge extraction
+      locator: "package://@galaxy-foundry/gxwf-foundry#summarize-nextflow"
+    kind: defect
+    severity: major
+    what: "The deterministic edge extractor split MULTIQC's multi-line call argument (a .map closure building a tuple) into ~12 spurious edges whose 'from' values are Groovy fragments ('[', ']', '}', '[]', ternary halves), and emitted no edge or call record for the zero-argument process call COWPY()."
+    expected: "Parse a process call's argument list as one balanced expression and emit one edge per referenced channel (FASTQC.out.zip, ch_collated_versions, ...); record zero-argument process invocations so source processes are not lost from the DAG."
+    evidence: "nf-core/demo 1.2.0 workflows/demo.nf: edges before reconciliation had from='[' / '}' / ': file(...)' targeting MULTIQC and nothing for COWPY. Reconciled by hand in the LLM pass."
+    status: open
+    issue: null
+  - id: summarize-nextflow-cli-utility-subworkflows-classified-pipeline
+    raised_by: summarize-nextflow
+    observed_in: *obs1
+    subject:
+      kind: cli-command
+      label: foundry summarize-nextflow subworkflow kind classifier
+      locator: "package://@galaxy-foundry/gxwf-foundry#summarize-nextflow"
+    kind: defect
+    severity: minor
+    what: "PIPELINE_INITIALISATION, PIPELINE_COMPLETION and UTILS_NFSCHEMA_PLUGIN were emitted kind: pipeline although they invoke no pipeline processes; free functions (samplesheetToList, paramsHelp, completionEmail) were listed in calls[]."
+    expected: "Classify a subworkflow as pipeline only when its transitive calls reach a process; keep free-function names out of calls[] (the Mold and schema both cite PIPELINE_INITIALISATION as the canonical utility example)."
+    evidence: "nf-core/demo 1.2.0 summary; corrected to utility in the LLM pass."
+    status: open
+    issue: null
+  - id: summarize-nextflow-cli-silent-test-profile-default
+    raised_by: summarize-nextflow
+    observed_in: *obs1
+    subject:
+      kind: cli-command
+      label: foundry summarize-nextflow --profile default
+      locator: "package://@galaxy-foundry/gxwf-foundry#summarize-nextflow"
+    kind: friction
+    severity: minor
+    what: "The CLI help says '--profile <name> (default: test)' while the Mold says the profile override is optional and 'When omitted, there is no silent profile default'."
+    expected: "Drop the CLI default (omitted --profile means no override) or have the Mold document the CLI default explicitly."
+    evidence: "foundry summarize-nextflow --help output during this run."
+    status: open
+    issue: null
+  - id: summarize-nextflow-misses-getgenomeattribute-in-main-nf
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    observed_in:
+      mold: nextflow-summary-to-galaxy-reference-data
+      path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+      revision: 5
+      content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: cli-command
+      label: foundry summarize-nextflow params source_kind detection
+      locator: "package://@galaxy-foundry/gxwf-foundry#summarize-nextflow"
+    kind: defect
+    severity: minor
+    what: "main.nf assigns params.fasta = getGenomeAttribute('fasta') (the nf-core template idiom), but the summary records fasta.source_kind: nextflow_schema with null source_expression; the key-expanded-bundle signal this Mold reads first is absent."
+    expected: "Scan main.nf top-level params assignments (as the summarize-nextflow Mold itself describes) in addition to conf/igenomes.config, and set source_kind getGenomeAttribute with the verbatim source_expression."
+    evidence: "nf-core/demo 1.2.0 main.nf line 29 vs summary params[fasta]."
+    status: open
+    issue: null
+  - id: reference-classification-no-unconsumed-template-asset-case
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    observed_in:
+      mold: nextflow-summary-to-galaxy-reference-data
+      path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+      revision: 5
+      content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: research
+      label: nextflow-reference-data-classification
+      locator: content/research/nextflow-reference-data-classification/index.md
+      content_hash: 2b33f3bddb635c9d700e506784b4bf16f8c387369bc66194a15cb75be9ad8a1f
+    kind: gap
+    severity: minor
+    what: "The 'None' classification is detected by 'no path-shaped reference asset and no getGenomeAttribute call', but nf-core template pipelines (nf-core/demo) declare fasta/genome and call getGenomeAttribute while no process consumes them. The note gives no rule for a declared-but-unconsumed asset, so I had to decide by hand that used_by: [] means None/drop."
+    expected: "Add an explicit rule: a reference_assets[] entry with empty used_by and no rebuild is template scaffolding → classify None and record a dropped ledger entry citing the empty used_by."
+    evidence: "nf-core/demo 1.2.0: reference_assets[fasta].used_by == [], reference_rebuilds == []."
+    status: open
+    issue: null
+  - id: summary-omits-samplesheet-channel-construction-in-utility-subworkflow
+    raised_by: nextflow-summary-to-galaxy-interface
+    observed_in: &obs3
+      mold: nextflow-summary-to-galaxy-interface
+      path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+      revision: 6
+      content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: schema
+      label: summary-nextflow channel construction coverage
+      locator: "package://@galaxy-foundry/summarize-nextflow#summaryNextflowSchema"
+      content_hash: 839e11b1892af74df3158377027e7d340a67dafdb9b5965d79e9715a1a109d54
+    kind: gap
+    severity: major
+    what: "ch_samplesheet, the only data input channel, is built in PIPELINE_INITIALISATION (samplesheetToList -> map single_end -> groupTuple -> validate -> flatten), but workflow.channels[] only covers the primary workflow DEMO, so the summary has no channel with from_param: input and loses the groupTuple multi-run merge. The params-to-inputs translation order (index channels by from_param) cannot find the input's materialization; I had to read the source tree."
+    expected: "Record channels emitted by utility subworkflows that feed the primary workflow's take: (at least the samplesheet one) with construct samplesheetToList, from_param input, and the literal operator chain, or add a sample_sheets[].materialization field carrying the post-parse chain."
+    evidence: "nf-core/demo 1.2.0 subworkflows/local/utils_nfcore_demo_pipeline/main.nf lines 109-125; summary workflow.channels[] has no from_param=input entry."
+    status: open
+    issue: null
+  - id: params-to-inputs-no-rule-for-duplicate-sample-rows
+    raised_by: nextflow-summary-to-galaxy-interface
+    observed_in: *obs3
+    subject:
+      kind: research
+      label: nextflow-params-to-galaxy-inputs
+      locator: content/research/nextflow-params-to-galaxy-inputs/index.md
+      content_hash: b65bf1a16cb986bc04ff7926e6ca0eea9ce35980aa4d4c47d8a102a28ffae085
+    kind: gap
+    severity: minor
+    what: "The sample-sheet table covers optional second mates and record shapes but says nothing about the common nf-core idiom of several rows sharing one sample id (multi-run / multi-lane merged by groupTuple). Galaxy identifiers must be unique, so I had to choose between per-row elements, list:list (sample -> runs), or a pre-merge step without guidance."
+    expected: "Add a row: duplicate sample ids merged by groupTuple -> either nested list:list / list:list:paired keyed by sample, or per-row elements with a recorded dropped grouping when all consumers are per-file; state the default."
+    evidence: "nf-core/demo test samplesheet lists SAMPLE3_SE twice; PIPELINE_INITIALISATION groupTuple()s them."
+    status: open
+    issue: null
+  - id: identifier-uniqueness-rule-only-in-data-flow-mold
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    observed_in:
+      mold: nextflow-summary-to-galaxy-data-flow
+      path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+      revision: 8
+      content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+      foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+    subject:
+      kind: mold
+      label: nextflow-summary-to-galaxy-interface
+      locator: content/molds/nextflow-summary-to-galaxy-interface/index.md
+      content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+    kind: gap
+    severity: minor
+    what: "The rule 'key each element on something unique per dataset; a positional _1/_2 suffix is a mate only when every row is paired' lives only in the data-flow Mold, but the interface Mold is where element identifiers are first chosen. In this run the interface brief proposed SAMPLE3_SE_1/_2 for repeated single-end rows, which the data-flow step then had to override."
+    expected: "Move or duplicate the identifier-uniqueness rule into nextflow-summary-to-galaxy-interface (or its testability note) so the interface brief picks unique, non-positional identifiers first."
+    evidence: "nf-core/demo run: interface brief text 'e.g. SAMPLE3_SE_1, SAMPLE3_SE_2' vs data-flow decision element-identifiers-sample-plus-run."
+    status: open
+    issue: null
+  - id: iwc-exemplar-no-guidance-for-multi-exemplar-idiom
+    raised_by: compare-against-iwc-exemplar
+    observed_in:
+      mold: compare-against-iwc-exemplar
+      path: content/molds/compare-against-iwc-exemplar/index.md
+      revision: 12
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: mold
+      label: compare-against-iwc-exemplar
+      locator: content/molds/compare-against-iwc-exemplar/index.md
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+    kind: gap
+    severity: minor
+    what: "The Mold assumes one nearest exemplar supplies the idiom. Here the domain-nearest workflow (short-read-qc-trimming, fastp-based) lacked the key idiom (FastQC text_file -> MultiQC software=fastqc), which only a Low-confidence cross-domain workflow (mgnify amplicon QC) carried. Nothing says whether a secondary exemplar's step may be spliced into iwc-exemplar.gxwf.yml, so I did it by hand with an in-file provenance note."
+    expected: "Allow (and specify the shape for) secondary idiom excerpts: per-step provenance comments or a separate keyed section in iwc-exemplar.gxwf.yml, labelled with the source workflow id and confidence."
+    evidence: "nf-core/demo run; IWC @ 9f111cb."
+    status: open
+    issue: null
+  - id: gxwf-convert-compact-leaves-null-and-uuid-noise
+    raised_by: compare-against-iwc-exemplar
+    observed_in:
+      mold: compare-against-iwc-exemplar
+      path: content/molds/compare-against-iwc-exemplar/index.md
+      revision: 12
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: related-project
+      label: "@galaxy-tool-util/cli gxwf convert --compact"
+      locator: https://github.com/jmchilton/galaxy-tool-util-ts
+    kind: friction
+    severity: minor
+    what: "gxwf convert --to format2 --compact (1.15.x) still emits 'fields: null', 'column_definitions: null' on every input, per-step uuid, and full tool_state; the Mold calls the artifact a 'cleaned' view but the bundle has no cleaning step, so trimming was hand-done."
+    expected: "Either a --clean/--minimal flag that drops null keys, uuids and default tool_state, or Mold guidance on what to strip."
+    evidence: "Converted short-read-quality-control-and-trimming.ga: 183 lines with null fields and uuids."
+    status: open
+    issue: null
+  - id: collection-patterns-no-paired-or-unpaired-to-reduction-recipe
+    raised_by: nextflow-summary-to-galaxy-template
+    observed_in:
+      mold: nextflow-summary-to-galaxy-template
+      path: content/molds/nextflow-summary-to-galaxy-template/index.md
+      revision: 10
+      content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+      foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+    subject:
+      kind: pattern
+      label: galaxy-collection-patterns
+      locator: content/patterns/galaxy-collection-patterns.md
+      content_hash: 2dbb4b7520ba30d3e9fdf68e6133fb35c597e7e8482478b4dee2abe9f415d6ef
+    kind: gap
+    severity: major
+    what: "The interface/channel-shape notes route mixed single/paired nf-core samplesheets to list:paired_or_unpaired, but no pattern covers the next step: per-file tools map fine, yet the bundled semantics say list:paired_or_unpaired is rejected on a multi-data input, so the common FastQC -> MultiQC reduction breaks. I inferred a __FLATTEN__-first recipe from the semantics YAML alone, with no corpus example of __FLATTEN__ over paired_or_unpaired."
+    expected: "Add a pattern (or a section of collection-flatten-after-fanout) for list:paired_or_unpaired -> flat list before a multiple=true reduction, stating the identifier suffixes __FLATTEN__ produces for forward/reverse/unpaired; cross-link from nextflow-to-galaxy-channel-shape-mapping's mixed-reads row."
+    evidence: "galaxy-collection-semantics.yml: 'rejects list:paired_or_unpaired input on multi-data input'; IWC @ 9f111cb has 0 workflows using paired_or_unpaired."
+    status: open
+    issue: null
+  - id: tool-cache-summary-lacks-wrapper-command
+    raised_by: advance-galaxy-draft-step
+    observed_in: &obs7
+      mold: advance-galaxy-draft-step
+      path: content/molds/advance-galaxy-draft-step/index.md
+      revision: 11
+      content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: related-project
+      label: "@galaxy-tool-util/cli galaxy-tool-cache summarize (raw_tool_source_path)"
+      locator: https://github.com/jmchilton/galaxy-tool-util-ts
+    kind: friction
+    severity: minor
+    what: "galaxy-tool-cache add/summarize for toolshed iuc/seqtk/seqtk_trimfq 1.5+galaxy0 left artifacts.raw_tool_source_path null, so the wrapper command could not be inspected to answer an open ledger question (does the output stay gzip-compressed like the source's `| gzip`?)."
+    expected: "Cache the raw tool XML (or the <command> block) alongside parsed_tool so per-step implementation can check output compression and other command-level behaviour."
+    evidence: "tool-summary-seqtk_trimfq.json artifacts: parsed_tool_path set, raw_tool_source_path null."
+    status: open
+    issue: null
+  - id: strict-state-null-optional-data-message-unclear
+    raised_by: advance-galaxy-draft-step
+    observed_in: *obs7
+    subject:
+      kind: related-project
+      label: "@galaxy-tool-util/cli gxwf draft-validate --strict-state"
+      locator: https://github.com/jmchilton/galaxy-tool-util-ts
+    kind: friction
+    severity: minor
+    what: "Setting unconnected optional data inputs to null in state (contaminants: null for devteam/fastqc 0.74+galaxy1) fails with 'contaminants: Expected never, actual null / Expected undefined, actual null'. The message does not say the fix is to omit the key, and nothing in the bundle states that rule."
+    expected: "Emit an actionable diagnostic ('unconnected data input: omit from state') and document the rule in the implement-galaxy-tool-step references."
+    evidence: "draft-validate --concrete --strict-state JSON during phase 7 iteration 2; passing after removing the null keys."
+    status: open
+    issue: null
+  - id: harness-loop-ran-leaf-skills-inline
+    raised_by: advance-galaxy-draft-step
+    observed_in: *obs7
+    subject:
+      kind: mold
+      label: advance-galaxy-draft-step
+      locator: content/molds/advance-galaxy-draft-step/index.md
+      content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+    kind: friction
+    severity: minor
+    what: "For three Identity-pinned steps whose wrapper ids came straight from an IWC exemplar, running discover-shed-tool, summarize-galaxy-tool and implement-galaxy-tool-step as separate skill invocations per step was disproportionate; this run did tool-versions/tool-revisions + cache summarize + direct state binding inline. The Mold gives no lighter path for exemplar-pinned wrappers."
+    expected: "Allow an exemplar-confirmed Identity-pinned step to resolve version/changeset via gxwf tool-revisions and bind state from the cached summary without the full discovery sub-skill, and say so explicitly."
+    evidence: "nf-core/demo phase 7: fastqc, seqtk_trim, multiqc all resolved in one pass each; validation green."
+    status: open
+    issue: null
+  - id: test-data-refs-no-shape-for-scalar-inputs
+    raised_by: nextflow-to-test-data
+    observed_in:
+      mold: nextflow-to-test-data
+      path: content/molds/nextflow-to-test-data/index.md
+      revision: 4
+      content_hash: 842e097edfb5bfbc37b62a35d5870ee2087df33919212a7965fd70dae799b189
+      foundry_head: 2f8792a62ca53f074605ddbcfb25e75871f52b24
+    subject:
+      kind: schema
+      label: test-data-refs
+      locator: "package://@galaxy-foundry/gxwf-foundry#testDataRefsSchema"
+      content_hash: 534dcb2f44e24a33bd59de2bca8d882af97321c602cf1b66776c22c38b0207a8
+    kind: gap
+    severity: minor
+    what: "The schema requires 'one ref per workflow input' and a resolved ref must carry a fixture location or elements, but the workflow's boolean skip_trim and optional string multiqc_title have no data fixture. Their test values come from the nf-test params_delta/defaults (skip_trim false, title unset), and there is no valid way to record them, so they were left out of test-data-refs.json."
+    expected: "Add a scalar ref form (e.g. value + source: params_delta|default) or state that test-data-refs covers data/collection inputs only and scalar values belong to the test plan."
+    evidence: "nf-core/demo run: test-data-refs.json has only `reads`; the fixture storage enum has no 'parameter' option."
+    status: open
+    issue: null
+  - id: snapshot-note-silent-on-gz-md5-semantics
+    raised_by: nextflow-test-to-galaxy-test-plan
+    observed_in: &obs9
+      mold: nextflow-test-to-galaxy-test-plan
+      path: content/molds/nextflow-test-to-galaxy-test-plan/index.md
+      revision: 8
+      content_hash: fa769216f621ef25470c9fb907df1278635c0a1e022b647b9462ff7b92469291
+      foundry_head: 47aa5c1cf419386ea72929c8ee34aec0db65588f
+    subject:
+      kind: research
+      label: nextflow-snapshot-to-galaxy-assertions
+      locator: content/research/nextflow-snapshot-to-galaxy-assertions/index.md
+      content_hash: 6d1009543d1bf433706ce0da23a6ef1bf352721cb65b390e2c20142d4a0f0e5c
+    kind: gap
+    severity: major
+    what: "The note says nothing about compressed outputs. nf-test snapshot md5s for *.fastq.gz (here 6 trimmed-read files) may be computed over decompressed content, while a Galaxy tests-format checksum covers dataset bytes, and the Galaxy wrapper may not gzip at all. I translated them as low-confidence checksum assertions without knowing whether they can ever match."
+    expected: "State how nf-test computes md5 for .gz paths and give the matching Galaxy translation (e.g. decompress: true with has_n_lines/has_line, or checksum only when compression is byte-identical)."
+    evidence: "tests/default.nf.test.snap md5 for SAMPLE1_PE_sample1_R1.fastq.gz equals SAMPLE3_SE_sample1_R1.fastq.gz (same reads), consistent with content hashing; no guidance in the bundle."
+    status: open
+    issue: null
+  - id: test-plan-fixture-no-scalar-value
+    raised_by: nextflow-test-to-galaxy-test-plan
+    observed_in: *obs9
+    subject:
+      kind: schema
+      label: galaxy-workflow-test-plan JobInput/Fixture
+      locator: "package://@galaxy-foundry/gxwf-foundry#galaxyWorkflowTestPlanSchema"
+      content_hash: 03fc1d58499c4bd5f3fa9556d771a8f24bcc8a387f120bd6eb28fe5f103ffc95
+    kind: gap
+    severity: minor
+    what: "JobInput requires a Fixture (storage/location/checksum/provenance) even for boolean/string parameter inputs; there is no value field, so the skip_trim=false job value had to be smuggled into fixture.location as the string 'false' with storage null."
+    expected: "Add an optional JobInput.value (with source: default|params_delta) used instead of fixture for scalar inputs."
+    evidence: "galaxy-test-plan.yml job_inputs skip_trim / multiqc_title in the nf-core/demo run."
+    status: open
+    issue: null
+  - id: implement-test-run-green-duplicates-run-workflow-test
+    raised_by: implement-galaxy-workflow-test
+    observed_in:
+      mold: implement-galaxy-workflow-test
+      path: content/molds/implement-galaxy-workflow-test/index.md
+      revision: 11
+      content_hash: 34855691581889d36265e00178088b8a52a51ee72119329261bca186f7cb480e
+      foundry_head: a59d6025d612ce7013b09fa1ccb58f60507ccc6a
+    subject:
+      kind: pipeline
+      label: nextflow-to-galaxy
+      locator: content/pipelines/nextflow-to-galaxy/index.md
+    kind: friction
+    severity: minor
+    what: "implement-galaxy-workflow-test step 5 ('Run green: drive planemo test') and its step-1 bootstrap from a real invocation both require a Planemo-managed Galaxy run, but the nextflow-to-galaxy pipeline runs validate-galaxy-workflow and run-workflow-test as phases 11-12 after it. Inside the pipeline, the Mold's own run gate either duplicates an expensive Galaxy boot or is skipped; nothing says which."
+    expected: "Have the pipeline (or the Mold) state that under a harness with a later run-workflow-test phase, implement-galaxy-workflow-test stops at the static gate and hands the run to that phase."
+    evidence: "nf-core/demo run: test file passed validate-tests + workflow cross-check; Planemo run deferred to phase 12."
+    status: open
+    issue: null
+  - id: draft-loop-validation-skips-strict-structure
+    raised_by: validate-galaxy-workflow
+    observed_in:
+      mold: validate-galaxy-workflow
+      path: content/molds/validate-galaxy-workflow/index.md
+      revision: 5
+      content_hash: 74e3743fc376f33c1eb37832ab4869c327d48f87e015c7a38597cf4c4ca939cd
+      foundry_head: 88eb241e0b7226af678c1a938ab2bfc89a31aa1e
+    subject:
+      kind: mold
+      label: advance-galaxy-draft-step
+      locator: content/molds/advance-galaxy-draft-step/index.md
+      content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+    kind: defect
+    severity: minor
+    what: "The template wrote comments frames with 'colour:' (a typo for 'color'). draft-validate in the template step and in every advance-galaxy-draft-step iteration (--concrete --strict-state) accepted it; only terminal 'gxwf validate --strict' rejected it, two phases later."
+    expected: "Run draft-validate with --strict (or at least --strict-structure) in the template and per-step loop gates, so unknown envelope keys fail at the phase that wrote them."
+    evidence: "nf-core/demo run: draft-validate exit 0 with colour present; gxwf validate --strict --connections exit 2 'comments.0.colour is unexpected'."
+    status: open
+    issue: null
+  - id: planemo-0-75-47-keyerror-embedded-user-tool
+    raised_by: run-workflow-test
+    observed_in: &obs12
+      mold: run-workflow-test
+      path: content/molds/run-workflow-test/index.md
+      revision: 8
+      content_hash: 6e312c6ee27ef6e45a6ace74087cd28a6509ade11f788a51ee478efce58971b6
+      foundry_head: 0b06389d693ff56e7892349d90052de33156734c
+    subject:
+      kind: related-project
+      label: "planemo 0.75.47 galaxy/workflows.py get_tool_ids_for_workflow"
+      locator: https://github.com/galaxyproject/planemo
+    kind: defect
+    severity: blocker
+    what: "planemo test 0.75.47 crashes before starting Galaxy with KeyError 'tool_id' on any workflow step that embeds a GalaxyUserTool under run: (the binding the Foundry's own galaxy-user-tool-workflow-binding note prescribes). 0.75.48 fixes it and also grants the user-tool-execute role and enable_beta_tool_formats."
+    expected: "Bump the Foundry's planemo pin (bootstrap + run-workflow-test + implement-galaxy-workflow-test) to >=0.75.48, and close the binding note's open question about Planemo-managed Galaxy with that version."
+    evidence: "nf-core/demo run attempt 1 (0.75.47) KeyError; attempt 5 (0.75.48) passed tool-id collection and POST /api/roles 200."
+    status: open
+    issue: null
+  - id: galaxy-embedded-user-tool-import-integrityerror
+    raised_by: run-workflow-test
+    observed_in: *obs12
+    subject:
+      kind: related-project
+      label: "Galaxy workflow import with embedded GalaxyUserTool (DynamicToolManager.create_unprivileged_tool commit)"
+      locator: https://github.com/galaxyproject/galaxy
+    kind: defect
+    severity: blocker
+    what: "Importing a gxformat2 workflow whose step embeds a GalaxyUserTool fails with HTTP 500: sqlite3.IntegrityError NOT NULL constraint failed: workflow_step.workflow_id. create_unprivileged_tool -> ModelManager.create -> session.commit() runs mid-import and flushes already-built workflow_step rows (here fastqc, order_index 4) before the workflow row exists."
+    expected: "Galaxy should create the dynamic tool without committing the in-progress workflow (flush in a nested transaction or defer the commit); until fixed, the Foundry binding note should warn that embedded user tools fail to import whenever a tool step precedes them."
+    evidence: "Galaxy master b18269a10f8 via planemo 0.75.48, attempt 5 log; same workflow imports and passes once the step references an XML tool instead (attempt 9)."
+    status: open
+    issue: null
+  - id: gxwf-accepts-frames-without-position-size
+    raised_by: run-workflow-test
+    observed_in: *obs12
+    subject:
+      kind: related-project
+      label: "@galaxy-tool-util/cli gxwf validate --strict (comments frame schema)"
+      locator: https://github.com/jmchilton/galaxy-tool-util-ts
+    kind: defect
+    severity: major
+    what: "gxwf validate --strict and draft-validate accept frame comments without position/size, but Galaxy's WorkflowCommentModel requires both and rejects the import (RequestParameterMissingException frame.position / frame.size). The Foundry galaxy-workflow-comments note also presents position/size as optional-looking."
+    expected: "Make position and size required for frame (and other) comments in the gxwf structural schema, or have the comments note and template Mold always emit them."
+    evidence: "Attempt 3: import 400 on comments; fixed by adding position/size; gxwf strict validation passed before and after."
+    status: open
+    issue: null
+  - id: run-workflow-test-no-guidance-container-only-planemo
+    raised_by: run-workflow-test
+    observed_in: *obs12
+    subject:
+      kind: mold
+      label: run-workflow-test
+      locator: content/molds/run-workflow-test/index.md
+      content_hash: 6e312c6ee27ef6e45a6ace74087cd28a6509ade11f788a51ee478efce58971b6
+    kind: gap
+    severity: major
+    what: "The Mold says Planemo-managed Galaxy 'installs the workflow's tools from the Tool Shed/conda' but gives no container-only recipe. On a docker-less HPC host, default conda resolution broke every shed install (conda's env-python shebang picked Galaxy's venv Python), and plain --biocontainers made Apptainer convert docker:// images (>10 min each, MultiQC converted twice). Prefetching depot.galaxyproject.org .sif files took 37 s for all four images."
+    expected: "Document a container-first recipe: job_conf with singularity_enabled, --no_dependency_resolution --no_install_resolver_dependencies --no_conda_auto_install, and a container_resolvers config using cached_mulled_singularity over prefetched depot .sif images (with mulled-hash to derive names)."
+    evidence: "nf-core/demo attempts 6-9; final pass in attempt 9 with that configuration."
+    status: open
+    issue: null
+  - id: debug-bisection-needs-managed-galaxy-recipe
+    raised_by: debug-galaxy-workflow-output
+    observed_in:
+      mold: debug-galaxy-workflow-output
+      path: content/molds/debug-galaxy-workflow-output/index.md
+      revision: 6
+      content_hash: 0ea72a26de30b8086e4d11fea09bc269e94320ec97fb317f6c0232cd92841009
+      foundry_head: eec35c4bdb6f486a98372cbf022cced5b84e6556
+    subject:
+      kind: mold
+      label: debug-galaxy-workflow-output
+      locator: content/molds/debug-galaxy-workflow-output/index.md
+      content_hash: 0ea72a26de30b8086e4d11fea09bc269e94320ec97fb317f6c0232cd92841009
+    kind: friction
+    severity: minor
+    what: "Step 3 requires bisecting an import 500 with several synthetic workflows imported 'as the same user on the same server', but with a Planemo-managed Galaxy every 'planemo test' boots and tears down its own server (~4 min each), and the bundle gives no recipe for a persistent server (planemo serve + API import loop). Bisection was therefore recorded as a proposed repro, not executed."
+    expected: "Add a recipe: planemo serve (container-only flags) once, then import each variant via POST /api/workflows with the bootstrap admin key and the same user, capturing status/body per variant."
+    evidence: "nf-core/demo attempt 5 import 500; debug report marks bisection as not done."
+    status: open
+    issue: null
+  - id: template-frames-without-step-positions
+    raised_by: user-review
+    observed_in:
+      mold: nextflow-summary-to-galaxy-template
+      path: content/molds/nextflow-summary-to-galaxy-template/index.md
+      revision: 10
+      content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+      foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+    subject:
+      kind: mold
+      label: nextflow-summary-to-galaxy-template
+      locator: content/molds/nextflow-summary-to-galaxy-template/index.md
+      content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+    kind: defect
+    severity: major
+    what: "The template emits comments: frames with fixed position/size but no step positions. On import Galaxy stacks steps at (0,0),(10,10)..., so frames do not enclose their child_steps (the Reporting frame at x=660 was empty; multiqc sat at 60,60). Saving that workflow in the usegalaxy.be editor (Galaxy 26.1.2.dev0) failed with 'Input should be a valid number in (frame, position, 0/1)'."
+    expected: "Whenever frames are emitted, also emit a position for every step/input and size each frame from the positions of its contained steps (or emit no frames); add a static check that each frame's child_steps lie inside its rectangle."
+    evidence: "nf-core/demo no-cowpy variant on usegalaxy.be: editor save error on v1; v2 with step positions and enclosing frames imports with all steps inside their frames and reran 14/14 jobs ok."
+    status: open
+    issue: null
+  - id: galaxy-editor-frame-fit-empty-bounds-infinity
+    raised_by: user-review
+    observed_in:
+      mold: nextflow-summary-to-galaxy-template
+      path: content/molds/nextflow-summary-to-galaxy-template/index.md
+      revision: 10
+      content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+      foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+    subject:
+      kind: related-project
+      label: "Galaxy workflow editor: frame comment fit-to-content with no contained steps"
+      locator: https://github.com/galaxyproject/galaxy
+    kind: defect
+    severity: minor
+    what: "FrameComment.vue onFitToContent builds an empty AxisAlignedBoundingBox (x=y=Infinity) when no step/comment lies inside the frame and emits move([Infinity, Infinity]); JSON serialises Infinity as null and the save is rejected with 'Input should be a valid number in (frame, position, 0)'. Stored workflow was valid (positions [0.0,0.0], [660.0,0.0]); the bad value is created client-side. Exact UI action before save not confirmed."
+    expected: "Skip the move/resize when the bounding box is empty (or keep the current frame geometry), and guard against non-finite comment positions before save."
+    evidence: "release_26.1 client/src/utils/geometry.ts (x = Infinity default), Comments/FrameComment.vue onFitToContent; usegalaxy.be 26.1.2.dev0 save error."
+    status: open
+    issue: null
+  - id: pipeline-no-source-output-parity-or-non-udt-variant
+    raised_by: user-review
+    observed_in:
+      mold: run-workflow-test
+      path: content/molds/run-workflow-test/index.md
+      revision: 8
+      content_hash: 6e312c6ee27ef6e45a6ace74087cd28a6509ade11f788a51ee478efce58971b6
+      foundry_head: 0b06389d693ff56e7892349d90052de33156734c
+    subject:
+      kind: pipeline
+      label: nextflow-to-galaxy
+      locator: content/pipelines/nextflow-to-galaxy/index.md
+    kind: wish
+    severity: major
+    what: "The pipeline's only check against the source is the nf-test snapshot; there is no artifact comparing Galaxy outputs with a real Nextflow results/ directory (file mapping, content, tool-version differences, missing files on either side). Intended differences are scattered over the interface brief, open-requirements ledger, test plan and debug report. Separately, the delivered workflow embeds a GalaxyUserTool, so it cannot be imported on public servers that disallow UDTs; the user had to ask for a UDT-free variant."
+    expected: "Add an optional parity phase (input: a Nextflow results/ dir) emitting a per-file table (identical / differs-how / missing) including tool-version deltas (seqtk 1.4 vs 1.5, MultiQC 1.34 vs 1.35), and have the pipeline emit a UDT-free deployable variant (drop or XML-wrap UDT steps) alongside the embedded form."
+    evidence: "nf-core/demo: manual comparison found all content identical but 25 reference-only files (multiqc_data, pipeline_info) and 6 Galaxy-only files; seqtk version delta recorded nowhere. UDT-free variant ran on usegalaxy.be (14/14 jobs ok)."
+    status: open
+    issue: null

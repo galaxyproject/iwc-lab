@@ -1,0 +1,152 @@
+entries:
+- id: reference-genome-params-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  units: params genome, fasta, igenomes_base, igenomes_ignore (Reference genome options group)
+  because: 'summary-nextflow reference_assets[fasta].used_by is empty and reference_rebuilds[] is empty; workflows/demo.nf DEMO take: block carries no reference channel'
+  unmet: Galaxy interface does not offer the source's reference-genome parameters
+  missing: no process in the source consumes them, so there is nothing to wire
+  note: Expected to be surrendered at terminal as an intentional, cited drop. [surrendered at run end 2026-11-09]
+- id: reads-multi-run-grouping-not-carried
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: PIPELINE_INITIALISATION groupTuple() merge of samplesheet rows sharing `sample` (+ validateInputSamplesheet endedness check)
+  because: Galaxy collection element identifiers must be unique; test samplesheet has SAMPLE3_SE on two rows. All per-sample consumers (FASTQC, SEQTK_TRIM) operate per FASTQ file, so outputs differ only
+    in grouping/naming.
+  unmet: per-sample grouping of multiple runs
+  missing: one element per run row instead of per sample
+  note: '[surrendered at run end 2026-11-09]'
+- id: reads-paired-or-unpaired-mapping
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  unmet: FASTQC and SEQTK_TRIM must run once per FASTQ file of every element in list:paired_or_unpaired `reads`
+  missing: unverified whether chosen wrappers accept paired_or_unpaired map-over; may need __FLATTEN__ / split to per-file list
+  note: Explicit flatten node N1 (list:paired_or_unpaired -> per-file list) feeds FASTQC and SEQTK_TRIM; exact operation left to implementation.
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+- id: trimmed-reads-conditional-output
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: '`trimmed_reads` exists only when skip_trim is false'
+  missing: Galaxy conditional-step (when:) wiring for SEQTK_TRIM gated by `skip_trim` boolean input
+  note: 'Inline when: $(!inputs.skip_trim) on seqtk_trim; output has no downstream consumer so no pick_value needed.'
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+- id: multiqc-stats-output-shape
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: checkpoint output `multiqc_stats` with stable MultiQC data tables
+  missing: Galaxy MultiQC wrapper output name/shape for multiqc_data tables not yet known
+  note: IWC MultiQC wrapper (iuc/multiqc 1.35+galaxy5) exposes a `stats` output, promoted in mgnify QC exemplar; wire multiqc_stats <- multiqc/stats.
+  resolved_by: compare-against-iwc-exemplar
+- id: multiqc-custom-config-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: params multiqc_config, multiqc_logo, multiqc_methods_description
+  because: Presentation-only per conf/modules.config + workflows/demo.nf (passed as MULTIQC tuple slots 3-4 and methods_description_mqc.yaml); not cited against a Galaxy wrapper yet
+  unmet: custom MultiQC config/logo/methods text
+  missing: not exposed as Galaxy inputs
+  note: '[surrendered at run end 2026-11-09]'
+- id: software-versions-and-plots-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: pipeline_info/nf_core_demo_software_mqc_versions.yml; MULTIQC.out.plots
+  because: Galaxy records tool versions per job (no topic-channel equivalent); plot images vary across runs (tests/.nftignore lists multiqc_plots)
+  unmet: versions YAML and MultiQC plot exports as workflow outputs
+  missing: not exposed
+  note: '[surrendered at run end 2026-11-09]'
+- id: flatten-identifier-derivation
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: flatten_reads
+  unmet: per-file element identifiers after flattening list:paired_or_unpaired must stay unique and traceable to <sample>_<run>
+  missing: Galaxy flatten suffix convention for paired_or_unpaired not confirmed
+  note: 'Verified at runtime (planemo attempts 8-9): list:paired_or_unpaired -> __FLATTEN__ produced elements <element>_forward/_reverse/_unpaired addressed by the test element_tests.'
+  resolved_by: run-workflow-test
+- id: cowpy-source-step-tool
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: cowpy
+  unmet: step rendering the fixed text "nf-core rules!" with cowpy, no data inputs
+  missing: tool not yet discovered
+  note: No Tool Shed hit for cowpy/cowsay (gxwf tool-search, repo-search); authored GalaxyUserTool cowpy_say 1.1.5 with the source Wave container, embedded under run:.
+  resolved_by: advance-galaxy-draft-step
+- id: seqtk-output-compression
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: seqtk_trim
+  unmet: trimmed reads gzip-compressed like source (gzip --no-name)
+  missing: Galaxy seqtk_trimfq output datatype/compression unverified
+  note: Galaxy seqtk_trimfq (seqtk 1.5 + pigz 2.8 image) emits gzip; decompressed content equals nf-core snapshot md5s for all 6 files (attempt 8/9).
+  resolved_by: debug-galaxy-workflow-output
+- id: paired-or-unpaired-no-corpus-precedent
+  status: resolved
+  raised_by: compare-against-iwc-exemplar
+  unmet: list:paired_or_unpaired reads input with flatten before per-file tools
+  missing: 'no IWC workflow uses paired_or_unpaired (searched IWC @ 9f111cb .ga/.yml for "paired_or_unpaired": 0 hits); idiom unverified against a real run'
+  note: 'Verified at runtime (planemo attempts 8-9): list:paired_or_unpaired -> __FLATTEN__ produced elements <element>_forward/_reverse/_unpaired addressed by the test element_tests.'
+  resolved_by: run-workflow-test
+- id: flatten-accepts-paired-or-unpaired
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-template
+  step: flatten_reads
+  unmet: __FLATTEN__ must accept list:paired_or_unpaired and emit a flat list of FASTQs
+  missing: no corpus or semantics-doc example of __FLATTEN__ over paired_or_unpaired; verify in concrete validation/run
+  note: 'gxwf draft-validate --connections: reads(list:paired_or_unpaired) -> __FLATTEN__ 1.0.0 ok, output list; runtime still to confirm in run-workflow-test.'
+  resolved_by: advance-galaxy-draft-step
+- id: cowpy-udt-needs-beta-tool-formats
+  status: resolved
+  raised_by: advance-galaxy-draft-step
+  step: cowpy
+  unmet: cowpy step runs on the target Galaxy
+  missing: embedded GalaxyUserTool requires enable_beta_tool_formats and the Custom Tool Execution role; Wave container is docker-registry only (singularity must pull docker://)
+  note: 'Resolved 2026-11-10: the import 500 was galaxy#24471, fixed by galaxy#24475 (2026-10-29); the run''s Galaxy b18269a10f8 predated it. Delivered embedded GalaxyUserTool form imports and passes 2/2
+    tests on Galaxy master 7c18ab768ac with planemo 0.75.48 (beta tool formats on, user_tool_execute role granted). Requirement for deployment: Galaxy 26.1 with galaxy#24475.'
+  resolved_by: run-workflow-test
+discoveries:
+- id: demo-consumes-no-reference-data
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: FASTQC/SEQTK_TRIM consume samplesheet reads only; COWPY has no inputs; MULTIQC consumes the QC bundle plus optional config/logo.
+  impact: No reference-data inputs, data tables, or rebuild steps in the Galaxy workflow.
+- id: fastqc-text-feeds-multiqc
+  raised_by: compare-against-iwc-exemplar
+  evidence: 'mgnify QC paired-end: devteam/fastqc 0.74+galaxy1 text_file -> iuc/multiqc results software=fastqc output_N|input'
+  impact: Use FastQC raw text (not zip) as the MultiQC input and as the fastqc_zip checkpoint equivalent.
+- id: paired-or-unpaired-rejected-on-multi-data
+  raised_by: nextflow-summary-to-galaxy-template
+  evidence: 'galaxy-collection-semantics: list:paired_or_unpaired maps over a data input (BASIC_MAPPING_PAIRED_OR_UNPAIRED_*), but is rejected on a multi-data input.'
+  impact: FastQC/seqtk could map directly over reads, but MultiQC (multiple=true reduction) would reject the nested output; flatten_reads (__FLATTEN__, join_identifier "_") before per-file tools keeps the
+    whole chain flat.
+decisions:
+- id: reads-as-list-paired-or-unpaired
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: 'Expose params.input as `reads`: collection list:paired_or_unpaired of fastqsanger.gz, one element per samplesheet row.'
+  rationale: Optional fastq_2 => mixed endedness; no metadata columns beyond the identifier so sample_sheet adds nothing.
+  basis: agent
+- id: expose-skip-trim-boolean
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Expose skip_trim as boolean input (default false) gating SEQTK_TRIM.
+  rationale: Skip flag gates a process whose output is published.
+- id: element-identifiers-sample-plus-run
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: reads element identifier = <sample>_<fastq_1 basename stem minus mate tag>, e.g. SAMPLE3_SE_sample1
+  rationale: sample repeats across runs in the source test sheet; run file name is unique per dataset and matches source trimmed-output naming.
+  basis: agent
+- id: fastqc-raw-replaces-fastqc-zip
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: Workflow output fastqc_zip renamed fastqc_raw <- fastqc/text_file
+  rationale: Galaxy FastQC wrapper feeds MultiQC via text_file (IWC idiom); no zip output used.
+- id: trimmed-reads-full-content-fixtures
+  decided_by: debug-galaxy-workflow-output
+  decision: 'Compare trimmed_reads elements against regenerated fixtures with decompress: true + compare: diff'
+  rationale: Fixtures regenerated in the wrapper container match nf-core snapshot md5s after decompression; compressed bytes differ (pigz vs gzip --no-name).
+  basis: evidence
+- id: skip-trim-test-case
+  decided_by: debug-galaxy-workflow-output
+  decision: Second test with skip_trim=true asserts trimmed_reads elements are skipped (null) datasets
+  rationale: 'when: gating had no runtime coverage; no upstream nf-test exists for this branch.'
+  basis: agent
+brief_change_recommendations: []

@@ -1,0 +1,55 @@
+{
+  "command": "gxwf validate galaxy-workflow.gxwf.yml --strict --connections --json --cache-dir .tool-cache",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "not_run_reason": null,
+  "tool_versions": "@galaxy-tool-util/cli 1.15.x",
+  "diagnostics": [
+    {
+      "severity": "error",
+      "resolved": true,
+      "message": "comments.N.colour is unexpected (expected color) \u2014 strict-structure failure on both stage frames",
+      "addresses": "comments[0..1]",
+      "routes_to": "nextflow-summary-to-galaxy-template",
+      "resolution": "renamed colour -> color in galaxy-workflow-draft.gxwf.yml and galaxy-workflow.gxwf.yml; re-run passed"
+    },
+    {
+      "severity": "info",
+      "resolved": true,
+      "message": "connection skipped: Cannot resolve input 'skip_trim' on step seqtk_trim",
+      "addresses": "steps.seqtk_trim.in.skip_trim",
+      "routes_to": null,
+      "resolution": "expected: skip_trim is a when-only step input consumed by when: $(!inputs.skip_trim), not a tool parameter"
+    }
+  ],
+  "checks": {
+    "tool_state": "5 ok, 0 fail, 0 skip",
+    "structure": "strict ok",
+    "encoding": "strict ok",
+    "connections": "valid (1 skip, see diagnostics)",
+    "lint": "structural + best practices OK",
+    "tests_cross_check": "gxwf validate-tests --workflow: valid"
+  },
+  "residual_runtime_risks": [
+    {
+      "risk": "Embedded GalaxyUserTool cowpy_say requires enable_beta_tool_formats and the Custom Tool Execution role on the Galaxy that runs it; its Wave image must be pullable (docker:// for Singularity).",
+      "proof": "planemo test job state for step cowpy"
+    },
+    {
+      "risk": "__FLATTEN__ over list:paired_or_unpaired (statically OK) needs a Galaxy release supporting paired_or_unpaired; flattened identifiers assumed <element>_<forward|reverse|unpaired>.",
+      "proof": "planemo test invocation output identifiers for fastqc_html / trimmed_reads"
+    },
+    {
+      "risk": "when: $(!inputs.skip_trim) gating on a mapped-over step; skipped branch emits null outputs for trimmed_reads.",
+      "proof": "run with skip_trim=true (not in current tests)"
+    },
+    {
+      "risk": "trimmed_reads checksum assertions translated from nf-test md5s may not match (compression / md5-over-decompressed semantics).",
+      "proof": "planemo test output checksum comparison"
+    },
+    {
+      "risk": "MultiQC fastqc module reading flattened FastQC text_file collection via multiple=true input.",
+      "proof": "multiqc job success and has_text FastQC on multiqc_report"
+    }
+  ]
+}
