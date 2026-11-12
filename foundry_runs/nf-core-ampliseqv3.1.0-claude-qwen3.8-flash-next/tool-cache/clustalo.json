@@ -1,0 +1,975 @@
+{
+  "schema_version": 1,
+  "tool_id": "clustalo",
+  "tool_version": "1.2.4+galaxy0",
+  "cache_key": "b452cf4f5456d8f1bc042617071c602bf45af5b6fa074e4c9df57992470c086d",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/ngphylogeny~clustalo~clustalo/versions/1.2.4+galaxy0",
+    "cached_at": "2026-11-12T06:54:05.932Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": "/home/abennett/nf-core-ampliseq/tool-cache/b452cf4f5456d8f1bc042617071c602bf45af5b6fa074e4c9df57992470c086d.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "clustalo",
+    "version": "1.2.4+galaxy0",
+    "name": "Clustal Omega",
+    "description": "Multiple sequence alignment software",
+    "inputs": [
+      {
+        "name": "input_seqs",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Sequences file",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "fasta",
+          "clustal",
+          "msf",
+          "phylip",
+          "stockholm"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "seqType",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Sequence type",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Auto",
+            "value": "",
+            "selected": true
+          },
+          {
+            "label": "DNA",
+            "value": "--seqtype=DNA",
+            "selected": false
+          },
+          {
+            "label": "RNA",
+            "value": "--seqtype=RNA",
+            "selected": false
+          },
+          {
+            "label": "Protein",
+            "value": "--seqtype=Protein",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "dealign",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Dealign input sequences",
+        "help": "If given already aligned sequences, by default Clustal Omega use the existing    alignment to guide creation of the new alignment, by constructing a HMM from    the existing alignment. Check this box to realign aligned sequences from scratch.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "--dealign",
+        "falsevalue": ""
+      },
+      {
+        "name": "clusteringGuideTree",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Clustering guide-tree",
+        "help": "By default, only a fraction of the distance matrix is calculated, for speed.    Calculate full matrix may be more accurate under some circumstances but is    slower and needs more memory.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "mBed-like",
+            "value": "",
+            "selected": true
+          },
+          {
+            "label": "Use full distance matrix",
+            "value": "--full",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "iteration",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "iterOptions",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Use iteration",
+          "help": "Redo the alignment multiple times to improve accuracy.      Both the HMM and the guide tree will be recalculated each time.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Do not use iteration",
+              "value": "false",
+              "selected": true
+            },
+            {
+              "label": "Use iteration",
+              "value": "true",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "false",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "true",
+            "parameters": [
+              {
+                "name": "clusteringIteration",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Calculate full distance matrix during iteration",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "No",
+                    "value": "",
+                    "selected": true
+                  },
+                  {
+                    "label": "Yes",
+                    "value": "--full-iter",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              {
+                "name": "nbrIter",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Number of iterations (combined guide-tree/HMM)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 1,
+                "min": 0,
+                "max": 5,
+                "validators": []
+              },
+              {
+                "name": "separateIters",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "separateIterOptions",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Different number of guide tree, HMM iterations",
+                  "help": "Normally, if iteration is specified, a new guide tree and HMM will be calculated for each          iteration. Use this option to restrict the number of iterations for either.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "No",
+                      "value": "false",
+                      "selected": true
+                    },
+                    {
+                      "label": "Yes",
+                      "value": "true",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "false",
+                    "parameters": [],
+                    "is_default_when": true
+                  },
+                  {
+                    "discriminator": "true",
+                    "parameters": [
+                      {
+                        "name": "maxGuideTreeIteration",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Maximum guide tree iterations",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 1,
+                        "min": 0,
+                        "max": 5,
+                        "validators": []
+                      },
+                      {
+                        "name": "maxHmmIterations",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Maximum number of HMM iterations",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 1,
+                        "min": 0,
+                        "max": 5,
+                        "validators": []
+                      }
+                    ],
+                    "is_default_when": false
+                  }
+                ]
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "outputOrder",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "MSA output order",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Input order",
+            "value": "input-order",
+            "selected": false
+          },
+          {
+            "label": "Guide tree order",
+            "value": "tree-order",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "getTree",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Display tree guide",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "No",
+            "value": "",
+            "selected": true
+          },
+          {
+            "label": "Yes",
+            "value": "--guidetree-out=guidetree.txt",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "outputFormat",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Alignment Output format",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "FASTA",
+            "value": "fasta",
+            "selected": true
+          },
+          {
+            "label": "Clustal",
+            "value": "clustal",
+            "selected": false
+          },
+          {
+            "label": "Phylip",
+            "value": "phylip",
+            "selected": false
+          },
+          {
+            "label": "Msf",
+            "value": "msf",
+            "selected": false
+          },
+          {
+            "label": "Stockholm",
+            "value": "stockholm",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out_align",
+        "label": "alignment",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "guide_tree",
+        "label": "alignment Guide tree",
+        "hidden": false,
+        "type": "data",
+        "format": "nhx",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "guidetree.txt",
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1038/msb.2011.75"
+      }
+    ],
+    "license": null,
+    "profile": "24.01",
+    "edam_operations": [
+      "operation_0499",
+      "operation_0492"
+    ],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n    \n   \n.. class:: infomark\n\n**Clustal omega version 1.2.4** \n\n**What it does**\n\nClustal-Omega is a general purpose multiple sequence alignment (MSA) program for protein and DNA/RNA.\nIt produces high quality MSAs and is capable of handling data-sets of hundreds of thousands of sequences in reasonable time.\n\n-----\n\nFor further informations, please visite the ClustalOmega_ website.\n\n.. _ClustalOmega: http://www.clustal.org/omega/\n\n-----\n\n**OPTIONS**\n\nSequence Input:\n  -i, --infile=<file>       Multiple sequence input file (- for stdin)\n  --hmm-in=<file>           HMM input files\n  --dealign                 Dealign input sequences\n  --profile1, --p1=<file>   Pre-aligned multiple sequence file (aligned columns will be kept fix)\n  --profile2, --p2=<file>   Pre-aligned multiple sequence file (aligned columns will be kept fix)\n  --is-profile              Disable check if profile, force profile (default no)\n  -t, --seqtype             *Protein, RNA, DNA* Force a sequence type (default: auto)\n  --infmt                   *fa[sta], clu[stal], msf, phy[lip], st[ockholm]* Forced sequence input file format (default: auto)\n\n-----    \n\nClustering:\n  --distmat-in=<file>       Pairwise distance matrix input file (skips distance computation)\n  --distmat-out=<file>      Pairwise distance matrix output file\n  --guidetree-in=<file>     Guide tree input file (skips distance computation and guide-tree clustering step)\n  --guidetree-out=<file>    Guide tree output file\n  --pileup                  Sequentially align sequences\n  --full                    Use full distance matrix for guide-tree calculation (might be slow; mBed is default)\n  --full-iter               Use full distance matrix for guide-tree calculation during iteration (might be slowish; mBed is default)\n  --cluster-size=<n>        soft maximum of sequences in sub-clusters\n  --clustering-out=<file>   Clustering output file\n  --trans=<n>               Use transitivity (default: 0)\n  --posterior-out=<file>    Posterior probability output file\n  --use-kimura              Use Kimura distance correction for aligned sequences (default no)\n  --percent-id              convert distances into percent identities (default no)\n\n----       \n\nAlignment Output:\n  -o, --outfile=<file>      Multiple sequence alignment output file (default: stdout)\n  --outfmt                  *fa[sta], clu[stal], msf, phy[lip], st[ockholm]* MSA output file format (default: fasta)\n  --residuenumber, --resno  in Clustal format print residue numbers (default no)\n  --wrap=<n>                number of residues before line-wrap in output\n  --output-order            *input-order, tree-order* MSA output order like in input/guide-tree\n      \n----\n\nIteration:\n  --iterations, --iter=<n>  Number of (combined guide-tree/HMM) iterations\n  --max-guidetree-iterations=<n>  Maximum number of guidetree iterations\n  --max-hmm-iterations=<n>  Maximum number of HMM iterations\n\n----\n                            \nLimits (will exit early, if exceeded):\n  --maxnumseq=<n>           Maximum allowed number of sequences\n  --maxseqlen=<l>           Maximum allowed sequence length\n\n----\n     \nMiscellaneous:\n  --auto                    Set options automatically (might overwrite some of your options)\n  --threads=<n>             Number of processors to use\n  --pseudo=<file>           Input file for pseudo-count parameters\n  -l, --log=<file>          Log all non-essential output to this file\n  -h, --help                Print this help and exit\n  -v, --verbose             Verbose output (increases if given multiple times)\n  --version                 Print version information and exit\n  --long-version            Print long version information and exit\n  --force                   Force file overwriting \n         \n  "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input_seqs": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "seqType": {
+          "type": "string",
+          "enum": [
+            "",
+            "--seqtype=DNA",
+            "--seqtype=RNA",
+            "--seqtype=Protein"
+          ]
+        },
+        "dealign": {
+          "type": "boolean"
+        },
+        "clusteringGuideTree": {
+          "type": "string",
+          "enum": [
+            "",
+            "--full"
+          ]
+        },
+        "iteration": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "iterOptions": {
+                  "type": "string",
+                  "enum": [
+                    "false"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "iterOptions"
+              ],
+              "properties": {
+                "iterOptions": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                },
+                "clusteringIteration": {
+                  "type": "string",
+                  "enum": [
+                    "",
+                    "--full-iter"
+                  ]
+                },
+                "nbrIter": {
+                  "$ref": "#/$defs/Int",
+                  "description": "a number less than or equal to 5",
+                  "title": "lessThanOrEqualTo(5)",
+                  "minimum": 0,
+                  "maximum": 5
+                },
+                "separateIters": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "separateIterOptions": {
+                          "type": "string",
+                          "enum": [
+                            "false"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "separateIterOptions"
+                      ],
+                      "properties": {
+                        "separateIterOptions": {
+                          "type": "string",
+                          "enum": [
+                            "true"
+                          ]
+                        },
+                        "maxGuideTreeIteration": {
+                          "$ref": "#/$defs/Int",
+                          "description": "a number less than or equal to 5",
+                          "title": "lessThanOrEqualTo(5)",
+                          "minimum": 0,
+                          "maximum": 5
+                        },
+                        "maxHmmIterations": {
+                          "$ref": "#/$defs/Int",
+                          "description": "a number less than or equal to 5",
+                          "title": "lessThanOrEqualTo(5)",
+                          "minimum": 0,
+                          "maximum": 5
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "outputOrder": {
+          "type": "string",
+          "enum": [
+            "input-order",
+            "tree-order"
+          ]
+        },
+        "getTree": {
+          "type": "string",
+          "enum": [
+            "",
+            "--guidetree-out=guidetree.txt"
+          ]
+        },
+        "outputFormat": {
+          "type": "string",
+          "enum": [
+            "fasta",
+            "clustal",
+            "phylip",
+            "msf",
+            "stockholm"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "input_seqs"
+      ],
+      "properties": {
+        "input_seqs": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "seqType": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "",
+                "--seqtype=DNA",
+                "--seqtype=RNA",
+                "--seqtype=Protein"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "dealign": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "clusteringGuideTree": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "",
+                "--full"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "iteration": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "iterOptions": {
+                      "type": "string",
+                      "enum": [
+                        "false"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "iterOptions"
+                  ],
+                  "properties": {
+                    "iterOptions": {
+                      "type": "string",
+                      "enum": [
+                        "true"
+                      ]
+                    },
+                    "clusteringIteration": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "",
+                            "--full-iter"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "nbrIter": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a number less than or equal to 5",
+                          "title": "lessThanOrEqualTo(5)",
+                          "minimum": 0,
+                          "maximum": 5
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "separateIters": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "separateIterOptions": {
+                                  "type": "string",
+                                  "enum": [
+                                    "false"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "separateIterOptions"
+                              ],
+                              "properties": {
+                                "separateIterOptions": {
+                                  "type": "string",
+                                  "enum": [
+                                    "true"
+                                  ]
+                                },
+                                "maxGuideTreeIteration": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int",
+                                      "description": "a number less than or equal to 5",
+                                      "title": "lessThanOrEqualTo(5)",
+                                      "minimum": 0,
+                                      "maximum": 5
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "maxHmmIterations": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int",
+                                      "description": "a number less than or equal to 5",
+                                      "title": "lessThanOrEqualTo(5)",
+                                      "minimum": 0,
+                                      "maximum": 5
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "outputOrder": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "input-order",
+                "tree-order"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "getTree": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "",
+                "--guidetree-out=guidetree.txt"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "outputFormat": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "fasta",
+                "clustal",
+                "phylip",
+                "msf",
+                "stockholm"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

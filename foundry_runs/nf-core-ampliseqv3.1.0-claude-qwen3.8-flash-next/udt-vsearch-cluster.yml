@@ -1,0 +1,47 @@
+class: GalaxyUserTool
+id: ampliseq_vsearch_cluster
+version: 1.0.0
+name: ASV post-clustering with VSEARCH (ampliseq)
+description: Re-cluster ASVs into OTU-style clusters at a fixed pairwise identity with vsearch --cluster_smallmem
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core VSEARCH_CLUSTER module
+    (modules/nf-core/vsearch/cluster/main.nf) as invoked by nf-core/ampliseq
+    (workflows/ampliseq.nf:698-706), where conf/modules.config:750-754 set
+    args="--id <vsearch_cluster_id> --usersort --qmask none", args2="--cluster_smallmem"
+    and args3="--clusters". Two recorded deviations. (1) The source's wave container is
+    samtools+vsearch; samtools only serves the --samout branch this invocation never
+    takes, so the pinned BioContainers vsearch image of the same vsearch 2.31.0 build is
+    used. (2) FASTA headers are temporarily relabelled to the sequences before clustering
+    (the awk pass below), so cluster-file headers key on ASV sequences exactly as in the
+    source, where dada2 ASV ids ARE the sequences; ampliseq_filter_clusters maps them
+    back to the ASV_N labels this draft's FASTA convention uses. vsearch writes one
+    numbered FASTA per cluster (the module globs *.clusters.fasta*[0-9]); those files are
+    published uncompressed as a list collection (the source gzips each and its
+    filt_clusters.py gzip-opens the list).
+container: quay.io/biocontainers/vsearch:2.31.0--hd2be7a0_0
+inputs:
+- name: fasta
+  type: data
+  format: [fasta]
+  label: ASV sequences
+  help: ASV fasta, one sequence per record (single-line sequences).
+- name: cluster_id
+  type: float
+  label: Pairwise identity threshold
+  value: 0.97
+  help: Clustering identity passed to vsearch --id (source vsearch_cluster_id, default 0.97).
+outputs:
+- name: clusters
+  type: collection
+  collection_type: list
+  format: fasta
+  label: Cluster files (one per cluster, first record is the centroid; headers are sequences)
+  discover_datasets:
+  - discover_via: pattern
+    pattern: ASV_post_clustering.clusters.fasta*
+shell_command: |
+  awk '/^>/{if(seq){print ">" seq; print seq} seq=""; next} {seq=seq $0} END{if(seq){print ">" seq; print seq}}' "$(inputs.fasta.path)" > relabeled.fasta;
+  vsearch --cluster_smallmem relabeled.fasta --clusters ASV_post_clustering.clusters.fasta --threads 1 --id "$(inputs.cluster_id.value)" --usersort --qmask none

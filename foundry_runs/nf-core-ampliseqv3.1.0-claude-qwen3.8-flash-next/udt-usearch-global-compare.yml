@@ -1,0 +1,47 @@
+class: GalaxyUserTool
+id: ampliseq_usearch_global_compare
+version: 1.0.0
+name: Observed-vs-expected global alignment (ampliseq comparison)
+description: Globally align observed ASVs against expected sequences with vsearch --usearch_global, emitting the userfields table the comparison scripts consume
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core VSEARCH_USEARCHGLOBAL module
+    (modules/nf-core/vsearch/usearchglobal/main.nf) as invoked by
+    nf-core/ampliseq subworkflows/local/comparison_wf/main.nf:24-30 with
+    outoption 'userout', user_columns query+target+ql+tl+qilo+qihi+tilo+tihi+gaps+mism+qstrand
+    and similarity threshold "0.80", plus the conf/modules.config batch-mode args
+    "--strand both --maxaccepts 0 --maxrejects 0 --dbmask none --qmask none --output_no_hits"
+    and prefix "vsearch_usearchglobal". --output_no_hits is essential - unmatched queries
+    get target "*" rows that the comparison scripts count as absent expected sequences.
+    Recorded deviations. (1) --threads 1 fixed (source $task.cpus; Galaxy UDTs are single-cpu).
+    (2) The module's other output formats (aln/biom/lca/...) are never taken by this
+    invocation (outoption is hardcoded 'userout'), so only the tsv is published.
+    (3) The tag meta [id: val_md5sum_version] wrapping is a pipeline_info linkage device
+    and is not carried.
+container: quay.io/biocontainers/vsearch:2.31.0--hd2be7a0_0
+inputs:
+- name: query
+  type: data
+  format: [fasta]
+  label: Observed ASV sequences
+  help: Query fasta (the post-filter ASV sequences).
+- name: db
+  type: data
+  format: [fasta]
+  label: Expected sequences
+  help: Reference fasta of expected sequences (params.expected_sequences in the source).
+- name: id
+  type: float
+  label: Similarity threshold
+  value: 0.8
+  help: vsearch --id cutoff; the source hardcodes "0.80" in comparison_wf (similarity_threshold).
+outputs:
+- name: tsv
+  type: data
+  format: tsv
+  from_work_dir: vsearch_usearchglobal.tsv
+  label: Userfields alignment table (query,target,ql,tl,qilo,qihi,tilo,tihi,gaps,mism,qstrand)
+shell_command: |
+  vsearch --usearch_global "$(inputs.query.path)" --db "$(inputs.db.path)" --id "$(inputs.id.value)" --threads 1 --strand both --maxaccepts 0 --maxrejects 0 --dbmask none --qmask none --output_no_hits --userfields query+target+ql+tl+qilo+qihi+tilo+tihi+gaps+mism+qstrand --userout vsearch_usearchglobal.tsv

@@ -1,0 +1,58 @@
+class: GalaxyUserTool
+id: ampliseq_summary_counts
+version: 1.0.0
+name: Long-format counts summarizer (ampliseq)
+description: Melt the ASV x sample count table to long (asv_id, sample, count) keeping count > 0 rows, gzipped
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core/ampliseq SUMMARY_TABLE_COUNTS process
+    (modules/local/summary_table_counts/main.nf). The R body is the module's inline script
+    and the container is its exact community.wave.seqera.io image (registry manifest probe:
+    anonymously pullable OCI manifest; conda env r-base=4.3.1 + r-dplyr/r-tidyr/r-readr).
+    Two adaptations. (1) rename(asv_id = ASV_ID) becomes a positional rename of the first
+    column: the source's count tables always carry the literal ASV_ID header from the DADA2
+    biom chain, while this draft's tables are keyed by ASV sequence under headers the
+    producers do not standardize. (2) The versions.yml writeLines block (which embeds
+    task.process) is dropped (pipeline_info artifacts dropped precedent). The module's stub
+    branch is translation-irrelevant. Output stays gzipped per the source's
+    ampliseq.counts.tsv.gz name; readr gzips by extension and Galaxy sniffs the compression.
+container: community.wave.seqera.io/library/r-base_r-data.table_r-dplyr_r-dtplyr_pruned:a6608bc81b0e6546
+inputs:
+- name: table
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: ASV count table
+  help: Tab-separated ASV x sample counts, ASV id in the first column (asv_table_knot).
+outputs:
+- name: tsv
+  type: data
+  format: tabular
+  from_work_dir: ampliseq.counts.tsv.gz
+  label: Long-format counts (asv_id, sample, count; count > 0)
+configfiles:
+- filename: summary_counts.R
+  content: |
+    #!/usr/bin/env Rscript
+    # Verbatim modules/local/summary_table_counts/main.nf script body
+    # (positional first-column rename + versions.yml drop - see tool help).
+    suppressPackageStartupMessages({
+        library(dplyr)
+        library(tidyr)
+        library(readr)
+    })
+
+    a <- commandArgs(trailingOnly = TRUE)
+    asv_table <- a[1]
+
+    counts <- read_tsv(asv_table, show_col_types = FALSE) |>
+        rename_with(~"asv_id", 1) |>
+        pivot_longer(-asv_id, names_to = "sample", values_to = "count") |>
+        filter(count > 0)
+
+    write_tsv(counts, "ampliseq.counts.tsv.gz")
+shell_command: |
+  Rscript summary_counts.R "$(inputs.table.path)"

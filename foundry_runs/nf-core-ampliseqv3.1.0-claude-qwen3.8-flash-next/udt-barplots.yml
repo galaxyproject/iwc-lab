@@ -1,0 +1,81 @@
+class: GalaxyUserTool
+id: ampliseq_barplots
+version: 1.0.0
+name: QIIME2 grouped taxonomic barplots (ampliseq)
+description: Relativize the ASV table, group samples by a metadata category and render taxonomic average-abundance barplots
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core/ampliseq QIIME2_BARPLOTAVG subworkflow
+    (subworkflows/local/qiime2_barplotavg + modules qiime2_export_relasv,
+    qiime2_inasv, qiime2_featuretable_group, qiime2_barplot - all pinned to
+    qiime2/qiime2:2026.4, kept). Command chain is the modules': feature-table
+    relative-frequency; feature-table filter-samples --p-where "cat"<>'' (the
+    featuretable_group module drops samples lacking the category); feature-table group
+    --p-axis sample --m-metadata-column cat --p-mode sum; taxa barplot --i-table
+    grouped --i-taxonomy tax --o-visualization (the average call passes NO metadata
+    document, since grouping already collapsed samples by category). Galaxy adaptations.
+    (1) The source round-trips the relative table to biom-tsv (qiime2_export_relasv) and
+    re-imports it (QIIME2_INASV_BPAVG) only because rel_tsv is also a standalone
+    artifact; inside this tool the qza feeds forward directly - identical abundances, no
+    re-import. (2) One category: upstream tokenizes params.metadata_category_barplot by
+    comma and runs per category; v1 treats the input as a single metadata column (ancom
+    single-category precedent). (3) The exported barplot folder (svg/pngs for the full
+    summary report) is dropped; the taxa-bar-plots.qzv is the emitted result, fixed name
+    (static from_work_dir). (4) Taxonomic levels tax_agglom_min/max do NOT touch this
+    path upstream (barplotavg passes the consolidated tax qza unagglomerated; the levels
+    feed ANCOM_TAX) - nothing to reproduce. (5) versions.yml dropped (pipeline_info
+    precedent).
+container: quay.io/qiime2/qiime2:2026.4
+inputs:
+- name: table
+  type: data
+  label: Feature table artifact
+  help: QIIME2 FeatureTable[Frequency] qza (import_table).
+- name: taxonomy
+  type: data
+  label: Taxonomy artifact
+  help: QIIME2 taxonomy qza (import_taxonomy).
+- name: metadata
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: Sample metadata
+  help: Tab-separated sample metadata (filtered metadata, source ch_metadata rebind).
+- name: category
+  type: text
+  label: Barplot metadata category
+  help: Metadata column to group samples by (params.metadata_category_barplot, single category in v1).
+outputs:
+- name: barplots
+  type: data
+  from_work_dir: taxa-bar-plots.qzv
+  label: Taxonomic barplots (qzv)
+shell_command: |
+  export XDG_CONFIG_HOME="./xdgconfig"
+  export XDG_CACHE_HOME="./xqcache"
+  export MPLCONFIGDIR="./mplconfigdir"
+  export NUMBA_CACHE_DIR="./numbacache"
+  mcat="$(inputs.category)"
+  qiime feature-table relative-frequency \
+      --i-table "$(inputs.table.path)" \
+      --o-relative-frequency-table rel.qza
+  qiime feature-table filter-samples \
+      --i-table rel.qza \
+      --m-metadata-file "$(inputs.metadata.path)" \
+      --p-where "\"$mcat\"<>''" \
+      --o-filtered-table filtered.qza
+  qiime feature-table group \
+      --i-table filtered.qza \
+      --p-axis 'sample' \
+      --m-metadata-file "$(inputs.metadata.path)" \
+      --m-metadata-column "$mcat" \
+      --p-mode 'sum' \
+      --o-grouped-table grouped.qza
+  qiime taxa barplot \
+      --i-table grouped.qza \
+      --i-taxonomy "$(inputs.taxonomy.path)" \
+      --o-visualization taxa-bar-plots.qzv \
+      --verbose

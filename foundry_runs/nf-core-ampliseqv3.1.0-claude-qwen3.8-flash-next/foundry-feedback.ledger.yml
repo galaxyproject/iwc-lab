@@ -1,0 +1,179 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-ampliseq
+  status: running
+  phases:
+    - { n: 1, kind: mold, skill: summarize-nextflow, status: done, feedback_checked: true }  # appended: mold-sketch-shape-missing-schema-required-fields
+    - { n: 2, kind: mold, skill: nextflow-summary-to-galaxy-reference-data, status: done, feedback_checked: true }  # appended: rebuild-rules-cannot-distinguish-download-from-rebuild
+    - { n: 3, kind: mold, skill: nextflow-summary-to-galaxy-interface, status: done, feedback_checked: true }  # appended: publishdir-regex-misses-centralized-modules-config, sample-sheet-note-silent-on-element-identifier
+    - { n: 4, kind: mold, skill: nextflow-summary-to-galaxy-data-flow, status: done, feedback_checked: true }  # appended: conditional-when-note-lacks-multi-present-fanin
+    - { n: 5, kind: mold, skill: compare-against-iwc-exemplar, status: done, feedback_checked: true }  # appended: exemplar-view-carries-dead-state-residue
+    - { n: 6, kind: mold, skill: nextflow-summary-to-galaxy-template, status: done, feedback_checked: true }  # no feedback
+    - { n: 7, kind: mold, skill: advance-galaxy-draft-step, status: done, feedback_checked: true }  # appended: concrete-tool-state-omits-drafty-fed-steps, strict-state-accepts-composite-key-conditional-state
+    - { n: 8, kind: branch, pattern: test-data-resolution, status: pending }
+    - { n: 9, kind: mold, skill: nextflow-test-to-galaxy-test-plan, status: pending }
+    - { n: 10, kind: mold, skill: implement-galaxy-workflow-test, status: pending }
+    - { n: 11, kind: mold, skill: validate-galaxy-workflow, status: pending }
+    - { n: 12, kind: mold, skill: run-workflow-test, status: pending }
+    - { n: 13, kind: mold, skill: debug-galaxy-workflow-output, status: pending }
+entries:
+  - id: mold-sketch-shape-missing-schema-required-fields
+    raised_by: summarize-nextflow
+    observed_in:
+      mold: summarize-nextflow
+      path: content/molds/summarize-nextflow/index.md
+      revision: 18
+      content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+      foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+    subject:
+      kind: mold
+      label: summarize-nextflow
+      locator: content/molds/summarize-nextflow/index.md
+      content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    kind: defect
+    severity: minor
+    what: "The Mold's 'Sketch shape' output example contradicts the summary-nextflow schema bundled in the same skill bundle: the root example omits `reference_assets` and `reference_rebuilds` (both in Summary.required), the process example omits `meta` and `module_tests` (both in Process.required), and the subworkflow example omits `tests` (in Subworkflow.required) - the example appears to predate those schema additions, so an author pattern-matching the sketch fails the bundled validator."
+    expected: "The 'Sketch shape' JSONC in the Mold shows every schema-required key: reference_assets/reference_rebuilds at the root, meta/module_tests on a process example, tests on a subworkflow example (even if abbreviated with /* ... */ placeholders), so the document and the bundled summary-nextflow.schema.json agree."
+    evidence: "On this run (nf-core/ampliseq), the first <run>/summary-nextflow.json authored against the sketch failed `foundry validate-summary-nextflow --schema-sha256 839e11b1...` with schema errors for exactly these keys (missing reference_assets, reference_rebuilds, per-process meta/module_tests, subworkflow tests, plus null-vs-string description values); after adding them the artifact reports valid, exit 0."
+    status: open
+    issue: null
+  - id: rebuild-rules-cannot-distinguish-download-from-rebuild
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    observed_in:
+      mold: nextflow-summary-to-galaxy-reference-data
+      path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+      revision: 5
+      content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: schema
+      label: summary-nextflow ReferenceRebuildRule
+      locator: "package://@galaxy-foundry/summarize-nextflow#summaryNextflowSchema"
+      content_hash: 839e11b1892af74df3158377027e7d340a67dafdb9b5965d79e9715a1a109d54
+    kind: gap
+    severity: minor
+    what: "ReferenceRebuildRule carries no signal separating rebuild-from-supplied-asset (Sarek: samtools faidx over a user FASTA) from download-from-catalog (nf-core/ampliseq: all 7 rules are positive-form '<selector> set && params.ref_taxonomy_storage' guards around DOWNLOAD_REFERENCE_<TOOL>(url).db builders fetching catalog files plus taxref_reformat scripts). The Mold procedure says a non-empty reference_rebuilds[] means the compute-if-missing classification applies, and the mapping note routes compute-if-missing to the 'in-tool rebuild' posture - applied verbatim here it would assume unimplementable wrapper rebuilds for assets that are not derivable from any user input."
+    expected: "summary-nextflow.schema.json adds a discriminator to ReferenceRebuildRule (e.g. rebuild kind: build | download, or a builder-input field showing the builder consumes no asset param), and nextflow-reference-data-classification / nextflow-to-galaxy-reference-data-mapping state that download-catalog branches map to explicit optional inputs with no rebuild posture."
+    evidence: "<run>/summary-nextflow.json reference_rebuilds[] holds 7 entries whose guards are all '<selector> set && params.ref_taxonomy_storage'; classification of them as acquire-not-rebuild required re-reading the verbatim guard strings and conf/ref_databases.config, which the note's decision path does not anticipate."
+    status: open
+    issue: null
+  - id: publishdir-regex-misses-centralized-modules-config
+    raised_by: nextflow-summary-to-galaxy-interface
+    observed_in:
+      mold: nextflow-summary-to-galaxy-interface
+      path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+      revision: 6
+      content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: mold
+      label: summarize-nextflow
+      locator: content/molds/summarize-nextflow/index.md
+      content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    kind: gap
+    severity: minor
+    what: "The deterministic pass is specified as 'regex-tokenize process blocks for typed fields (name, container, conda, declared IO channel names, when: guards, publishDir)', and the packaged pipeline-anatomy note never mentions conf/modules.config or withName blocks - but modern nf-core pipelines centralize publishing in conf/modules.config as process { withName: X { publishDir = [...] } }. For nf-core/ampliseq every one of the 126 processes[] entries got an empty publish_dir, silently losing the pipeline's whole output-intent surface; the consumer had to re-parse conf/modules.config to rebuild it."
+    expected: "The Mold's deterministic step (or component-nextflow-pipeline-anatomy) instructs scanning conf/modules.config-style centralized process { withName: ... { publishDir ... } } blocks and folding them into processes[].publish_dir, matching the same withName-glob resolution the includes/aliases pass already does."
+    evidence: "<run>/summary-nextflow.json shows publish_dir empty for all 126 processes while <source>/conf/modules.config carries 60+ withName publishDir blocks (FASTQC *.html, SAVONT/EXPORT *_final_asvs.fasta + _feature-table.tsv, DUCKDB_TABLE2PARQUET *.parquet, MULTIQC, SUMMARY_REPORT ...); the interface output table was derived entirely from that conf file."
+    status: open
+    issue: null
+  - id: sample-sheet-note-silent-on-element-identifier
+    raised_by: nextflow-summary-to-galaxy-interface
+    observed_in:
+      mold: nextflow-summary-to-galaxy-interface
+      path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+      revision: 6
+      content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: research
+      label: galaxy-sample-sheet-collections
+      locator: content/research/galaxy-sample-sheet-collections/index.md
+      content_hash: 98736fdcd0c4f4698af4e0cd4c539b33e3d0db872de1e10487556b21033030ec
+    kind: gap
+    severity: minor
+    what: "The 'Mapping from Nextflow sample sheets' table maps every nf-schema column class (meta column, path column, enum, pattern, control_sample) except one - which column becomes the collection's element_identifier, and what to do when the natural key repeats per row (nf-core v3/v4 samplesheets let one `sample` recur across `run` values, so `sample` is not unique). A Galaxy sample_sheet element needs a unique identifier; the note's mapping gives the interface Mold no rule, and getting it wrong silently breaks every identifier-keyed step downstream."
+    expected: "Add an identifier row to the mapping table: pick the nf-schema column(s) that identify one dataset (usually the meta column the pipeline groups by), and when it repeats across a secondary key (e.g. run), synthesize a joined identifier column and record the derivation - mirroring the uniqueness rule the nextflow-summary-to-galaxy-data-flow Mold applies."
+    evidence: "ampliseq's assets/schema_input.json has required `sample` (pattern allows reuse) plus optional `run`; choosing the element identifier sample[__run] was an unreferenced judgment in this run's interface brief."
+    status: open
+    issue: null
+  - id: conditional-when-note-lacks-multi-present-fanin
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    observed_in:
+      mold: nextflow-summary-to-galaxy-data-flow
+      path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+      revision: 8
+      content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+      foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+    subject:
+      kind: research
+      label: nextflow-conditional-to-galaxy-subworkflow-when
+      locator: content/research/nextflow-conditional-to-galaxy-subworkflow-when/index.md
+      content_hash: f38341565d0927321248b67a9d99ce9533cc89ef4e543cbf80378260e7025f7e
+    kind: gap
+    severity: minor
+    what: "The note's output fan-in vocabulary covers select-one (pick_value modes first_non_null/first_or_skip/the_only_non_null), the two-branch twin cascade, and plain concatenation, but has no shape for an N-way present-only merge: nf-core/ampliseq's CONSOLIDATE_TAXONOMY consumes path(tax_files, stageAs: 'tax_*.tsv') + val(sources) (workflows/ampliseq.nf:885), i.e. all tables produced by whichever 0..N when-gated taxonomy branches ran, merged by a strategy scalar - and pick_value's select-one semantics actively mis-model it. The cited IWC precedent only shows when:+pick_value."
+    expected: "The note adds a present-only N-way fan-in recipe: collect when-gated branch outputs into a list collection (stating whether collection construction tolerates skipped-step typed-null/NO_REPLACEMENT sentinels, which the note's own skip semantics make inevitable), feed one reduce step with a multiple=true input plus strategy scalar, and warn that pick_value must not be used for multi-present merge semantics."
+    evidence: "This run's data-flow brief derived the list-collection + multiple=true shape unreferenced (recorded Medium confidence, open-requirements entry consolidate-taxonomy-optional-fanin); the sentinel-tolerance assumption has no packaged source and is flagged for phase-11 validation."
+    status: open
+    issue: null
+  - id: exemplar-view-carries-dead-state-residue
+    raised_by: compare-against-iwc-exemplar
+    observed_in:
+      mold: compare-against-iwc-exemplar
+      path: content/molds/compare-against-iwc-exemplar/index.md
+      revision: 12
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: mold
+      label: compare-against-iwc-exemplar
+      locator: content/molds/compare-against-iwc-exemplar/index.md
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+    kind: friction
+    severity: minor
+    what: "The Mold promises the surfaced view as 'cleaned gxformat2 conversion ... the concrete idiom the downstream template draft pattern-matches against', but --compact only strips positions: the emitted iwc-exemplar.gxformat2 artifact of amplicon/dada2/dada2_paired still carries dead tool_state residue from the authors' scratch runs - __identifier__ port pins (dadaF|__identifier__: pool.feces.fastq) that contradict the workflow's own F3D0/F3D5 fixture, and an absolute server path (chromInfo: /gpfs1/...). For an artifact whose stated purpose is pattern-matching material for a template author, distinguishing live wiring from dead residue was an unguided manual pass."
+    expected: "The Mold's nearest-exemplar section instructs stripping or flagging known-dead state when emitting the sibling artifact - at minimum port __identifier__ values whose source port is a ConnectedValue, and absolute filesystem paths in tool_state - or the notes must state they are retained verbatim, so 'cleaned' matches what downstream consumers receive."
+    evidence: "<run>/iwc-exemplar.gxwf.yml lines for _unlabeled_step_14 show the four pinned identifiers beside ConnectedValue sources; the comparison notes had to add an explicit 'antipatterns - do not pattern-match' section to protect the phase-6 template Mold."
+    status: open
+    issue: null
+  - id: concrete-tool-state-omits-drafty-fed-steps
+    raised_by: advance-galaxy-draft-step
+    observed_in:
+      mold: advance-galaxy-draft-step
+      path: content/molds/advance-galaxy-draft-step/index.md
+      revision: 11
+      content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: cli
+      label: gxwf draft-validate --concrete --strict-state
+      locator: content/cli/gxwf/draft-validate.md
+      content_hash: 37cded427fbccf49ff19a6fe8b03f9e90857afe556e5db0e51a01402fbf33f1e
+    kind: defect
+    severity: major
+    what: "draft-validate --concrete --strict-state silently omits concrete steps whose connections are fed by still-drafty producers: they appear in neither results nor the ok/fail/skip summary, so a green {ok: N, fail: 0, skip: 0} claims complete tool-state coverage of a projection that was never fully checked. This contradicts the documented intent (the skill cast states skipped tool-state checks must fail the gate) and the gate is the loop's per-iteration oracle, so authors trust the summary as coverage."
+    expected: "Every concrete step appears in tool_state.results - steps unresolvable due to a drafty producer surface as skip (and fail --strict-state) or at least as a distinct omitted count in the summary, so the loop cannot report a clean gate while concrete steps with unvalidatable wiring go unchecked."
+    evidence: "On this run the concrete q2d2 adonis step, fed by core_metrics/TODO_distance_matrix, passed nine consecutive green gates (tool_state 73 ok/0 fail/0 skip); the moment its producer was concretized the same gate emitted 74 ok/1 fail - checked count rose by two for one concretized step - and the failure was a real defect from an earlier iteration (No parameter definition matching connection key metadata_0|__q2galaxy__GUI__conditional__metadata__), which no gate had ever evaluated."
+    status: open
+    issue: null
+  - id: strict-state-accepts-composite-key-conditional-state
+    raised_by: advance-galaxy-draft-step
+    observed_in:
+      mold: advance-galaxy-draft-step
+      path: content/molds/advance-galaxy-draft-step/index.md
+      revision: 11
+      content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: cli
+      label: gxwf draft-validate --concrete --strict-state
+      locator: content/cli/gxwf/draft-validate.md
+      content_hash: 37cded427fbccf49ff19a6fe8b03f9e90857afe556e5db0e51a01402fbf33f1e
+    kind: gap
+    severity: major
+    what: "strict-state validates step state shallowly for conditionals: the conditional name is matched against the parameter definition but the inner state mapping keys are not checked against the conditional test parameter or when-branch discriminators (the parsed-tool schema the cast bundles exposes whens[].discriminator for exactly this). A step whose conditional state is garbage validates green; a connection key into that conditional (reference_cond|refFasta) also passes, although Galaxy only activates the when-case data parameter when the test parameter selects that case at runtime."
+    expected: "strict-state descends one level into conditional state: keys must match the conditional test parameter name, its value a declared option, when-case maps their declared parameters - unknown or composite keys are strict_state_errors; ideally also cross-check that in: keys under a conditional are consistent with the state-selected case."
+    evidence: "Three tax_dada_assign* steps carried reference_cond: {{ reference_select: history }} (doubled braces parsed by both JS and Python YAML as a COMPOSITE MAPPING KEY with null value - a splice f-string brace-doubling idiom leaked into literal draft YAML) through 40+ green gates with strict_state_errors []; found only because draft-extract stderr warned 'Keys with collection values will be stringified due to JS Object restrictions'; at runtime Galaxy would fall back to the default reference_select case and strand the custom-taxonomy refFasta connections."
+    status: open
+    issue: null

@@ -1,0 +1,68 @@
+class: GalaxyUserTool
+id: ampliseq_ancom
+version: 1.0.0
+name: QIIME2 ANCOM differential abundance (ampliseq)
+description: Filter samples missing a metadata category, add pseudocounts, and run QIIME2 ANCOM for one metadata column
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core/ampliseq QIIME2_ANCOM subworkflow ASV branch
+    (subworkflows/local/qiime2_ancom + modules/local/qiime2_filtersamples +
+    qiime2_ancom_asv, container qiime2/qiime2:2026.4 kept verbatim) fused into one job.
+    The command sequence is the modules': XDG/MPL/NUMBA exports, feature-table
+    filter-samples --p-where '<category><>""' (drop samples without a category value -
+    the filtersamples module's default args), composition add-pseudocount, composition
+    ancom --m-metadata-column <category>. Collapsing to one category: the source fans
+    out over EVERY metadata column (METADATA_ALL) and every taxonomic rank
+    (tax_agglom_min..max via ANCOM_TAX); the draft interface offers one chosen category
+    (metadata_category) on the ASV table only - v1 scope, per the step plan. The column
+    identifier is double-quoted inside the where clause (the module interpolates it bare;
+    quoting only widens the set of legal column names). Deviations.
+    (1) params.ancom_sample_min_count is captured in the pipeline parameter defaults but
+    NO source code consumes it (main.nf:190 is its only occurrence); no tool input was
+    invented for it. (2) The qzv export folders (ancom/Category-...-ASV, consumed by the
+    full summary report and the publish dir) are dropped; the visualization qzv is the
+    emitted result. (3) versions.yml dropped (pipeline_info precedent). (4) The
+    WARNING-emitting empty-result guard the subworkflow logs on (fewer valid samples than
+    q2 needs) is not replicated as a warning channel; q2's own error surfaces instead.
+container: quay.io/qiime2/qiime2:2026.4
+inputs:
+- name: table
+  type: data
+  label: Feature table artifact
+  help: QIIME2 FeatureTable[Frequency] qza (import_table).
+- name: metadata
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: Sample metadata
+  help: Tab-separated sample metadata (filtered metadata, source ch_metadata rebind).
+- name: category
+  type: text
+  label: Metadata category
+  help: Metadata column to test (--m-metadata-column; params.metadata_category passthrough).
+outputs:
+- name: result
+  type: data
+  from_work_dir: ancom.qzv
+  label: ANCOM results visualization (qzv)
+shell_command: |
+  export XDG_CONFIG_HOME="./xdgconfig"
+  export XDG_CACHE_HOME="./xqcache"
+  export MPLCONFIGDIR="./mplconfigdir"
+  export NUMBA_CACHE_DIR="./numbacache"
+  qiime feature-table filter-samples \
+      --i-table "$(inputs.table.path)" \
+      --m-metadata-file "$(inputs.metadata.path)" \
+      --p-where '"$(inputs.category)"<>""' \
+      --o-filtered-table ancom-filtered.qza
+  qiime composition add-pseudocount \
+      --i-table ancom-filtered.qza \
+      --o-composition-table comp-table.qza
+  qiime composition ancom \
+      --i-table comp-table.qza \
+      --m-metadata-file "$(inputs.metadata.path)" \
+      --m-metadata-column "$(inputs.category)" \
+      --o-visualization ancom.qzv

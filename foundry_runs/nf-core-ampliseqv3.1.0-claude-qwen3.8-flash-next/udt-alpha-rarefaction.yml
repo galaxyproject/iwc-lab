@@ -1,0 +1,71 @@
+class: GalaxyUserTool
+id: ampliseq_alpha_rarefaction
+version: 1.0.0
+name: QIIME2 alpha rarefaction (ampliseq)
+description: Rarefy the feature table across auto-derived depth/steps and visualize alpha diversity rarefaction profiles
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core/ampliseq QIIME2_ALPHARAREFACTION process
+    (modules/local/qiime2_alphararefaction/main.nf, container qiime2/qiime2:2026.4 kept
+    verbatim, the same pin as the draft's other QIIME2 UDTs). The command block is the
+    module's: the four XDG/MPL/NUMBA cache exports, the module's max-depth rule - maximum
+    per-sample count, capped at 75000, steps = 250 when maxdepth > 5000 else
+    maxdepth/20 - then qiime diversity alpha-rarefaction --p-iterations 10 producing
+    alpha-rarefaction.qzv. Galaxy adaptations. (1) Max-depth source: the module runs
+    bin/count_table_minmax_reads.py over the QIIME2 filter-taxon stats table (which this
+    draft has no step for); the same per-sample maximum is computed with awk column sums
+    over the wide ASV count table wired in as stats - the sums are identical because
+    filter-taxon drops FEATURES (rows), never samples (columns). (2) The
+    qiime tools export of the qzv into the alpha-rarefaction/ folder is dropped: it feeds
+    the full source summary report's embedded rarefaction plots, which this draft's
+    simplified report does not render; the qzv itself is the emitted visualization.
+    (3) versions.yml dropped (pipeline_info precedent). Note: params.diversity_rarefaction_depth
+    does NOT govern this step upstream - the subworkflow passes it only to
+    QIIME2_DIVERSITY_CORE; rarefaction depth is always auto-derived.
+container: quay.io/qiime2/qiime2:2026.4
+inputs:
+- name: table
+  type: data
+  label: Feature table artifact
+  help: QIIME2 FeatureTable[Frequency] qza (import_table).
+- name: phylogeny
+  type: data
+  label: Rooted phylogeny artifact
+  help: QIIME2 rooted tree qza (qiime2_tree).
+- name: metadata
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: Sample metadata
+  help: Tab-separated sample metadata (filtered metadata, source ch_metadata rebind).
+- name: stats
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: Wide count table (depth derivation)
+  help: ASV x sample counts (asv_table_knot) - per-sample column sums derive --p-max-depth.
+outputs:
+- name: plot
+  type: data
+  from_work_dir: alpha-rarefaction.qzv
+  label: Alpha rarefaction visualization (qzv)
+shell_command: |
+  export XDG_CONFIG_HOME="./xdgconfig"
+  export XDG_CACHE_HOME="./xqcache"
+  export MPLCONFIGDIR="./mplconfigdir"
+  export NUMBA_CACHE_DIR="./numbacache"
+  maxdepth=$(awk -F'\t' 'NR>1 {for (i=2; i<=NF; i++) s[i]+=$i} END {m=0; for (i in s) if (s[i]>m) m=s[i]; printf "%d", m}' "$(inputs.stats.path)")
+  if [ "$maxdepth" -gt "75000" ]; then maxdepth="75000"; fi
+  if [ "$maxdepth" -gt "5000" ]; then maxsteps="250"; else maxsteps=$((maxdepth/20)); fi
+  qiime diversity alpha-rarefaction \
+      --i-table "$(inputs.table.path)" \
+      --i-phylogeny "$(inputs.phylogeny.path)" \
+      --p-max-depth "$maxdepth" \
+      --m-metadata-file "$(inputs.metadata.path)" \
+      --p-steps "$maxsteps" \
+      --p-iterations 10 \
+      --o-visualization alpha-rarefaction.qzv

@@ -1,0 +1,755 @@
+{
+  "schema_version": 1,
+  "tool_id": "dada2_plotQualityProfile",
+  "tool_version": "1.38.0+galaxy2",
+  "cache_key": "15c6a5102b347f1075187c635532a31697fdc5618252a86fee229af5a1e20d36",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~dada2_plotqualityprofile~dada2_plotQualityProfile/versions/1.38.0+galaxy2",
+    "cached_at": "2026-11-12T06:11:49.646Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": "/home/abennett/nf-core-ampliseq/tool-cache/15c6a5102b347f1075187c635532a31697fdc5618252a86fee229af5a1e20d36.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "dada2_plotQualityProfile",
+    "version": "1.38.0+galaxy2",
+    "name": "dada2: plotQualityProfile",
+    "description": "plot a visual summary of the quality scores",
+    "inputs": [
+      {
+        "name": "batch_cond",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "batch_select",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Processing mode",
+          "help": "Joint processing processes all reads at once in a single job creating a single output (two in the case of paired data). Batch processes the samples in separate jobs and creates separate output for each",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Joint",
+              "value": "joint",
+              "selected": false
+            },
+            {
+              "label": "Batch",
+              "value": "batch",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "joint",
+            "parameters": [
+              {
+                "name": "paired_cond",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "paired_select",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Paired reads",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "paired",
+                      "value": "paired",
+                      "selected": false
+                    },
+                    {
+                      "label": "single",
+                      "value": "single",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "paired",
+                    "parameters": [
+                      {
+                        "name": "reads",
+                        "parameter_type": "gx_data_collection",
+                        "hidden": false,
+                        "label": "Paired short read data",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "data_collection",
+                        "collection_type": "list:paired",
+                        "extensions": [
+                          "fastq",
+                          "fastq.gz"
+                        ],
+                        "value": null
+                      }
+                    ],
+                    "is_default_when": true
+                  },
+                  {
+                    "discriminator": "single",
+                    "parameters": [
+                      {
+                        "name": "reads",
+                        "parameter_type": "gx_data",
+                        "hidden": false,
+                        "label": "Short read data",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "data",
+                        "extensions": [
+                          "fastq",
+                          "fastq.gz"
+                        ],
+                        "multiple": true,
+                        "min": null,
+                        "max": null,
+                        "url_default": null
+                      }
+                    ],
+                    "is_default_when": false
+                  }
+                ]
+              },
+              {
+                "name": "aggregate",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Aggregate data",
+                "help": "Create a single plot for all data sets (default) or a separate plot for each data set",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": true,
+                "truevalue": "TRUE",
+                "falsevalue": "FALSE"
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "batch",
+            "parameters": [
+              {
+                "name": "paired_cond",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "paired_select",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Paired reads",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "paired",
+                      "value": "paired",
+                      "selected": false
+                    },
+                    {
+                      "label": "single",
+                      "value": "single",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "paired",
+                    "parameters": [
+                      {
+                        "name": "reads",
+                        "parameter_type": "gx_data_collection",
+                        "hidden": false,
+                        "label": "Paired short read data",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "data_collection",
+                        "collection_type": "paired",
+                        "extensions": [
+                          "fastq",
+                          "fastq.gz"
+                        ],
+                        "value": null
+                      }
+                    ],
+                    "is_default_when": true
+                  },
+                  {
+                    "discriminator": "single",
+                    "parameters": [
+                      {
+                        "name": "reads",
+                        "parameter_type": "gx_data",
+                        "hidden": false,
+                        "label": "Short read data",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "data",
+                        "extensions": [
+                          "fastq",
+                          "fastq.gz"
+                        ],
+                        "multiple": false,
+                        "min": null,
+                        "max": null,
+                        "url_default": null
+                      }
+                    ],
+                    "is_default_when": false
+                  }
+                ]
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "n",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "sample number",
+        "help": "number of records to sample from the fastq file",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "integer",
+        "value": 500000,
+        "min": null,
+        "max": null,
+        "validators": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output",
+        "label": null,
+        "hidden": false,
+        "type": "data",
+        "format": "pdf",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "output.pdf",
+        "precreate_directory": false
+      },
+      {
+        "name": "output_fwd",
+        "label": "${tool.name} on ${on_string}: forward reads",
+        "hidden": false,
+        "type": "data",
+        "format": "pdf",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "output.pdf",
+        "precreate_directory": false
+      },
+      {
+        "name": "output_rev",
+        "label": "${tool.name} on ${on_string}: reverse reads",
+        "hidden": false,
+        "type": "data",
+        "format": "pdf",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "output_rev.pdf",
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1038/nmeth.3869"
+      }
+    ],
+    "license": null,
+    "profile": "24.2",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "dada2",
+        "type": "bio.tools"
+      },
+      {
+        "value": "dada2",
+        "type": "bioconductor"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\nSummary\n.......\n\nThis function plots a visual summary of the distribution of quality scores as a function of sequence position for the input fastq datasets.\n\nDetails\n.......\n\nThe distribution of quality scores at each position is shown as a grey-scale heat map, with dark colors corresponding to higher frequency. The plotted lines show positional summary statistics: green is the mean, orange is the median, and the dashed orange lines are the 25th and 75th quantiles. If the sequences vary in length, a red line will be plotted showing the percentage of reads that extend\nto at least that position.\n\n\nOverview\n........\n\nThe intended use of the dada2 tools for paired sequencing data is shown in the following image.\n\n.. image:: pairpipe.png\n\nNote: In particular for the analysis of paired collections the collections should be sorted lexicographical\nbefore the analysis.\n\nFor single end data you the steps \"Unzip collection\" and \"mergePairs\" are not necessary.\n\nMore information may be found on the dada2 homepage:: https://benjjneb.github.io/dada2/index.html (in particular tutorials) or the documentation of dada2's R package https://bioconductor.org/packages/release/bioc/html/dada2.html (in particular the pdf which contains the full documentation of all parameters)\n    \n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "batch_cond": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "batch_select": {
+                  "type": "string",
+                  "enum": [
+                    "joint"
+                  ]
+                },
+                "paired_cond": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "paired_select": {
+                          "type": "string",
+                          "enum": [
+                            "paired"
+                          ]
+                        },
+                        "reads": {
+                          "$id": "/schemas/never",
+                          "not": {},
+                          "title": "never"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "paired_select"
+                      ],
+                      "properties": {
+                        "paired_select": {
+                          "type": "string",
+                          "enum": [
+                            "single"
+                          ]
+                        },
+                        "reads": {
+                          "$id": "/schemas/never",
+                          "not": {},
+                          "title": "never"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "aggregate": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "batch_select"
+              ],
+              "properties": {
+                "batch_select": {
+                  "type": "string",
+                  "enum": [
+                    "batch"
+                  ]
+                },
+                "paired_cond": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "paired_select": {
+                          "type": "string",
+                          "enum": [
+                            "paired"
+                          ]
+                        },
+                        "reads": {
+                          "$id": "/schemas/never",
+                          "not": {},
+                          "title": "never"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "paired_select"
+                      ],
+                      "properties": {
+                        "paired_select": {
+                          "type": "string",
+                          "enum": [
+                            "single"
+                          ]
+                        },
+                        "reads": {
+                          "$id": "/schemas/never",
+                          "not": {},
+                          "title": "never"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "n": {
+          "$ref": "#/$defs/Int"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "batch_cond": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "batch_select": {
+                      "type": "string",
+                      "enum": [
+                        "joint"
+                      ]
+                    },
+                    "paired_cond": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "reads"
+                              ],
+                              "properties": {
+                                "paired_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "paired"
+                                  ]
+                                },
+                                "reads": {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "paired_select",
+                                "reads"
+                              ],
+                              "properties": {
+                                "paired_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "single"
+                                  ]
+                                },
+                                "reads": {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "aggregate": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "batch_select"
+                  ],
+                  "properties": {
+                    "batch_select": {
+                      "type": "string",
+                      "enum": [
+                        "batch"
+                      ]
+                    },
+                    "paired_cond": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "reads"
+                              ],
+                              "properties": {
+                                "paired_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "paired"
+                                  ]
+                                },
+                                "reads": {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "paired_select",
+                                "reads"
+                              ],
+                              "properties": {
+                                "paired_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "single"
+                                  ]
+                                },
+                                "reads": {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "n": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

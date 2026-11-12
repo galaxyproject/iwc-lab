@@ -1,0 +1,103 @@
+class: GalaxyUserTool
+id: ampliseq_phyloseq
+version: 1.0.0
+name: Phyloseq object builder (ampliseq)
+description: Build and save the phyloseq RDS from the ASV table, taxonomy, optional metadata and optional Newick tree
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core/ampliseq PHYLOSEQ process
+    (modules/local/phyloseq/main.nf, container bioconductor-phyloseq:1.50.0--r44hdfd78af_0
+    kept; conda env bioconductor-phyloseq=1.50.0 + r-base=4.4.2 matches). The R body is the
+    module's inline script verbatim - otu_table from the count table (row 1 = ASV id, cast
+    to integer), tax_table from the taxonomy table with the module's own *_confidence /
+    classifier / database column filters, optional sample_data and phy_tree merged via
+    the file.exists guards, saveRDS at the end. Galaxy adaptations. (1) The Nextflow tuple
+    path variables become positional args; the versions.yml writeLines block (which embeds
+    task.process) is dropped (pipeline_info artifacts dropped precedent). (2) The optional
+    metadata and tree ports reproduce the source's .ifEmpty('EMPTY') staging
+    (subworkflows/local/robject_workflow/main.nf:30-38) - a skipped optional input
+    substitutes empty and file.exists("") is FALSE, exactly the EMPTY-path branch. (3) The
+    source prefix (classifier name, one rds per classifier channel mixed into the tuple)
+    collapses to the fixed output name phyloseq.rds since the draft consolidates a single
+    taxonomy table upstream. The tree arrives as Newick (read_tree) - the draft's tree
+    producer is a QIIME2 qza, exported by ampliseq_export_tree, mirroring the source where
+    the tree channel reaching ROBJECT_WORKFLOW is already tree_nwk. Shape note carried from
+    the source: the taxonomy table must be keyed by the same ASV ids as the count table
+    (the knot's wide branch tables are exactly what ch_tax fed here, single-lineage exports
+    yield the module's single-rank tax_table).
+container: quay.io/biocontainers/bioconductor-phyloseq:1.50.0--r44hdfd78af_0
+inputs:
+- name: otu
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: ASV count table
+  help: Tab-separated counts keyed by ASV sequence in the first column (asv_table_knot).
+- name: tax
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: ASV taxonomy table
+  help: Tab-separated taxonomy keyed by ASV sequence in the first column (tax_table_knot; the module drops _confidence/classifier/database columns itself).
+- name: sam
+  type: data
+  format:
+  - tabular
+  - tsv
+  optional: true
+  label: Sample metadata
+  help: Optional sample-keyed metadata tsv merged as sample_data (source ch_meta.ifEmpty('EMPTY')).
+- name: tree
+  type: data
+  format:
+  - newick
+  optional: true
+  label: Rooted tree (Newick)
+  help: Optional Newick tree merged as phy_tree (source ch_robject_intree.ifEmpty('EMPTY')).
+outputs:
+- name: rds
+  type: data
+  format: rdata
+  from_work_dir: phyloseq.rds
+  label: phyloseq object (RDS)
+configfiles:
+- filename: phyloseq.R
+  content: |
+    #!/usr/bin/env Rscript
+    # Verbatim modules/local/phyloseq/main.nf script body (tuple vars -> positional args;
+    # versions.yml writeLines block dropped - deviations in the tool help).
+    suppressPackageStartupMessages(library(phyloseq))
+
+    a <- commandArgs(trailingOnly = TRUE)
+    otu_tsv <- a[1]; tax_tsv <- a[2]; sam_tsv <- a[3]; tree <- a[4]
+
+    otu_df  <- read.table(otu_tsv, sep="\t", header=TRUE, row.names=1)
+    tax_df  <- read.table(tax_tsv, sep="\t", header=TRUE, row.names=1, comment.char = "")
+    # per-rank confidences and the source classifier and database are not ranks, and phyloseq treats every column as one
+    tax_df  <- tax_df[, !grepl("_confidence$", colnames(tax_df)) & !colnames(tax_df) %in% c("classifier", "database"), drop=FALSE]
+    otu_mat <- as.matrix(otu_df)
+    tax_mat <- as.matrix(tax_df)
+    storage.mode(otu_mat) <- "integer"
+
+    OTU     <- otu_table(otu_mat, taxa_are_rows=TRUE)
+    TAX     <- tax_table(tax_mat)
+    phy_obj <- phyloseq(OTU, TAX)
+
+    if (file.exists(sam_tsv)) {
+        sam_df  <- read.table(sam_tsv, sep="\t", header=TRUE, row.names=1)
+        SAM     <- sample_data(sam_df)
+        phy_obj <- merge_phyloseq(phy_obj, SAM)
+    }
+
+    if (file.exists(tree)) {
+        TREE    <- read_tree(tree)
+        phy_obj <- merge_phyloseq(phy_obj, TREE)
+    }
+
+    saveRDS(phy_obj, file = "phyloseq.rds")
+shell_command: |
+  Rscript phyloseq.R "$(inputs.otu.path)" "$(inputs.tax.path)" "$(inputs.sam.path)" "$(inputs.tree.path)"

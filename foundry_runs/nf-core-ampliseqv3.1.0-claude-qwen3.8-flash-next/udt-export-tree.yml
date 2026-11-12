@@ -1,0 +1,39 @@
+class: GalaxyUserTool
+id: ampliseq_export_tree
+version: 1.0.0
+name: Rooted phylogeny exporter (ampliseq)
+description: Export a QIIME2 rooted-tree artifact to Newick for the R-object consumers
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Export half of the source's tree plumbing for the R objects: ROBJECT_WORKFLOW consumes
+    ch_tree_for_robject as an nwk file (subworkflows/local/robject_workflow/main.nf; the
+    source's nwk comes from QIIME2_DIVERSITY.out.tree_nwk / pplace grafted / SIDLE, i.e. a
+    qiime tools export happens inside the producer - the qiime2_tree step doc defers this
+    export to the robject consumers, realized here as the shared producer for phyloseq and
+    tse). Newick-exporting q2d2 wrappers were not searched because the QIIME2_DIVERSITY
+    export module runs the plain qiime tools command this UDT carries. The XDG/MPL/NUMBA
+    cache exports match the sibling qiime2 UDTs. versions.yml not published (pipeline_info
+    dropped precedent).
+container: quay.io/qiime2/qiime2:2026.4
+inputs:
+- name: tree_qza
+  type: data
+  format:
+  - qza
+  label: Rooted phylogeny artifact
+  help: QIIME2 Phylogeny[Rooted] artifact to export.
+outputs:
+- name: tree_nwk
+  type: data
+  format: newick
+  from_work_dir: tree.nwk
+  label: Rooted tree (Newick)
+shell_command: |
+  export XDG_CONFIG_HOME="./xdgconfig";
+  export XDG_CACHE_HOME="./xqcache";
+  export MPLCONFIGDIR="./mplconfigdir";
+  export NUMBA_CACHE_DIR="./numbacache";
+  qiime tools export --input-path "$(inputs.tree_qza.path)" --output-path tree_export;
+  cp tree_export/tree.nwk tree.nwk

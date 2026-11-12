@@ -1,0 +1,37 @@
+class: GalaxyUserTool
+id: ampliseq_qiime2_classify
+version: 1.0.0
+name: QIIME2 Taxonomy Classifier (pre-trained sk-learn classifier)
+description: Import ASVs and classify them with a pre-trained QIIME2 sk-learn classifier, exporting the taxonomy table
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: |
+    Mirrors nf-core/ampliseq `QIIME2_INSEQ` + `QIIME2_CLASSIFY` (the
+    pipeline's own qiime-CLI modules, container qiime2/qiime2:2026.4):
+    `qiime tools import` the ASV fasta as FeatureData[Sequence],
+    `qiime feature-classifier classify-sklearn`, then `qiime tools export`
+    to taxonomy.tsv. The .qzv visualization of the module is skipped. Used
+    when the user supplies a pre-trained classifier (source
+    params.qiime_classifier); training a classifier from a custom reference
+    is the sibling tool ampliseq_qiime2_train_classify.
+container: qiime2/qiime2:2026.4
+inputs:
+  - name: seqs
+    type: data
+    format:
+      - fasta
+    label: ASV sequences
+  - name: classifier
+    type: data
+    format:
+      - qza
+    label: Pre-trained classifier
+    help: QIIME2 FeatureData[Classifier] artifact (.qza, requires the qza datatype on the server).
+outputs:
+  - name: taxonomy
+    type: data
+    format: tsv
+    from_work_dir: taxonomy.tsv
+    label: Taxonomy classification table
+shell_command: "export XDG_CONFIG_HOME=./xdgconfig XDG_CACHE_HOME=./xqcache MPLCONFIGDIR=./mplconfigdir NUMBA_CACHE_DIR=./numbacache && qiime tools import --type 'FeatureData[Sequence]' --input-path $(inputs.seqs.path) --output-path inseq.qza && qiime feature-classifier classify-sklearn --i-classifier $(inputs.classifier.path) --i-reads inseq.qza --o-classification taxonomy.qza && qiime tools export --input-path taxonomy.qza --output-path taxonomy && cp taxonomy/taxonomy.tsv ."

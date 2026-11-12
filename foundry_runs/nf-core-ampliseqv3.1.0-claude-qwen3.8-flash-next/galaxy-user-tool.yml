@@ -1,0 +1,205 @@
+class: GalaxyUserTool
+id: ampliseq_decontam
+version: 1.0.0
+name: Decontam contaminant filtering (ampliseq)
+description: Drop (or keep) ASVs by decontam isContaminant / isNotContaminant using control and quant_reading metadata
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of nf-core/ampliseq DECONTAM (modules/local/decontam/main.nf,
+    bioconductor-decontam 1.30.0 / r-base 4.5 conda pin kept as the BioContainers image;
+    the wave container was bioconductor-decontam + r-base) fused with the
+    FILTER_SEQUENCES_ABUNDANCES rebind (modules/local/filter_sequences_abundances/main.nf)
+    that the workflow applies to the ASV FASTA immediately after either branch
+    (workflows/ampliseq.nf:717-741), and carrying the workflow-level guards: decontaminate
+    errors when every feature is removed (the :723 countLines>1 + ifEmpty error),
+    notcontaminant errors when no non-contaminant feature is found (:737), and the module's
+    stop() when neither controls nor concentrations exist. The mode input selects the
+    source's channel pick (decontaminate = non-contaminant rows of isContaminant;
+    notcontaminant = isNotContaminant prevalence-only). The active table is published as
+    decontam_table.tsv (the source's two mode channels collapse to one port). Recorded
+    deviations: the metadata bridge is a tabular INPUT (sample key first column, optional
+    control / quant_reading columns) - the source builds it with collectFile over the
+    sample sheet (workflows/ampliseq.nf:260-267), but Galaxy sample-sheet column values
+    do not reach tool inputs, so the draft's metadata input carries it (interface doc
+    line 'gates ... decontam'); the run column is not needed. The details/counts/log
+    publications and the FILTER_SEQUENCES_ABUNDANCES abund/stats outputs are not emitted
+    (stats-chain deviation precedent; the source also does NOT rebind the table through
+    FILTER_SEQUENCES_ABUNDANCES - only the fasta - and this tool reproduces that, the
+    table port is the raw decontam result). Table and FASTA arrive as base/clustered
+    pairs (the clustered member optional): the source's vsearch-cluster branch rebinds
+    both channels before DECONTAM, which when-guards cannot express, so the shell
+    prefers the clustered ports when present (optional-port fan-in idiom). FASTA filtering is adapted to this draft's
+    conventions: the table is keyed by sequence while FASTA ids are ASV_N labels, so the
+    join matches FASTA sequences to table keys and keeps the original labels (the source
+    joins ASV_ID = sequence = fasta id). Both source sorts (by sequence) are kept. The
+    seed reproduces the source's set.seed(params.seed) ext (conf/modules.config:497);
+    isContaminant args are detailed=TRUE, normalize=TRUE (modules.config:498).
+container: quay.io/biocontainers/bioconductor-decontam:1.30.0--r45hdfd78af_1
+inputs:
+- name: table
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: ASV count table (pre-decontam)
+  help: ASV table keyed by sequence in its first column, used when vsearch clustering is off.
+- name: table_clustered
+  type: data
+  format:
+  - tabular
+  - tsv
+  optional: true
+  label: ASV count table (cluster centroids)
+  help: Centroid-collapsed table from ampliseq_filter_clusters when clustering was on (takes precedence).
+- name: sheet
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: Sample metadata (control / quant_reading bridge)
+  help: Sample-keyed tsv with optional control and quant_reading columns (the source derives it from sample sheet columns).
+- name: fasta_base
+  type: data
+  format: [fasta]
+  label: ASV sequences (pre-decontam)
+  help: Post-filter ASV fasta when vsearch clustering is off.
+- name: fasta_clustered
+  type: data
+  format: [fasta]
+  optional: true
+  label: ASV sequences (cluster centroids)
+  help: Cluster centroid fasta from ampliseq_filter_clusters when clustering was on.
+- name: mode
+  type: text
+  label: Decontam mode
+  value: decontaminate
+  help: decontaminate or notcontaminant (the none case is guarded by the step when).
+- name: method
+  type: text
+  label: isContaminant method
+  value: auto
+  help: decontam isContaminant method (auto, frequency, prevalence, combined, minimum, either, both).
+- name: threshold
+  type: float
+  label: Contamination threshold
+  value: 0.1
+  help: isContaminant threshold (schema default 0.1).
+- name: threshold_nc
+  type: float
+  label: Non-contaminant threshold
+  value: 0.5
+  help: isNotContaminant threshold (schema default 0.5; method fixed prevalence, as source).
+- name: seed
+  type: integer
+  label: Random seed
+  value: 100
+  help: set.seed value (source params.seed via ext.seed).
+outputs:
+- name: table
+  type: data
+  format: tsv
+  from_work_dir: decontam_table.tsv
+  label: Decontam-filtered ASV count table
+- name: fasta
+  type: data
+  format: fasta
+  from_work_dir: filtered_sequences.fasta
+  label: ASV sequences present in the filtered table
+configfiles:
+- filename: decontam.R
+  content: |
+    #!/usr/bin/env Rscript
+    # Replica of modules/local/decontam/main.nf's script block fused with the
+    # FILTER_SEQUENCES_ABUNDANCES rebind (modules/local/filter_sequences_abundances/main.nf)
+    # and the workflow guards of workflows/ampliseq.nf:717-741. Deviations in the tool help.
+    suppressPackageStartupMessages(library(decontam))
+    suppressPackageStartupMessages(library(Biostrings))
+
+    a <- commandArgs(trailingOnly = TRUE)
+    mode <- a[1]; method <- a[2]
+    threshold <- as.numeric(a[3]); threshold_nc <- as.numeric(a[4]); seed <- a[5]
+    table_file <- a[6]; metadata_file <- a[7]; fasta_file <- a[8]
+
+    set.seed(seed) # Initialize random number generator for reproducibility
+
+    # get controls and concentrations
+    metadata <- read.csv(metadata_file, header = TRUE, sep = "\t")
+    metadata <- metadata[order(metadata[,1]),] # make sure samples in metadata and abundances are in same order
+    if ("quant_reading" %in% colnames(metadata)) {
+        concentrations <- metadata$quant_reading
+    } else { concentrations <- list() }
+    if ("control" %in% colnames(metadata)) {
+        negative_controls <- metadata$control == 'control'
+    } else { negative_controls <- list() }
+
+    # get abundance table
+    abundances_tsv <- read.csv(table_file, header = TRUE, sep = "\t")
+    abundances <- abundances_tsv[,-1]
+    rownames(abundances) <- abundances_tsv[,1]
+    abundances <- t(abundances)
+    abundances <- abundances[order(rownames(abundances)),] # make sure samples in metadata and abundances are in same order
+
+    # make sure that the metadata doesnt contain more samples than the abundance table (samples might have been lost before)
+    metadata <- metadata[metadata[,1] %in% rownames(abundances),]
+
+    if (mode == "decontaminate") {
+        # find contaminants: null hypothesis is that sequences are NOT contaminants.
+        if (length(negative_controls) > 0 && length(concentrations) > 0) {
+            contam_table <- isContaminant(as.matrix(abundances), conc = concentrations, neg = negative_controls, threshold = threshold, method = method, detailed = TRUE, normalize = TRUE)
+        } else if (length(concentrations) > 0) {
+            contam_table <- isContaminant(as.matrix(abundances), conc = concentrations, threshold = threshold, method = method, detailed = TRUE, normalize = TRUE)
+        } else if (length(negative_controls) > 0) {
+            contam_table <- isContaminant(as.matrix(abundances), neg = negative_controls, threshold = threshold, method = method, detailed = TRUE, normalize = TRUE)
+        } else { stop("Neither negative controls nor concentration values were provided.") }
+        contam_table <- cbind(ID = rownames(contam_table), contam_table)
+        rownames(contam_table)[1] <- colnames(abundances_tsv)[1]
+
+        iscontaminant_id <- contam_table[!(contam_table$contaminant),][,1]
+        abundances_filtered <- abundances_tsv[abundances_tsv[,1] %in% iscontaminant_id,]
+        if (nrow(abundances_filtered) == 0) {
+            stop("Decontamination removed all features, please adjust settings.")
+        }
+        write.table(abundances_filtered, file = "decontam_table.tsv", sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE, na = '')
+    } else if (mode == "notcontaminant") {
+        if (length(negative_controls) == 0) {
+            stop("No non-contaminant features were identified, please check control samples (column 'control' in samplesheet).")
+        }
+        notcontam_table <- isNotContaminant(as.matrix(abundances), neg = negative_controls, threshold = threshold_nc, method = 'prevalence', detailed = TRUE, normalize = TRUE)
+        notcontam_table <- cbind(ID = rownames(notcontam_table), notcontam_table)
+        rownames(notcontam_table)[1] <- colnames(abundances_tsv)[1]
+
+        isnotcontaminant_id <- notcontam_table[notcontam_table$not.contaminant,][,1]
+        abundances_filtered <- abundances_tsv[abundances_tsv[,1] %in% isnotcontaminant_id,]
+        if (nrow(abundances_filtered) == 0) {
+            stop("No non-contaminant features were identified, please check control samples (column 'control' in samplesheet).")
+        }
+        write.table(abundances_filtered, file = "decontam_table.tsv", sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE, na = '')
+    } else {
+        stop(paste("Unknown decontam mode:", mode))
+    }
+
+    # FILTER_SEQUENCES_ABUNDANCES rebind (fasta side only - the source does not rebind
+    # ch_asv_table here). Adaptation: table keys are sequences, fasta ids are labels.
+    table2 <- read.table(file = "decontam_table.tsv", sep = "\t", comment.char = "", header = TRUE)
+    colnames(table2)[1] <- "ASV_ID"
+    seq <- readDNAStringSet(fasta_file)
+    seq <- data.frame(ID = names(seq), sequence = paste(seq))
+
+    filtered_table <- table2[table2$ASV_ID %in% seq$sequence,]
+    filtered_seq <- seq[seq$sequence %in% table2$ASV_ID,]
+
+    filtered_table <- filtered_table[order(filtered_table$ASV_ID),]
+    filtered_seq <- filtered_seq[order(filtered_seq$sequence),]
+
+    write.table(data.frame(s = sprintf(">%s\n%s", filtered_seq$ID, filtered_seq$sequence)),
+                file = "filtered_sequences.fasta", col.names = FALSE, row.names = FALSE, quote = FALSE, na = '')
+shell_command: |
+  TABLE="$(inputs.table.path)";
+  CTABLE="$(inputs.table_clustered.path)";
+  if [ -n "$CTABLE" ] && [ -f "$CTABLE" ]; then TABLE="$CTABLE"; fi;
+  FASTA="$(inputs.fasta_base.path)";
+  CFASTA="$(inputs.fasta_clustered.path)";
+  if [ -n "$CFASTA" ] && [ -f "$CFASTA" ]; then FASTA="$CFASTA"; fi;
+  Rscript decontam.R "$(inputs.mode.value)" "$(inputs.method.value)" "$(inputs.threshold.value)" "$(inputs.threshold_nc.value)" "$(inputs.seed.value)" "$TABLE" "$(inputs.sheet.path)" "$FASTA"

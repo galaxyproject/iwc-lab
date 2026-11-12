@@ -1,0 +1,195 @@
+class: GalaxyWorkflow
+label: "QIIME2 IIb: Denoising (sequence quality control) and feature table creation (paired-end)"
+doc: Use DADA2 for sequence quality control. DADA2 is a pipeline for detecting and correcting (where possible) Illumina amplicon sequence data. As implemented in the q2-dada2 plugin, this quality control process will additionally filter any phiX reads (commonly present in marker gene Illumina sequence data) that are identified in the sequencing data, and will filter chimeric sequences.
+inputs:
+  - id: Metadata
+    type: data
+    optional: false
+    format:
+      - tabular
+    doc: Tab separated metadata file
+  - id: Demultiplexed sequences
+    type: data
+    optional: false
+    format:
+      - qza
+    doc: Demultiplexed sequences in qza format
+  - id: Truncation length (forward)
+    type: int
+    optional: false
+    doc: Length to which the forward read sequence should be truncated. Will remove bases from the 3' end.
+  - id: Truncation length (reverse)
+    type: int
+    optional: false
+    doc: Length to which the reverse read sequence should be truncated. Will remove bases from the 3' end.
+  - id: Trimming length (forward)
+    type: int
+    optional: true
+    doc: |-
+      Number of bases at the 5' end of the forward read that should be removed. Default: 0.
+
+
+      Mention the length up to which you want to trim your sequences from the left.
+      If not needed, put 0.
+  - id: Trimming length (reverse)
+    type: int
+    optional: true
+    doc: |
+      Number of bases at the 5' end of the reverse read that should be removed. Default: 0.
+outputs:
+  - id: Denoising statistics
+    outputSource: Denoising the datasets/denoising_stats
+  - id: Denoising output table
+    outputSource: Denoising the datasets/table
+  - id: Representative denoised sequences
+    outputSource: Denoising the datasets/representative_sequences
+  - id: DADA2 representative sequences list visualisation
+    outputSource: Tabulate DADA2 denoised representative sequences/visualization
+  - id: DADA2 statistics visualisation
+    outputSource: Tabulate DADA2 statistical metadata /visualization
+  - id: DADA2 output table visualisation
+    outputSource: Summing up the dada2 output table/summary
+steps:
+  - id: Denoising the datasets
+    label: Denoising the datasets
+    doc: |-
+      qiime2 dada2 denoise-paired
+      Denoise and dereplicate paired-end sequences
+      Small insight: if the denoising percentage is lower or poorer, reduce 'trunc_q: Int' from 2 to 1.
+    tool_id: toolshed.g2.bx.psu.edu/repos/q2d2/qiime2__dada2__denoise_paired/qiime2__dada2__denoise_paired/2026.1.0+q2galaxy.2026.1.0
+    tool_version: 2026.1.0+q2galaxy.2026.1.0
+    tool_shed_repository:
+      changeset_revision: 569b33f54ed0
+      name: qiime2__dada2__denoise_paired
+      owner: q2d2
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      - id: __q2galaxy__GUI__section__extra_opts__|trim_left_f
+        source: Trimming length (forward)
+      - id: __q2galaxy__GUI__section__extra_opts__|trim_left_r
+        source: Trimming length (reverse)
+      - id: demultiplexed_seqs
+        source: Demultiplexed sequences
+      - id: trunc_len_f
+        source: Truncation length (forward)
+      - id: trunc_len_r
+        source: Truncation length (reverse)
+    out: []
+    tool_state:
+      __q2galaxy__GUI__section__extra_opts__:
+        trim_left_f:
+          __class__: ConnectedValue
+        trim_left_r:
+          __class__: ConnectedValue
+        max_ee_f: "2.0"
+        max_ee_r: "2.0"
+        trunc_q: "2"
+        min_overlap: "12"
+        max_merge_mismatch: "0"
+        trim_overhang: false
+        pooling_method: independent
+        chimera_method: consensus
+        min_fold_parent_over_abundance: "1.0"
+        allow_one_off: false
+        n_reads_learn: "1000000"
+        hashed_feature_ids: true
+        retain_all_samples: true
+      demultiplexed_seqs:
+        __class__: ConnectedValue
+      trunc_len_f:
+        __class__: ConnectedValue
+      trunc_len_r:
+        __class__: ConnectedValue
+    uuid: 93e5c884-d782-4b97-96ba-d9abdf4ce4ed
+  - id: Tabulate DADA2 denoised representative sequences
+    label: Tabulate DADA2 denoised representative sequences
+    doc: |-
+      qiime2 feature-table tabulate-seqs
+      View sequence associated with each feature
+    tool_id: toolshed.g2.bx.psu.edu/repos/q2d2/qiime2__feature_table__tabulate_seqs/qiime2__feature_table__tabulate_seqs/2026.1.0+q2galaxy.2026.1.0
+    tool_version: 2026.1.0+q2galaxy.2026.1.0
+    tool_shed_repository:
+      changeset_revision: f85a59f6a6dc
+      name: qiime2__feature_table__tabulate_seqs
+      owner: q2d2
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      - id: data
+        source: Denoising the datasets/representative_sequences
+    out:
+      - id: visualization
+        rename: dada2_rep_seq_visualization
+    tool_state:
+      __q2galaxy__GUI__section__extra_opts__:
+        taxonomy:
+          __class__: RuntimeValue
+        metadata: []
+        merge_method: strict
+      data:
+        __class__: ConnectedValue
+    uuid: 221fe314-49e9-48bd-979e-1b6d0c2f4192
+  - id: "Tabulate DADA2 statistical metadata "
+    label: "Tabulate DADA2 statistical metadata "
+    doc: |-
+      qiime2 metadata tabulate
+      Interactively explore Metadata in an HTML table
+    tool_id: toolshed.g2.bx.psu.edu/repos/q2d2/qiime2__metadata__tabulate/qiime2__metadata__tabulate/2026.1.0+q2galaxy.2026.1.0
+    tool_version: 2026.1.0+q2galaxy.2026.1.0
+    tool_shed_repository:
+      changeset_revision: 92bb3663bb96
+      name: qiime2__metadata__tabulate
+      owner: q2d2
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      - id: input_0|__q2galaxy__GUI__conditional__input__|source
+        source: Denoising the datasets/denoising_stats
+    out:
+      - id: visualization
+        rename: dada2_stats_visualisation
+    tool_state:
+      __q2galaxy__GUI__section__extra_opts__:
+        page_size: "100"
+      input:
+        - __index__: 0
+          __q2galaxy__GUI__conditional__input__:
+            type: qza
+            __current_case__: 1
+            source:
+              __class__: ConnectedValue
+    uuid: 082c2df8-422c-4661-b39d-181ef7ff3072
+  - id: Summing up the dada2 output table
+    label: Summing up the dada2 output table
+    doc: |
+      qiime2 feature-table summarize
+      Summarize table
+    tool_id: toolshed.g2.bx.psu.edu/repos/q2d2/qiime2__feature_table__summarize/qiime2__feature_table__summarize/2026.1.0+q2galaxy.2026.1.0
+    tool_version: 2026.1.0+q2galaxy.2026.1.0
+    tool_shed_repository:
+      changeset_revision: 41e9af5ca46b
+      name: qiime2__feature_table__summarize
+      owner: q2d2
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      - id: table
+        source: Denoising the datasets/table
+      - id: __q2galaxy__GUI__section__extra_opts__|metadata_0|__q2galaxy__GUI__conditional__metadata__|source
+        source: Metadata
+    out:
+      - id: summary
+        rename: dada2_table_visualisation
+    tool_state:
+      __q2galaxy__GUI__section__extra_opts__:
+        metadata:
+          - __index__: 0
+            __q2galaxy__GUI__conditional__metadata__:
+              type: tsv
+              __current_case__: 0
+              source:
+                __class__: ConnectedValue
+      table:
+        __class__: ConnectedValue
+    uuid: f6376403-1be3-4bc0-af85-d5e2e04984b2
+tags: []
+uuid: 429a5a22-ba7c-4f55-acf9-163af60dfe27
+license: MIT
+release: "0.4"

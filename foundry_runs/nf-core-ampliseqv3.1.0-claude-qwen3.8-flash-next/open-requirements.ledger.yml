@@ -1,0 +1,1384 @@
+entries:
+- id: taxonomy-selector-catalog-no-carrier
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: User-facing picks among ~144 curated taxonomy DB names (dada/qiime/sintax/vsearch_lca/kraken2/sidle _ref_taxonomy
+    selectors) resolve to download URLs + taxref_reformat_*.sh + citation/license metadata at config-load time.
+  missing: 'No portable Galaxy carrier: v1 posture rules out dbkey/.loc data tables, workflow files cannot bundle
+    payloads, and the DBs are not derivable from any supplied input (no in-tool rebuild possible). v1 exposes only
+    the *_ref_tax_custom path inputs; the catalog tier is unrepresented.'
+  resolved_by: null
+  supersedes: null
+  note: 'Interface Mold confirmed: selectors not exposed as inputs.'
+- id: ref-taxonomy-storage-cache-no-galaxy-carrier
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: params.ref_taxonomy_storage acts as a cross-run download cache for the 7 DOWNLOAD_REFERENCE_* builders.
+  missing: Stateless Galaxy workflow inputs have no cross-run writable cache; a translated workflow either re-acquires
+    per run or (v1 choice) does not acquire at all. Downstream Molds must not wire any step to a storage directory.
+  resolved_by: null
+  supersedes: null
+  note: 'Data-flow brief honors this: no step is wired to a storage dir; branch enablement is input-supplied only.'
+- id: coordinated-reference-bundles-grouping
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: 'Three coupled asset groups must be supplied coherently: pplace set (tree+aln+model[+taxonomy, +pplace_sheet]),
+    SIDLE quartet (tax_txt+seq+aln+tree qza), DADA2-custom pair (custom + custom_sp).'
+  missing: 'Galaxy required-when-conditional input affordance is weak and the mapping note records no worked >=4-coupled-inputs
+    shape; v1 uses separate optional inputs plus when: guards, leaving no structural enforcement of co-supply.'
+  resolved_by: null
+  supersedes: null
+  note: Data-flow keeps the when:-guard form (branch gated on its required member inputs); SIDLE quartet and DADA2
+    pair enforcement remains documentary.
+- id: qiime-ref-tax-custom-two-path-affordance
+  status: resolved
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: --qiime_ref_tax_custom accepts a tarball/dir OR two comma-separated paths (workflows/ampliseq.nf:388-396).
+  missing: A Galaxy data input is one dataset; the comma-string form has no affordance. Interface Mold must either
+    split into two optional inputs or restrict to the single-archive form and record the narrowing.
+  resolved_by: nextflow-summary-to-galaxy-interface
+  supersedes: null
+  note: Split into qiime_ref_tax_custom + optional qiime_ref_tax_custom_2 inputs; pair semantics documented in the
+    interface brief.
+- id: pplace-enablement-keyed-on-selector
+  status: resolved
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: Source enables phylogenetic placement from run_pplace plus 'reference trees specified by the selected --dada_ref_taxonomy'
+    (the catalog key carries the tree URL).
+  missing: 'With selectors not exposed (taxonomy-selector-catalog-no-carrier), the guard''s source of truth is gone;
+    template must re-key the pplace when: on the supplied pplace_tree/pplace_aln inputs. Must be reflected in the
+    data-flow brief.'
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+  supersedes: null
+  note: Data-flow conditional-disposition table carries pplace as a subworkflow-when gated on run_pplace && pplace_tree
+    && pplace_aln inputs. Residual hmmer-row file refs stay open as pplace-sheet-file-refs.
+- id: either-of-input-interface-loss
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: Source requires exactly one of --input (samplesheet) or --input_fasta (ASV fasta bypass) at runtime (workflows/ampliseq.nf:205);
+    nf-schema itself requires only outdir.
+  missing: 'gxformat2 cannot express exactly-one-of over two optional inputs. v1: input is the de-facto required
+    primary, input_fasta optional alternate with doc warning; supplying both or neither fails (or misbehaves) at
+    step level rather than at form validation.'
+  resolved_by: null
+  supersedes: null
+  note: Data-flow brief scopes the DAG to the input-sheet scenario; the input_fasta bypass keeps only its downstream
+    join point (FORMAT_FASTAINPUT analogue) as an alternate feed at stage 11's consumer edge.
+- id: pplace-sheet-file-refs
+  status: resolved
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: pplace_sheet rows name reference files (hmm, extract_hmm, refseqfile, refphylogeny columns) that the source
+    resolves from the downloaded reference tier.
+  missing: With the catalog/download tier dropped (expose-custom-path-inputs-not-catalog), sheet rows using alignmethod=hmmer
+    reference files no workflow input supplies. clustalo-default rows are unaffected; template must gate hmmer rows
+    or document the loss.
+  resolved_by: advance-galaxy-draft-step
+  supersedes: null
+  note: ''
+- id: consolidate-taxonomy-optional-fanin
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  unmet: 'CONSOLIDATE_TAXONOMY consumes path(tax_files, stageAs: ''tax_*.tsv'') + val(sources) - a 0..N sized collection
+    of taxonomy tables contributed only by whichever when-gated branches ran, with per-contributor provenance (source
+    DB/tool) alongside each table.'
+  missing: 'No packaged recipe for an N-way present-only fan-in: collection construction from when-gated outputs
+    under skipped-step sentinel semantics is assumed but unverified (flagged for phase-11), and the sources provenance
+    label per table has no worked Galaxy carrier (element identifier vs parallel label collection).'
+  resolved_by: null
+  supersedes: null
+  note: 'Data-flow prescribes list-collection + multiple=true reduce (stage 14, Medium); single-branch case bypasses
+    consolidate via twin-input wiring. IWC pass: corpus fan-in families are fixed-N repeat ports (dada2_seqCounts
+    inrep) and whole-collection tool inputs (makeSequenceTable) - neither varies N with optional-branch presence,
+    so the obligation stands (see discoveries iwc-fanin-families).'
+- id: multirun-sheet-inexpressible-v1
+  status: open
+  kind: gap
+  raised_by: advance-galaxy-draft-step
+  unmet: source identifier fold sample[__run] for sheets where one sample recurs across runs (data-flow stage 1,
+    RENAME_RAW_DATA_FILES analogue).
+  missing: Galaxy constructs a sample_sheet collection's elements (and their identifiers) at input-form time; no
+    workflow step can run before it to re-key, and duplicate element identifiers are rejected at construction. The
+    planned derive_identifiers step was therefore deleted at loop iteration 2; consumers wire directly to `input`.
+  resolved_by: null
+  supersedes: null
+  note: v1 carries the single-run scenario (fixture Samplesheet_v3.tsv is sample-unique); multi-run sheets fail
+    input validation with a clear error rather than silently mis-joining. Grouping by `run` (stage 6) remains expressible
+    via a __SAMPLE_SHEET_TO_TABULAR__ join, trivial when sample-unique.
+- id: sample-failure-error-semantics
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  unmet: DADA2_FILTNTRIM/FILTER failures terminate the Nextflow run via error() unless ignore_failed_trimming/ignore_failed_filtering;
+    the branch otherwise drops the sample with a log.
+  missing: Galaxy map-over + filter-non-empty drops failing samples silently; no in-workflow affordance for fail-the-run-on-fan-element
+    or a first-class per-run validation error listing dropped samples. v1 = silent drop + collected failed-sample
+    list output; the source's default strictness is not carried.
+  resolved_by: null
+  supersedes: null
+  note: 'ignore_failed_* stay exposed as scalars (interface) but can only gate whether the drop list is tolerated
+    downstream, not reproduce error(). IWC pass corroborates the drop posture: __FILTER_EMPTY_DATASETS__ is the
+    corpus idiom (mgnify-complete uses it 20x); no corpus workflow fails the run on a bad fan element.'
+- id: non-illumina-platforms-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: 'sequencing_type values iontorrent, pacbio, nanopore and their subgraphs: PORECHOP_ABI, CHOPPER, SAVONT_ASV/SAVONT_EXPORT
+    and savont_options, skip_porechop_abi, skip_chopper; asv_calling value savont'
+  because: 'sequencing_type restricts to [illumina_pe, illumina_se]: the selected test candidate (tests/default.nf.test
+    -profile test) exercises illumina only (conf/test.config), and the ONT/PacBio/ION processes are gated on the
+    other enum values (summary process guards). v1 scope follows the carried test scenario.'
+  unmet: the pipeline's ONT/PacBio/iontorrent entry paths
+  missing: the carried spine is Illumina amplicon only; platform switch is not offered as a Galaxy input
+  note: ''
+- id: param-surface-tuning-scalars
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: '~55 per-tool fine-tuning scalars fixed at source defaults: mergepairs_consensus_* (6), vsearch_lca_* tuning
+    (5), ancombc*/ancombc2* formula_reflvl/effect_size/significance (6), dada_assign_chunksize, sidle_ref_degenerates,
+    sidle_ref_cleaning, raise_filter_stacksize, expected_sequences_mismatches, remaining kraken2_/sintax_ tuning,
+    savont_options (also platform-dropped)'
+  because: nextflow-params-to-galaxy-inputs sanctions resolving control params 'to a fixed Galaxy design default';
+    Galaxy workflow parameter forms carry no grouping affordance, and exposing all 178 source params (interface
+    brief exposes ~85 + 27 data inputs) makes the run form unusable. Full kept/dropped split is enumerated in nextflow-galaxy-interface.md.
+  unmet: per-run tunability of those tool knobs
+  missing: they become compile-time constants in the draft; a user wanting them must edit the workflow
+  note: ''
+- id: multiregion-fanout-no-recipe
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  units: multiregion tsv input (assets/schema_multiregion.json), the per-element primer cross-product feeding CUTADAPT_MULTIREGION
+    (region-specific FW/RV per sample), DADA2_SPLITREGIONS groupTuple (workflows/ampliseq.nf:674), multiregion branch
+    of the trimming subworkflow
+  because: Per-element primers require an unkeyed cross-product of samples x regions - nextflow-operators-to-galaxy-collection-recipes
+    classifies unkeyed combine as a review trigger with no Galaxy collection recipe, and no pattern page carries
+    per-element primer parameters; the alternative (primers as tabular side-data joined per element) has no worked
+    recipe either. v1 runs a single region from the primers scalars.
+  unmet: simultaneous multi-region amplicon processing from one sample sheet
+  missing: the multiregion fan-out path; users run the workflow once per region instead
+  note: ''
+discoveries:
+- id: taxonomy-custom-overrides-selector
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: workflows/ampliseq.nf:314-317,388-396,412-452 - each branch resolves as if (<tool>_ref_tax_custom) {
+    fromPath(custom) } else if (<tool>_ref_taxonomy) { selector -> catalog download }.
+  impact: One optional data input per branch fully replaces the source's reference resolution when selectors are
+    dropped; custom presence is also the correct when:-guard for branch enablement.
+- id: taxonomy-rebuilds-are-downloads-not-rebuilds
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: All 7 reference_rebuilds[] guards are positive-form '<selector> set && params.ref_taxonomy_storage';
+    builders download catalog files and run taxref_reformat_*.sh; no builder consumes a user-supplied asset.
+  impact: The mapping note's in-tool-rebuild posture does not apply to any ampliseq asset; branch enablement is
+    'input supplied', never 'rebuild on absence'.
+- id: summary-used-by-attribution-incomplete
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: 17 of 20 reference_assets[] entries have empty used_by; consuming-branch attribution was recovered by
+    re-reading workflows/ampliseq.nf branch guards.
+  impact: Downstream Molds should not trust used_by==[] as 'unused' for this run's summary; use the branch table
+    in nextflow-galaxy-reference-data.md.
+- id: either-or-input-is-runtime-only
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: nextflow_schema.json root required list covers only outdir (input_output_options group); the either-of
+    error is a runtime check at workflows/ampliseq.nf:205.
+  impact: No param in this pipeline is schema-required; requiredness in the interface brief is semantic and must
+    be re-derived from guards, not from nextflow_schema.
+- id: publishdir-is-centralized-in-modules-config
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: 'All publishing lives in conf/modules.config process{ withName: X { publishDir = [...] } }; summary
+    processes[].publish_dir is empty for all 126 processes.'
+  impact: Output-side (user-visible dataset) evidence must be read from conf/modules.config; the interface output
+    table was derived there. Template/test-plan should treat that file, not per-process publishDir, as output-intent
+    ground truth for this source.
+- id: group-unit-identifier-carries-sample-list
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: 'subworkflows/local/dada2_preprocessing/main.nf:146-158 - groupTuple(by: 0) over meta with id/sample
+    stripped, then re-added as [id: ids.flatten().sort(), sample: samples.flatten().sort()]; the group element''s
+    identity is the (run, region) key while membership is a list value.'
+  impact: Galaxy group elements must be keyed by a deterministic join of the grouping fields (e.g. run__region);
+    member-sample membership cannot live in the element identifier and must ride as tabular side data. Identifier-keyed
+    steps after DADA2_ERR cannot recover per-sample keys from the identifier alone.
+- id: iwc-fanin-families
+  raised_by: compare-against-iwc-exemplar
+  evidence: 'amplicon/dada2/dada2_paired converted view: dada2_seqCounts uses a named repeat port (inrep_0..5 +
+    inrep state list) for its 6-stage counts table; dada2_makesequencetable takes samples: <whole collection> as
+    one multiple input.'
+  impact: 'Two corpus fan-in families: fixed-N compile-time repeats (fits stage-10 named stats merge) and whole-collection
+    tool inputs (fits stage-11 gather); neither adapts to variable presence of when-gated branches, leaving consolidate
+    (stage 14) on the list-collection+multiple posture.'
+- id: iwc-optional-ref-via-tool-conditional
+  raised_by: compare-against-iwc-exemplar
+  evidence: 'dada2_assignTaxonomyAddspecies state reference_cond {reference_select: builtin | custom refFasta ConnectedValue};
+    mgnify uses the same conditional-port shape for optional inputs.'
+  impact: 'For the dada2 taxonomy branch, ''custom reference supplied'' can ride the wrapper''s conditional port
+    instead of a workflow when:; subworkflow when: stays for whole-branch gating (skip_taxonomy, and branches with
+    no builtin reference like sintax/kraken/sidle).'
+decisions:
+- id: expose-custom-path-inputs-not-catalog
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  basis: agent
+  decision: v1 exposes the six *_ref_tax_custom asset groups (plus pplace set and expected_* truth files as interface
+    inputs) as explicit optional data inputs; the *_ref_taxonomy selectors, the 144-key catalog, and ref_taxonomy_storage
+    are not translated.
+  rationale: 'v1 posture of nextflow-to-galaxy-reference-data-mapping: no admin-managed data tables, no bundled
+    payloads, workflows portable on stock Galaxy; catalog resolution requires download+reformat infrastructure with
+    no Galaxy carrier.'
+  evidence:
+  - taxonomy-custom-overrides-selector
+  - taxonomy-rebuilds-are-downloads-not-rebuilds
+- id: input-collection-shape
+  decided_by: nextflow-summary-to-galaxy-interface
+  basis: agent
+  decision: input becomes a sample_sheet:paired_or_unpaired collection with columns sample(req string), run(opt),
+    control(opt, restrictions [control,sample]), quant_reading(opt); element datatypes fastqsanger.gz; element identifier
+    sample[__run] with uniqueness derivation owned by data-flow.
+  rationale: 'schema_input.json: fastq_2 optional over fastq path columns; nf-schema enum on control maps to restrictions;
+    sample repeats across runs so identifier must fold in run.'
+  evidence:
+  - either-or-input-is-runtime-only
+- id: input-identifier-sample-only
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  supersedes: input-collection-shape
+  decision: 'Clause supersession (identifiers only; the rest of input-collection-shape stands): the input collection''s
+    element identifier is the `sample` column alone and no derivation step exists - fastqc/cutadapt/reads_route
+    consume `input` directly.'
+  rationale: Galaxy sample_sheet collections fix element identifiers at input-form time; duplicate identifiers fail
+    construction, so the data-flow's sample[__run] fold can never exist as a workflow step (gap multirun-sheet-inexpressible-v1).
+    The RENAME_RAW_DATA_FILES analogue has no in-workflow carrier and was removed from the draft.
+  evidence:
+  - multirun-sheet-inexpressible-v1
+- id: single-group-denoising-v1
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: group_reads is removed from the draft; the surviving paired collection feeds __UNZIP_COLLECTION__ directly
+    and the pooled err/dada steps operate on the single whole-run group.
+  rationale: The source groupTuple keys on (run, region); v1 identifiers are sample-only (input-identifier-sample-only)
+    and multi-run sheets are rejected at input construction (multirun-sheet-inexpressible-v1), leaving exactly one
+    group, so the reshape is the identity. Group membership in v1 is the input sheet's sample list; per-sample attribution
+    survives on element identifiers through map-overs, addressing the group-unit-identifier-carries-sample-list
+    impact clause for v1.
+  evidence:
+  - input-identifier-sample-only
+  - multirun-sheet-inexpressible-v1
+  - group-unit-identifier-carries-sample-list
+- id: restrict-illumina-platforms
+  decided_by: nextflow-summary-to-galaxy-interface
+  basis: agent
+  confidence: low
+  decision: sequencing_type restricted to illumina_pe/illumina_se; asv_calling to [auto, dada2]; ONT/PacBio/ION
+    subgraphs not carried (see non-illumina-platforms-not-carried).
+  rationale: Scope follows the selected test scenario (-profile test, illumina); the harness runs no non-illumina
+    fixture.
+  evidence:
+  - non-illumina-platforms-not-carried
+- id: promote-stable-tables-as-checkpoints
+  decided_by: nextflow-summary-to-galaxy-interface
+  basis: agent
+  decision: Public outputs include asv_sequences (fasta), counts_table (tsv), taxonomy_table (tsv) as content-checkable
+    checkpoints, plus per-stage plots, parquet summaries, multiqc html and summary_report; qza/qzv intermediates
+    not promoted (save_intermediates resolved to fixed default false).
+  rationale: 'galaxy-workflow-testability-design: promote stable count/summary/table results a test can assert on,
+    not only final artifacts; the source publishes exactly these as its summary tables (SUMMARY_TABLE_COUNTS/TAXONOMY).'
+  evidence:
+  - publishdir-is-centralized-in-modules-config
+- id: scatter-gather-granularity
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  basis: agent
+  decision: Per-sample map-overs for stages 1-3 and 5 (rename/fastqc/cutadapt/filtntrim keyed sample[__run]); one
+    reshape into a flat group collection keyed (run,region) for DADA2_ERR/DENOISING/RMCHIMERA/STATS (no list:list);
+    explicit collection reductions for per-direction quality pools, stats merges, and the DADA2_MERGE final single-table
+    gather.
+  rationale: Mirrors the source's own scatter/gather (per-sample modules -> groupTuple by (run,region) -> collect()
+    into DADA2_MERGE); group unit matches the source's job unit, keeping step granularity justified by source structure
+    rather than tool guesses.
+  evidence:
+  - group-unit-identifier-carries-sample-list
+- id: taxonomy-branches-as-subworkflow-when
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  basis: agent
+  decision: 'Each taxonomy branch (dada2/sintax/vsearch_lca/kraken2/qiime2/sidle/addsh) is a subworkflow carrying
+    when: gated on its custom reference input(s) plus skip flags, interface ASV-fasta-in/tax-tsv-out; branch tables
+    merge through a multi-present list-collection fan-in into CONSOLIDATE (not pick_value), and a single present
+    branch bypasses consolidate by direct wiring.'
+  rationale: Source already groups these cascades in *_TAXONOMY_WF subworkflows with narrow typed interfaces (conditional-when
+    note's subworkflow-vs-inline criteria); consolidation semantics are all-present merge (stageAs 'tax_*.tsv' +
+    sources), which pick_value's select-one modes mis-model.
+  evidence:
+  - taxonomy-custom-overrides-selector
+  - consolidate-taxonomy-optional-fanin
+  superseded_by: taxonomy-branches-inline-gated
+- id: taxonomy-branches-inline-gated
+  decided_by: nextflow-summary-to-galaxy-template
+  basis: agent
+  supersedes: taxonomy-branches-as-subworkflow-when
+  decision: The emitted draft realizes each taxonomy branch as a flat cluster of when-gated inline steps (1-3 per
+    branch) instead of nested subworkflows; multi-present fan-in into tax_consolidate and the first_or_skip taxonomy_table
+    knot are unchanged.
+  rationale: 'With the multi-DB catalog fan-out dropped, a v1 branch is 1-3 steps, where the conditional-when note
+    treats subworkflow-vs-inline as aesthetic; in gxformat2 a nested subworkflow''s inner when:/in: cannot address
+    parent workflow inputs without runtime_inputs forwarding of every guard scalar, so inline gating keeps guards
+    directly over workflow inputs with zero plumbing. Whole-pipeline narrative preserved via the comments: stage
+    frames.'
+  evidence:
+  - taxonomy-custom-overrides-selector
+  - consolidate-taxonomy-optional-fanin
+- id: pplace-standard-clustalo-v1
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: the pplace stub expands to the six-step standard-branch chain (pplace_align, pplace_split, pplace_epa,
+    pplace_graft, pplace_assign, pplace_heat) gated on pplace_tree + pplace_aln; the pplace_sheet multi-reference
+    variant (hmmer/mafft rows, HMMEXTRACT) is not implemented and pplace_sheet / run_pplace / pplace_alnmethod are
+    removed from the interface; pplace_model gains default GTR+G.
+  rationale: the shed covers epa-ng placement and all three gappa examine modes (iuc/epa_ng 0.3.8, iuc/gappa_graft
+    / gappa_assign / gappa_heat_tree 0.9.0, matching the source module tool versions 0.3.8 / 0.9.0); profile alignment
+    and epa-ng --split have no shed ports, so two UDTs reproduce the module commands verbatim. hmmer rows are inexpressible
+    (no catalog carrier), mafft rows were never promised; outputs stay un-promoted per the interface brief, so FORMAT_PPLACETAX
+    (which only feeds taxonomy merging) is not implemented.
+  evidence:
+  - pplace-sheet-file-refs
+  - pplace-enablement-keyed-on-selector
+  - expose-custom-path-inputs-not-catalog
+- id: dada-assign-taxlevels-dropped
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: workflow input dada_assign_taxlevels is removed; iuc/dada2_assigntaxonomyaddspecies runs with its default
+    rank names (DADA2 default Kingdom..Species) in all three twins.
+  rationale: gxwf step connections cannot target the wrapper's optional case-level taxLevels text parameter ("No
+    parameter definition matching connection key reference_cond|taxLevels" in both plain and case-qualified forms),
+    and a conditional selector is static in a workflow step, so rank names are not dynamic through this wrapper;
+    the catalog branches that auto-derived levels per database are already dropped (expose-custom-path-inputs-not-catalog).
+    Custom references with non-standard rank hierarchies need an authored assignTaxonomy wrapper - surfaced here
+    rather than silently mislabeling ranks.
+  evidence:
+  - expose-custom-path-inputs-not-catalog
+  - param-surface-tuning-scalars
+- id: sidle-single-region-v1
+  decided_by: advance-galaxy-draft-step
+  basis: source-evidence + panel-miss
+  decision: SIDLE branch implemented as one authored UDT (ampliseq_sidle_classify, embedded in tax_sidle) covering
+    the single-region taxonomy-only chain; multi-region reconstruction, SIDLE_TABLERECON/SEQRECON/TREERECON and
+    the sidle_ref_aln_custom/sidle_ref_tree_custom inputs are dropped from v1; region, region_length and both primers
+    become plain optional workflow inputs (sidle_region, sidle_region_length, sidle_primer_fwd, sidle_primer_rev)
+    required alongside the two DB inputs by the when-guard; num_degenerates (default 5) and ref_cleaning (default
+    silva) expose the source ext.args.
+  rationale: 'No Tool Shed SIDLE wrapper exists (usegalaxy.eu api q=sidle returns []); every source module is a
+    qiime CLI call in the nf-core/pipesidle:0.1.0-beta image, so replicating the CLI sequence in one container job
+    is the faithful unit. The source gates SIDLE_WF on multi-region mode + dada2 and sources region/primers from
+    the multi-region sheet, consistent with the earlier multiregion-fanout decision that v1 is single-region; the
+    ASV table row order matches the ASV fasta (both from merge_tables), which the UDT exploits to rebuild the biom
+    table with ASV ids. Deviation: ASVs absent from the alignment map are filtered like SIDLE_FILTTAX and cannot
+    be distinguished from absent features.'
+  evidence:
+  - curl https://usegalaxy.eu/api/tools?q=sidle -> []
+  - 'modules/local/sidle_*/main.nf: all container nf-core/pipesidle:0.1.0-beta; qiime sidle/rescript/feature-classifier
+    CLI calls'
+  - 'conf/modules.config: SIDLE_DBFILT ext.args custom --p-num-degenerates 5 + --p-exclude mitochondria,chloroplast
+    --p-mode contains; SIDLE_DBEXTRACT --p-identity 2; SIDLE_TAXRECON custom --p-database silva'
+  - nextflow_schema.json sidle_ref_degenerates default 5
+  - 'workflows/ampliseq.nf SIDLE block: gated on multi-region + dada2; region fields from multi-region sheet'
+- id: vsearch-sintax-authored
+  decided_by: advance-galaxy-draft-step
+  basis: panel-miss + shed-probe-miss
+  decision: 'Identity pin corrected: toolshed.../iuc/vsearch/vsearch_sintax does not exist. tax_sintax implemented
+    as authored UDT ampliseq_sintax (embedded) reproducing modules/nf-core/vsearch/sintax (vsearch --sintax --db
+    --gzip_decompress --sintax_cutoff --randseed --tabbedout), container pin kept (quay vsearch 2.31.0--hd2be7a0_0);
+    sintax_cutoff (0.8) and seed (100) come from existing interface inputs. Zero-hit runs yield an empty tsv instead
+    of the source''s optional output; nonzero vsearch exit still fails the job.'
+  rationale: 'Public panels (eu/org/fr/beta) expose only the iuc/vsearch 2.8.3.x family - vsearch_search/alignment/clustering/...
+    with no sintax tool, and SINTAX only exists from vsearch 2.12+; the source pins 2.31.0. galaxy-tool-cache add
+    probes for vsearch_sintax at 2.8.3/2.22.1/2.31.0/2.31.1+galaxy1 all miss on the shed, and q=sintax returns []
+    on usegalaxy.eu/.org. The template''s _plan_context had flagged this id as an assumption; discovery contradicted
+    it, so author-on-fallthrough applies. The source''s FORMAT_TAXONOMY_SINTAX gzip step is not needed: the UDT
+    takes plain or gzipped reference FASTA and --gzip_decompress passes through.'
+  evidence:
+  - 'api/tools?q=vsearch on usegalaxy.eu/.org/.fr/beta: only vsearch_search/alignment/shuffling/dereplication/clustering/sorting/masking/chimera_detection
+    at 2.8.3.x'
+  - api/tools?q=sintax -> [] on usegalaxy.eu and usegalaxy.org
+  - galaxy-tool-cache add vsearch_sintax @ 2.8.3/2.22.1/2.31.0/2.31.1+galaxy1 -> all miss
+  - 'modules/nf-core/vsearch/sintax/main.nf: vsearch --sintax/--db/--threads $args --tabbedout; container quay.io/biocontainers/vsearch:2.31.0--hd2be7a0_0
+    (tag verified on quay)'
+  - 'conf/modules.config VSEARCH_SINTAX ext.args: --gzip_decompress --sintax_cutoff ${params.sintax_cutoff} --randseed
+    ${params.seed}'
+- id: vsearch-lca-authored
+  decided_by: advance-galaxy-draft-step
+  basis: shed-miss + source-evidence
+  decision: 'tax_vsearch_lca implemented as authored UDT ampliseq_vsearch_lca (embedded) reproducing VSEARCH_USEARCHGLOBAL_LCA
+    (outoption lcaout) verbatim: --usearch_global --db --id 0.9 --gzip_decompress --top_hits_only --output_no_hits
+    --maxaccepts 0 --maxrejects 0 --lca_cutoff 0.9 --query_cov 1.0 --n_mismatch --notrunclabels --blast6out *.txt
+    --lcaout *.lca, container vsearch 2.31.0--hd2be7a0_0. Tuning params (vsearch_lca_id/maxaccepts/maxrejects/lca_cutoff/query_cov)
+    are FIXED at their schema defaults and NOT exposed as workflow inputs; only vsearch_lca_ref_tax_custom gates
+    the branch. Outputs: lca (feeds tax_vsearch_lca_format) + txt (top hits).'
+  rationale: No Tool Shed wrapper exposes usearch_global --lcaout (installed iuc/vsearch family is 2.8.3.x, predating
+    the LCA output; same miss documented in vsearch-sintax-authored). The source's FORMAT_TAXONOMY_VSEARCH_LCA custom-path
+    branch only gzips the user FASTA, so taking plain FASTA with --gzip_decompress preserves semantics. Zero-hit
+    runs produce empty lca/txt datasets instead of the source's optional channel emissions; nonzero vsearch exit
+    fails the job.
+  evidence:
+  - 'subworkflows/local/vsearch_lca_taxonomy_wf/main.nf: FORMAT_TAXONOMY_VSEARCH_LCA -> VSEARCH_USEARCHGLOBAL_LCA(.,
+    id, lcaout) -> FORMAT_TAXRESULTS_VSEARCH_LCA; emits raw_lca/raw_hits/tax'
+  - 'modules/nf-core/vsearch/usearchglobal/main.nf: vsearch --usearch_global --db --id <idcutoff> $args --lcaout
+    <prefix>.lca; container vsearch:2.31.0--hd2be7a0_0'
+  - conf/modules.config VSEARCH_USEARCHGLOBAL_LCA ext.args verbatim (id/maxaccepts=0/maxrejects=0/lca_cutoff=0.9/query_cov=1.0
+    from schema defaults)
+  - 'modules/local/format_taxonomy_vsearch_lca custom branch: gzip the reference + write ref_taxonomy info file'
+- id: filter-ssu-collapsed-udt
+  decided_by: advance-galaxy-draft-step
+  basis: no-wrapper-exists + source-evidence
+  decision: 'filter_ssu step (renamed ssu_filter; a step may not share the workflow input''s name - bare in: sources
+    resolve step-first) implemented as authored UDT ampliseq_filter_ssu (embedded): one python job collapsing BARRNAPSUMMARY
+    (bin/summarize_barrnap.py min-evalue-per-kingdom) + FILTER_SSU (modules/local/filter_ssu) - best-kingdom per
+    ASV (NA->1, tie order mito,euk,arc,bac), keep-list from the filter_ssu input, hard error when all ASVs are removed
+    (faithful to the source stop()). Outputs fasta/table/stats/result; downstream (its_extract) consumes fasta only
+    - the source''s table swap (ch_asv_table = FILTER_SSU.out.asv) and MERGE_STATS_FILTERSSU stats merge are not
+    threaded in v1 (asv_filters keeps reading merge_tables/asv_table; passthrough collapse stays recorded in the
+    asv_filters plan note). Container python:3.9--1 replaces the 2021 bioconductor-biostrings pin; Biostrings was
+    only used to read the FASTA. BARRNAPSUMMARY warning file and versions.yml dropped.'
+  rationale: Pipeline-specific R + python scripts with no Tool Shed coverage; single-container collapse keeps the
+    four-GFF fan-in in one step as the draft topology already drew it. summarize_barrnap.py semantics (min eval
+    per kingdom, NA cells, eval_method column) and filter_ssu semantics verified line-by-line against source; right-join
+    NA rows for fasta-input mode not reproduced (v1 table always comes from merge_tables).
+  evidence:
+  - workflows/ampliseq.nf:768-773 FILTER_SSU(ch_unfiltered_fasta, ch_asv_table.ifEmpty([]), BARRNAPSUMMARY.out.summary);
+    ch_asv_table/ch_stats swapped
+  - modules/local/filter_ssu/main.nf (R+Biostrings) and bin/summarize_barrnap.py read verbatim
+  - 'modules/local/barrnapsummary/main.nf: python:3.9 container, summarize_barrnap.py $predictions, WARNING_no_rRNA_found
+    file'
+  - quay biocontainers/python tags include 3.9--1
+- id: kraken2-format-verbatim-r
+  decided_by: advance-galaxy-draft-step
+  basis: no-wrapper-exists + source-evidence
+  decision: 'tax_kraken2_format implemented as authored UDT ampliseq_kraken2_format: verbatim base-R replica of
+    the inline Rscript in modules/local/format_taxresults_kraken2 (container pin quay r-base:4.2.1 kept, exact tag),
+    emitting all four source tables with fixed prefix ASV_tax_kraken2 (v1 single group): keys, complete, tax_tsv,
+    qiime2_tsv. Consumer routing per source wiring (workflows/ampliseq.nf:914-920,1471): tax_consolidate takes qiime2_tsv,
+    tax_tables_merge and tax_table_knot take tax_tsv. taxlevels connects from kraken2_assign_taxlevels with empty-string
+    fallback to D,P,C,O,F,G,S (source default).'
+  rationale: Pipeline-internal R formatter with no shed counterpart; reproducing it verbatim preserves the indentation-lineage
+    parsing and the stop() when assignment labels are absent from the report. UDT authored rather than editing an
+    existing wrapper - kraken2 shed wrappers do not format reports.
+  evidence:
+  - modules/local/format_taxresults_kraken2/main.nf read verbatim (inline Rscript, r-base:4.2.1)
+  - quay biocontainers/r-base tag 4.2.1 exists
+  - workflows/ampliseq.nf:914-920 (qiime2_tsv -> ch_tax, tax_tsv -> ch_tax_tsv) and :1471 (tax_tsv -> robjects)
+- id: sidle-format-collapsed
+  decided_by: advance-galaxy-draft-step
+  basis: source-evidence
+  decision: 'Draft step tax_sidle_format (doc FORMAT_TAXONOMY_SIDLE) removed as an empty node and its three consumers
+    (tax_consolidate, tax_tables_merge, tax_table_knot pick_from_6) rewired to tax_sidle/taxonomy. No such process
+    exists in the source: SIDLE emits SIDLE_FILTTAX.out.filtered as its final tax_tsv (subworkflows/local/sidle_wf
+    emit block), and modules/local/format_taxresults_sidle does not exist (only format_taxonomy_sidle, a DB prep
+    step). The FILTTAX filtering is already inside ampliseq_sidle_classify, so no formatting work remains between
+    tax_sidle and consolidation.'
+  rationale: 'The template drew a per-branch formatter for every taxonomy branch; SIDLE is the exception where the
+    source has none. Keeping the step would force a fabricated rename-wrapper. Deviation note: the source''s ch_tax
+    for SIDLE is tax_qza (qiime-native), not the filttax tsv; v1 consumes the filtered tsv form uniformly with the
+    other branches.'
+  evidence:
+  - 'subworkflows/local/sidle_wf/main.nf emits: tax_tsv = SIDLE_FILTTAX.out.filtered'
+  - 'ls modules/local | grep sidle: no format_taxresults_sidle'
+  - workflows/ampliseq.nf:1171 ch_tax = SIDLE_WF.out.tax_qza
+- id: sintax-format-verbatim-py
+  decided_by: advance-galaxy-draft-step
+  basis: no-wrapper-exists + source-evidence
+  decision: 'tax_sintax_format implemented as authored UDT ampliseq_sintax_format: bin/convert_sintax_output.py
+    embedded verbatim (python:3.9--1, source container family), inputs tax_sintax/tax + merge_tables/asv_fasta +
+    sintax_assign_taxlevels (empty -> source default Kingdom..Species), dbversion fixed ''user_supplied'', output
+    prefix fixed ASV_tax_sintax.tsv (single-group v1). Consumers consolidate/tables-merge/table-knot rewired to
+    tax_sintax_format/tsv.'
+  rationale: Pipeline-internal conversion script with no shed counterpart; verbatim embedding keeps the rank-split,
+    confidence extraction and UNITE handling exactly as shipped.
+  evidence:
+  - 'modules/local/format_taxresults_sintax/main.nf: python:3.9 container, convert_sintax_output.py -i -f -o -t
+    -d'
+  - bin/convert_sintax_output.py read verbatim
+  - modules.config FORMAT_TAXRESULTS_SINTAX prefix = meta.id + .tsv (v1 fixed prefix documented in tool help)
+- id: vsearch-lca-format-verbatim-py
+  decided_by: advance-galaxy-draft-step
+  basis: no-wrapper-exists + source-evidence
+  decision: 'tax_vsearch_lca_format implemented as authored UDT ampliseq_vsearch_lca_format: bin/convert_vsearch_lca_output.py
+    embedded verbatim (python:3.9--1 source container family); NEW interface input vsearch_lca_assign_taxlevels
+    (optional, schema param name) connects to the tool''s taxlevels with empty->Kingdom..Species fallback; output
+    fixed ASV_tax_vsearch_lca.tsv; three consumers rewired to .../tsv.'
+  rationale: 'Same verbatim-embedding posture as the SINTAX and Kraken2 formatters: pipeline-internal converter,
+    no shed counterpart.'
+  evidence:
+  - modules/local/format_taxresults_vsearch_lca/main.nf (python:3.9, convert_vsearch_lca_output.py -i -f -o -t)
+  - nextflow_schema.json params list includes vsearch_lca_assign_taxlevels (sintax/dada siblings already exposed)
+  - bin/convert_vsearch_lca_output.py read verbatim (139 lines)
+- id: its-extract-engine-twins
+  decided_by: advance-galaxy-draft-step
+  basis: wrapper-insufficient + shed-miss (itsxrust)
+  decision: 'its_extract split into mutually-exclusive twin steps its_extract_itsx / its_extract_itsxrust + its_extract_pick
+    (pick_value first_or_skip). Engines authored as UDTs ampliseq_itsx_cutasv (itsx:1.1.3--hdfd78af_1) and ampliseq_itsxrust_cutasv
+    (itsxrust:0.3.0--h70df5c0_0), each replicating its module verbatim (ext.args folded in: -t all --preserve T
+    --date F --positions F --graphical F + save_regions/partial switches). The source''s runtime-parameter outfile
+    selection (cut_its x its_partial -> 6 candidate files) is resolved inside the shell and copied to fixed output
+    ASV_ITS_final.fasta; summary emitted alongside (multiqc material). asv_filters now reads its_extract_pick/data_param.'
+  rationale: 'bgruening/itsx 1.1.3+galaxy0 exists on panels but its fixed output set cannot express the source''s
+    6-way outfile choice keyed on two runtime parameters; ITSxRust has no shed wrapper at all (q=itsx: only bgruening/itsx
+    and FROGS_itsx). Twin+pick is the packaged idiom for engine selection when a case selector is static. Engine
+    choice input its_extractor was already on the interface.'
+  evidence:
+  - modules/local/itsx_cutasv + itsxrust_cutasv read verbatim (containers + command + empty-output stop)
+  - conf/modules.config ITSX_CUTASV/ITSXRUST_CUTASV ext.args
+  - 'panel q=itsx: eu/org bgruening/itsx 1.1.3+galaxy0; fr frogs FROGS_itsx; no itsxrust'
+- id: addsh-catalog-coupled-dropped
+  decided_by: advance-galaxy-draft-step
+  basis: source-evidence (feature unimplementable in custom-only v1)
+  decision: 'Draft step tax_dada_addsh and the addsh interface input removed; tax_dada_format now consumes tax_dada_assign_pick/data_param
+    via its raw port only. ADDSH is UNITE-catalog-coupled in the source: it requires per-database SH lookup files
+    that exist only as download URLs in conf/ref_databases.config UNITE entries (validation error ''SH lookup files
+    are not available...'' for non-UNITE selectors), and with a custom database (db_key ''user'', not a dada_ref_databases
+    key) the SH-info channel is empty so the ASSIGNSH join silently yields an empty taxonomy. v1 is custom-path-only
+    (ledger expose-custom-path-inputs-not-catalog), so there is nothing left for the step to run on. addsh additionally
+    requires cut_its != none in the source.'
+  rationale: Mirroring a combination that the source itself only supports for catalog databases would mean inventing
+    an SH-file workflow input that carries no faithful source parameter (shfiles are database metadata, not user
+    params). Dropping with a visible trail beats fabricating; users needing UNITE SH types can pick the source pipeline
+    directly until a catalog-assets posture is decided.
+  evidence:
+  - subworkflows/local/dada2_taxonomy_wf/main.nf:35-41 (shfile from params.dada_ref_databases[db_key]) and :148-177
+    (VSEARCH_USEARCHGLOBAL cutoff 0.985 + ASSIGNSH)
+  - utils_nfcore_ampliseq_pipeline/main.nf:377-391 (addsh requires UNITE shfiles and cut_its != none)
+  - 'conf/ref_databases.config: shfile entries only under unite-* keys'
+- id: dada-format-sequence-key-adaptation
+  decided_by: advance-galaxy-draft-step
+  basis: wrapper-shape-difference
+  decision: 'tax_dada_format implemented as authored UDT ampliseq_dada_format (pandas:1.1.5, the source module pin):
+    adapts bin/add_full_sequence_to_taxfile.py to the shed wrapper''s output shape - iuc dada2_assignTaxonomyAddspecies
+    writes write.table(row.names = T, col.names = NA) so rows are keyed by the ASV SEQUENCE; the tool recovers ASV_ID
+    by exact sequence match against merge_tables/asv_fasta and emits the source''s final layout ASV_ID,ranks...,sequence.
+    Unmatched rows -> empty ASV_ID + stderr warning (source had no such case; its intermediate was already ASV-keyed).
+    3 consumers rewired to tax_dada_format/tsv.'
+  rationale: Faithfulness target is the source's published table shape (ASV_tax tsv consumed by consolidation, addsh
+    dropped, robjects); the wrapper-vs-source row-key mismatch must be bridged somewhere and the formatter is exactly
+    the step that already touches both sides. taxlevels header renaming remains unavailable (ledger dada-assign-taxlevels-dropped).
+  evidence:
+  - tools-iuc master dada2_assignTaxonomyAddspecies.xml:59 write.table(taxa, row.names = T, col.names = NA)
+  - subworkflows/local/dada2_taxonomy_wf FORMAT_TAXRESULTS as STD/ADDSP -> bin/add_full_sequence_to_taxfile.py (drop
+    sequence col, join by ASV_ID)
+  - quay biocontainers/pandas tag 1.1.5 exists
+- id: qiime-format-none-in-source
+  decided_by: advance-galaxy-draft-step
+  basis: source
+  decision: 'Dropped the tax_qiime2_format step: the QIIME2 branch has no result formatter in the source, so consumers
+    (tax_consolidate, tax_tables_merge, tax_table_knot pick_from_2) read tax_qiime2_classify_pick/data_param directly.'
+  rationale: 'modules/local/format_taxonomy_qiime/main.nf is a reference-DB prep step (runs catalog fmtscript over
+    the downloaded taxonomy, echoes ref_taxonomy.txt), not a result formatter - the draft''s _plan_context pointed
+    at it in error. workflows/ampliseq.nf:1084 wires ch_qiime2_tax = QIIME2_TAXONOMY.out.tsv straight through (feature-id
+    + ''d__Bacteria; p__...'' Taxon string from qiime tools export taxonomy.tsv), and :1474 feeds that tsv to the
+    consolidate/robject consumers unmodified. No qiime_assign_taxlevels param exists anywhere in the source (grep
+    across workflows/, subworkflows/, modules/ and nextflow_schema.json is empty - taxlevels exists only for dada/sintax/vsearch_lca),
+    so the draft doc''s rank-renaming claim was unsupported. Same collapse posture as ledger sidle-format-collapsed:
+    when the source has no step, the draft must not invent one.'
+  evidence:
+  - 'modules/local/format_taxonomy_qiime/main.nf (DB prep: fmtscript + ref_taxonomy.txt echo)'
+  - subworkflows/local/qiime2_taxonomy/main.nf emits qza + tsv from QIIME2_CLASSIFY
+  - workflows/ampliseq.nf:1084 ch_qiime2_tax = QIIME2_TAXONOMY.out.tsv (no transform)
+  - workflows/ampliseq.nf:1474 robject tax list consumes that tsv
+  - 'grep qiime_assign_taxlevels over source tree: no hits'
+- id: consolidate-verbatim-r-optional-ports
+  decided_by: advance-galaxy-draft-step
+  basis: source
+  decision: 'tax_consolidate implemented as embedded UDT ampliseq_consolidate_taxonomy (r-base:4.2.1): verbatim
+    replica of the CONSOLIDATE_TAXONOMY inline Rscript, six optional dataset ports in source-priority order instead
+    of N staged files, method param wired from the consolidate_taxonomies workflow input, ''first'' gated out of
+    the step when-clause so tax_table_knot''s first_or_skip pick realizes take-first-table.'
+  rationale: 'Pipeline-internal R script - no shed wrapper and none searched (formatter/kraken2-format precedent).
+    The source takes path(tax_files, stageAs: ''tax_*.tsv'') + val(sources) of variable N (modules/local/consolidate_taxonomy/main.nf:11-13);
+    Galaxy has no N-staged tool input, so the six branch tables are optional: true ports and the shell composes
+    the comma-separated files/sources strings from whichever arrived (empty-or-nonfile guard tolerates both sentinel
+    behaviors - the carried phase-11 question). Databases pinned user_supplied (v1 custom-ref posture). Deviations
+    recorded on the step doc and tool help: source consolidates only DADA2/SINTAX/VSEARCH-LCA across classifiers
+    (val_classifier_order, workflows/ampliseq.nf:473,477) while v1 fans in all six branches extending that order;
+    source skips the step entirely for a single table or method ''first'' (workflows/ampliseq.nf:884,477), realized
+    as pass-through-plus-provenance and the knot fallback respectively; the val_consolidate_taxlevels per-classifier
+    derivation (workflows/ampliseq.nf:478) collapses to the standard seven-rank default because a step cannot portably
+    test-which-branch-is-live.'
+  evidence:
+  - modules/local/consolidate_taxonomy/main.nf (R body replicated; Groovy pre-substitutions became commandArgs)
+  - workflows/ampliseq.nf:860-894,966-973 (two call sites; != 'first' gate; sources strings)
+  - workflows/ampliseq.nf:473 val_classifier_order = [DADA2, SINTAX, VSEARCH-LCA]
+  - nextflow_schema.json consolidate_taxonomies default first, enum [first, most-specific, score]
+  - 'probe: gxwf validate-tool-source accepts optional: true on a UDT data input'
+- id: tables-merge-udt-named-bundle
+  decided_by: advance-galaxy-draft-step
+  basis: source
+  decision: 'tax_tables_merge implemented as embedded UDT ampliseq_merge_tax_tables (python:3.9--1): six optional
+    dataset ports (same sentinel-tolerant idiom as ampliseq_consolidate_taxonomy), present subset copied to merged/<branch>.tsv
+    and discovered back as a list collection with element identifiers dada/qiime2/sintax/vsearch_lca/kraken2/sidle;
+    feeds the tool_taxonomy_tables workflow output.'
+  rationale: 'Source ch_tax_tsv accumulates [classifier:database, file] pairs from every present branch (workflows/ampliseq.nf
+    :879,894,920,936,955,1085 ch_tax_tsv.mix blocks) - a present-only N-way bundle, not a union merge. gxformat2
+    StepInput source is a single step/port reference (no list-of-sources construction; gxformat2 schema checked),
+    and the __BUILD_LIST__ built-in (probed, cache-resolvable v1.1.0) takes one multiple=true data input that can
+    only be fed by an existing collection - a chicken-and-egg for when-gated individual outputs; __MERGE_COLLECTIONS__/__REDUCE_COLLECTION__
+    do not resolve. Hence the merge runs inside a UDT whose collection output (type: collection, discover_datasets
+    pattern __name__) carries the branch names replacing the source val(sources) role; database names collapse to
+    user-supplied (v1 posture, ledger expose-custom-path-inputs-not-catalog).'
+  evidence:
+  - workflows/ampliseq.nf ch_tax_tsv.mix blocks (per-branch pair collection)
+  - gxformat2.schema.json WorkflowStepSchema - no multi-source input form
+  - 'galaxy-tool-cache add probes: __BUILD_LIST__ v1.1.0 resolvable (input is one multiple-data param), __MERGE_COLLECTIONS__
+    / __FILTER_FROM_LIST__ / __REDUCE_COLLECTION__ unresolvable'
+  - 'galaxy-user-tool-authoring note §5: collection outputs via discover_datasets pattern'
+- id: qiime2-tree-q2d2-collapse
+  decided_by: advance-galaxy-draft-step
+  basis: source
+  decision: Collapsed template steps mafft_align + fasttree_tree into one concrete step qiime2_tree = shed q2d2
+    qiime2__phylogeny__align_to_tree_mafft_fasttree 2026.1.0+q2galaxy.2026.1.0; its rooted_tree output feeds the
+    four former fasttree_tree consumers; input rewired from its_extract_pick/data_param to merge_tables/asv_fasta.
+  rationale: 'Source QIIME2_TREE (modules/local/qiime2_tree/main.nf) is one qiime2:2026.4 module chaining alignment
+    mafft -> alignment mask -> phylogeny fasttree -> midpoint-root -> nwk export; the q2d2 align-to-tree-mafft-fasttree
+    plugin tool is exactly that four-command chain (ports: sequences in; alignment/masked_alignment/tree/rooted_tree
+    out), beating any two-wrapper emulation that would silently drop mask+rooting. The template itself pre-authorized
+    this collapse in fasttree_tree._plan_context. The pinned tool_id iuc/mafft was corrected per discovery: panel
+    search on usegalaxy.org/.eu returns only rnateam/rbc_mafft 7.526+galaxy2 and the q2d2 family - no iuc/mafft
+    wrapper (iuc/fasttree 2.1.10+galaxy1 exists but pairing it with rnateam mafft loses mask/midpoint-root). Input
+    fix: ch_seq is QIIME2_INSEQ over ch_full_fasta = ch_asv_fasta (workflows/ampliseq.nf:822,1225) - full-length
+    ASVs; ITS-extracted sequences feed classifiers, not the tree, so the draft''s its_extract_pick wiring was a
+    template error. Deviations recorded on the step doc: source builds the tree only with metadata present and only
+    when pplace/sidle supplied no tree (produce_tree, subworkflows/local/qiime2_diversity/main.nf:30-33); the pplace-tree
+    priority is deferred to the consuming steps'' iterations.'
+  evidence:
+  - modules/local/qiime2_tree/main.nf (four-command qiime chain + nwk export)
+  - 'galaxy-tool-cache summarize: sequences in, alignment/masked_alignment/tree/rooted_tree qza out'
+  - 'panel search q=mafft: no iuc/mafft on org/eu (rnateam + q2d2 only); q=fasttree: iuc/fasttree 2.1.10+galaxy1'
+  - workflows/ampliseq.nf:822 ch_full_fasta = ch_asv_fasta; :1221-1225 ch_seq origins
+  - subworkflows/local/qiime2_diversity/main.nf:30-33 produce_tree gate; :1156-1159 ch_tree pplace/sidle
+- id: asv-filters-central-fusion
+  decided_by: advance-galaxy-draft-step
+  basis: source
+  decision: 'asv_filters implemented as embedded UDT ampliseq_asv_filters (python:3.9--1): FILTER_LEN_ASV length
+    window + qiime taxa filter-table contains-mode + feature-table filter-features min_frequency/min_samples over
+    plain tsv/fasta; table from merge_tables/asv_table, fasta from ssu_filter/fasta (NOT its_extract_pick), tax
+    from tax_table_knot; outputs table+fasta consumed by codon_filter.'
+  rationale: 'v1 fusion of two source filters (modules/local/filter_len/main.nf R+Biostrings; modules/local/qiime2_tablefiltertaxa/main.nf
+    qiime2/qiime2:2026.4). The step-6 plan''s premise that prevalence/taxa filters live only on the robject path
+    is wrong for this source generation: workflows/ampliseq.nf:1209 gates QIIME2_TABLEFILTERTAXA on the MAIN path
+    and its condition is TRUE by default (exclude_taxa default mitochondria,chloroplast), so central application
+    is faithful, not a simplification. Fasta-input fix from source order: FILTER_LEN runs before ITSx on ch_asv_fasta
+    (:790-796); ITS-cut sequences feed only classifiers; the taxa/prevalence filter never touches sequences. Reimplemented
+    over tsv instead of qza to avoid an import/export round-trip; contains-mode = substring over the concatenated
+    rank string (Taxon column when the knot carries the raw QIIME2 shape). Optional tax port reproduces the source''s
+    silently-prevented taxa filter when no classifier ran (stderr warning + skip). Script functionally tested locally
+    (6 scenarios: default+tax, no-tax warning, length window on/off, freq, max-len). Deviations recorded on the
+    step doc: ch_stats filter rows (stats.len.tsv + FILTER_STATS/MERGE_STATS_FILTERTAXA) not emitted; filters apply
+    to the one promoted table rather than per-consumer-branch.'
+  evidence:
+  - modules/local/filter_len/main.nf (window id_list join, write shapes)
+  - modules/local/qiime2_tablefiltertaxa/main.nf (contains mode; filter-features flags)
+  - workflows/ampliseq.nf:790-796 (FILTER_LEN pre-ITSx), :822, :1209-1228 (main-path taxa filter + stats merges)
+  - 'nextflow_schema.json defaults: exclude_taxa=mitochondria,chloroplast, min_frequency=1, min_samples=1, min/max_len_asv
+    unset (draft interface uses 0 = off)'
+  - 'merge_tables asv_merge.R: asv_table.tsv row-names = sequences (write.table col.names=NA)'
+- id: import-taxonomy-intax-replica
+  decided_by: advance-galaxy-draft-step
+  basis: source
+  decision: 'import_taxonomy implemented as embedded UDT ampliseq_import_taxonomy (quay.io/qiime2/qiime2:2026.4):
+    shape-adjudicator (python) + verbatim bin/parse_dada2_taxonomy.r + the source''s verbatim qiime tools import
+    HeaderlessTSVTaxonomyFormat; corrects the pinned q2d2 qiime2_core__tools__import identity; tax_table_knot pick_from_5
+    rewired tax_tsv -> kraken2_format/qiime2_tsv.'
+  rationale: 'QIIME2_INTAX (modules/local/qiime2_intax/main.nf) always pre-converts (parse_dada2_taxonomy.r, or
+    cp for kraken2) before importing; the q2d2 import wrapper cannot perform that conversion, so discovery contradicted
+    the pin and the identity was corrected per the resolve rules. The knot can carry four table shapes (wide ASV_ID+ranks
+    from dada/sintax/lca/consolidate; Feature ID/Taxon from the raw QIIME2 branch; two-column ASV_ID/taxonomy from
+    kraken2 into-qiime2; headerless two-column from SIDLE filttax) - adjudicator tested locally for all four (parse/strip_header/parse/passthrough).
+    parse path is the R script verbatim including its non-rank exclusion (name set + _confidence/_exact suffixes).
+    Kraken2 knot-port fix: source ch_kraken2_tax = KRAKEN2_TAXONOMY_WF.qiime2_tsv (workflows/ampliseq.nf:913-917,
+    used by INTAX :1191 and robjects :921); the wide kraken2.tsv would leak its lowest_match column into the joined
+    taxon string through the parse path. Null-knot skip mirrors the source''s empty-channel prevention (:1200-1205).'
+  evidence:
+  - modules/local/qiime2_intax/main.nf (script val, HeaderlessTSVTaxonomyFormat import)
+  - bin/parse_dada2_taxonomy.r (embedded verbatim)
+  - workflows/ampliseq.nf:1170-1201 (INTAX dispatch incl. kraken2 cp-path), :913-921 (ch_kraken2_tax = qiime2_tsv)
+  - modules/local/format_taxresults_kraken2/main.nf:96-100 (tax_tsv wide vs into-qiime2 two-column)
+  - 'local adjudicator test: wide->parse, raw-qiime->strip_header, k2-2col->parse, sidle->passthrough'
+- id: codon-filter-sequence-key-adaptation
+  decided_by: advance-galaxy-draft-step
+  basis: source
+  decision: 'codon_filter implemented as embedded UDT ampliseq_codon_filter (pandas:1.1.5 pin kept): bin/filt_codons.py
+    verbatim except the count-table lookup keyed by the sequence line instead of the fasta id; shell adds the utils_nfcore
+    (orf_end+1-orf_start)%3 validation and the all-removed error; ports fasta/table + orf_start/orf_end/stop_codons
+    params; guarded by $(inputs.filter_codons).'
+  rationale: FILTER_CODONS (modules/local/filter_codons/main.nf) is a pipeline-internal bin script - no shed search.
+    In the source, ASV ids ARE the sequences (dada2 row names; FILTER_LEN joins fasta names to table col 1 directly),
+    so filt_codons.py's count_dict[bin_head] works there; this draft's merged ASV table is sequence-keyed while
+    the fasta carries ASV_N labels (ledger input-identifier-sample-only era shapes), requiring the one-line lookup
+    adaptation, valid because every producer emits single-line FASTA. Arg assembly mirrors conf/modules.config:542-546
+    (-s/-e/-x only when set; orf_start schema default 1 => -s always present, so the script's mis-slicing begin=0
+    default stays unreachable; -e omitted when orf_end unset, interface uses 0 = off). The (orf_end+1-orf_start)%3
+    error (utils_nfcore_ampliseq_pipeline/main.nf:395-398) and the empty-fasta error (workflows/ampliseq.nf:812-814)
+    were Nextflow-side checks the step must own now. Script functionally tested locally (in-frame stop dropped,
+    out-of-frame length dropped, table rows follow, clean ASVs pass).
+  evidence:
+  - modules/local/filter_codons/main.nf (container pin, script call, optional stats/list outputs)
+  - bin/filt_codons.py (embedded; one adapted lookup site)
+  - conf/modules.config:542-546 (-s/-e/-x assembly)
+  - subworkflows/local/utils_nfcore_ampliseq_pipeline/main.nf:395-398 (frame validation)
+  - workflows/ampliseq.nf:805-814 (FILTER_CODONS block + all-removed guard)
+- id: vsearch-cluster-container-split
+  decided_by: advance-galaxy-draft-step
+  basis: source
+  decision: The template's fused when-guarded vsearch_cluster step (cluster + table remap, one step, TODO iuc/vsearch_cluster
+    pin) was split into two concrete embedded UDTs, ampliseq_vsearch_cluster (vsearch --cluster_smallmem at vsearch_cluster_id,
+    --usersort --qmask none; emits the per-cluster numbered FASTA files as a list collection) and ampliseq_filter_clusters
+    (bin/filt_clusters.py replica collapsing table+fasta onto centroids via a multiple:true repeat input), replacing
+    the identity pin.
+  rationale: 'The only Tool Shed candidate is iuc/vsearch_clustering at 2.8.3.1 (source uses vsearch 2.31.0), and
+    no single container can run both halves: the vsearch 2.31.0--hd2be7a0_0 BioContainers image is base-glibc-busybox-bash:3.1
+    + the vsearch package with no python (image config verified), while the remap is pandas code (the source runs
+    it in biocontainers/pandas:1.1.5); the source itself is two processes on two containers (wave samtools_vsearch
+    + pandas). The shed wrapper also emits neither the per-cluster clusters files nor a remapped table. The fused
+    shape is kept downstream-invisible: both steps share the when ''$(inputs.vsearch_cluster)'' guard. Deviations
+    recorded on the tools: header relabel to sequences before clustering and restore to ASV_N labels after (the
+    draft keys tables by sequence but labels fasta ASV_N, whereas the source''s dada2 ids are the sequences); samtools
+    dropped (only the untaken --samout branch uses it); cluster files stay uncompressed (source gzips at publish
+    and gzip-opens in the remap); the ASVs_before/after stats table is not emitted (stats-chain deviation precedent).
+    The collection->multiple:true binding for the cluster files replaces the source''s space-separated stdin list,
+    preserving per-file centroid semantics. Chain note for the decontam iteration: the table chain codon_filter/table
+    -> [filter_clusters/table] -> [decontam] is when-guarded end-to-end; the pass-through pick across the guard
+    still has to be realized there.'
+  evidence:
+  - workflows/ampliseq.nf:698-708 (ch_fasta_for_clustering = ch_asv_fasta; VSEARCH_CLUSTER then FILTER_CLUSTERS
+    rebind both channels)
+  - conf/modules.config:750-754 (args --id ${vsearch_cluster_id} --usersort --qmask none; args2 --cluster_smallmem;
+    args3 --clusters)
+  - modules/nf-core/vsearch/cluster/main.nf (command template; wave container community-cr-prod samtools_vsearch;
+    find ${prefix}.clusters.fasta*[0-9] gzip; output glob *.clusters.fasta*.gz proves one numbered file per cluster)
+  - modules/local/filter_clusters/main.nf (echo clusters | filt_clusters.py -t asv -p ASV_post_clustering -c - in
+    biocontainers/pandas:1.1.5)
+  - bin/filt_clusters.py (per-file read_num==1 centroid semantics; loc-sum-drop; pandas read_table index_col=0)
+  - quay image config for biocontainers/vsearch:2.31.0--hd2be7a0_0 (base quay.io/bioconda/base-glibc-busybox-bash:3.1,
+    no conda/python layer)
+  - 'toolshed panel probe: iuc/vsearch vsearch_clustering only at 2.8.3.1 (org and eu)'
+  - nextflow_schema.json vsearch_cluster_id default 0.97 (matches draft interface input)
+  - 'local functional tests of the replica: 3 cluster files with multiline centroid and member summing; unknown-centroid
+    warning path; awk relabel incl. wrapped-sequence joining'
+- id: decontam-metadata-bridge-channel-collapse
+  decided_by: advance-galaxy-draft-step
+  basis: source
+  decision: 'Drafty step ''decontam'' became embedded UDT ampliseq_decontam (id: decontam_run) fusing DECONTAM with
+    the FILTER_SEQUENCES_ABUNDANCES FASTA rebind, and the when-guarded master channels were collapsed with two new
+    pick_value (first_or_skip) steps asv_table_knot / asv_fasta_knot carrying [decontam, filter_clusters, codon_filter]
+    per channel; all seven consumers of the template''s direct decontam/TODO_table reference were rewired to the
+    knots. The metadata bridge rides the existing metadata workflow input.'
+  rationale: 'The source builds ch_decontam_metadata by collectFile over sample-sheet columns (workflows/ampliseq.nf:260-267);
+    Galaxy sample_sheet collection column values cannot reach any tool input, so the control/quant_reading bridge
+    must be an explicit tabular input - the interface already documents metadata.tsv as the input that gates decontam.
+    The template''s direct references into a when-guarded step would resolve null whenever decontam=none (the default),
+    breaking every downstream consumer; the pick_value idiom already proven at tax_table_knot realizes the source''s
+    ch_asv_table/ch_asv_fasta rebind chain instead. Table and FASTA enter decontam_run as base/clustered pairs with
+    the clustered member optional because a knot containing the decontam outputs cannot feed them back in (cycle).
+    The step id was renamed decontam_run because bare in: tokens resolve step-first and the mode port needs the
+    interface input named ''decontam'' (filter_ssu->ssu_filter precedent). Along the way two template mis-wirings
+    were corrected from source order: phyloseq and picrust consumed its_extract_pick/data_param as their ASV FASTA;
+    the source feeds both the full-length master channel ch_asv_fasta/ch_fasta/ch_seq (ITS-cut sequences are classifier-only),
+    now asv_fasta_knot/data_param (picrust''s QIIME2-export abs_fasta alternative branch remains that step''s iteration).'
+  evidence:
+  - modules/local/decontam/main.nf (isContaminant conc/neg dispatch, stop() when neither, isNotContaminant prevalence-only,
+    detailed=TRUE normalize=TRUE via modules.config:498, seed via :497, environment.yml bioconductor-decontam=1.30.0
+    r-base=4.5.2)
+  - 'quay.io tag list biocontainers/bioconductor-decontam: 1.30.0--r45hdfd78af_1 exists (exact version pin; decontam
+    imports Biostrings so the fused FASTA join runs in the same image)'
+  - workflows/ampliseq.nf:260-267 (collectFile bridge, conditional headers), :717-741 (decontaminate filter countLines>1
+    + ifEmpty error; notcontaminant ifEmpty error; FILTER_SEQUENCES_ABUNDANCES rebinds ch_asv_fasta only, NOT ch_asv_table
+    - reproduced)
+  - modules/local/filter_sequences_abundances/main.nf (join by ASV_ID, sorts, sprintf fasta writer; biocontainers/bioconductor-biostrings:2.58.0--r40)
+  - 'draft inputs: metadata (line 81, doc names decontam), decontam enum default none, thresholds 0.1/0.5, seed
+    100; sample sheet column_definitions control/quant_reading (lines 53-60) with element identifier = sample (ledger
+    multirun-sheet-inexpressible-v1, obsoleting the sample[__run] hint in _plan_context)'
+  - 'workflow sources for the channel fix: :1299-1301 PICRUST(ch_fasta,...) DADA2 branch, phyloseq consumes ch_asv_fasta'
+  - 'not run locally: no R/decontam available on this host (Rscript absent); the R body is a verbatim transcription
+    of the two module script blocks plus the documented adaptations - runtime check deferred to phase 11 test runs'
+- id: expected-comparison-chain-realization
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'The template''s two drafty comparison steps could not compute their outputs as wired - the source''s
+    compare_expected_abundances IS COMPARE_PERFORMANCE, which consumes the alignment-derived matches.tsv from
+    COMPARE_SEQUENCES, which consumes VSEARCH_USEARCHGLOBAL over observed-vs-expected sequences. Realized the whole
+    chain in place as three steps. expected_alignment: embedded UDT ampliseq_usearch_global_compare
+    (quay.io/biocontainers/vsearch:2.31.0--hd2be7a0_0, the module''s exact pin) with similarity 0.80 (fixed in
+    comparison_wf), the conf/modules.config batch-mode args (--strand both --maxaccepts 0 --maxrejects 0 --dbmask
+    none --qmask none --output_no_hits), userfields query+target+ql+tl+qilo+qihi+tilo+tihi+gaps+mism+qstrand and
+    --userout vsearch_usearchglobal.tsv; query = asv_fasta_knot/data_param, db = expected_sequences.
+    compare_expected_sequences: embedded UDT ampliseq_compare_sequences (r-base:4.2.1) embedding bin/compare_sequences.r
+    BYTE-VERBATIM (verified 8867-byte diff), args (matches-table, observed table = asv_table_knot/data_param,
+    expected abundances, empty prefix, 0.80, expected_sequences_region), optional expabund port reproducing the
+    source''s ifEmpty([]) staging (skipped input substitutes empty, file.exists("") is FALSE in R - compare against
+    all sequences); out matches (nucleotide-differences.tsv) + per-sample tsv/svg/png list collections.
+    compare_expected_abundances: embedded UDT ampliseq_compare_performance (r-base:4.2.1) embedding
+    bin/compare_performance.r BYTE-VERBATIM (17968-byte diff); fbeta=2 and mismatch_threshold=0 fixed shell literals
+    (modules.config ext.fbeta=2; expected_sequences_mismatches schema default 0 with no draft interface input,
+    mismatches-0-fixed), merge_mode from expected_sequences_merge; out performance_summary.tsv,
+    performance_per-sample.tsv, abundances_per-sample.tsv + svg/png collections. Guards: sequences chain on
+    expected_sequences != null; abundances on BOTH expected inputs (source fires COMPARE_PERFORMANCE only when the
+    matches producer ran and the expected-abundance channel is non-empty - an empty path input never triggers the
+    task). expected_alignment added to frame_postfilters.'
+  rationale: 'Same bounded-structural-edit precedent mode as the decontam knots: a when-guarded two-port step cannot
+    express a multi-process producer chain. FASTA/table keys align with the source (dada2 ASV ids are sequences, this
+    draft''s tables are keyed by sequence, so the alignment query column joins the table ID column directly).
+    Deviations: the run_qiime2 && !skip_abundance_tables branch of the COMPARISON_WF call site
+    (workflows/ampliseq.nf:1337-1339, QIIME2_EXPORT abs_fasta/rel_tsv/rel_tax as observed inputs) is not carried -
+    v1 keeps the main ch_asv_fasta/ch_asv_table branch (recorded here; compare_expected_profile''s own iteration
+    revisits the profile pick); the first script argument tag is the source''s val_md5sum_version (md5 of params +
+    version, a constant per run) replaced by a constant text input ampliseq (pipeline_info artifacts dropped
+    precedent); nucleotide-differences.log/performance.log/Warnings.txt/md5sum_version.txt/versions.yml are not
+    published (stderr stays in the job output); per-sample plots are list collections instead of .collect() fan-in;
+    vsearch --threads 1 fixed.'
+  evidence:
+  - 'subworkflows/local/comparison_wf/main.nf (full: VSEARCH_USEARCHGLOBAL_BM(observed.map{[[id:val_md5sum_version],file]},
+    expected, "0.80", userout, userfields) -> COMPARE_SEQUENCES(ifEmpty([]) expected, region, ...) ->
+    COMPARE_PERFORMANCE(matches relabeled, observed, expected non-optional channel) -> COMPARE_PROFILE; emit
+    mismatch_barplot png/svg only'
+  - 'modules/nf-core/vsearch/usearchglobal/main.nf (container quay.io/biocontainers/vsearch:2.31.0--hd2be7a0_0 exact;
+    command shape --usearch_global/--db/--id/--threads/$args/${columns}/${outfmt}; outoption userout -> *.tsv'
+  - 'conf/modules.config BM args for USEARCHGLOBAL (--strand both --maxaccepts 0 --maxrejects 0 --dbmask none --qmask
+    none --output_no_hits, prefix vsearch_usearchglobal) and COMPARE_PERFORMANCE ext.fbeta=2,
+    ext.mismatch_threshold=params.expected_sequences_mismatches, ext.merge_mode=params.expected_sequences_merge'
+  - 'modules/local/compare_sequences/main.nf + compare_performance/main.nf (command lines with "" prefix / meta.id tag;
+    container biocontainers/r-base:4.2.1 matching both environment.yml pins; output globs *nucleotide-differences.tsv,
+    *_per-sample.tsv, *.svg, *.png, performance_summary.tsv, performance_per-sample.tsv, abundances_per-sample.tsv'
+  - 'bin/compare_sequences.r + bin/compare_performance.r read in full; argv contracts (6 and 7 args), SAMPLES overlap
+    logic, merge-mode branches, svg/png device calls; embedded content byte-identical to source after splice'
+  - 'workflows/ampliseq.nf:1331-1344 (COMPARISON_WF gated on expected_sequences||expected_profile; observed
+    channels; val_md5sum_version = params.md5()+version); nextflow_schema.json defaults region=observed,
+    merge=all, mismatches=0'
+  - 'not run locally: no vsearch binary and no Rscript on this host - the two R replicas are byte-verbatim
+    transcriptions and the vsearch command mirrors the module line; runtime check deferred to phase 11'
+- id: compare-profile-observed-side-realization
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'compare_expected_profile concretized as embedded UDT ampliseq_compare_profile
+    (quay.io/biocontainers/r-base:4.2.1, the module container/env pin): bin/compare_profile.r
+    BYTE-VERBATIM (verified byte-diff) plus the import_taxonomy-identical observed-side
+    normalization (adjudicate.py + verbatim bin/parse_dada2_taxonomy.r) plus a small authored
+    build_profile.R that joins the normalized sequence+lineage table to asv_table_knot
+    abundances and aggregates raw counts per lineage into observed_profile.tsv (taxon column +
+    one column per sample). Args fixed per conf/modules.config:1322-1324 (mode=level,
+    fbeta=2); tag a constant text input; outputs profile_summary.tsv, profile_per-sample.tsv,
+    profile_lineplot svg/png; guarded when expected_profile != null. Wired tax:
+    tax_table_knot/data_param, table: asv_table_knot/data_param, expected: expected_profile.'
+  rationale: 'The template wired tax+table+expected precisely because the source has no
+    main-branch observed profile - the COMPARISON_WF call site passes
+    run_qiime2 && !skip_abundance_tables ? QIIME2_EXPORT.out.rel_tax : channel.empty()
+    (workflows/ampliseq.nf:1339) and comparison_wf slices the max-level rel-table-<level>.tsv,
+    so on the main input path COMPARE_PROFILE never fires in the source; v1 realizes the
+    template-intended main-path comparison instead (recorded deviation). Full-depth lineage
+    strings are equivalent-or-better than the max-level slice because compare_profile.r
+    evaluates every level 1..max_lev from the lineage strings themselves. Observed lineage
+    labels trimmed and rejoined with "; " to match the QIIME2 rel_tax style the expected files
+    are written against (compare_profile.r does not trim labels on either side - separator
+    style mismatches fail identically in the source). A null knot (no classifier ran) leaves
+    the required tax input unsatisfied so Galaxy skips the step, mirroring the empty channel
+    (import_taxonomy precedent). fbeta/mode have no interface params in the schema (ext-only),
+    so they are fixed shell literals; tag column constant replaces val_md5sum_version
+    (pipeline_info dropped precedent); profile.log not published.'
+  evidence:
+  - 'modules/local/compare_profile/main.nf + environment.yml (r-base=4.2.1; argv tag,obs,exp,
+    fbeta,mode; outputs profile_summary.tsv, profile_per-sample.tsv, *.svg, *.png, profile.log)'
+  - 'bin/compare_profile.r read in full (biom-header branch, common_samples intersect,
+    get_taxa_by_mode split on ; with mode complete/level, per-level classification/distance/
+    correlation metrics, lineplot); embedded byte-identical'
+  - 'subworkflows/local/comparison_wf/main.nf:54-59 (observed .collect() max-baseName-level
+    slice, meta relabel); workflows/ampliseq.nf:1339 (rel_tax only on the QIIME2 branch,
+    channel.empty() on main)'
+  - 'conf/modules.config:1322-1324 (ext.mode=level, ext.fbeta=2)'
+  - 'draft import_taxonomy UDT (adjudicate.py shapes ASV_ID-wide / Feature ID+Taxon /
+    headerless-2col; verbatim parse_dada2_taxonomy.r); parse_dada2_taxonomy.r embedded
+    byte-identical into the new UDT'
+  - 'not run locally: no Rscript on this host; build_profile.R is authored base-R
+    (rowsum aggregation over the label factor), runtime check deferred to phase 11'
+- id: import-table-identity-corrected-udt
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'import_table concretized as embedded UDT ampliseq_import_table
+    (quay.io/qiime2/qiime2:2026.4, the source module container), replacing the template''s
+    pinned q2d2 qiime2_core__tools__import (identity-pinned tool_id, TODO version). The UDT
+    shell is the verbatim QIIME2_INASV script (sed biom-header strip; biom convert
+    --table-type="OTU table" --to-hdf5; qiime tools import --type FeatureTable[Frequency]
+    --input-format BIOMV210Format) plus the source XDG/MPL/NUMBA cache exports. Consumer
+    filter_samples''s TODO_table RHS rewired import_table/TODO_qza -> import_table/qza.'
+  rationale: 'The q2d2 import wrapper consumes a BIOM artifact only; this draft carries the ASV
+    table as a plain tab-separated, ASV-sequence-keyed tsv, so the tsv-to-biom pre-conversion
+    the source performs (biom convert) must live in the step tool - same identity correction
+    class as import_taxonomy (that step''s help already records it for the taxonomy sibling).
+    biom-format''s load_table accepts the plain tsv as a simple BIOM text table (first column
+    observations, header row samples), so no conversion of keys is needed; the biom-header sed
+    is kept verbatim and is a no-op for header-less inputs. Deviations: versions.yml not
+    published (pipeline_info dropped precedent); no when guard mirrors the source (the main-branch
+    import always runs).'
+  evidence:
+  - 'modules/local/qiime2_inasv/main.nf (container qiime2/qiime2:2026.4; script lines quoted in
+    the UDT help; emits table.qza) + environment.yml (biom-format=2.1.17 in the qiime2 image)'
+  - 'draft pinned identity q2d2/qiime2_core__tools__import with _plan_state "feature-table format
+    per exemplar qiime2-VI import idiom" - exemplar import cannot pre-convert tsv'
+  - 'sibling precedent in-draft: import_taxonomy (qiime2/qiime2:2026.4 UDT with the same cache
+    exports; identical q2d2 identity correction documented in its tool help)'
+- id: phyloseq-export-and-tree-nwk-producer
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'phyloseq concretized as embedded UDT ampliseq_phyloseq
+    (quay.io/biocontainers/bioconductor-phyloseq:1.50.0--r44hdfd78af_0, the module''s exact
+    container/conda pin): the module''s inline R body verbatim (otu/tax read.table row.names=1,
+    module''s own _confidence/classifier/database column drop, integer otu cast, optional
+    sample_data + phy_tree behind the file.exists guards, saveRDS), Nextflow tuple vars ->
+    positional args, fixed phyloseq.rds output name. sam and tree are optional:true ports
+    wired to metadata and the NEW export_tree step; the step keeps its !skip_phyloseq when.
+    Bounded structural edit: inserted export_tree (UDT ampliseq_export_tree, qiime2:2026.4,
+    qiime tools export rooted qza -> tree.nwk) ahead of phyloseq, guarded with qiime2_tree''s
+    when, added to frame_exports; phyloseq_objects workflow output rewired to phyloseq/rds.'
+  rationale: 'qiime2_tree''s pinned q2d2 wrapper emits rooted_tree as a qza (verified in the
+    cached manifest), while PHYLOSEQ consumes Newick - the source''s tree channel into
+    ROBJECT_WORKFLOW is tree_nwk because each source tree producer exports internally
+    (QIIME2_DIVERSITY.out.tree_nwk / PPLACE grafted / SIDLE nwk; ch_tree_for_robject
+    assignment workflows/ampliseq.nf:1310-1316) and the qiime2_tree step doc already deferred
+    the export to the consumers. One shared export producer serves phyloseq now and tse in
+    its own iteration. The sam/tree optional ports reproduce the source''s
+    .ifEmpty(''EMPTY'') staging (robject_workflow/main.nf:30-38): a skipped optional input
+    substitutes empty, file.exists("") is FALSE, the EMPTY branch. The TODO_fasta wiring in
+    the template was a mis-wire - the module has no FASTA input (tax keyed by ASV id joins
+    the otu table directly; picrust/phyloseq mis-wire correction precedent). Fixed output
+    name because the source prefix is the per-classifier tuple id and the draft consolidates
+    a single taxonomy table upstream (one rds not N).'
+  evidence:
+  - 'modules/local/phyloseq/main.nf (R script quoted in the UDT configfile; container tag
+    verified on quay /v2/biocontainers/bioconductor-phyloseq/tags/list: 1.50.0--r44hdfd78af_0;
+    environment.yml bioconductor-phyloseq=1.50.0 r-base=4.4.2)'
+  - 'subworkflows/local/robject_workflow/main.nf:26-45 (combine/ifEmpty EMPTY/map strip,
+    ch_for_r_objects tuple val(prefix),tax,otu,sam,tree, no FASTA)'
+  - 'workflows/ampliseq.nf:1310-1316 (ch_tree_for_robject = PPLACE grafted / SIDLE nwk /
+    QIIME2_DIVERSITY tree_nwk / empty) and :1492 (phyloseq out collected into
+    phyloseq_objects)'
+  - 'tool-cache manifest for qiime2__phylogeny__align_to_tree_mafft_fasttree: output
+    rooted_tree.qza (qza format) - drives the export_tree producer'
+  - 'not run locally: no Rscript; R body is the module verbatim, runtime check deferred to
+    phase 11'
+- id: summary-counts-wave-udt
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'summary_counts concretized as embedded UDT ampliseq_summary_counts pinning the
+    source process''s exact community wave image (community.wave.seqera.io/library/
+    r-base_r-data.table_r-dplyr_r-dtplyr_pruned:a6608bc81b0e6546, anonymously pullable -
+    verified via the registry auth challenge + manifest GET), R body verbatim from
+    SUMMARY_TABLE_COUNTS except a positional first-column rename, gzipped
+    ampliseq.counts.tsv.gz output kept. Consumers rewired: workflow output counts_table plus
+    the two step consumers parquet_tables and summary_report now read summary_counts/tsv.'
+  rationale: 'Custom inline-R summarizer - no Tool Shed wrapper melts the ASV matrix, and the
+    wave image is the evidenced container (its singularity fallback is the same blob), so the
+    wave URI is pinned as-is rather than substituting a different R image. The source rename
+    targets the literal ASV_ID header produced by the DADA2 biom chain; this draft''s count
+    tables carry sequence keys under producer-varying headers, so the rename is positional
+    (documented in the tool help). versions.yml writeLines dropped (pipeline_info precedent).
+    The first splice left two step-level consumers pointing at the removed TODO_counts_long
+    port - draft-validate topology caught it and both were rewired in the same iteration
+    (producer-consumer invariant: grep must cover step-level references, not only workflow
+    outputs).'
+  evidence:
+  - 'modules/local/summary_table_counts/main.nf (inline R dplyr/tidyr/readr melt + filter
+    count>0 + write_tsv gz; wave + community-cr-prod blob container URIs; stub branch)'
+  - 'environment.yml (r-base=4.3.1, r-dplyr=1.1.4, r-tidyr=1.3.1, r-readr=2.1.5, r-data.table,
+    r-dtplyr, r-purrr, r-stringr)'
+  - 'wave registry probe: WWW-Authenticate cerbero.seqera.io token flow -> OCI manifest
+    (14 layers) for tag a6608bc81b0e6546'
+- id: tse-udt-and-plan-hint-correction
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'tse concretized as embedded UDT ampliseq_tse pinning the module''s exact
+    container quay.io/biocontainers/bioconductor-treesummarizedexperiment:2.10.0--r43hdfd78af_0
+    (tag verified on quay), TREESUMMARIZEDEXPERIMENT inline R body verbatim (counts assay
+    integer cast, taxonomy _confidence/classifier/database drop + rownames match, sequence
+    column to referenceSeq when present, file.exists-guarded colData/rowTree, saveRDS),
+    tuple vars -> positional args, fixed TreeSummarizedExperiment.rds output. Wiring on
+    the module''s real four-port tuple: otu/tax knots, sam: metadata and tree:
+    export_tree/tree_nwk; tse_objects workflow output rewired to tse/rds (only consumer).'
+  rationale: 'The template hint was wrong on two counts and the module is authoritative:
+    (1) _plan_context named modules/local/robjects/tse.R, which does not exist - the R body
+    is inline in modules/local/treesummarizedexperiment/main.nf; (2) the TODO in: block
+    listed three inputs with tree wired to qiime2_tree/rooted_tree, but the module input is
+    tuple val(prefix),tax,otu,sam,tree and ape::read.tree needs Newick - sam: metadata added
+    (source ch_meta.ifEmpty, same as phyloseq iter 52) and tree re-pointed at the shared
+    export_tree producer built for phyloseq ("one shared export producer serves phyloseq now
+    and tse in its own iteration"). Prefix -> fixed name drops because the draft
+    consolidates one taxonomy knot upstream (phyloseq precedent). Verbatim-embedding proof:
+    42 R lines byte-identical after documented interpolations ($var -> args, \$ -> $,
+    Nextflow heredoc dedent and \\t unescape).'
+  evidence:
+  - 'modules/local/treesummarizedexperiment/main.nf (inline script quoted in the UDT
+    configfile; container depot/biocontainers tag 2.10.0--r43hdfd78af_0 verified via quay
+    /v2/biocontainers/bioconductor-treesummarizedexperiment/tags/list)'
+  - 'environment.yml (bioconductor-treesummarizedexperiment=2.10.0, r-base=4.3.2)'
+  - 'subworkflows/local/robject_workflow/main.nf:41-43 (ch_for_r_objects tuple into
+    TREESUMMARIZEDEXPERIMENT behind if (!params.skip_tse)); draft step keeps !skip_tse when'
+  - 'not run locally: no Rscript; R body is the module verbatim, runtime check deferred to
+    phase 11'
+- id: filter-samples-r-intersect-identity-correction
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'filter_samples concretized as embedded UDT ampliseq_filter_samples - the
+    LOCAL modules/local/filter_samples base-R mutual sample intersect (meta[,1] in abund
+    columns AND abund columns in meta[,1], both rewritten, stop() on empty intersection)
+    on quay.io/biocontainers/r-base:4.2.1 (module''s exact container; conda r-base=4.2.1,
+    base R only) - identity corrected from the template-pinned q2d2
+    qiime2__feature_table__filter_samples. Realized at the source''s channel position:
+    in = (metadata, asv_table_knot), out = (metadata, table); NEW pick_value knot
+    asv_table_for_import (first_or_skip: filter_samples/table else asv_table_knot/data_param)
+    now feeds import_table (was the bare knot), and the six QIIME2 consumers (core_metrics,
+    alpha_rarefaction, barplots, ancom, ancombc, adonis) rewired from filter_samples/TODO_table
+    to import_table/qza. Step keeps the template when metadata != null.'
+  rationale: 'The q2d2 wrapper cannot compute this step: q2 feature-table filter-samples is
+    a no-op without --p-where and there is no static expression for "keep samples present
+    in the metadata dataset" (wrapper-choice mismatch -> author branch, import_table
+    identity-correction precedent). Template wiring also inverted the source order: the
+    source runs FILTER_SAMPLES before QIIME2_INASV and REBINDS ch_asv_table
+    (workflows/ampliseq.nf:1144-1146), so QIIME2 only ever sees the intersected table -
+    reproducing the rebind needs the pick knot (draft-first_or_skip-knot idiom,
+    asv_table_knot; bounded edit, export_tree precedent). The knot is sound because the
+    fallback branch is always non-null, and priority order makes the filtered table win
+    when both exist. Display-only *.log outputs dropped: filenames are the messages
+    themselves, consumed only by log.warn echo; the fatal stop() path is kept. CARRIED
+    FORWARD: the source also rebinds ch_metadata (same lines) - future QIIME2 metadata
+    consumers (core_metrics metadata qza etc.) should prefer filter_samples/metadata when
+    metadata != null; phyloseq/tse sam stays on the raw metadata input (v1 bounded
+    deviation: filtered-vs-raw differ only by samples absent from the ASV table).'
+  evidence:
+  - 'modules/local/filter_samples/main.nf + environment.yml (inline R script quoted in the
+    UDT configfile - 17-line verbatim proof modulo $var->args, heredoc dedent, \\t
+    unescape; container depot/biocontainers r-base:4.2.1)'
+  - 'workflows/ampliseq.nf:1142-1147 (if (params.metadata && !params.multiregion)
+    FILTER_SAMPLES(ch_metadata, ch_asv_table); both channels reassigned; out.log only
+    echoed via log.warn) and :1150 QIIME2_INASV(ch_asv_table) consuming the rebound table'
+  - 'decontam_run sheet: metadata left on the raw input - decontam precedes FILTER_SAMPLES
+    in the source, unaffected by the rebind'
+  - 'not run locally: no Rscript; runtime check deferred to phase 11'
+- id: parquet-two-jobs-and-taxonomy-output
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'parquet_tables concretized as TWO steps running the same embedded UDT
+    ampliseq_duckdb_table2parquet (module''s exact wave image
+    community.wave.seqera.io/library/duckdb-cli:1.5.5--9c6d18d9f687a45d, manifest probe
+    HTTP 200 anonymously pullable; SQL verbatim COPY read_csv -> FORMAT PARQUET):
+    parquet_tables (counts: summary_counts/tsv, when !skip_parquet_summary AND
+    !skip_abundance_tables) and NEW parquet_taxonomy (tax_table_knot, when
+    !skip_parquet_summary). Interface bounded edit: summary_parquet repointed to
+    parquet_tables/table_parquet and a new summary_parquet_taxonomy output added; frame
+    exports updated.'
+  rationale: 'The nf-core module converts ONE table per job (caller maps it over the
+    summary-table collection, workflows/ampliseq.nf:1133-1135) - a single two-port drafty
+    step cannot reproduce per-job shape, and the source collection also holds more tables
+    than the draft''s interface keeps (BUILD_ASV_ANNOTATIONS rows), so the split realizes
+    the module job-per-table for exactly the summary tables the draft exposes. Output name:
+    the module derives the parquet stem from the input filename (prefix = meta.id); a UDT
+    from_work_dir must be static, so the file is table.parquet and the workflow-output
+    labels carry identity. Delimiter fixed to tab - the module''s suffix derivation
+    (.tsv->tab) always yields tab for the draft''s inputs; gz auto-decompressed by
+    read_csv. SET threads/memory_limit (task.cpus/task.memory - no Galaxy equivalent)
+    dropped, SET temp_directory kept; ext args/args2 and the versions eval line dropped
+    (pipeline_info precedent). The counts job''s compound when mirrors the collection: the
+    counts table is only in ch_summary_tables when !skip_abundance_tables (mix at :658
+    inside the abundance-tables branch).'
+  evidence:
+  - 'modules/nf-core/duckdb/table2parquet/main.nf + environment.yml (wave +
+    community-cr-prod blob URIs; duckdb=1.5.5; heredoc SQL quoted in the UDT help; stub
+    branch translation-irrelevant)'
+  - 'workflows/ampliseq.nf:1131-1136 (duckdb branch gated !skip_parquet_summary, map with
+    id = filename stem) and :658/:1127 (collection members: SUMMARY_TABLE_COUNTS.tsv,
+    SUMMARY_TABLE_TAXONOMY.out.tsv - the draft keeps counts + taxonomy)'
+  - 'wave registry probe: cerbero.seqera.io token -> manifests/library/duckdb-cli/1.5.5--
+    9c6d18d9f687a45d HTTP 200'
+  - 'not run locally: no duckdb binary; SQL is the module verbatim, runtime check deferred
+    to phase 11'
+- id: summary-report-simplified-rmd
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'summary_report concretized as embedded UDT ampliseq_summary_report pinning the
+    module''s exact mulled container (quay.io/biocontainers/mulled-v2-b2ec1fea... with the
+    full tag in the evidence item; verified present on quay; env r-base=4.2.3 +
+    r-rmarkdown/r-knitr/r-data.table): rmarkdown::render mirroring the module''s call, an
+    AUTHORED simplified template.Rmd (title/abstract passthrough + abundance overview from
+    the long counts table + taxonomy overview from the consolidated table), inputs
+    counts(optional)/tax/abstract(optional)/report_title(text), fixed
+    summary_report.html output rewired to the summary_report workflow output.'
+  rationale: 'The module renders the pipeline''s bundled template.Rmd with ~70 params from
+    every pipeline output plus css/logo assets - assets the draft interface excluded
+    (excluded-params note) and the step plan explicitly ruled ("render a simplified
+    report"). Embedding the 1000+ line untrusted template and feeding it phantom params
+    would fail on the first unguarded params$ access, so the simplified Rmd is authored
+    content (deviation stated in tool help and here). The two summary tables mirror the
+    interface''s kept summary outputs (counts + taxonomy; the Parquet pair from
+    parquet-two-jobs). Optional counts/abstract reproduce the module''s per-entry
+    channel-presence guards via empty-path file.exists branches (skip_abundance_tables
+    drops the counts section exactly as the empty channel does upstream). *.svg passthrough
+    output dropped (simplified report writes no standalone svgs); versions.yml dropped
+    (pipeline_info precedent). The report_abstract data input matches the module''s staged
+    file input - no text-injection surface.'
+  evidence:
+  - 'modules/local/summary_report/main.nf (full input list + params_list_named assembly +
+    render call quoted in help) + environment.yml (r-base=4.2.3, r-rmarkdown=2.22,
+    r-knitr=1.43, r-data.table=1.14.8)'
+  - 'quay tags list for mulled-v2-b2ec1fea5791d428eebb8c8ea7409c350d31dada: exactly the
+    pinned tag a447f6b7a6afde38352b24c30ae9cd6e39df95c4-1'
+  - 'not run locally: no Rscript/rmarkdown; simplified Rmd is authored content, first
+    render check deferred to phase 11'
+- id: alpha-rarefaction-autodepth-and-filtered-meta
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'alpha_rarefaction concretized as embedded UDT ampliseq_alpha_rarefaction
+    (qiime2/qiime2:2026.4, the draft''s standing qiime2 pin): module command block verbatim -
+    XDG/MPL/NUMBA exports, max-depth rule (per-sample maximum, cap 75000, steps 250 above
+    5000 else maxdepth/20), qiime diversity alpha-rarefaction --p-iterations 10 ->
+    alpha-rarefaction.qzv. Wiring: table import_table/qza, phylogeny qiime2_tree/rooted_tree
+    (qza is what q2 wants - no export_tree here), metadata filter_samples/metadata (NEW),
+    stats asv_table_knot/data_param (NEW port, replaces the absent filter-taxon stats
+    input); NEW workflow output alpha_rarefaction_plot publishes the qzv.'
+  rationale: 'No Tool Shed wrapper: the shed q2d2 alpha-rarefaction takes numeric
+    max-depth/steps and cannot derive them per the module''s rule from a stats dataset
+    (author branch). Depth derivation: the module computes it with bin/count_table_minmax_
+    reads.py over QIIME2_FILTERTAXA stats; the draft has no q2 filter-taxon step, and the
+    per-sample MAXIMUM is invariant under taxa (row) filtering - filter-taxon drops
+    features, never samples - so awk column sums over the same knot table the qza was
+    imported from give the identical maxdepth (equivalence argument in tool help). The
+    metadata port executes the filter-samples carry-forward: source rebinds ch_metadata
+    before QIIME2_DIVERSITY, and filter_samples shares this step''s exact metadata != null
+    guard so the dependency can never dangle. _plan_state''s "depth
+    diversity_rarefaction_depth" was wrong from source: the subworkflow threads that
+    param only to QIIME2_DIVERSITY_CORE (qiime2_diversity/main.nf:36-43); rarefaction
+    depth is always auto-derived. qzv-folder unpack dropped (feeds the full summary
+    report''s embedded plots; simplified report has no rarefaction section), versions
+    dropped (precedent); visualization published as a workflow output because the source
+    publishes it and no report embeds it here.'
+  evidence:
+  - 'modules/local/qiime2_alphararefaction/main.nf (command block quoted in shell_command;
+    container qiime2/qiime2:2026.4 verbatim; bin/count_table_minmax_reads.py: skiprows
+    [0,1], drop feature column, per-sample sums, maximum)'
+  - 'subworkflows/local/qiime2_diversity/main.nf:13-43 (take list; if (!skip_alpha_
+    rarefaction) QIIME2_ALPHARAREFACTION(ch_metadata, ch_asv, ch_tree, ch_stats=
+    QIIME2_FILTERTAXA.out.tsv); diversity_rarefaction_depth only to DIVERSITY_CORE)'
+  - 'workflows/ampliseq.nf:1258 (guard params.metadata && (!skip_alpha_rarefaction ||
+    !skip_diversity_indices)) with draft when = !skip_alpha_rarefaction && metadata != null'
+  - 'not run locally: no qiime2; command is the module verbatim, runtime check deferred
+    to phase 11'
+- id: ancom-single-category-collapse
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'ancom concretized as embedded UDT ampliseq_ancom (qiime2/qiime2:2026.4):
+    filtersamples->pseudocount->ancom command sequence fused into one job for the ONE
+    metadata_category - feature-table filter-samples --p-where ''"$(category)"<>""'' ,
+    composition add-pseudocount, composition ancom --m-metadata-column category; in =
+    import_table/qza + filter_samples/metadata + metadata_category(text); when gained the
+    metadata_category != null conjunct; NEW workflow output ancom_result publishes the
+    qzv.'
+  rationale: 'No wrapper: the q2d2 ancom wrapper covers only the third command; the
+    source pipeline per-category filters samples with the category where-clause first
+    (modules/local/qiime2_filtersamples default args filter<>""), which the shed step
+    cannot chain (author branch). Fan-out collapse: the source runs ANCOM for EVERY
+    metadata column (METADATA_ALL channel) and every rank tax_agglom_min..max
+    (QIIME2_ANCOM_TAX); the draft interface exposes one chosen category on ASVs only (v1,
+    step plan _plan_state). The metadata column identifier is double-quoted inside the
+    where clause (module interpolates bare; quoting is a superset for legal names). No
+    port for params.ancom_sample_min_count: main.nf:190 default is its ONLY occurrence in
+    the pipeline - dead parameter upstream, do not invent consumers. qzv export folders
+    and the subworkflow WARNING log channel dropped (report/publish + display
+    channels); metadata via filter_samples reproduces the ch_metadata rebind and shares
+    the metadata != null guard, and category != null is added so the text port can never
+    bind empty.'
+  evidence:
+  - 'subworkflows/local/qiime2_ancom/main.nf:33-55 (FILTERSAMPLES per metacolumn_all,
+    then ANCOM_TAX over tax_agglom_min..max and ANCOM_ASV per category) and
+    workflows/ampliseq.nf:1243-1253 (ch_metacolumn_all = METADATA_ALL categories)'
+  - 'modules/local/qiime2_filtersamples/main.nf (--p-where ''${filter}<>""'' default args,
+    qiime2/qiime2:2026.4) and modules/local/qiime2_ancom_asv/main.nf (add-pseudocount +
+    ancom + tools export ancom/Category-${baseName}-ASV; error_ignore label)'
+  - 'grep ancom_sample_min_count across source: only main.nf:190 (parameter default) -
+    no consumer'
+  - 'not run locally: no qiime2; commands are module-verbatim modulo documented edits,
+    runtime check deferred to phase 11'
+- id: ancombc-branch-merged-tool
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'ancombc concretized as embedded UDT ampliseq_ancombc (qiime2/qiime2:2026.4 -
+    both source modules pin it; ancombc2 ships inside q2-composition 2026.4, the
+    q2-miyabi worry in the step plan does not apply): one tool, two branches switched by
+    the use_ancombc2 text port fed from the ancombc2 boolean workflow input (shell matches
+    True/true); category where-filter (''"$cat"<>""'' like the ancom tool), then
+    composition ancombc --p-formula or ancombc2 --p-fixed-effects-formula (fixed effects),
+    composition tabulate -> result.qzv published via NEW workflow output ancombc_result.
+    Two formula ports (formula1/formula2) take ancombc_formula / ancombc2_formula and the
+    branch picks. Empty formula -> category -> table basename. ALSO executed the
+    filter-samples carry-forward on the concrete adonis step: its q2d2 metadata conditional
+    port rewired from the raw workflow input to filter_samples/metadata (shared metadata
+    != null guard). Step when unchanged ((ancombc||ancombc2) && metadata != null).'
+  rationale: 'Author branch: the q2d2 ancombc wrapper covers one command and cannot chain
+    the upstream per-category filtersamples nor branch ancombc/ancombc2 (the draft folds
+    both flags into one step). Default-formula semantics preserved: the source default is
+    the input table''s baseName, and since upstream feeds the per-category filtersamples
+    product ${category}.qza, baseName == category - reproduced by the category fallback
+    chain. Dropped (documented in tool help): tools-export folders (full-report inputs),
+    da-barplot / ancombc2-visualizer qzvs and ancombc_volcanoplot.r volcano (formula-named
+    outputs; Galaxy from_work_dir is static and the draft publishes one result),
+    --p-num-processes uses 1 (Galaxy single-core precedent), versions (precedent),
+    error_ignore warning echo. The adonis swap closes a known deviation class rather than
+    a new decision: source rebinds ch_metadata at workflows/ampliseq.nf:1145 before every
+    QIIME2 consumer.'
+  evidence:
+  - 'modules/local/qiime2_ancombc_asv/main.nf + qiime2_ancombc2_asv/main.nf (both
+    container qiime2/qiime2:2026.4; ancombc2 uses --p-fixed-effects-formula,
+    ancombc2-visualizer + bin/ancombc_volcanoplot.r volcano; formula = formula_in ?:
+    table.baseName; error_ignore labels)'
+  - 'subworkflows/local/qiime2_ancom/main.nf:57-67 (ancombc ASV called with empty formula
+    over FILTERSAMPLES per-category qza products)'
+  - 'draft grep: ancombc2 formula inputs exist (ancombc2_formula string optional); adonis
+    when carries metadata != null making the filtered-metadata swap guard-consistent'
+  - 'not run locally: no qiime2; runtime check deferred to phase 11'
+- id: barplotavg-fused-single-category
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'barplots concretized as embedded UDT ampliseq_barplots (qiime2/qiime2:2026.4,
+    the pin all four source modules share): QIIME2_BARPLOTAVG fused to one job -
+    feature-table relative-frequency, featuretable_group''s where-filter ("cat"<>'''') +
+    feature-table group --p-axis sample --p-mode sum, taxa barplot on import_taxonomy/qza
+    with NO metadata document (average mode: grouping already collapsed samples); in =
+    import_table/qza + import_taxonomy/qza + filter_samples/metadata +
+    metadata_category_barplot(text); the barplots workflow output now reads
+    barplots/barplots (qzv).'
+  rationale: 'Author branch (no wrapper spans relativize->filter->group->barplot). The
+    source exports the relative table to biom-tsv (qiime2_export_relasv) and re-imports it
+    (QIIME2_INASV_BPAVG) only because rel_tsv is separately published; inside one job the
+    qza feeds forward - byte-equivalent abundances, zero re-import. Single category:
+    upstream tokenizes metadata_category_barplot by comma and fans out; v1 = one column
+    (ancom collapse precedent). Exported svg folder dropped (full-report input; static
+    from_work_dir + one published qzv). The step plan''s tax_agglom_min/max concern does
+    not apply: barplotavg passes the consolidated tax qza unagglomerated (agglom levels
+    feed ANCOM_TAX only) - verified in the subworkflow source. metadata via
+    filter_samples closes the ch_metadata rebind for this consumer; guard parity holds
+    (when carries metadata != null).'
+  evidence:
+  - 'subworkflows/local/qiime2_barplotavg/main.nf (inasv->group->barplot(…, "average");
+    tokenize('','')) and workflows/ampliseq.nf:1237-1238 (call with
+    QIIME2_EXPORT.out.rel_tsv, gated metadata_category_barplot)'
+  - 'modules/local/qiime2_export_relasv/main.nf (relative-frequency + biom --to-tsv),
+    qiime2_featuretable_group/main.nf (filter-samples --p-where "cat"<>'''' then group
+    --p-mode sum), qiime2_barplot/main.nf (taxa barplot, metadata_cmd empty for the
+    average call, tools export folder) - all container qiime2/qiime2:2026.4'
+  - 'not run locally: no qiime2; commands module-verbatim modulo fused-chain edits,
+    runtime check deferred to phase 11'
+- id: core-metrics-depth-and-adonis-leaf-key
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'core_metrics concretized as embedded UDT ampliseq_core_metrics
+    (qiime2/qiime2:2026.4): exports verbatim, sampling depth = awk minimum of per-sample
+    column sums over asv_table_knot raised to the diversity_rarefaction_depth floor
+    (int workflow input, default 500, now wired as the min_depth port - the
+    count_table_minmax_reads.py minimum vs param rule), qiime diversity
+    core-metrics-phylogenetic --output-dir --p-n-jobs-or-threads 1. Two published ports:
+    div_plots = alpha-group-significance on the shannon vector (DIVERSITY_ALPHA
+    pattern, fixed name alpha-shannon.qzv; feeds the diversity_results workflow output)
+    and distance_matrix = weighted_unifrac matrix copied to a fixed name (feeds the
+    concrete adonis step; upstream flattens all four matrices, single-port v1 choice).
+    metadata = filter_samples/metadata - closes the ch_metadata rebind for the last raw
+    consumer. ALSO fixed a latent adonis wiring defect surfaced when its producer became
+    concrete: the q2d2 wrapper metadata repeat''s conditional must be addressed down to
+    its data leaf, key now
+    metadata_0|__q2galaxy__GUI__conditional__metadata__|source.'
+  rationale: 'Author branch (no wrapper spans depth-derivation -> core-metrics ->
+    selective publication; the plan''s q2d2 coremetricsphylogenetic alternative emits a
+    bundle the single-port consumers cannot take, the split the _plan_context anticipated
+    - the UDT replaces both). Depth parity: taxa filtering drops features (rows) never
+    samples (columns), so column-sum minima over the wide table equal the module
+    minimum over the filter-taxon stats table (alpha-rarefaction precedent). Shannon is
+    the representative alpha metric (the draft has one div_plots port; per-vector and
+    per-category beta/betaord visualizers have no draft counterpart - documented drop
+    with the WARNING depth-note display files, tsv exports of the other three matrices,
+    and versions.yml). The adonis failure proves --concrete skips tool-state checks for
+    steps fed by drafty producers: earlier 73-ok gates never validated adonis; the
+    state block (repeat with conditional discriminator tsv) was already right, only the
+    connection leaf was missing.'
+  evidence:
+  - 'modules/local/qiime2_diversity_core/main.nf (UNIFRAC_USE_GPU=N + XDG/MPL/NUMBA
+    exports; mindepth from bin/count_table_minmax_reads.py minimum, raised when below
+    params.diversity_rarefaction_depth; core-metrics-phylogenetic --output-dir
+    diversity_core --p-n-jobs-or-threads task.cpus; four beta-matrix tools-export + mv
+    steps)'
+  - 'subworkflows/local/qiime2_diversity/main.nf:40-80 (vector.flatten -> per-alpha
+    DIVERSITY_ALPHA qzvs, distance.flatten -> beta + ADONIS over all four matrices);
+    modules/local/qiime2_diversity_alpha/main.nf (${core.baseName}-vis.qzv)'
+  - 'cached wrapper summary q2d2 qiime2__diversity__adonis 2026.1.0+q2galaxy.2026.1.0:
+    metadata is gx_repeat(min 1) of gx_conditional(type: tsv|qza) whose when-branches
+    both carry gx_data source (tabular/qiime2.tabular or qza) - leaf is source'
+  - 'gate: draft-validate --concrete --strict-state exit 0, tool_state 75 ok/0 fail/0
+    skip, strict [], todo only picrust; not run locally: no qiime2, runtime check
+    deferred to phase 11'
+- id: picrust-dada2-branch-single-result
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'picrust (last drafty step) concretized as embedded UDT ampliseq_picrust
+    (quay.io/biocontainers/picrust2:2.6.3--pyhdfd78af_0, the exact module container tag
+    - present on quay): picrust2_pipeline.py -s -i -o all_output -p 1 --in_traits EC,KO
+    --verbose then the three add_descriptions.py calls, module script verbatim. DADA2
+    branch realization: seq = asv_fasta_knot (ch_fasta is NOT rebound by the
+    filter-samples block), abund = asv_table_for_import/data_param (ch_asv_table IS
+    rebound at workflows/ampliseq.nf:1146 before the PICRUST call at :1304, so the
+    post-filter-samples wide table is what the source DADA2 call actually passes). The
+    template mis-wired the abundance port to import_table/qza - qza is unreadable by
+    picrust2_pipeline.py; corrected to the TSV. QIIME2 branch (taxon-filtered abs
+    exports + biom header tail-strip) dropped: draft has no QIIME2 abs-export producer.
+    Single result port = METACYC_path_abun_unstrat_descrip.tsv, exposed via NEW workflow
+    output picrust_result (nothing consumed the step; source feeds pathways into
+    MULTIQC, which the draft does not wire).'
+  rationale: 'Author branch confirmed (shed has no picrust2_pipeline wrapper; _plan_context
+    predicted it). Branch choice follows the draft''s existing channels rather than
+    inventing a producer: the wired fasta knot is the DADA2 chain, so pairing it with
+    the QIIME2-filtered table would mislabel provenance (the val message strings differ
+    per branch upstream). METACYC pathway descriptions = the pathways emit''s
+    interpretable member; static from_work_dir cannot publish the 3-file glob nor the
+    all_output folder, and EC/KO descrip files + message.txt + picrust.args.txt are
+    MultiQC/full-report inputs (drop precedent). $args = task.ext.args unset at the call
+    site -> nothing to reproduce; -p uses 1 (single-core precedent); versions dropped.'
+  evidence:
+  - 'modules/local/picrust/main.nf (container biocontainers/picrust2:2.6.3--pyhdfd78af_0;
+    QIIME2-source tail -n +2 strip; pipeline + 3x add_descriptions; outputs
+    outfolder/pathways/args/message/versions) and workflows/ampliseq.nf:1297-1305
+    (branch condition; DADA2 call with ch_fasta, ch_asv_table)'
+  - 'workflows/ampliseq.nf:1142-1147 (rebind covers ch_metadata + ch_asv_table only -
+    ch_fasta stays raw) ; quay tags/list: 2.6.3--pyhdfd78af_0 present'
+  - 'gate: exit 0, tool_state 76 ok/0 fail/0 skip, strict [], todo 0/[]/[]; then
+    draft-next-step reports draft false - loop endstate'
+- id: conditional-state-composite-key-fix
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'Fixed three tax_dada_assign* step states where the wrapper-conditional case
+    had been written as a YAML COMPOSITE MAPPING KEY - literal doubled braces in the
+    draft text, reference_cond: {{ reference_select: history }}, which both Python and
+    JS YAML parse as key={reference_select: history} value=null instead of the intended
+    case selector. Now single-braced reference_cond: { reference_select: history } in
+    the draft; re-gated exit 0 (76 ok) and re-extracted galaxy-workflow.gxwf.yml clean
+    (no stringified-key warning). Loop endstate recorded: draft-next-step draft false,
+    extracted workflow = class GalaxyWorkflow, 86 steps, 117 inputs, 19 outputs, 0
+    TODOs.'
+  rationale: 'Runtime landmine: Galaxy would fall back to the default reference_select
+    case and the reference_cond|refFasta connections (custom taxonomy branch) would
+    target an inactive conditional. Survived every gate because --strict-state matches
+    the conditional name but does not descend into its state mapping keys (same blind
+    spot class as the adonis leaf-key miss, entry
+    core-metrics-depth-and-adonis-leaf-key). Provenance: f-string brace-doubling idiom
+    leaking from a splice script into literal draft YAML - correct inside splice
+    f-strings, wrong on disk; the state block predated this window. Not a topology
+    repair (no computability gap), bounded local edit.'
+  evidence:
+  - 'grep draft: three lines reference_cond: {{ reference_select: history }} at
+    tax_dada_assign / _sp / _sp_multi state blocks; sibling
+    speciesreference_cond: { speciesreference_select: history } shows the intended
+    single-brace form'
+  - 'draft-extract stderr before fix: "Warning: Keys with collection values will be
+    stringified due to JS Object restrictions"; absent after'
+  - 'not exercised at runtime: phase 11 custom-reference test branch will hit
+    tax_dada_assign first'

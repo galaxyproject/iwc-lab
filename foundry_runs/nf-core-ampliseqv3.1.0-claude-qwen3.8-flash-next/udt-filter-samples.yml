@@ -1,0 +1,80 @@
+class: GalaxyUserTool
+id: ampliseq_filter_samples
+version: 1.0.0
+name: Metadata/abundance sample intersect (ampliseq)
+description: Intersect the sample metadata rows and the abundance table columns so both cover exactly the shared samples, failing when the intersection is empty
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core/ampliseq FILTER_SAMPLES process
+    (modules/local/filter_samples/main.nf - NOT the nf-core qiime2/filter/samples module;
+    the template's expected q2d2 qiime2__feature_table__filter_samples id was corrected
+    from source: q2 filter-samples is a no-op without --p-where and cannot compute this
+    mutual metadata/abundance sample intersect). Container
+    biocontainers/r-base:4.2.1 kept (conda env conda-forge::r-base=4.2.1, base R only).
+    The R body is the module's inline script verbatim - meta[,1] %in% abundance sample
+    columns, abundance columns %in% meta sample ids, both rewrites with quote=FALSE
+    na='', and the stop() when the intersection is empty (samples that are in one file
+    only are dropped from both). Galaxy adaptations. (1) The staged path variables become
+    positional args; the versions.yml writeLines block (which embeds task.process) is
+    dropped (pipeline_info artifacts dropped precedent). (2) The module's two informational
+    .log files are dropped: their file names are the messages themselves
+    (paste0(log_message, ".log")), they exist only to be echoed via log.warn at the
+    workflow level (a display channel with no Galaxy consumer), and an undecidable-name
+    output cannot be declared - the empty-intersection stop() (the fatal path) is kept.
+container: quay.io/biocontainers/r-base:4.2.1
+inputs:
+- name: meta
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: Sample metadata
+  help: Tab-separated sample metadata, first column = sample id.
+- name: table
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: ASV count table
+  help: Tab-separated ASV x sample counts, first column = ASV id, remaining column headers = sample ids.
+outputs:
+- name: metadata
+  type: data
+  format: tabular
+  from_work_dir: metadata.tsv
+  label: Metadata restricted to samples present in the abundance table
+- name: table
+  type: data
+  format: tabular
+  from_work_dir: table.tsv
+  label: Abundance table restricted to samples present in the metadata
+configfiles:
+- filename: filter_samples.R
+  content: |
+    #!/usr/bin/env Rscript
+    # Verbatim modules/local/filter_samples/main.nf script body (staged path vars ->
+    # positional args; versions.yml and the display-only *.log writes dropped - tool help).
+    a <- commandArgs(trailingOnly = TRUE)
+    meta_file <- a[1]; abund_file <- a[2]
+
+    # first column in meta has sample id
+    meta <- read.table( meta_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+    # column names are sample ids, but first column is asv id
+    abund <- read.table( abund_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+
+    # samples that arent in both files are dropped
+    meta_filtered <- meta[meta[,1] %in% colnames(abund)[2:length(colnames(abund))],]
+    abund_filtered <- abund[,colnames(abund) %in% c( colnames(abund)[1], meta[,1] ) ]
+
+    # write filtered data
+    write.table(meta_filtered, file = "metadata.tsv", row.names = FALSE, col.names = TRUE, quote = FALSE, na = '', sep = "\t")
+    write.table(abund_filtered, file = "table.tsv", row.names = FALSE, col.names = TRUE, quote = FALSE, na = '', sep = "\t")
+
+    # error in case all samples were removed
+    if ( nrow(meta_filtered) == 0 ) {
+        stop("All samples were removed. That means no overlap between the metadata sample IDs and the abundance table sample IDs was found. Make sure that sample IDs match.")
+    }
+shell_command: |
+  Rscript filter_samples.R "$(inputs.meta.path)" "$(inputs.table.path)"
