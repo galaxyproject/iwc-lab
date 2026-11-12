@@ -26,7 +26,8 @@ The two collections are kept apart: queries are compared with references, never 
 other. An isolate ID that appears in both collections is used as a reference only, and its
 reference-collection file is the one aligned (CSP2 would take the file given on the query side).
 
-Isolate IDs cannot contain whitespace, `,`, `/` or `:`.
+Isolate IDs cannot contain whitespace, `,`, `/`, `:` or `__vs__` (CSP2 joins the two IDs
+of a pair with `__vs__` in file names).
 
 The remaining parameters are CSP2's quality thresholds, with CSP2's defaults: minimum reference
 coverage (85%), minimum alignment length (500) and identity (99%), reference and query contig

@@ -325,6 +325,7 @@ steps:
           for id in "$query" "$reference"; do
             case "$id" in
               ""|*[[:space:],/]*) echo "Isolate ID '$id' from pair '$pair' is empty or contains whitespace, ',' or '/'" >&2; exit 1 ;;
+              *__vs__*) echo "Isolate ID '$id' from pair '$pair' contains '__vs__', which CSP2 uses to join the two IDs in file names" >&2; exit 1 ;;
             esac
           done
           staged="snpdiffs/$query"__vs__"$reference.snpdiffs" &&
@@ -340,7 +341,7 @@ steps:
           format:
             - txt
           label: CSP2 snpdiffs files
-          help: One snpdiffs file per aligned pair, at least one. Each element identifier must be `<query isolate ID>:<reference isolate ID>`; neither ID may contain ':', whitespace, ',' or '/'.
+          help: One snpdiffs file per aligned pair, at least one. Each element identifier must be `<query isolate ID>:<reference isolate ID>`; neither ID may contain ':', `__vs__`, whitespace, ',' or '/'.
         - name: reference_ids
           type: data
           format:
