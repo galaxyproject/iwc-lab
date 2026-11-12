@@ -1,0 +1,43 @@
+{
+  "command": "gxwf validate galaxy-workflow.gxwf.yml --strict --connections --json --cache-dir tool-cache",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "not_run_reason": null,
+  "diagnostics": [],
+  "summary": {
+    "tool_state": {
+      "ok": 28,
+      "fail": 0,
+      "skip": 0
+    },
+    "connections_valid": true,
+    "structure_errors": 0,
+    "encoding_errors": 0
+  },
+  "residual_runtime_risks": [
+    {
+      "risk": "Embedded GalaxyUserTool steps (check_paired_end, collate_fastq_*) require enable_beta_tool_formats and a user_tool_execute role on the target Galaxy",
+      "proof": "workflow import response / planemo log (phase-10 run imported and ran them)"
+    },
+    {
+      "risk": "pick_value over a list whose chr_extract branch is skipped (chr unset) \u2014 element-wise pick of the fallback",
+      "proof": "invocation step states for chr_extract (skipped) and pick_alignments (ok); phase-10 run: 2 skipped, 44 ok"
+    },
+    {
+      "risk": "__FILTER_FROM_FILE__ discarded branch may be an empty list; downstream map-over (collate_fastq_single, fastqc_post_single, fastq_info_single) over an empty collection",
+      "proof": "history contents for single_end_reads (empty list) in the phase-12 run"
+    },
+    {
+      "risk": "CRAM inputs: shed samtools view/stats steps run without --reference; fastqc_pre receives CRAM elements",
+      "proof": "untested \u2014 needs the nf-test cram case translated"
+    },
+    {
+      "risk": "__APPLY_RULES__ regex ^(.*)_([123])$ relies on __MERGE_COLLECTION__ suffix_every '_#' numbering and per-sample inner order uu,um,mu",
+      "proof": "merge_unmapped job command line / decompressed FASTQ comparisons (passed in phase-10 run)"
+    },
+    {
+      "risk": "Sample identifiers must not contain characters rejected by Filter1/Cut1 tabular handling or the Apply Rules regex",
+      "proof": "pairing_table content"
+    }
+  ]
+}

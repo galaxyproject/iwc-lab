@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "tool_id": "__FILTER_FROM_FILE__",
+  "tool_version": "1.0.0",
+  "cache_key": "ceb84bdb8466049a5640abd42f4a123bdbee40290377edb994b9bc8a9da78c94",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/__FILTER_FROM_FILE__/versions/1.0.0",
+    "cached_at": "2026-11-10T08:47:45.850Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": "tool-cache/ceb84bdb8466049a5640abd42f4a123bdbee40290377edb994b9bc8a9da78c94.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "__FILTER_FROM_FILE__",
+    "version": "1.0.0",
+    "name": "Filter collection",
+    "description": null,
+    "inputs": [
+      {
+        "name": "input",
+        "parameter_type": "gx_data_collection",
+        "hidden": false,
+        "label": "Input Collection",
+        "help": "A collection whose elements will be filtered.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data_collection",
+        "collection_type": null,
+        "extensions": [
+          "data"
+        ],
+        "value": null
+      },
+      {
+        "name": "how",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "how_filter",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "How should the elements to remove be determined?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Remove if identifiers are ABSENT from file",
+              "value": "remove_if_absent",
+              "selected": true
+            },
+            {
+              "label": "Remove if identifiers are PRESENT in file",
+              "value": "remove_if_present",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "remove_if_absent",
+            "parameters": [
+              {
+                "name": "filter_source",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Filter out identifiers absent from",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "txt"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "remove_if_present",
+            "parameters": [
+              {
+                "name": "filter_source",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Filter out identifiers present in",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "txt"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output_filtered",
+        "label": "${on_string} (filtered)",
+        "hidden": false,
+        "type": "collection",
+        "collection_type": null,
+        "collection_type_source": "input",
+        "collection_type_from_rules": null,
+        "structured_like": null,
+        "discover_datasets": []
+      },
+      {
+        "name": "output_discarded",
+        "label": "${on_string} (discarded)",
+        "hidden": false,
+        "type": "collection",
+        "collection_type": null,
+        "collection_type_source": "input",
+        "collection_type_from_rules": null,
+        "structured_like": null,
+        "discover_datasets": []
+      }
+    ],
+    "citations": [],
+    "license": null,
+    "profile": "16.01",
+    "edam_operations": [
+      "operation_3695"
+    ],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n========\nSynopsis\n========\n\nFilters elements from a collection using a list supplied in a file.\n\n===========\nDescription\n===========\n\nThis tools allow filtering elements from a data collection.  It takes an input collection and a text file with names (i.e. identifiers). The tool behavious is controlled by **How should the elements to remove be determined?** drop-down. It has the following options:\n\n**Remove if identifiers are ABSENT from file**\n\nGiven a collection::\n\n Collection: [Dataset A] \n             [Dataset B] \n             [Dataset X]\n\nand a text file::\n\n             A\n             B\n             Z\n\nthe tool will return two collections::\n\n (filtered):  [Dataset A]\n              [Dataset B]\n\n (discarded): [Dataset X]\n\n------\n\n**Remove if identifiers are PRESENT in file**\n\nGiven a collection::\n\n Collection: [Dataset A] \n             [Dataset B] \n             [Dataset X]\n\nand a text file::\n\n             A\n             B\n             Z\n\nthe tool will return two collections::\n\n (filtered):  [Dataset X]\n\n (discarded): [Dataset A]\n              [Dataset B]\n\n.. class:: warningmark\n\n**Note** how the tool deals with the ``Z`` entry.\n\n.. class:: infomark\n\n\nThis tool will create new history datasets from your collection but your quota usage will not increase.\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "how": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "how_filter": {
+                  "type": "string",
+                  "enum": [
+                    "remove_if_absent"
+                  ]
+                },
+                "filter_source": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "how_filter"
+              ],
+              "properties": {
+                "how_filter": {
+                  "type": "string",
+                  "enum": [
+                    "remove_if_present"
+                  ]
+                },
+                "filter_source": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "how": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "filter_source"
+                  ],
+                  "properties": {
+                    "how_filter": {
+                      "type": "string",
+                      "enum": [
+                        "remove_if_absent"
+                      ]
+                    },
+                    "filter_source": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "how_filter",
+                    "filter_source"
+                  ],
+                  "properties": {
+                    "how_filter": {
+                      "type": "string",
+                      "enum": [
+                        "remove_if_present"
+                      ]
+                    },
+                    "filter_source": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

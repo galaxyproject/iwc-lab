@@ -1,0 +1,116 @@
+- doc: 'nf-core/bamtofastq default test (tests/default.nf.test "-profile test"): two paired-end BAMs plus genome.fasta, default parameters. Expected values come from tests/default.nf.test.snap; see galaxy-test-plan.yml
+    for provenance.'
+  job:
+    alignments:
+      class: Collection
+      collection_type: list
+      elements:
+      - class: File
+        identifier: test
+        location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam
+        filetype: bam
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 0799f89638bddd570439115c606f425c22d189b1
+      - class: File
+        identifier: test2
+        location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam
+        filetype: bam
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 522fb037cea05b9d41dd69647f27a644838bf507
+    reference_fasta:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/refs/heads/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      filetype: fasta
+      hashes:
+      - hash_function: SHA-1
+        hash_value: 56e7a0c035e2fce8ebe497d3704431d7586fd444
+    skip_read_qc: false
+    skip_stats: false
+    collate_fast: false
+    reads_in_memory: 100000
+  outputs:
+    paired_reads:
+      class: Collection
+      element_count: 2
+      element_tests:
+        test:
+          class: Collection
+          element_tests:
+            forward:
+              file: test-data/expected/test_1.merged.fastq.gz
+              decompress: true
+            reverse:
+              file: test-data/expected/test_2.merged.fastq.gz
+              decompress: true
+        test2:
+          class: Collection
+          element_tests:
+            forward:
+              file: test-data/expected/test2_1.merged.fastq.gz
+              decompress: true
+            reverse:
+              file: test-data/expected/test2_2.merged.fastq.gz
+              decompress: true
+    samtools_flagstat:
+      class: Collection
+      element_tests:
+        test:
+          checksum: md5$a53f3d26e2e9851f7d528442bbfe9781
+        test2:
+          checksum: md5$acbd95030a362a7e6491faa87d1b9c2c
+    samtools_idxstats:
+      class: Collection
+      element_tests:
+        test:
+          checksum: md5$e179601fa7b8ebce81ac3765206f6c15
+        test2:
+          checksum: md5$90f01313bc89c7fd096aad051cd71b66
+    samtools_stats:
+      class: Collection
+      element_tests:
+        test:
+          asserts:
+          - that: has_line
+            line: "SN\traw total sequences:\t5642\t# excluding supplementary and secondary reads"
+          - that: has_line
+            line: "SN\treads unmapped:\t2"
+        test2:
+          asserts:
+          - that: has_line
+            line: "SN\traw total sequences:\t5436\t# excluding supplementary and secondary reads"
+    fastq_info_paired:
+      class: Collection
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+          - that: not_has_text
+            text: ERROR
+        test2:
+          asserts:
+          - that: not_has_text
+            text: ERROR
+    single_end_reads:
+      class: Collection
+      element_tests: {}
+    fastqc_pre_html:
+      class: Collection
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+          - that: has_text
+            text: FastQC
+    fastqc_post_paired_html:
+      class: Collection
+      element_count: 2
+      element_tests:
+        test:
+          class: Collection
+          element_tests:
+            forward:
+              asserts:
+              - that: has_text
+                text: FastQC

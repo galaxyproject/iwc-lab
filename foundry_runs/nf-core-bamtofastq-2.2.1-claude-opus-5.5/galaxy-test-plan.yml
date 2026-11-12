@@ -1,0 +1,255 @@
+plan_version: '1'
+source:
+  kind: galaxy
+  name: nf-core-bamtofastq-claude galaxy-workflow.gxwf.yml (revision 2026-11-10)
+  derived_from: test-evidence
+  notes: 'Galaxy-to-Galaxy update plan. Baseline = summary-galaxy-workflow.json tests[0] (galaxy-workflow.gxwf-tests.yml, passed in phase 12), carried forward unchanged. Change-set galaxy-workflow-changeset.md is 43 change-parameter edits that write the tool defaults Galaxy already substitutes (no command-line change), so no edit reaches an observable output and no assertion is added, loosened or tightened. The baseline itself was translated from nf-core tests/default.nf.test (+ .snap) in the original run; its per-case derived_from/evidence values are kept as they were.'
+workflow:
+  title: nf-core/bamtofastq (Galaxy translation)
+  label_source: draft
+  notes: Labels read from galaxy-workflow.gxwf.yml (extracted concrete workflow).
+test_cases:
+- id: default
+  doc: 'nf-core/bamtofastq default test: two coordinate-sorted paired-end BAMs (test, test2) plus genome.fasta, default parameters (no chr, QC and stats on, normal collate). Both samples classify as paired-end
+    and go through the four-way pair-class split, merge, collate/fastq and mapped+unmapped concatenation.'
+  derived_from: mixed
+  provenance: tests/default.nf.test "-profile test"
+  job_inputs:
+  - workflow_label: alignments
+    label_status: resolved
+    description: One BAM per samplesheet row; element identifiers are the samplesheet sample_id values.
+    collection_shape: list
+    datatype: bam
+    fixture:
+      storage: remote-url
+      location: test=https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam; test2=https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam
+      checksum: test=SHA-1:0799f89638bddd570439115c606f425c22d189b1; test2=SHA-1:522fb037cea05b9d41dd69647f27a644838bf507
+      provenance: test-data-refs.json (nextflow-to-test-data) from test_bam_samplesheet.csv
+  - workflow_label: reference_fasta
+    label_status: resolved
+    description: Reference FASTA passed by the nf-test (inert for BAM input).
+    collection_shape: null
+    datatype: fasta
+    fixture:
+      storage: remote-url
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/refs/heads/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      checksum: SHA-1:56e7a0c035e2fce8ebe497d3704431d7586fd444
+      provenance: tests/default.nf.test params.fasta
+  expected_outputs:
+  - workflow_label: paired_reads
+    label_status: resolved
+    description: Final paired FASTQ per sample (nf-core reads/<id>_{1,2}.merged.fastq.gz).
+    output_kind: collection
+    collection_shape: list:paired
+    assertion_intent:
+    - family: element_count
+      intent: two samples in the paired output
+      expected_value: 2
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: high
+    - family: file
+      intent: decompressed content equals nf-core test_1.merged.fastq.gz (snapshot md5 9b0c08862a5e47e842a485ddad31b871 over decompressed content); expected file test-data/expected/test_1.merged.fastq.gz
+        regenerated with the nf-core container and commands, its decompressed md5 verified equal to the snapshot token; compare with decompress
+      expected_value: test-data/expected/test_1.merged.fastq.gz
+      tolerance: null
+      element_identifier: test/forward
+      evidence: test-evidence
+      confidence: high
+    - family: file
+      intent: decompressed content equals nf-core test_2.merged.fastq.gz (snapshot md5 40e17982d1231e561d6420234ae29357)
+      expected_value: test-data/expected/test_2.merged.fastq.gz
+      tolerance: null
+      element_identifier: test/reverse
+      evidence: test-evidence
+      confidence: high
+    - family: file
+      intent: decompressed content equals nf-core test2_1.merged.fastq.gz (snapshot md5 a4984fb5a60f80ccbfbfcf1cef9daaf3)
+      expected_value: test-data/expected/test2_1.merged.fastq.gz
+      tolerance: null
+      element_identifier: test2/forward
+      evidence: test-evidence
+      confidence: high
+    - family: file
+      intent: decompressed content equals nf-core test2_2.merged.fastq.gz (snapshot md5 bde23801e2d60604afb3bd0b0ab014ab)
+      expected_value: test-data/expected/test2_2.merged.fastq.gz
+      tolerance: null
+      element_identifier: test2/reverse
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: samtools_flagstat
+    label_status: resolved
+    description: samtools flagstat per input BAM (nf-core samtools/<id>.flagstat).
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: snapshot md5 of test.flagstat
+      expected_value: md5$a53f3d26e2e9851f7d528442bbfe9781
+      tolerance: null
+      element_identifier: test
+      evidence: test-evidence
+      confidence: medium
+    - family: checksum
+      intent: snapshot md5 of test2.flagstat
+      expected_value: md5$acbd95030a362a7e6491faa87d1b9c2c
+      tolerance: null
+      element_identifier: test2
+      evidence: test-evidence
+      confidence: medium
+  - workflow_label: samtools_idxstats
+    label_status: resolved
+    description: samtools idxstats per input BAM (nf-core samtools/<id>.idxstats).
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: snapshot md5 of test.idxstats
+      expected_value: md5$e179601fa7b8ebce81ac3765206f6c15
+      tolerance: null
+      element_identifier: test
+      evidence: test-evidence
+      confidence: high
+    - family: checksum
+      intent: snapshot md5 of test2.idxstats
+      expected_value: md5$90f01313bc89c7fd096aad051cd71b66
+      tolerance: null
+      element_identifier: test2
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: samtools_stats
+    label_status: resolved
+    description: samtools stats per input BAM. The snapshot md5 (test.stats 3c3f8fa5..., test2.stats 7e6537bd...) covers a header with the samtools version and command line, so it cannot hold across wrappers;
+      assert stable SN lines instead.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_line
+      intent: raw total sequences for test
+      expected_value: "SN\traw total sequences:\t5642\t# excluding supplementary and secondary reads"
+      tolerance: null
+      element_identifier: test
+      evidence: fixture-derived
+      confidence: high
+    - family: has_line
+      intent: reads unmapped for test
+      expected_value: "SN\treads unmapped:\t2"
+      tolerance: null
+      element_identifier: test
+      evidence: fixture-derived
+      confidence: high
+    - family: has_line
+      intent: raw total sequences for test2
+      expected_value: "SN\traw total sequences:\t5436\t# excluding supplementary and secondary reads"
+      tolerance: null
+      element_identifier: test2
+      evidence: fixture-derived
+      confidence: high
+  - workflow_label: fastq_info_paired
+    label_status: resolved
+    description: 'fastq_utils fastq_info report per paired sample. The nf-core module discards fastq_info output and writes a fixed sentence (''fastq_utils fastq_info ran and found no issues with <files>''),
+      whose md5 is the snapshot token (verified: db31682c..., 0222a414...); the token encodes ''validation passed'', not report content.'
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: element_count
+      intent: one report per paired sample
+      expected_value: 2
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: high
+    - family: not_has_text
+      intent: 'fastq_info reported no validation error for test (upstream: module succeeded and echoed ''found no issues'')'
+      expected_value: ERROR
+      tolerance: null
+      element_identifier: test
+      evidence: intent
+      confidence: medium
+    - family: not_has_text
+      intent: fastq_info reported no validation error for test2
+      expected_value: ERROR
+      tolerance: null
+      element_identifier: test2
+      evidence: intent
+      confidence: medium
+  - workflow_label: single_end_reads
+    label_status: resolved
+    description: Single-end FASTQ output; both default-test samples are paired, so it must be empty (nf-core publishes no *other.fq.gz in the snapshot stable_name list). element_count 0 is not enforceable
+      (Galaxy verify skips count when 0; planemo needs element_tests to treat an output as a collection), so only existence is checked.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent: []
+  - workflow_label: fastqc_pre_html
+    label_status: resolved
+    description: FastQC on the input BAMs (fastqc/<id>.pre_conversion_fastqc.html, listed in stable_name, content ignored by .nftignore).
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: element_count
+      intent: one pre-conversion report per sample
+      expected_value: 2
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: high
+    - family: has_text
+      intent: report is a FastQC HTML report
+      expected_value: FastQC
+      tolerance: null
+      element_identifier: test
+      evidence: intent
+      confidence: medium
+  - workflow_label: fastqc_post_paired_html
+    label_status: resolved
+    description: FastQC on the converted reads (fastqc/<id>.post_conversion_{1,2}_fastqc.html; content ignored by .nftignore).
+    output_kind: collection
+    collection_shape: list:paired
+    assertion_intent:
+    - family: element_count
+      intent: one paired report set per sample
+      expected_value: 2
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: high
+    - family: has_text
+      intent: forward report is a FastQC HTML report
+      expected_value: FastQC
+      tolerance: null
+      element_identifier: test/forward
+      evidence: intent
+      confidence: medium
+unresolved: []
+omissions:
+- target: MultiQC report and multiqc_data/*
+  reason: MultiQC not carried (only versions/params/methods YAML reach it in 2.2.1); snapshot only checks multiqc_citations.txt
+  category: out-of-scope
+- target: pipeline_info/nf_core_bamtofastq_software_mqc_versions.yml (removeFromYamlMap capture)
+  reason: "Galaxy tracks versions in job provenance; nextflow-snapshot-to-galaxy-assertions \xA72 says drop"
+  category: out-of-scope
+- target: succeeded task count (32)
+  reason: "invocation-level Nextflow metadata, no per-output Galaxy assertion (\xA72b)"
+  category: out-of-scope
+- target: fastqc_pre_data, fastqc_post_paired_data, fastqc_post_single_*, fastq_info_single
+  reason: FastQC content is in .nftignore; single-end outputs are empty collections in this test
+  category: weak-output
+- target: BAM/CRAM md5 captures
+  reason: snapshot records 'No BAM files' / 'No CRAM files' for the default test
+  category: other
+- target: single_end_reads element count (0)
+  reason: "element_count: 0 is a no-op in galaxy.tool_util.verify (falsy count) \u2014 existence-only"
+  category: other
+warnings:
+- code: deferred-test-candidates
+  message: 8 other primary nf-test cases (chr, collate_fast, cram, fai, no_bai, no_crai, no_qc, no_stats) are not translated; the single-end branch, chr extraction, CRAM decoding and the skip toggles stay
+    untested in Galaxy.
+  path: test_candidates
+- code: gz-snapshot-md5-over-decompressed-content
+  message: nf-test md5 tokens for *.fastq.gz hash decompressed content while Galaxy checksum hashes stored bytes; translated as decompressed file comparisons against nf-core-container regenerations whose
+    decompressed md5 equals the snapshot token (test-data/expected/decompressed-md5.txt).
+  path: tests/default.nf.test.snap
+- code: untranslatable-snapshot
+  message: fastqutils/*.txt snapshot md5s hash an nf-core echo sentence containing Nextflow-staged filenames, not fastq_info output; translated as not_has_text ERROR (weak).
+  path: tests/default.nf.test.snap
