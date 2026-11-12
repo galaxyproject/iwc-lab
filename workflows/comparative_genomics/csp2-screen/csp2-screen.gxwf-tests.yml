@@ -1,0 +1,117 @@
+- doc: 'screen-week-42-vs-lab-control: CSP2 screen mode on the two Week_42 query assemblies of the CSP2 test data (Week_42_Assembly, and Week_42_Reads, which is the SKESA assembly of the Week_42 reads published with the expected output) against the Lab_Control reference, with default thresholds. Expected values are the Contamination_Screen output published with the test data.'
+  job:
+    Query assemblies:
+      class: Collection
+      collection_type: list
+      elements:
+      - class: File
+        identifier: Week_42_Assembly
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/Screen/Assembly/Week_42_Assembly.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: c35b52c2e5b2628c2f7e1c030a4e5f63c0605e5e
+      - class: File
+        identifier: Week_42_Reads
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/Screen/Output/Contamination_Screen/Assemblies/Week_42_Reads.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 8a578585b91f537d71cea1b1d4156e2c59cf233e
+    Reference assemblies:
+      class: Collection
+      collection_type: list
+      elements:
+      - class: File
+        identifier: Lab_Control
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/Screen/Assembly/Lab_Control.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 646f28e00d5b995fb5891ee7c8cd30e2e29ae918
+  outputs:
+    Reference IDs:
+      asserts:
+      - has_line:
+          line: Lab_Control
+      - has_n_lines:
+          n: 1
+    SNPDiffs:
+      class: Collection
+      element_count: 2
+      element_tests:
+        Week_42_Assembly:Lab_Control:
+          asserts:
+          - has_n_lines:
+              n: 1678
+          - has_line_matching:
+              expression: '\#\tQuery_ID:Week_42_Assembly\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:747\tQuery_Assembly_Bases:4473771\tQuery_N50:12782\tQuery_N90:3438\tQuery_L50:105\tQuery_L90:360\tQuery_SHA256:85c216de6e1bb9ccf76e7e5d64931884375d66e765f4c4fe726f3be15eb91563\tReference_ID:Lab_Control\tReference_Assembly:[^\t]+\tReference_Contig_Count:254\tReference_Assembly_Bases:4584986\tReference_N50:41813\tReference_N90:13112\tReference_L50:38\tReference_L90:110\tReference_SHA256:aae3a07d055bff2fa66127ca77cae35dd5cce5cc42dafea481787d4010c7dbef\tSNPs:1\tReference_Percent_Aligned:97\.58\tQuery_Percent_Aligned:99\.99\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:2954\.00\tKmer_Similarity:97\.32\tShared_Kmers:4449973\tReference_Unique_Kmers:121740\tQuery_Unique_Kmers:746\tReference_Breakpoints:1425\tQuery_Breakpoints:34\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:516\tQuery_Translocations:5\tReference_Inversions:0\tQuery_Inversions:0\tReference_Insertions:902\tQuery_Insertions:12\tReference_Tandem:0\tQuery_Tandem:0\tIndels:0\tInvalid:0\tgSNPs:1\tgIndels:0'
+          - has_line_matching:
+              expression: '\#\#\t.*'
+              n: 1676
+          - has_line:
+              line: "##\tSRR16119110_100_32.8137\t10\t2396\t36207\t2386\tContig_523_10.8014\t0\t2386\t2386\t2386\t100.0"
+          - has_line:
+              line: "##\t.\t.\t.\t.\t.\tContig_693_13.0159\t8245\t8246\t.\t.\t."
+          - has_line:
+              line: "SRR16119110_237_29.2183\t4219\t4220\tContig_251_10.5396\t6990\t6991\tSRR16119110_237_29.2183/4220\tContig_251_10.5396/6991\t948\t11210\t0\t10262\tT\tC\t4220\t3271\t10262\t10262\t-1\t99.99\tSNP"
+        Week_42_Reads:Lab_Control:
+          file: test-data/snpdiffs/Week_42_Reads__vs__Lab_Control.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: '\#\tQuery_ID:Week_42_Reads\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:372\tQuery_Assembly_Bases:4561747\tQuery_N50:24332\tQuery_N90:7894\tQuery_L50:56\tQuery_L90:171\tQuery_SHA256:28eca0ecf14fcc1166ae7236c849acc08ad040cd011fc4331ba124db73601009\tReference_ID:Lab_Control\tReference_Assembly:[^\t]+\tReference_Contig_Count:254\tReference_Assembly_Bases:4584986\tReference_N50:41813\tReference_N90:13112\tReference_L50:38\tReference_L90:110\tReference_SHA256:aae3a07d055bff2fa66127ca77cae35dd5cce5cc42dafea481787d4010c7dbef\tSNPs:61\tReference_Percent_Aligned:99\.11\tQuery_Percent_Aligned:99\.57\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:4968\.00\tKmer_Similarity:98\.51\tShared_Kmers:4526310\tReference_Unique_Kmers:45403\tQuery_Unique_Kmers:23072\tReference_Breakpoints:609\tQuery_Breakpoints:279\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:186\tQuery_Translocations:70\tReference_Inversions:0\tQuery_Inversions:0\tReference_Insertions:398\tQuery_Insertions:171\tReference_Tandem:0\tQuery_Tandem:0\tIndels:5\tInvalid:0\tgSNPs:58\tgIndels:1'
+    Raw MUMmer summary:
+      asserts:
+      - has_n_lines:
+          n: 3
+      - has_line:
+          line: "SNPDiffs_File\tQuery_ID\tQuery_Assembly\tQuery_Contig_Count\tQuery_Assembly_Bases\tQuery_N50\tQuery_N90\tQuery_L50\tQuery_L90\tQuery_SHA256\tReference_ID\tReference_Assembly\tReference_Contig_Count\tReference_Assembly_Bases\tReference_N50\tReference_N90\tReference_L50\tReference_L90\tReference_SHA256\tSNPs\tReference_Percent_Aligned\tQuery_Percent_Aligned\tMedian_Percent_Identity\tMedian_Alignment_Length\tKmer_Similarity\tShared_Kmers\tReference_Unique_Kmers\tQuery_Unique_Kmers\tReference_Breakpoints\tQuery_Breakpoints\tReference_Relocations\tQuery_Relocations\tReference_Translocations\tQuery_Translocations\tReference_Inversions\tQuery_Inversions\tReference_Insertions\tQuery_Insertions\tReference_Tandem\tQuery_Tandem\tIndels\tInvalid\tgSNPs\tgIndels"
+      - has_line_matching:
+          expression: '[^\t]+\tWeek_42_Reads\t[^\t]+\t372\t4561747\t24332\t7894\t56\t171\t28eca0ecf14fcc1166ae7236c849acc08ad040cd011fc4331ba124db73601009\tLab_Control\t[^\t]+\t254\t4584986\t41813\t13112\t38\t110\taae3a07d055bff2fa66127ca77cae35dd5cce5cc42dafea481787d4010c7dbef\t61\t99\.11\t99\.57\t100\.00\t4968\.00\t98\.51\t4526310\t45403\t23072\t609\t279\t0\t0\t186\t70\t0\t0\t398\t171\t0\t0\t5\t0\t58\t1'
+      - has_line_matching:
+          expression: '[^\t]+\tWeek_42_Assembly\t[^\t]+\t747\t4473771\t12782\t3438\t105\t360\t85c216de6e1bb9ccf76e7e5d64931884375d66e765f4c4fe726f3be15eb91563\tLab_Control\t[^\t]+\t254\t4584986\t41813\t13112\t38\t110\taae3a07d055bff2fa66127ca77cae35dd5cce5cc42dafea481787d4010c7dbef\t1\t97\.58\t99\.99\t100\.00\t2954\.00\t97\.32\t4449973\t121740\t746\t1425\t34\t0\t0\t516\t5\t0\t0\t902\t12\t0\t0\t0\t0\t1\t0'
+    Isolate data:
+      asserts:
+      - has_n_lines:
+          n: 4
+      - has_line:
+          line: "Isolate_ID\tIsolate_Type\tAssembly_Path\tContig_Count\tAssembly_Bases\tN50\tN90\tL50\tL90\tSHA256"
+      - has_line_matching:
+          expression: 'Lab_Control\tReference\t[^\t]+\t254\t4584986\t41813\t13112\t38\t110\taae3a07d055bff2fa66127ca77cae35dd5cce5cc42dafea481787d4010c7dbef'
+      - has_line_matching:
+          expression: 'Week_42_Reads\tQuery\t[^\t]+\t372\t4561747\t24332\t7894\t56\t171\t28eca0ecf14fcc1166ae7236c849acc08ad040cd011fc4331ba124db73601009'
+      - has_line_matching:
+          expression: 'Week_42_Assembly\tQuery\t[^\t]+\t747\t4473771\t12782\t3438\t105\t360\t85c216de6e1bb9ccf76e7e5d64931884375d66e765f4c4fe726f3be15eb91563'
+    Screening results:
+      file: test-data/Screening_Results.tsv
+      compare: diff
+      sort: true
+      lines_diff: 0
+    Screening SNP tables:
+      class: Collection
+      element_count: 2
+      element_tests:
+        Week_42_Assembly__vs__Lab_Control:
+          file: test-data/screening/Week_42_Assembly__vs__Lab_Control_SNPs.tsv
+        Week_42_Reads__vs__Lab_Control:
+          file: test-data/screening/Week_42_Reads__vs__Lab_Control_SNPs.tsv
+    Screening logs:
+      class: Collection
+      element_count: 2
+      element_tests:
+        Week_42_Assembly__vs__Lab_Control:
+          file: test-data/screening/Week_42_Assembly__vs__Lab_Control.log
+          compare: diff
+          lines_diff: 6
+          asserts:
+          - has_line:
+              line: "\t- 1 SNPs detected between Week_42_Assembly and Lab_Control after filtering"
+        Week_42_Reads__vs__Lab_Control:
+          file: test-data/screening/Week_42_Reads__vs__Lab_Control.log
+          compare: diff
+          lines_diff: 6
+          asserts:
+          - has_line:
+              line: "\t- 50 SNPs detected between Week_42_Reads and Lab_Control after filtering"
