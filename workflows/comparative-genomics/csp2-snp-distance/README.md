@@ -58,6 +58,9 @@ Only `snp` mode is implemented. The workflow starts from assemblies, so read ass
 is not included, and CSP2's `screen`, `align` and `assemble` modes are not carried. CSP2 keeps
 one alignment per pair of references; this workflow aligns both directions. The tree step uses
 the Tool Shed IQ-TREE wrapper, which is a newer IQ-TREE than the one in the CSP2 image.
+`runSNPPipeline.py` also writes `Locus_Categories.tsv`, `Query_Coverage.tsv` and its own log,
+which explain why a site or an isolate dropped out of the preserved outputs; the workflow does
+not collect them.
 
 ## Validation
 
