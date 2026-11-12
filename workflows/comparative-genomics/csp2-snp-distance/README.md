@@ -45,6 +45,8 @@ step takes a switch, a substitution model (`MFP+MERGE+ASC`) and bootstrap settin
   **SNP alignment** and **Reference screening**, plus "preserved" versions of the distances,
   matrix, list and alignment, which keep only the sites that pass the missing-data threshold.
 - **Phylogenetic tree**: one tree per reference with more than three sequences, when enabled.
+  IQ-TREE needs four sequences only when bootstrapping, but the limit applies here even with
+  both bootstrap inputs empty, where CSP2 would still build a three-sequence tree.
 
 ## Requirements
 
