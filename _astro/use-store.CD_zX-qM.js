@@ -1,0 +1,1 @@
+import{Q as e,ot as t,tt as n}from"./runtime-core.esm-bundler.Dq98SRLj.js";function r(r){let i=t();if(typeof window<`u`){let t=r.subscribe(e=>{i.value=e});e()&&n(t)}else i.value=r.get();return i}export{r as t};

@@ -1,0 +1,1 @@
+import{l as e}from"./workflowStore.DqUeH6KZ.js";fetch(`/workflow_manifest.json`).then(e=>e.json()).then(t=>{e(t)});
