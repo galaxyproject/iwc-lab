@@ -18,9 +18,12 @@ steps so that each alignment is its own job:
 
 ## Inputs
 
-- **Query assemblies**: a list collection with one FASTA assembly per query isolate. The element
-  identifier is the isolate ID.
+- **Query assemblies**: a list collection with one FASTA assembly per query isolate.
 - **Reference assemblies**: a list collection with one FASTA assembly per reference isolate.
+
+Each element identifier is used unchanged as the isolate ID. CSP2 takes the ID from the file
+name with its extension removed, so if a collection is built from uploads named `sample.fasta`,
+rename the elements to `sample` to get the names CSP2 would report.
 
 The two collections are kept apart: queries are compared with references, never with each
 other. An isolate ID that appears in both collections is used as a reference only, and its
