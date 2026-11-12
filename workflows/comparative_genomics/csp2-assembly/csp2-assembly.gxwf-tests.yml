@@ -1,4 +1,4 @@
-- doc: 'assemble-week-42-contigs: SKESA assembly, as CSP2 assemble mode runs it, of three small isolates. Week_42_contig_52 and Week_42_contig_116 are real read pairs (SRR7874387) taken from the Week_42 reads of the CSP2 test data (https://github.com/microbial-bioinformatics/CSP2_TestData commit 61b1f790417ed2a2a08390d432b03effabbd66e2, assets/Screen/Reads): the 161 and 233 pairs that share a 25-mer with Contig_52_15.3018 and Contig_116_15.8852 of the SKESA assembly published with the expected output. Simulated_500bp is 100 pairs of 100-base reads simulated at 1% error from a random 500-base sequence, given as plain FASTQ. Expected assemblies are what SKESA 2.4.0 in the CSP2 image writes for these reads, the same with 1, 2, 4 or 8 cores; the single contig of Week_42_contig_52 contains the published Contig_52 in full.'
+- doc: 'assemble-week-42-contigs-paired: default paired-end SKESA assembly of three small isolates. Week_42_contig_52 and Week_42_contig_116 are real read pairs (SRR7874387) taken from the Week_42 reads of the CSP2 test data (https://github.com/microbial-bioinformatics/CSP2_TestData commit 61b1f790417ed2a2a08390d432b03effabbd66e2, assets/Screen/Reads): the 161 and 233 pairs whose forward or reverse read shares a 25-mer with Contig_52_15.3018 and Contig_116_15.8852 of the SKESA assembly published with the expected output. Simulated_500bp is 100 pairs of 100-base reads simulated at 1% error from a random 500-base sequence, given as plain FASTQ. Expected assemblies are what SKESA 2.4.0 in the CSP2 image writes for `--reads <forward>,<reverse>`, the same with 1, 2, 4 or 8 cores. Each isolate comes out as one contig, longer than the forward-only result; the contig of Week_42_contig_52 contains the published Contig_52 in full.'
   job:
     Paired reads:
       class: Collection
@@ -52,13 +52,94 @@
           lines_diff: 0
           asserts:
           - has_line:
+              line: '>Contig_1_25.7632'
+          - has_n_lines:
+              n: 2
+          - has_size:
+              value: 2522
+        Week_42_contig_116:
+          file: test-data/assemblies/Week_42_contig_116.fasta
+          compare: diff
+          lines_diff: 0
+          asserts:
+          - has_line_matching:
+              expression: '>Contig_\d+_[0-9.]+'
+              n: 1
+          - has_line:
+              line: '>Contig_1_25.6156'
+          - has_size:
+              value: 2198
+        Simulated_500bp:
+          file: test-data/assemblies/Simulated_500bp.fasta
+          compare: diff
+          lines_diff: 0
+          asserts:
+          - has_line:
+              line: '>Contig_1_31.1495'
+          - has_size:
+              value: 447
+- doc: "assemble-week-42-contigs-forward-only: the same three isolates with 'Reproduce CSP2 v.0.9.7.8 assembly (forward reads only)' switched on. Expected assemblies are what SKESA 2.4.0 in the CSP2 image writes for CSP2's own command line, which reads the forward file only; they differ from the paired-end ones for every isolate (Week_42_contig_116 falls into five contigs)."
+  job:
+    Paired reads:
+      class: Collection
+      collection_type: list:paired
+      elements:
+      - class: Collection
+        collection_type: paired
+        identifier: Week_42_contig_52
+        elements:
+        - class: File
+          identifier: forward
+          path: test-data/reads/Week_42_contig_52_1.fastq.gz
+          filetype: fastqsanger.gz
+        - class: File
+          identifier: reverse
+          path: test-data/reads/Week_42_contig_52_2.fastq.gz
+          filetype: fastqsanger.gz
+      - class: Collection
+        collection_type: paired
+        identifier: Week_42_contig_116
+        elements:
+        - class: File
+          identifier: forward
+          path: test-data/reads/Week_42_contig_116_1.fastq.gz
+          filetype: fastqsanger.gz
+        - class: File
+          identifier: reverse
+          path: test-data/reads/Week_42_contig_116_2.fastq.gz
+          filetype: fastqsanger.gz
+      - class: Collection
+        collection_type: paired
+        identifier: Simulated_500bp
+        elements:
+        - class: File
+          identifier: forward
+          path: test-data/reads/Simulated_500bp_1.fastq
+          filetype: fastqsanger
+        - class: File
+          identifier: reverse
+          path: test-data/reads/Simulated_500bp_2.fastq
+          filetype: fastqsanger
+    Reproduce CSP2 v.0.9.7.8 assembly (forward reads only): true
+  outputs:
+    Assemblies:
+      class: Collection
+      collection_type: list
+      element_count: 3
+      element_tests:
+        Week_42_contig_52:
+          file: test-data/assemblies-forward-only/Week_42_contig_52.fasta
+          compare: diff
+          lines_diff: 0
+          asserts:
+          - has_line:
               line: '>Contig_1_14.8866'
           - has_n_lines:
               n: 2
           - has_size:
               value: 2244
         Week_42_contig_116:
-          file: test-data/assemblies/Week_42_contig_116.fasta
+          file: test-data/assemblies-forward-only/Week_42_contig_116.fasta
           compare: diff
           lines_diff: 0
           asserts:
@@ -70,7 +151,7 @@
           - has_size:
               value: 2954
         Simulated_500bp:
-          file: test-data/assemblies/Simulated_500bp.fasta
+          file: test-data/assemblies-forward-only/Simulated_500bp.fasta
           compare: diff
           lines_diff: 0
           asserts:

@@ -7,26 +7,44 @@ SKESA assembly per isolate. CSP2's other modes start from assemblies, so this is
 lets read data into them.
 
 SKESA 2.4.0 runs from the image the CSP2 authors publish
-(`cfsanbiostatistics/csp2:v.0.9.7.8-galaxy`), with the command line CSP2 uses and nothing added:
-no trimming, no quality control, no filtering, and SKESA's defaults for everything else. Each
-isolate is its own job.
+(`cfsanbiostatistics/csp2:v.0.9.7.8-galaxy`), with nothing added: no trimming, no quality
+control, no filtering, and SKESA's defaults for everything but the read arguments. Each isolate
+is its own job.
 
-## Only the forward reads are assembled
+## Two assembly modes
 
-CSP2 calls `skesa --cores <n> --use_paired_ends --fastq <forward> <reverse> --contigs_out <out>`.
-SKESA 2.4.0 takes one file per `--fastq` and ignores the second file on that command line, so the
-reverse reads are never opened: the forward reads are assembled on their own. That is what CSP2
-v.0.9.7.8 does, and this workflow keeps the command as it is so that the assemblies are the ones
-CSP2 would make. Expect more and shorter contigs than a true paired-end assembly of the same
-reads gives. For the Week_42 reads of the CSP2 test data, CSP2's command gives 372 contigs with
-an N50 of 24,332, and SKESA given both files as a pair (`--reads <forward>,<reverse>`) gives 137
-contigs with an N50 of 64,029.
+**Paired-end (default).** SKESA gets both files of a pair,
+`skesa --cores <n> --reads <forward>,<reverse> --contigs_out <out>`, which is the form SKESA
+documents for mates in two files. Both mates are assembled and the pairing is used.
+
+**Reproduce CSP2 v.0.9.7.8 assembly (forward reads only).** CSP2 v.0.9.7.8 calls
+`skesa --cores <n> --use_paired_ends --fastq <forward> <reverse> --contigs_out <out>`. SKESA
+takes one value per `--fastq`, and the reverse file, separated by a space, is dropped without a
+message: SKESA reports only the forward read count, and the result is the same when the reverse
+file is missing or is not a FASTQ file. The forward reads are assembled alone, as single-end
+reads. With this switch on, the workflow runs that command unchanged. Use it to match
+assemblies made by CSP2 itself at that version, for example to compare with earlier CSP2 results;
+leave it off for new work.
+
+The default therefore differs from what CSP2 v.0.9.7.8 produces. On the Week_42 reads of the
+CSP2 test data (318,725 pairs, reads of up to 251 bases, a 4.6 Mb genome):
+
+| | Contigs | Total bases | N50 | Largest contig |
+|---|---|---|---|---|
+| Paired-end (default) | 137 | 4,612,997 | 64,029 | 237,699 |
+| Forward reads only (CSP2 v.0.9.7.8) | 372 | 4,561,747 | 24,332 | 97,467 |
+
+The forward-only assembly is, byte for byte, the one published with CSP2's expected test output.
+These figures are from that one dataset.
 
 ## Inputs
 
 - **Paired reads**: a `list:paired` collection with one forward/reverse pair of FASTQ files per
   isolate, plain or gzipped (`fastqsanger` or `fastqsanger.gz`). The identifier of each pair is
-  the isolate ID.
+  the isolate ID. The two files must list the mates in the same order: SKESA pairs them by
+  position, fails if the reverse file has fewer reads than the forward file, and ignores reverse
+  reads beyond the last forward read.
+- **Reproduce CSP2 v.0.9.7.8 assembly (forward reads only)**: off by default. See above.
 
 Isolate IDs cannot contain whitespace, `,`, `/` or `:`. These are the characters the other CSP2
 workflows refuse, and an ID that has one fails here, before the assembly runs.
@@ -57,14 +75,14 @@ assemblies together.
 One step is a Galaxy user-defined tool embedded in the workflow, so the Galaxy server needs
 `enable_beta_tool_formats` set and the user needs permission to run user-defined tools. That
 step runs in a Docker container. The job uses as many cores as Galaxy gives it; CSP2 itself
-gives SKESA at most 4 cores and 12 GB of memory. Assembling the Week_42 reads (319,000 forward
-reads of up to 251 bases, a 4.6 Mb genome) took about 2 GB.
+gives SKESA at most 4 cores and 12 GB of memory. Assembling the Week_42 reads took up to about 3.5 GB
+paired-end and about 2 GB forward-only.
 
 ## What is not covered
 
 Only paired reads are taken. CSP2 also assembles single-end reads (`skesa --fastq <reads>`),
-which is not carried as a separate input; in every case tried it gave the same assembly as this
-workflow gives for a pair with those reads as its forward file. CSP2 finds and pairs read files by file name suffix in a directory and can trim a common
+which is not carried as a separate input; in every case tried it gave the same assembly as the
+forward-only mode gives for a pair with those reads as its forward file. CSP2 finds and pairs read files by file name suffix in a directory and can trim a common
 string from isolate names; here the pairing and the names come from the input collection. The
 `Assembly_Data.tsv` table CSP2 writes in this mode, which lists the read and assembly paths of
 each isolate, is not produced. CSP2's `snp` and `screen` modes are the separate workflows
@@ -72,7 +90,9 @@ each isolate, is not produced. CSP2's `snp` and `screen` modes are the separate 
 
 ## Validation
 
-For the Week_42 reads published with the CSP2 test data, the command this workflow runs gives,
-byte for byte, the SKESA assembly published with the expected output of CSP2's contamination
-screen. The test uses three small isolates: two are the Week_42 read pairs that cover one contig
-each of that published assembly, and one is simulated.
+For the Week_42 reads published with the CSP2 test data, the forward-only mode gives, byte for
+byte, the SKESA assembly published with the expected output of CSP2's contamination screen, and
+the paired-end mode gives the same assembly as SKESA 2.5.1 does for the same command. Both modes
+gave the same bytes with 1, 2, 4 and 8 cores on the test reads. The tests run three small
+isolates in each mode: two are the Week_42 read pairs that cover one contig each of that
+published assembly, and one is simulated.
