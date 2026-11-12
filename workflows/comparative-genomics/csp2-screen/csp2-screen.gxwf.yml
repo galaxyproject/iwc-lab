@@ -315,6 +315,7 @@ steps:
         : > All_SNPDiffs.txt &&
         while IFS="$tab" read -r pair query reference path; do
           case "$pair" in
+            *:*:*) echo "snpdiffs identifier '$pair' has more than one ':'; isolate IDs must not contain ':'" >&2; exit 1 ;;
             *:*) ;;
             *) echo "snpdiffs identifier '$pair' is not <query isolate ID>:<reference isolate ID>" >&2; exit 1 ;;
           esac
@@ -336,7 +337,7 @@ steps:
           format:
             - txt
           label: CSP2 snpdiffs files
-          help: One snpdiffs file per aligned pair, at least one. Each element identifier must be `<query isolate ID>:<reference isolate ID>`; the IDs must not contain whitespace, ',' or '/', and the reference ID must not contain ':'.
+          help: One snpdiffs file per aligned pair, at least one. Each element identifier must be `<query isolate ID>:<reference isolate ID>`; neither ID may contain ':', whitespace, ',' or '/'.
         - name: reference_ids
           type: data
           format:
