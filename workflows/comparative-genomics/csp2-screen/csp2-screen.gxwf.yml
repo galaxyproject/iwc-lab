@@ -289,11 +289,12 @@ steps:
         - filename: snpdiffs.tsv
           content: |
             ${
-              return (inputs.snpdiffs.elements || inputs.snpdiffs).map(function (element) {
+              var rows = (inputs.snpdiffs.elements || inputs.snpdiffs).map(function (element) {
                 var pair = String(element.element_identifier);
                 var cut = pair.lastIndexOf(":");
                 return [pair, pair.substring(0, cut), pair.substring(cut + 1), element.path].join("\t");
-              }).join("\n") + "\n";
+              });
+              return rows.length ? rows.join("\n") + "\n" : "";
             }
         - filename: settings.txt
           content: |
@@ -314,6 +315,7 @@ steps:
         if [ "$density_windows" != 0 ] && [ "`printf '%s' "$density_windows" | tr -cd ,`" != "`printf '%s' "$max_snps" | tr -cd ,`" ]; then
           echo "SNP density windows '$density_windows' and Maximum SNPs per density window '$max_snps' must have the same number of entries" >&2; exit 1
         fi &&
+        if [ ! -s snpdiffs.tsv ]; then echo "No snpdiffs files to screen: there are no query and reference pairs (is every query also a reference?)" >&2; exit 1; fi &&
         mkdir -p snpdiffs logs tmp &&
         : > All_SNPDiffs.txt &&
         while IFS="$tab" read -r pair query reference path; do
