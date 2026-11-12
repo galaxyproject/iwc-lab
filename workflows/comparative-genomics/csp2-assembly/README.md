@@ -99,4 +99,6 @@ byte, the SKESA assembly published with the expected output of CSP2's contaminat
 the paired-end mode gives the same assembly as SKESA 2.5.1 does for the same command. Both modes
 gave the same bytes with 1, 2, 4 and 8 cores on the test reads. The tests run three small
 isolates in each mode: two are the Week_42 read pairs that cover one contig each of that
-published assembly, and one is simulated.
+published assembly, and one is simulated. Because these reads are subsets and simulations with no
+upstream copy, they are committed under `test-data/` rather than fetched by URL; the test file
+describes how each set was made.
