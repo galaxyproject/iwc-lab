@@ -311,6 +311,9 @@ steps:
             ""|*[!0-9,]*|,*|*,|*,,*) echo "'$list' is not a comma-separated list of whole numbers" >&2; exit 1 ;;
           esac
         done &&
+        if [ "$density_windows" != 0 ] && [ "`printf '%s' "$density_windows" | tr -cd ,`" != "`printf '%s' "$max_snps" | tr -cd ,`" ]; then
+          echo "SNP density windows '$density_windows' and Maximum SNPs per density window '$max_snps' must have the same number of entries" >&2; exit 1
+        fi &&
         mkdir -p snpdiffs logs tmp &&
         : > All_SNPDiffs.txt &&
         while IFS="$tab" read -r pair query reference path; do
