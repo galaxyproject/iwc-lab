@@ -59,5 +59,17 @@ the Tool Shed IQ-TREE wrapper, which is a newer IQ-TREE than the one in the CSP2
 
 ## Validation
 
-With one reference, the pairwise distances, distance matrices, SNP list and SNP alignment match
-the expected outputs published with the CSP2 test data for 15 soil isolates.
+The tests run two cases, both from the soil isolates in the CSP2 test data. One names Sample_A as
+the reference for three isolates with the tree switched off; its expected outputs come from
+running upstream's own Nextflow pipeline on the same three assemblies, and they agree with the
+published 15-isolate values for those isolates. The other runs all 15 isolates with every setting
+at its default, so RefChooser picks the reference and the tree is built, and compares against the
+expected outputs CSP2's authors publish for that run.
+
+In both cases the snpdiffs, summary tables, reference screening, pairwise distances, distance
+matrices, SNP list and SNP alignment, raw and preserved, are checked on their content. Assembly
+paths are left out of those checks. CSP2 writes the screening rows and the preserved SNP list in
+an order that changes from run to run, so they are sorted before comparing, and the preserved
+alignment is checked by size and per-isolate base counts. The tree comes from a newer IQ-TREE than
+upstream's, so only its shape is checked. Choosing more than one reference has no published
+expected output and is not tested.

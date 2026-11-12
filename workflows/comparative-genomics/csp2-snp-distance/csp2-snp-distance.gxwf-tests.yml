@@ -1,4 +1,29 @@
-- doc: 'snp-soil-3-isolates-named-reference: CSP2 snp mode on three of the Soil_Analysis assemblies (Sample_A, Sample_B, Sample_D) with Sample_A named as the reference and the tree step switched off. Exercises the user-supplied reference path (RefChooser skipped) and the Build phylogenetic tree = false branch in two alignments instead of fourteen.'
+# Expected values.
+#
+# snp-soil-15-isolates-refchooser compares against the expected outputs CSP2's authors publish with
+# their test data, microbial-bioinformatics/CSP2_TestData at 61b1f790417ed2a2a08390d432b03effabbd66e2,
+# assets/SNP/Output/Soil_Analysis. Files under test-data/snpdiffs/ and test-data/15-isolates/ are byte
+# copies of that tree; Sample_M's snpdiffs is gzipped (decompress: true) to stay under 100 KB.
+#
+# snp-soil-3-isolates-named-reference has no published oracle. Its files under test-data/3-isolates/
+# come from upstream's own Nextflow pipeline (CSP2.nf --runmode snp --ref_id Sample_A --notree) run in
+# cfsanbiostatistics/csp2:v.0.9.7.8-galaxy on the same three assemblies, and match this workflow's
+# outputs. Its snpdiffs, screening rows, distances and alignment bases also equal the 15-isolate
+# upstream values for the same isolates (SNPs_Cocalled differs, since the site set is smaller).
+#
+# What is not compared byte for byte, and why:
+# - snpdiffs headers and the Raw MUMmer summary / Isolate data rows carry job-local assembly paths;
+#   the rest of each line is matched exactly ([^\t]+ stands for a path, lines_diff: 2 allows the
+#   header line in the snpdiffs diff).
+# - Reference screening rows follow the order of a Python set of snpdiffs paths, and the preserved
+#   SNP list follows a set of Ref_Loc strings (runSNPPipeline.py), so both are sorted before an exact
+#   comparison. The preserved SNP alignment's columns follow that same set order, so its size,
+#   records and per-record base counts are asserted instead of its bytes.
+# - The tree comes from the Tool Shed IQ-TREE, newer than upstream's and stochastic, so only its
+#   shape is asserted: one Newick line with each isolate as a leaf exactly once.
+# Not covered by any case: more than one reference (Number of references to select > 1, or several
+# Reference isolate IDs). Upstream publishes no expected output for that path.
+- doc: 'snp-soil-3-isolates-named-reference: CSP2 snp mode on three of the Soil_Analysis assemblies (Sample_A, Sample_B, Sample_D) with Sample_A named as the reference and the tree step switched off. Exercises the user-supplied reference path (RefChooser skipped) and the Build phylogenetic tree = false branch in two alignments instead of fourteen. Expected outputs come from upstream''s own Nextflow pipeline on the same three assemblies.'
   job:
     Query assemblies:
       class: Collection
@@ -56,6 +81,8 @@
       asserts:
       - has_n_lines:
           n: 3
+      - has_line:
+          line: "SNPDiffs_File\tQuery_ID\tQuery_Assembly\tQuery_Contig_Count\tQuery_Assembly_Bases\tQuery_N50\tQuery_N90\tQuery_L50\tQuery_L90\tQuery_SHA256\tReference_ID\tReference_Assembly\tReference_Contig_Count\tReference_Assembly_Bases\tReference_N50\tReference_N90\tReference_L50\tReference_L90\tReference_SHA256\tSNPs\tReference_Percent_Aligned\tQuery_Percent_Aligned\tMedian_Percent_Identity\tMedian_Alignment_Length\tKmer_Similarity\tShared_Kmers\tReference_Unique_Kmers\tQuery_Unique_Kmers\tReference_Breakpoints\tQuery_Breakpoints\tReference_Relocations\tQuery_Relocations\tReference_Translocations\tQuery_Translocations\tReference_Inversions\tQuery_Inversions\tReference_Insertions\tQuery_Insertions\tReference_Tandem\tQuery_Tandem\tIndels\tInvalid\tgSNPs\tgIndels"
       - has_line_matching:
           expression: '[^\t]+\tSample_B\t[^\t]+\t40\t4631086\t285283\t87355\t6\t17\t2486ab6c17c1c7997a5707111aa8e2cac41c578382aff413fa66086a31fbde38\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t37\t99\.99\t99\.94\t100\.00\t50330\.00\t99\.87\t4616020\t1510\t4565\t42\t85\t0\t0\t3\t12\t0\t0\t10\t51\t0\t1\t2\t0\t35\t2'
       - has_line_matching:
@@ -64,6 +91,8 @@
       asserts:
       - has_n_lines:
           n: 4
+      - has_line:
+          line: "Isolate_ID\tIsolate_Type\tAssembly_Path\tContig_Count\tAssembly_Bases\tN50\tN90\tL50\tL90\tSHA256"
       - has_line_matching:
           expression: Sample_A\tReference\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b
       - has_line_matching:
@@ -75,42 +104,540 @@
       element_count: 1
       element_tests:
         Sample_A:
-          asserts:
-          - has_n_lines:
-              n: 3
-          - has_line:
-              line: "Sample_B\tSample_A\tPass\t34\t99.80\t99.91\t40\t4631086\t50\t4626313\t37\t0\t0\t0\t0\t2\t0\t0\t2\t0\t0\t1\t99.87\t4616020\t4565\t1510\t35\t2"
-          - has_line:
-              line: "Sample_D\tSample_A\tPass\t10\t99.85\t99.89\t55\t4627990\t50\t4626313\t10\t0\t0\t0\t0\t11\t0\t0\t0\t0\t0\t0\t99.92\t4616091\t2474\t1439\t10\t3"
+          file: test-data/3-isolates/Reference_Screening.tsv
+          compare: diff
+          sort: true
     Pairwise SNP distances:
       class: Collection
       element_count: 1
       element_tests:
         Sample_A:
-          asserts:
-          - has_n_lines:
-              n: 4
-          - has_line:
-              line: "Query_1\tQuery_2\tSNP_Distance\tSNPs_Cocalled"
+          file: test-data/3-isolates/snp_distance_pairwise.tsv
+          compare: diff
+    Preserved pairwise SNP distances:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          file: test-data/3-isolates/snp_distance_pairwise_preserved.tsv
+          compare: diff
     SNP distance matrix:
       class: Collection
       element_count: 1
       element_tests:
         Sample_A:
-          asserts:
-          - has_n_lines:
-              n: 4
-          - has_line:
-              line: "\tSample_A\tSample_B\tSample_D"
+          file: test-data/3-isolates/snp_distance_matrix.tsv
+          compare: diff
+    Preserved SNP distance matrix:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          file: test-data/3-isolates/snp_distance_matrix_preserved.tsv
+          compare: diff
+    SNP list:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          file: test-data/3-isolates/snplist.txt
+          compare: diff
     SNP alignment:
       class: Collection
       element_count: 1
       element_tests:
         Sample_A:
+          file: test-data/3-isolates/snpma.fasta
+          compare: diff
+    Preserved SNP list:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          file: test-data/3-isolates/snplist_preserved.txt
+          compare: diff
+          sort: true
+    Preserved SNP alignment:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
           asserts:
+          - has_n_lines:
+              n: 6
+          - has_size:
+              size: 150
           - has_line:
               line: '>Sample_A'
           - has_line:
               line: '>Sample_B'
           - has_line:
               line: '>Sample_D'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_A\n(?=(?:[^A>]*A){5}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){9}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){15}[^G>]*(?:>|\Z))(?=(?:[^T>]*T){10}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_B\n(?=(?:[^A>]*A){13}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){11}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){8}[^G>]*(?:>|\Z))(?=(?:[^T>]*T){7}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_D\n(?=(?:[^A>]*A){8}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){10}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){12}[^G>]*(?:>|\Z))(?=(?:[^T>]*T){9}[^T>]*(?:>|\Z))'
+- doc: 'snp-soil-15-isolates-refchooser: CSP2 snp mode on the 15 Soil_Analysis assemblies with every parameter left at its workflow default and no reference named, so RefChooser picks one reference. Reproduces the upstream expected run (n_ref = 1, reference Sample_A, max_missing = 50) and compares snpdiffs, screening, SNP lists, SNP alignments and SNP distances, raw and preserved, with the upstream expected outputs. Covers RefChooser and the tree step.'
+  job:
+    Query assemblies:
+      class: Collection
+      collection_type: list
+      elements:
+      - class: File
+        identifier: Sample_A
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_A.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 9ede9ea9addfd9233453fe05200d63b2e63f6c25
+      - class: File
+        identifier: Sample_B
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_B.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: d5fdde41045a6393adb978d8f1d0f689d1a08471
+      - class: File
+        identifier: Sample_C
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_C.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: fe226fe69f1b65d0ca856449d7e944a409b3ee8c
+      - class: File
+        identifier: Sample_D
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_D.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 2239f6fdcc72a133c45d914c8b91d8e10ba4a393
+      - class: File
+        identifier: Sample_E
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_E.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 0edea4f8f6a6849c7213529b3fc2d7c8eab94404
+      - class: File
+        identifier: Sample_F
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_F.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: d9a9d36576ff6806da1d0bda30e93dae41843d7b
+      - class: File
+        identifier: Sample_G
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_G.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 646f28e00d5b995fb5891ee7c8cd30e2e29ae918
+      - class: File
+        identifier: Sample_H
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_H.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 698381c3cdc53a28dfbe7c019a796f325486393e
+      - class: File
+        identifier: Sample_I
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_I.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 4b2a897efd95796fa9cf635f9609540c32f08194
+      - class: File
+        identifier: Sample_J
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_J.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 37de07a10f989ed632fad23111a446003335a8ef
+      - class: File
+        identifier: Sample_K
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_K.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 482d9d3bbd0579b45c1101250e0568050d38431f
+      - class: File
+        identifier: Sample_L
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_L.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: cc48647fae3c5ef7ea68894234aeac04006fe547
+      - class: File
+        identifier: Sample_M
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_M.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: f946809e4e5c60995213f55ff7a5a9e009152f46
+      - class: File
+        identifier: Sample_N
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_N.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 1d6e2df7b123fda6f57f394193aec706da07657b
+      - class: File
+        identifier: Sample_O
+        location: https://raw.githubusercontent.com/microbial-bioinformatics/CSP2_TestData/61b1f790417ed2a2a08390d432b03effabbd66e2/assets/SNP/Sample_O.fasta
+        filetype: fasta
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 51a976c42a79fc5ccffb50466114cbf851182b77
+  outputs:
+    Reference IDs:
+      asserts:
+      - has_line:
+          line: Sample_A
+      - has_n_lines:
+          n: 1
+    SNPDiffs:
+      class: Collection
+      element_count: 14
+      element_tests:
+        Sample_B:Sample_A:
+          file: test-data/snpdiffs/Sample_B__vs__Sample_A.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_B\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:40\tQuery_Assembly_Bases:4631086\tQuery_N50:285283\tQuery_N90:87355\tQuery_L50:6\tQuery_L90:17\tQuery_SHA256:2486ab6c17c1c7997a5707111aa8e2cac41c578382aff413fa66086a31fbde38\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:37\tReference_Percent_Aligned:99\.99\tQuery_Percent_Aligned:99\.94\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:50330\.00\tKmer_Similarity:99\.87\tShared_Kmers:4616020\tReference_Unique_Kmers:1510\tQuery_Unique_Kmers:4565\tReference_Breakpoints:42\tQuery_Breakpoints:85\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:3\tQuery_Translocations:12\tReference_Inversions:0\tQuery_Inversions:0\tReference_Insertions:10\tQuery_Insertions:51\tReference_Tandem:0\tQuery_Tandem:1\tIndels:2\tInvalid:0\tgSNPs:35\tgIndels:2
+        Sample_C:Sample_A:
+          file: test-data/snpdiffs/Sample_C__vs__Sample_A.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_C\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:49\tQuery_Assembly_Bases:4668385\tQuery_N50:235009\tQuery_N90:69689\tQuery_L50:7\tQuery_L90:22\tQuery_SHA256:c4676142f6ab101d74ffea7d9315433ccaacee08df481f019cdc2cf29969f52b\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:18\tReference_Percent_Aligned:99\.99\tQuery_Percent_Aligned:99\.11\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:54664\.00\tKmer_Similarity:99\.06\tShared_Kmers:4616466\tReference_Unique_Kmers:1064\tQuery_Unique_Kmers:42691\tReference_Breakpoints:35\tQuery_Breakpoints:52\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:6\tQuery_Translocations:5\tReference_Inversions:2\tQuery_Inversions:2\tReference_Insertions:11\tQuery_Insertions:28\tReference_Tandem:0\tQuery_Tandem:0\tIndels:2\tInvalid:0\tgSNPs:18\tgIndels:2
+        Sample_D:Sample_A:
+          file: test-data/snpdiffs/Sample_D__vs__Sample_A.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_D\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:55\tQuery_Assembly_Bases:4627990\tQuery_N50:238061\tQuery_N90:54649\tQuery_L50:7\tQuery_L90:23\tQuery_SHA256:0a8824d9ecda9632b817d421c082e8bf87b613a8032e6e41ce02fb8a8167d8c0\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:10\tReference_Percent_Aligned:99\.99\tQuery_Percent_Aligned:99\.97\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:40058\.00\tKmer_Similarity:99\.92\tShared_Kmers:4616091\tReference_Unique_Kmers:1439\tQuery_Unique_Kmers:2474\tReference_Breakpoints:51\tQuery_Breakpoints:52\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:13\tQuery_Translocations:5\tReference_Inversions:0\tQuery_Inversions:0\tReference_Insertions:21\tQuery_Insertions:30\tReference_Tandem:0\tQuery_Tandem:0\tIndels:11\tInvalid:0\tgSNPs:10\tgIndels:3
+        Sample_E:Sample_A:
+          file: test-data/snpdiffs/Sample_E__vs__Sample_A.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_E\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:84\tQuery_Assembly_Bases:4624417\tQuery_N50:95783\tQuery_N90:45157\tQuery_L50:16\tQuery_L90:43\tQuery_SHA256:342f8303aafabca5c3e3f175b975cab322eb91fa1f0aabb72340f07bd4740623\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:10\tReference_Percent_Aligned:99\.95\tQuery_Percent_Aligned:99\.98\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:44922\.00\tKmer_Similarity:99\.88\tShared_Kmers:4613770\tReference_Unique_Kmers:3760\tQuery_Unique_Kmers:1601\tReference_Breakpoints:107\tQuery_Breakpoints:30\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:37\tQuery_Translocations:2\tReference_Inversions:0\tQuery_Inversions:0\tReference_Insertions:58\tQuery_Insertions:9\tReference_Tandem:0\tQuery_Tandem:0\tIndels:5\tInvalid:0\tgSNPs:10\tgIndels:3
+        Sample_F:Sample_A:
+          file: test-data/snpdiffs/Sample_F__vs__Sample_A.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_F\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:275\tQuery_Assembly_Bases:4582721\tQuery_N50:36325\tQuery_N90:11886\tQuery_L50:40\tQuery_L90:120\tQuery_SHA256:1f9e26d3f5ea00ac336292f5877077fcf74f8fbfa13c7e64c594f9808fd392ef\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:29\tReference_Percent_Aligned:99\.12\tQuery_Percent_Aligned:99\.99\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:7744\.00\tKmer_Similarity:98\.90\tShared_Kmers:4568089\tReference_Unique_Kmers:49441\tQuery_Unique_Kmers:1584\tReference_Breakpoints:543\tQuery_Breakpoints:70\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:228\tQuery_Translocations:2\tReference_Inversions:0\tQuery_Inversions:0\tReference_Insertions:281\tQuery_Insertions:11\tReference_Tandem:0\tQuery_Tandem:0\tIndels:1\tInvalid:0\tgSNPs:29\tgIndels:1
+        Sample_G:Sample_A:
+          file: test-data/snpdiffs/Sample_G__vs__Sample_A.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_G\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:254\tQuery_Assembly_Bases:4584986\tQuery_N50:41813\tQuery_N90:13112\tQuery_L50:38\tQuery_L90:110\tQuery_SHA256:aae3a07d055bff2fa66127ca77cae35dd5cce5cc42dafea481787d4010c7dbef\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:30\tReference_Percent_Aligned:99\.14\tQuery_Percent_Aligned:99\.99\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:8664\.00\tKmer_Similarity:98\.92\tShared_Kmers:4569771\tReference_Unique_Kmers:47759\tQuery_Unique_Kmers:1942\tReference_Breakpoints:474\tQuery_Breakpoints:54\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:204\tQuery_Translocations:2\tReference_Inversions:0\tQuery_Inversions:0\tReference_Insertions:243\tQuery_Insertions:14\tReference_Tandem:0\tQuery_Tandem:0\tIndels:1\tInvalid:0\tgSNPs:30\tgIndels:1
+        Sample_H:Sample_A:
+          file: test-data/snpdiffs/Sample_H__vs__Sample_A.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_H\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:54\tQuery_Assembly_Bases:4728796\tQuery_N50:285283\tQuery_N90:57940\tQuery_L50:6\tQuery_L90:22\tQuery_SHA256:7f3d73397edee903cfea5b796e4f1a257cc50b63233dcb68a5379ec4fad22953\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:25\tReference_Percent_Aligned:99\.99\tQuery_Percent_Aligned:97\.86\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:44922\.00\tKmer_Similarity:97\.81\tShared_Kmers:4615794\tReference_Unique_Kmers:1736\tQuery_Unique_Kmers:101815\tReference_Breakpoints:55\tQuery_Breakpoints:81\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:8\tQuery_Translocations:9\tReference_Inversions:2\tQuery_Inversions:2\tReference_Insertions:13\tQuery_Insertions:45\tReference_Tandem:0\tQuery_Tandem:0\tIndels:8\tInvalid:0\tgSNPs:25\tgIndels:1
+        Sample_I:Sample_A:
+          file: test-data/snpdiffs/Sample_I__vs__Sample_A.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_I\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:47\tQuery_Assembly_Bases:4668267\tQuery_N50:222472\tQuery_N90:69687\tQuery_L50:7\tQuery_L90:21\tQuery_SHA256:e05093575566fd4d00f1e50534435fc38b757b0f26ff73c3046ac9f436fd6208\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:12\tReference_Percent_Aligned:99\.99\tQuery_Percent_Aligned:99\.11\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:51864\.00\tKmer_Similarity:99\.06\tShared_Kmers:4616398\tReference_Unique_Kmers:1132\tQuery_Unique_Kmers:42755\tReference_Breakpoints:47\tQuery_Breakpoints:61\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:5\tQuery_Translocations:6\tReference_Inversions:2\tQuery_Inversions:2\tReference_Insertions:17\tQuery_Insertions:31\tReference_Tandem:0\tQuery_Tandem:2\tIndels:2\tInvalid:0\tgSNPs:12\tgIndels:2
+        Sample_J:Sample_A:
+          file: test-data/snpdiffs/Sample_J__vs__Sample_A.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_J\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:170\tQuery_Assembly_Bases:4730789\tQuery_N50:55413\tQuery_N90:21547\tQuery_L50:28\tQuery_L90:79\tQuery_SHA256:f4b68669533ce36a0f19f97ed11ffa0ea40daa27767f9b094cca7d4ffff53225\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:17\tReference_Percent_Aligned:99\.65\tQuery_Percent_Aligned:97\.39\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:21389\.00\tKmer_Similarity:97\.01\tShared_Kmers:4599459\tReference_Unique_Kmers:18071\tQuery_Unique_Kmers:123529\tReference_Breakpoints:291\tQuery_Breakpoints:37\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:108\tQuery_Translocations:1\tReference_Inversions:0\tQuery_Inversions:0\tReference_Insertions:165\tQuery_Insertions:2\tReference_Tandem:0\tQuery_Tandem:0\tIndels:2\tInvalid:0\tgSNPs:17\tgIndels:2
+        Sample_K:Sample_A:
+          file: test-data/snpdiffs/Sample_K__vs__Sample_A.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_K\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:38\tQuery_Assembly_Bases:4632444\tQuery_N50:259526\tQuery_N90:83199\tQuery_L50:6\tQuery_L90:16\tQuery_SHA256:eb45e2ad3c47422df1d3bb56c8900d89daf2e623e00389a94d77f2099e6288ff\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:15\tReference_Percent_Aligned:99\.97\tQuery_Percent_Aligned:99\.92\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:44800\.50\tKmer_Similarity:99\.85\tShared_Kmers:4615265\tReference_Unique_Kmers:2265\tQuery_Unique_Kmers:4865\tReference_Breakpoints:65\tQuery_Breakpoints:118\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:7\tQuery_Translocations:16\tReference_Inversions:0\tQuery_Inversions:0\tReference_Insertions:13\tQuery_Insertions:64\tReference_Tandem:1\tQuery_Tandem:0\tIndels:15\tInvalid:0\tgSNPs:15\tgIndels:3
+        Sample_L:Sample_A:
+          file: test-data/snpdiffs/Sample_L__vs__Sample_A.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_L\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:61\tQuery_Assembly_Bases:4627094\tQuery_N50:169488\tQuery_N90:51870\tQuery_L50:9\tQuery_L90:27\tQuery_SHA256:c0c473f21eb8c605b2bd77299e5cbff8d7e6944d62937f0202efb6425f7a1f2c\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:9\tReference_Percent_Aligned:99\.97\tQuery_Percent_Aligned:99\.96\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:40087\.00\tKmer_Similarity:99\.89\tShared_Kmers:4614975\tReference_Unique_Kmers:2555\tQuery_Unique_Kmers:2563\tReference_Breakpoints:75\tQuery_Breakpoints:62\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:23\tQuery_Translocations:9\tReference_Inversions:2\tQuery_Inversions:2\tReference_Insertions:33\tQuery_Insertions:31\tReference_Tandem:0\tQuery_Tandem:0\tIndels:9\tInvalid:0\tgSNPs:9\tgIndels:3
+        Sample_M:Sample_A:
+          file: test-data/snpdiffs/Sample_M__vs__Sample_A.snpdiffs.gz
+          decompress: true
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_M\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:805\tQuery_Assembly_Bases:4587464\tQuery_N50:11490\tQuery_N90:2756\tQuery_L50:113\tQuery_L90:423\tQuery_SHA256:43cb745a1d68479c4c5478bc92d6dbe3c8c999be665ce6394243b7b659a7fa1f\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:29\tReference_Percent_Aligned:98\.21\tQuery_Percent_Aligned:98\.99\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:2978\.50\tKmer_Similarity:96\.83\tShared_Kmers:4516541\tReference_Unique_Kmers:100989\tQuery_Unique_Kmers:46764\tReference_Breakpoints:1582\tQuery_Breakpoints:37\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:744\tQuery_Translocations:1\tReference_Inversions:0\tQuery_Inversions:0\tReference_Insertions:825\tQuery_Insertions:5\tReference_Tandem:0\tQuery_Tandem:0\tIndels:9\tInvalid:0\tgSNPs:29\tgIndels:2
+        Sample_N:Sample_A:
+          file: test-data/snpdiffs/Sample_N__vs__Sample_A.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_N\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:63\tQuery_Assembly_Bases:4667287\tQuery_N50:173213\tQuery_N90:40058\tQuery_L50:8\tQuery_L90:27\tQuery_SHA256:d32b34cc2dd9824e5381b505505ff44d510d4e9d5e7352eab60ec2878d3a688b\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:17\tReference_Percent_Aligned:99\.96\tQuery_Percent_Aligned:99\.11\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:31487\.00\tKmer_Similarity:99\.02\tShared_Kmers:4614530\tReference_Unique_Kmers:3000\tQuery_Unique_Kmers:42760\tReference_Breakpoints:66\tQuery_Breakpoints:51\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:21\tQuery_Translocations:6\tReference_Inversions:2\tQuery_Inversions:2\tReference_Insertions:27\tQuery_Insertions:28\tReference_Tandem:0\tQuery_Tandem:0\tIndels:2\tInvalid:0\tgSNPs:17\tgIndels:2
+        Sample_O:Sample_A:
+          file: test-data/snpdiffs/Sample_O__vs__Sample_A.snpdiffs
+          compare: diff
+          lines_diff: 2
+          asserts:
+          - has_line_matching:
+              expression: \#\tQuery_ID:Sample_O\tQuery_Assembly:[^\t]+\tQuery_Contig_Count:83\tQuery_Assembly_Bases:4623444\tQuery_N50:104612\tQuery_N90:43315\tQuery_L50:13\tQuery_L90:40\tQuery_SHA256:cbcc76d3c8bd2e8c61daeb1abeeab82b5f6285b1b52ec3211252fe8fa721df78\tReference_ID:Sample_A\tReference_Assembly:[^\t]+\tReference_Contig_Count:50\tReference_Assembly_Bases:4626313\tReference_N50:285283\tReference_N90:80168\tReference_L50:7\tReference_L90:20\tReference_SHA256:dae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\tSNPs:37\tReference_Percent_Aligned:99\.89\tQuery_Percent_Aligned:99\.96\tMedian_Percent_Identity:100\.00\tMedian_Alignment_Length:29878\.00\tKmer_Similarity:99\.76\tShared_Kmers:4609834\tReference_Unique_Kmers:7696\tQuery_Unique_Kmers:3266\tReference_Breakpoints:103\tQuery_Breakpoints:51\tReference_Relocations:0\tQuery_Relocations:0\tReference_Translocations:41\tQuery_Translocations:5\tReference_Inversions:0\tQuery_Inversions:0\tReference_Insertions:52\tQuery_Insertions:30\tReference_Tandem:0\tQuery_Tandem:0\tIndels:16\tInvalid:0\tgSNPs:34\tgIndels:1
+    Raw MUMmer summary:
+      asserts:
+      - has_n_lines:
+          n: 15
+      - has_line:
+          line: "SNPDiffs_File\tQuery_ID\tQuery_Assembly\tQuery_Contig_Count\tQuery_Assembly_Bases\tQuery_N50\tQuery_N90\tQuery_L50\tQuery_L90\tQuery_SHA256\tReference_ID\tReference_Assembly\tReference_Contig_Count\tReference_Assembly_Bases\tReference_N50\tReference_N90\tReference_L50\tReference_L90\tReference_SHA256\tSNPs\tReference_Percent_Aligned\tQuery_Percent_Aligned\tMedian_Percent_Identity\tMedian_Alignment_Length\tKmer_Similarity\tShared_Kmers\tReference_Unique_Kmers\tQuery_Unique_Kmers\tReference_Breakpoints\tQuery_Breakpoints\tReference_Relocations\tQuery_Relocations\tReference_Translocations\tQuery_Translocations\tReference_Inversions\tQuery_Inversions\tReference_Insertions\tQuery_Insertions\tReference_Tandem\tQuery_Tandem\tIndels\tInvalid\tgSNPs\tgIndels"
+      - has_line_matching:
+          expression: '[^\t]+\tSample_B\t[^\t]+\t40\t4631086\t285283\t87355\t6\t17\t2486ab6c17c1c7997a5707111aa8e2cac41c578382aff413fa66086a31fbde38\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t37\t99\.99\t99\.94\t100\.00\t50330\.00\t99\.87\t4616020\t1510\t4565\t42\t85\t0\t0\t3\t12\t0\t0\t10\t51\t0\t1\t2\t0\t35\t2'
+      - has_line_matching:
+          expression: '[^\t]+\tSample_C\t[^\t]+\t49\t4668385\t235009\t69689\t7\t22\tc4676142f6ab101d74ffea7d9315433ccaacee08df481f019cdc2cf29969f52b\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t18\t99\.99\t99\.11\t100\.00\t54664\.00\t99\.06\t4616466\t1064\t42691\t35\t52\t0\t0\t6\t5\t2\t2\t11\t28\t0\t0\t2\t0\t18\t2'
+      - has_line_matching:
+          expression: '[^\t]+\tSample_D\t[^\t]+\t55\t4627990\t238061\t54649\t7\t23\t0a8824d9ecda9632b817d421c082e8bf87b613a8032e6e41ce02fb8a8167d8c0\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t10\t99\.99\t99\.97\t100\.00\t40058\.00\t99\.92\t4616091\t1439\t2474\t51\t52\t0\t0\t13\t5\t0\t0\t21\t30\t0\t0\t11\t0\t10\t3'
+      - has_line_matching:
+          expression: '[^\t]+\tSample_E\t[^\t]+\t84\t4624417\t95783\t45157\t16\t43\t342f8303aafabca5c3e3f175b975cab322eb91fa1f0aabb72340f07bd4740623\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t10\t99\.95\t99\.98\t100\.00\t44922\.00\t99\.88\t4613770\t3760\t1601\t107\t30\t0\t0\t37\t2\t0\t0\t58\t9\t0\t0\t5\t0\t10\t3'
+      - has_line_matching:
+          expression: '[^\t]+\tSample_F\t[^\t]+\t275\t4582721\t36325\t11886\t40\t120\t1f9e26d3f5ea00ac336292f5877077fcf74f8fbfa13c7e64c594f9808fd392ef\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t29\t99\.12\t99\.99\t100\.00\t7744\.00\t98\.90\t4568089\t49441\t1584\t543\t70\t0\t0\t228\t2\t0\t0\t281\t11\t0\t0\t1\t0\t29\t1'
+      - has_line_matching:
+          expression: '[^\t]+\tSample_G\t[^\t]+\t254\t4584986\t41813\t13112\t38\t110\taae3a07d055bff2fa66127ca77cae35dd5cce5cc42dafea481787d4010c7dbef\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t30\t99\.14\t99\.99\t100\.00\t8664\.00\t98\.92\t4569771\t47759\t1942\t474\t54\t0\t0\t204\t2\t0\t0\t243\t14\t0\t0\t1\t0\t30\t1'
+      - has_line_matching:
+          expression: '[^\t]+\tSample_H\t[^\t]+\t54\t4728796\t285283\t57940\t6\t22\t7f3d73397edee903cfea5b796e4f1a257cc50b63233dcb68a5379ec4fad22953\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t25\t99\.99\t97\.86\t100\.00\t44922\.00\t97\.81\t4615794\t1736\t101815\t55\t81\t0\t0\t8\t9\t2\t2\t13\t45\t0\t0\t8\t0\t25\t1'
+      - has_line_matching:
+          expression: '[^\t]+\tSample_I\t[^\t]+\t47\t4668267\t222472\t69687\t7\t21\te05093575566fd4d00f1e50534435fc38b757b0f26ff73c3046ac9f436fd6208\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t12\t99\.99\t99\.11\t100\.00\t51864\.00\t99\.06\t4616398\t1132\t42755\t47\t61\t0\t0\t5\t6\t2\t2\t17\t31\t0\t2\t2\t0\t12\t2'
+      - has_line_matching:
+          expression: '[^\t]+\tSample_J\t[^\t]+\t170\t4730789\t55413\t21547\t28\t79\tf4b68669533ce36a0f19f97ed11ffa0ea40daa27767f9b094cca7d4ffff53225\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t17\t99\.65\t97\.39\t100\.00\t21389\.00\t97\.01\t4599459\t18071\t123529\t291\t37\t0\t0\t108\t1\t0\t0\t165\t2\t0\t0\t2\t0\t17\t2'
+      - has_line_matching:
+          expression: '[^\t]+\tSample_K\t[^\t]+\t38\t4632444\t259526\t83199\t6\t16\teb45e2ad3c47422df1d3bb56c8900d89daf2e623e00389a94d77f2099e6288ff\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t15\t99\.97\t99\.92\t100\.00\t44800\.50\t99\.85\t4615265\t2265\t4865\t65\t118\t0\t0\t7\t16\t0\t0\t13\t64\t1\t0\t15\t0\t15\t3'
+      - has_line_matching:
+          expression: '[^\t]+\tSample_L\t[^\t]+\t61\t4627094\t169488\t51870\t9\t27\tc0c473f21eb8c605b2bd77299e5cbff8d7e6944d62937f0202efb6425f7a1f2c\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t9\t99\.97\t99\.96\t100\.00\t40087\.00\t99\.89\t4614975\t2555\t2563\t75\t62\t0\t0\t23\t9\t2\t2\t33\t31\t0\t0\t9\t0\t9\t3'
+      - has_line_matching:
+          expression: '[^\t]+\tSample_M\t[^\t]+\t805\t4587464\t11490\t2756\t113\t423\t43cb745a1d68479c4c5478bc92d6dbe3c8c999be665ce6394243b7b659a7fa1f\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t29\t98\.21\t98\.99\t100\.00\t2978\.50\t96\.83\t4516541\t100989\t46764\t1582\t37\t0\t0\t744\t1\t0\t0\t825\t5\t0\t0\t9\t0\t29\t2'
+      - has_line_matching:
+          expression: '[^\t]+\tSample_N\t[^\t]+\t63\t4667287\t173213\t40058\t8\t27\td32b34cc2dd9824e5381b505505ff44d510d4e9d5e7352eab60ec2878d3a688b\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t17\t99\.96\t99\.11\t100\.00\t31487\.00\t99\.02\t4614530\t3000\t42760\t66\t51\t0\t0\t21\t6\t2\t2\t27\t28\t0\t0\t2\t0\t17\t2'
+      - has_line_matching:
+          expression: '[^\t]+\tSample_O\t[^\t]+\t83\t4623444\t104612\t43315\t13\t40\tcbcc76d3c8bd2e8c61daeb1abeeab82b5f6285b1b52ec3211252fe8fa721df78\tSample_A\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b\t37\t99\.89\t99\.96\t100\.00\t29878\.00\t99\.76\t4609834\t7696\t3266\t103\t51\t0\t0\t41\t5\t0\t0\t52\t30\t0\t0\t16\t0\t34\t1'
+    Isolate data:
+      asserts:
+      - has_n_lines:
+          n: 16
+      - has_line:
+          line: "Isolate_ID\tIsolate_Type\tAssembly_Path\tContig_Count\tAssembly_Bases\tN50\tN90\tL50\tL90\tSHA256"
+      - has_line_matching:
+          expression: Sample_A\tReference\t[^\t]+\t50\t4626313\t285283\t80168\t7\t20\tdae2379030db9c465040198216d2976ef11fcea1a5739c2dc47950253842bd4b
+      - has_line_matching:
+          expression: Sample_B\tQuery\t[^\t]+\t40\t4631086\t285283\t87355\t6\t17\t2486ab6c17c1c7997a5707111aa8e2cac41c578382aff413fa66086a31fbde38
+      - has_line_matching:
+          expression: Sample_C\tQuery\t[^\t]+\t49\t4668385\t235009\t69689\t7\t22\tc4676142f6ab101d74ffea7d9315433ccaacee08df481f019cdc2cf29969f52b
+      - has_line_matching:
+          expression: Sample_D\tQuery\t[^\t]+\t55\t4627990\t238061\t54649\t7\t23\t0a8824d9ecda9632b817d421c082e8bf87b613a8032e6e41ce02fb8a8167d8c0
+      - has_line_matching:
+          expression: Sample_E\tQuery\t[^\t]+\t84\t4624417\t95783\t45157\t16\t43\t342f8303aafabca5c3e3f175b975cab322eb91fa1f0aabb72340f07bd4740623
+      - has_line_matching:
+          expression: Sample_F\tQuery\t[^\t]+\t275\t4582721\t36325\t11886\t40\t120\t1f9e26d3f5ea00ac336292f5877077fcf74f8fbfa13c7e64c594f9808fd392ef
+      - has_line_matching:
+          expression: Sample_G\tQuery\t[^\t]+\t254\t4584986\t41813\t13112\t38\t110\taae3a07d055bff2fa66127ca77cae35dd5cce5cc42dafea481787d4010c7dbef
+      - has_line_matching:
+          expression: Sample_H\tQuery\t[^\t]+\t54\t4728796\t285283\t57940\t6\t22\t7f3d73397edee903cfea5b796e4f1a257cc50b63233dcb68a5379ec4fad22953
+      - has_line_matching:
+          expression: Sample_I\tQuery\t[^\t]+\t47\t4668267\t222472\t69687\t7\t21\te05093575566fd4d00f1e50534435fc38b757b0f26ff73c3046ac9f436fd6208
+      - has_line_matching:
+          expression: Sample_J\tQuery\t[^\t]+\t170\t4730789\t55413\t21547\t28\t79\tf4b68669533ce36a0f19f97ed11ffa0ea40daa27767f9b094cca7d4ffff53225
+      - has_line_matching:
+          expression: Sample_K\tQuery\t[^\t]+\t38\t4632444\t259526\t83199\t6\t16\teb45e2ad3c47422df1d3bb56c8900d89daf2e623e00389a94d77f2099e6288ff
+      - has_line_matching:
+          expression: Sample_L\tQuery\t[^\t]+\t61\t4627094\t169488\t51870\t9\t27\tc0c473f21eb8c605b2bd77299e5cbff8d7e6944d62937f0202efb6425f7a1f2c
+      - has_line_matching:
+          expression: Sample_M\tQuery\t[^\t]+\t805\t4587464\t11490\t2756\t113\t423\t43cb745a1d68479c4c5478bc92d6dbe3c8c999be665ce6394243b7b659a7fa1f
+      - has_line_matching:
+          expression: Sample_N\tQuery\t[^\t]+\t63\t4667287\t173213\t40058\t8\t27\td32b34cc2dd9824e5381b505505ff44d510d4e9d5e7352eab60ec2878d3a688b
+      - has_line_matching:
+          expression: Sample_O\tQuery\t[^\t]+\t83\t4623444\t104612\t43315\t13\t40\tcbcc76d3c8bd2e8c61daeb1abeeab82b5f6285b1b52ec3211252fe8fa721df78
+    Reference screening:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          file: test-data/15-isolates/Reference_Screening.tsv
+          compare: diff
+          sort: true
+    Pairwise SNP distances:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          file: test-data/15-isolates/snp_distance_pairwise.tsv
+          compare: diff
+    Preserved pairwise SNP distances:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          file: test-data/15-isolates/snp_distance_pairwise_preserved.tsv
+          compare: diff
+    SNP distance matrix:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          file: test-data/15-isolates/snp_distance_matrix.tsv
+          compare: diff
+    Preserved SNP distance matrix:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          file: test-data/15-isolates/snp_distance_matrix_preserved.tsv
+          compare: diff
+    SNP list:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          file: test-data/15-isolates/snplist.txt
+          compare: diff
+    SNP alignment:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          file: test-data/15-isolates/snpma.fasta
+          compare: diff
+    Preserved SNP list:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          file: test-data/15-isolates/snplist_preserved.txt
+          compare: diff
+          sort: true
+    Preserved SNP alignment:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          asserts:
+          - has_n_lines:
+              n: 60
+          - has_size:
+              size: 2700
+          - has_line:
+              line: '>Sample_A'
+          - has_line:
+              line: '>Sample_B'
+          - has_line:
+              line: '>Sample_C'
+          - has_line:
+              line: '>Sample_D'
+          - has_line:
+              line: '>Sample_E'
+          - has_line:
+              line: '>Sample_F'
+          - has_line:
+              line: '>Sample_G'
+          - has_line:
+              line: '>Sample_H'
+          - has_line:
+              line: '>Sample_I'
+          - has_line:
+              line: '>Sample_J'
+          - has_line:
+              line: '>Sample_K'
+          - has_line:
+              line: '>Sample_L'
+          - has_line:
+              line: '>Sample_M'
+          - has_line:
+              line: '>Sample_N'
+          - has_line:
+              line: '>Sample_O'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_A\n(?=(?:[^\?>]*\?){0}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){32}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){52}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){54}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){0}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){29}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_B\n(?=(?:[^\?>]*\?){0}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){40}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){54}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){47}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){0}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){26}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_C\n(?=(?:[^\?>]*\?){0}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){38}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){50}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){48}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){0}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){31}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_D\n(?=(?:[^\?>]*\?){0}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){35}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){53}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){51}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){0}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){28}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_E\n(?=(?:[^\?>]*\?){0}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){35}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){53}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){51}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){0}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){28}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_F\n(?=(?:[^\?>]*\?){4}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){30}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){46}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){54}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){1}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){32}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_G\n(?=(?:[^\?>]*\?){3}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){29}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){47}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){55}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){1}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){32}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_H\n(?=(?:[^\?>]*\?){0}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){35}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){58}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){46}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){0}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){28}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_I\n(?=(?:[^\?>]*\?){0}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){38}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){53}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){49}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){0}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){27}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_J\n(?=(?:[^\?>]*\?){4}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){31}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){53}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){51}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){0}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){28}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_K\n(?=(?:[^\?>]*\?){0}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){32}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){51}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){55}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){0}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){29}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_L\n(?=(?:[^\?>]*\?){0}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){37}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){52}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){49}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){0}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){29}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_M\n(?=(?:[^\?>]*\?){6}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){35}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){47}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){47}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){0}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){32}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_N\n(?=(?:[^\?>]*\?){0}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){38}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){51}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){48}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){0}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){30}[^T>]*(?:>|\Z))'
+          - has_text_matching:
+              expression: '(?:^|\n)>Sample_O\n(?=(?:[^\?>]*\?){0}[^\?>]*(?:>|\Z))(?=(?:[^A>]*A){35}[^A>]*(?:>|\Z))(?=(?:[^C>]*C){52}[^C>]*(?:>|\Z))(?=(?:[^G>]*G){55}[^G>]*(?:>|\Z))(?=(?:[^N>]*N){0}[^N>]*(?:>|\Z))(?=(?:[^T>]*T){25}[^T>]*(?:>|\Z))'
+    Phylogenetic tree:
+      class: Collection
+      element_count: 1
+      element_tests:
+        Sample_A:
+          asserts:
+          - has_n_lines:
+              n: 1
+          - has_text_matching:
+              expression: ^\(.*\);\s*$
+          - has_text:
+              text: 'Sample_'
+              n: 15
+          - has_text_matching:
+              expression: '[(,]Sample_A:'
+          - has_text_matching:
+              expression: '[(,]Sample_B:'
+          - has_text_matching:
+              expression: '[(,]Sample_C:'
+          - has_text_matching:
+              expression: '[(,]Sample_D:'
+          - has_text_matching:
+              expression: '[(,]Sample_E:'
+          - has_text_matching:
+              expression: '[(,]Sample_F:'
+          - has_text_matching:
+              expression: '[(,]Sample_G:'
+          - has_text_matching:
+              expression: '[(,]Sample_H:'
+          - has_text_matching:
+              expression: '[(,]Sample_I:'
+          - has_text_matching:
+              expression: '[(,]Sample_J:'
+          - has_text_matching:
+              expression: '[(,]Sample_K:'
+          - has_text_matching:
+              expression: '[(,]Sample_L:'
+          - has_text_matching:
+              expression: '[(,]Sample_M:'
+          - has_text_matching:
+              expression: '[(,]Sample_N:'
+          - has_text_matching:
+              expression: '[(,]Sample_O:'
