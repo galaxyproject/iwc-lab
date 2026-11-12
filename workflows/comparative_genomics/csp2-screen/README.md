@@ -23,7 +23,8 @@ steps so that each alignment is its own job:
 - **Reference assemblies**: a list collection with one FASTA assembly per reference isolate.
 
 The two collections are kept apart: queries are compared with references, never with each
-other. An isolate ID that appears in both collections is used as a reference only, as in CSP2.
+other. An isolate ID that appears in both collections is used as a reference only, and its
+reference-collection file is the one aligned (CSP2 would take the file given on the query side).
 
 Isolate IDs cannot contain whitespace, `,`, `/` or `:`.
 
