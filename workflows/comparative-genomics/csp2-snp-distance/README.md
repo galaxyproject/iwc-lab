@@ -26,7 +26,7 @@ steps so that each alignment and each reference is its own job:
 - **Number of references to select**: how many references RefChooser picks when none are named
   (default 1).
 
-Isolate IDs may use only letters, digits, `.`, `_` and `-`. CSP2 builds file names and command
+Isolate IDs may use only letters, digits, `.`, `_` and `-`, and may not start with `-`. CSP2 builds file names and command
 arguments from these IDs, so anything else is rejected before alignment.
 
 The remaining parameters are CSP2's quality thresholds, with CSP2's defaults: minimum reference

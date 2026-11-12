@@ -225,7 +225,7 @@ steps:
         if [ -z "$slots" ]; then slots=1; fi &&
         while IFS="$tab" read -r id path; do
           case "$id" in
-            ""|*[![:alnum:]._-]*) echo "Isolate ID '$id' is empty or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
+            ""|-*|*[![:alnum:]._-]*) echo "Isolate ID '$id' is empty, starts with '-' or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
           esac
           ln -s "$path" "$id.fasta" &&
           mash sketch -s 10000 -p 1 -o "$id.msh" "$id.fasta" || exit 1
@@ -241,7 +241,7 @@ steps:
           format:
             - fasta
           label: Isolate assemblies
-          help: One uncompressed FASTA assembly per isolate. The element identifier is the isolate ID and may use only letters, digits, '.', '_' and '-'.
+          help: One uncompressed FASTA assembly per isolate. The element identifier is the isolate ID and may use only letters, digits, '.', '_' and '-', not starting with '-'.
         - name: ref_count
           type: integer
           value: 1
@@ -406,7 +406,7 @@ steps:
         esac &&
         for id in "$query" "$reference"; do
           case "$id" in
-            ""|*[![:alnum:]._-]*) echo "Isolate ID '$id' from pair '$pair' is empty or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
+            ""|-*|*[![:alnum:]._-]*) echo "Isolate ID '$id' from pair '$pair' is empty, starts with '-' or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
           esac
         done &&
         work=`pwd` &&
@@ -425,7 +425,7 @@ steps:
           format:
             - fasta
           label: Query assembly
-          help: Uncompressed FASTA assembly of the query isolate. Its element identifier must be `<query isolate ID>:<reference isolate ID>`; the IDs may use only letters, digits, '.', '_' and '-'.
+          help: Uncompressed FASTA assembly of the query isolate. Its element identifier must be `<query isolate ID>:<reference isolate ID>`; the IDs may use only letters, digits, '.', '_' and '-', not starting with '-'.
         - name: reference_fasta
           type: data
           format:
@@ -489,7 +489,7 @@ steps:
           esac
           for id in "$query" "$reference"; do
             case "$id" in
-              ""|*[![:alnum:]._-]*) echo "Isolate ID '$id' from pair '$pair' is empty or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
+              ""|-*|*[![:alnum:]._-]*) echo "Isolate ID '$id' from pair '$pair' is empty, starts with '-' or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
             esac
           done
           staged="snpdiffs/$query"__vs__"$reference.snpdiffs" &&
@@ -504,7 +504,7 @@ steps:
           format:
             - txt
           label: CSP2 snpdiffs files
-          help: One snpdiffs file per aligned pair, at least one. Each element identifier must be `<query isolate ID>:<reference isolate ID>`; the IDs may use only letters, digits, '.', '_' and '-'.
+          help: One snpdiffs file per aligned pair, at least one. Each element identifier must be `<query isolate ID>:<reference isolate ID>`; the IDs may use only letters, digits, '.', '_' and '-', not starting with '-'.
         - name: reference_ids
           type: data
           format:
@@ -616,7 +616,7 @@ steps:
           esac
           for id in "$query" "$reference"; do
             case "$id" in
-              ""|*[![:alnum:]._-]*) echo "Isolate ID '$id' from pair '$pair' is empty or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
+              ""|-*|*[![:alnum:]._-]*) echo "Isolate ID '$id' from pair '$pair' is empty, starts with '-' or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
             esac
           done
           if [ -z "$reference_id" ]; then reference_id="$reference"; fi
@@ -639,7 +639,7 @@ steps:
           format:
             - txt
           label: CSP2 snpdiffs files against one reference
-          help: One snpdiffs file per query aligned to the same reference, at least one. Each element identifier must be `<query isolate ID>:<reference isolate ID>` with the same reference ID throughout; the IDs may use only letters, digits, '.', '_' and '-'.
+          help: One snpdiffs file per query aligned to the same reference, at least one. Each element identifier must be `<query isolate ID>:<reference isolate ID>` with the same reference ID throughout; the IDs may use only letters, digits, '.', '_' and '-', not starting with '-'.
         - name: min_cov
           type: float
           value: 85
