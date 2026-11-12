@@ -69,7 +69,8 @@ not collect them.
 The tests run two cases, both from the soil isolates in the CSP2 test data. One names Sample_A as
 the reference for three isolates with the tree switched off; its expected outputs come from
 running upstream's own Nextflow pipeline on the same three assemblies, and they agree with the
-published 15-isolate values for those isolates. The other runs all 15 isolates with every setting
+published 15-isolate values for those isolates, apart from SNPs_Cocalled, which depends on the
+size of the site set. The other runs all 15 isolates with every setting
 at its default, so RefChooser picks the reference and the tree is built, and compares against the
 expected outputs CSP2's authors publish for that run.
 
