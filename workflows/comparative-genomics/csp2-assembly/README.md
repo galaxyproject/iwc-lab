@@ -84,7 +84,9 @@ paired-end and about 2 GB forward-only.
 
 Only paired reads are taken. CSP2 also assembles single-end reads (`skesa --fastq <reads>`),
 which is not carried as a separate input; in every case tried it gave the same assembly as the
-forward-only mode gives for a pair with those reads as its forward file. CSP2 finds and pairs read files by file name suffix in a directory and can trim a common
+forward-only mode gives for a pair with those reads as its forward file.
+
+CSP2 finds and pairs read files by file name suffix in a directory and can trim a common
 string from isolate names; here the pairing and the names come from the input collection. The
 `Assembly_Data.tsv` table CSP2 writes in this mode, which lists the read and assembly paths of
 each isolate, is not produced. CSP2's `snp` and `screen` modes are the separate workflows
