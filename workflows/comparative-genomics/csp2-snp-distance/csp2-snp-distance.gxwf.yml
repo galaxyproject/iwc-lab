@@ -214,7 +214,7 @@ steps:
           content: |
             ${
               return (inputs.assemblies.elements || inputs.assemblies).map(function (element) {
-                return element.element_identifier + "\t" + element.path;
+                return String(element.element_identifier).replace(/[\r\n\t]/g, " ") + "\t" + element.path;
               }).join("\n") + "\n";
             }
       shell_command: |
@@ -386,11 +386,11 @@ steps:
         - filename: pair.txt
           content: |
             ${
-              var pair = String(inputs.query_fasta.element_identifier);
+              var pair = String(inputs.query_fasta.element_identifier).replace(/[\r\n\t]/g, " ");
               var cut = pair.lastIndexOf(":");
               return [
                 pair,
-                String(inputs.reference_fasta.element_identifier),
+                String(inputs.reference_fasta.element_identifier).replace(/[\r\n\t]/g, " "),
                 pair.substring(0, cut),
                 pair.substring(cut + 1),
                 inputs.query_fasta.path,
@@ -473,7 +473,7 @@ steps:
           content: |
             ${
               return (inputs.snpdiffs.elements || inputs.snpdiffs).map(function (element) {
-                var pair = String(element.element_identifier);
+                var pair = String(element.element_identifier).replace(/[\r\n\t]/g, " ");
                 var cut = pair.lastIndexOf(":");
                 return [pair, pair.substring(0, cut), pair.substring(cut + 1), element.path].join("\t");
               }).join("\n") + "\n";
@@ -580,7 +580,7 @@ steps:
           content: |
             ${
               return (inputs.snpdiffs.elements || inputs.snpdiffs).map(function (element) {
-                var pair = String(element.element_identifier);
+                var pair = String(element.element_identifier).replace(/[\r\n\t]/g, " ");
                 var cut = pair.lastIndexOf(":");
                 return [pair, pair.substring(0, cut), pair.substring(cut + 1), element.path].join("\t");
               }).join("\n") + "\n";
