@@ -1,0 +1,283 @@
+{
+    "name": "nf-core/demo (Galaxy translation, no cowpy) v2 - fixed layout",
+    "a_galaxy_workflow": "true",
+    "format-version": "0.1",
+    "annotation": "Galaxy translation of nf-core/demo 1.2.0: per-FASTQ FastQC, optional seqtk quality\ntrimming, and a MultiQC report aggregating FastQC results.\nVariant without the cowpy step (no user-defined or custom tools needed).\n",
+    "tags": [],
+    "license": "MIT",
+    "uuid": "6cc7652b-78c4-4aef-b2c7-bde96f143187",
+    "creator": [
+        {
+            "name": "nf-core",
+            "url": "https://github.com/nf-core/demo",
+            "class": "Organization"
+        }
+    ],
+    "comments": [
+        {
+            "id": 0,
+            "position": [
+                220.0,
+                -40.0
+            ],
+            "size": [
+                560.0,
+                520.0
+            ],
+            "color": "blue",
+            "type": "frame",
+            "data": {
+                "title": "Read QC and trimming"
+            },
+            "child_steps": [
+                3,
+                4,
+                5
+            ]
+        },
+        {
+            "id": 1,
+            "position": [
+                820.0,
+                -40.0
+            ],
+            "size": [
+                300.0,
+                520.0
+            ],
+            "color": "green",
+            "type": "frame",
+            "data": {
+                "title": "Reporting"
+            },
+            "child_steps": [
+                6
+            ]
+        }
+    ],
+    "steps": {
+        "0": {
+            "id": 0,
+            "name": "reads",
+            "type": "data_collection_input",
+            "label": "reads",
+            "annotation": "One element per samplesheet row, identifier <sample>_<run> (e.g. SAMPLE3_SE_sample1); paired rows carry forward/reverse, single-end rows a single unpaired dataset.",
+            "tool_state": "{\"name\": \"reads\", \"format\": [\"fastqsanger.gz\"], \"collection_type\": \"list:paired_or_unpaired\"}",
+            "position": {
+                "top": 0,
+                "left": 0
+            },
+            "input_connections": {},
+            "inputs": [
+                {
+                    "name": "reads",
+                    "description": ""
+                }
+            ],
+            "outputs": [],
+            "workflow_outputs": [],
+            "post_job_actions": {}
+        },
+        "1": {
+            "id": 1,
+            "name": "skip_trim",
+            "type": "parameter_input",
+            "label": "skip_trim",
+            "annotation": "Skip seqtk quality trimming (source params.skip_trim).",
+            "tool_state": "{\"name\": \"skip_trim\", \"parameter_type\": \"boolean\", \"default\": false}",
+            "position": {
+                "top": 180,
+                "left": 0
+            },
+            "input_connections": {},
+            "inputs": [
+                {
+                    "name": "skip_trim",
+                    "description": ""
+                }
+            ],
+            "outputs": [],
+            "workflow_outputs": [],
+            "post_job_actions": {}
+        },
+        "2": {
+            "id": 2,
+            "name": "multiqc_title",
+            "type": "parameter_input",
+            "label": "multiqc_title",
+            "annotation": "Optional MultiQC report title (source params.multiqc_title).",
+            "tool_state": "{\"name\": \"multiqc_title\", \"parameter_type\": \"text\", \"optional\": true}",
+            "position": {
+                "top": 330,
+                "left": 0
+            },
+            "input_connections": {},
+            "inputs": [
+                {
+                    "name": "multiqc_title",
+                    "description": ""
+                }
+            ],
+            "outputs": [],
+            "workflow_outputs": [],
+            "post_job_actions": {}
+        },
+        "3": {
+            "id": 3,
+            "name": "__FLATTEN__",
+            "type": "tool",
+            "label": "flatten_reads",
+            "annotation": "Split every paired/unpaired element into individual FASTQ datasets (source flattens fastqs per sample).",
+            "tool_state": "{\"__page__\": 0, \"join_identifier\": \"_\"}",
+            "tool_id": "__FLATTEN__",
+            "position": {
+                "top": 0,
+                "left": 260
+            },
+            "input_connections": {
+                "input": [
+                    {
+                        "id": 0,
+                        "output_name": "output"
+                    }
+                ]
+            },
+            "inputs": [],
+            "outputs": [],
+            "workflow_outputs": [],
+            "post_job_actions": {}
+        },
+        "4": {
+            "id": 4,
+            "name": "toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1",
+            "type": "tool",
+            "label": "fastqc",
+            "annotation": "Per-file read QC (source FASTQC, ext.args --quiet).",
+            "tool_state": "{\"__page__\": 0, \"nogroup\": false, \"kmers\": 7}",
+            "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1",
+            "tool_version": "0.74+galaxy1",
+            "tool_shed_repository": {
+                "name": "fastqc",
+                "changeset_revision": "2c64fded1286",
+                "owner": "devteam",
+                "tool_shed": "toolshed.g2.bx.psu.edu"
+            },
+            "position": {
+                "top": 0,
+                "left": 520
+            },
+            "input_connections": {
+                "input_file": [
+                    {
+                        "id": 3,
+                        "output_name": "output"
+                    }
+                ]
+            },
+            "inputs": [],
+            "outputs": [],
+            "workflow_outputs": [
+                {
+                    "label": "fastqc_html",
+                    "output_name": "html_file"
+                },
+                {
+                    "label": "fastqc_raw",
+                    "output_name": "text_file"
+                }
+            ],
+            "post_job_actions": {}
+        },
+        "5": {
+            "id": 5,
+            "name": "toolshed.g2.bx.psu.edu/repos/iuc/seqtk/seqtk_trimfq/1.5+galaxy0",
+            "type": "tool",
+            "label": "seqtk_trim",
+            "annotation": "Phred-based quality trimming per FASTQ (source SEQTK_TRIM, seqtk trimfq default args), gated by skip_trim.",
+            "when": "$(!inputs.skip_trim)",
+            "tool_state": "{\"__page__\": 0, \"mode\": {\"mode_select\": \"quality\", \"q\": 0.05, \"l\": 30}}",
+            "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/seqtk/seqtk_trimfq/1.5+galaxy0",
+            "tool_version": "1.5+galaxy0",
+            "tool_shed_repository": {
+                "name": "seqtk",
+                "changeset_revision": "c8fb17965c7d",
+                "owner": "iuc",
+                "tool_shed": "toolshed.g2.bx.psu.edu"
+            },
+            "position": {
+                "top": 240,
+                "left": 520
+            },
+            "input_connections": {
+                "in_file": [
+                    {
+                        "id": 3,
+                        "output_name": "output"
+                    }
+                ],
+                "skip_trim": [
+                    {
+                        "id": 1,
+                        "output_name": "output"
+                    }
+                ]
+            },
+            "inputs": [],
+            "outputs": [],
+            "workflow_outputs": [
+                {
+                    "label": "trimmed_reads",
+                    "output_name": "default"
+                }
+            ],
+            "post_job_actions": {}
+        },
+        "6": {
+            "id": 6,
+            "name": "toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5",
+            "type": "tool",
+            "label": "multiqc",
+            "annotation": "Aggregate FastQC results into one MultiQC report (source MULTIQC).",
+            "tool_state": "{\"__page__\": 0, \"results\": [{\"software_cond\": {\"software\": \"fastqc\", \"output\": [{\"type\": \"data\"}]}}], \"comment\": \"\", \"flat\": false, \"export\": false, \"png_plots\": false}",
+            "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5",
+            "tool_version": "1.35+galaxy5",
+            "tool_shed_repository": {
+                "name": "multiqc",
+                "changeset_revision": "94b6bea727ae",
+                "owner": "iuc",
+                "tool_shed": "toolshed.g2.bx.psu.edu"
+            },
+            "position": {
+                "top": 0,
+                "left": 860
+            },
+            "input_connections": {
+                "results_0|software_cond|output_0|input": [
+                    {
+                        "id": 4,
+                        "output_name": "text_file"
+                    }
+                ],
+                "title": [
+                    {
+                        "id": 2,
+                        "output_name": "output"
+                    }
+                ]
+            },
+            "inputs": [],
+            "outputs": [],
+            "workflow_outputs": [
+                {
+                    "label": "multiqc_report",
+                    "output_name": "html_report"
+                },
+                {
+                    "label": "multiqc_stats",
+                    "output_name": "stats"
+                }
+            ],
+            "post_job_actions": {}
+        }
+    }
+}

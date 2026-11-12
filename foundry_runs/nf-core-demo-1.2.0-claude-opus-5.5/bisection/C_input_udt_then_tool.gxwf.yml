@@ -1,0 +1,24 @@
+class: GalaxyWorkflow
+label: C_input_udt_then_tool
+inputs:
+  d: {type: data}
+outputs: {}
+steps:
+  u:
+    run:
+      class: GalaxyUserTool
+      id: udt_bisect_c
+      version: 1.0.0
+      name: udt_bisect_c
+      container: busybox:1.36
+      shell_command: echo hi > out.txt
+      inputs: []
+      outputs:
+      - name: out
+        type: data
+        format: txt
+        from_work_dir: out.txt
+  fq:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    in: {input_file: d}
