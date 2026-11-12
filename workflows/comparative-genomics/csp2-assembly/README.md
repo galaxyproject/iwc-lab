@@ -56,8 +56,9 @@ reference, so an ID that has one fails here, before the assembly runs.
   Contigs are named `Contig_<number>_<k-mer coverage>` and are at least 200 bases long. The
   assembly does not depend on the number of cores the job gets.
 
-A job fails when SKESA fails, which includes reads that cannot be assembled at all. If SKESA
-succeeds without reporting a contig, the assembly is an empty dataset, as it is in CSP2.
+A job fails when SKESA fails, which includes reads that cannot be assembled at all; every
+unassemblable input tried made SKESA fail. Should SKESA ever succeed without reporting a contig,
+the assembly is an empty dataset.
 
 ## Using the assemblies in the other CSP2 workflows
 
