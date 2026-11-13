@@ -12,9 +12,11 @@ CSP2's own scripts do the work, unmodified, from the image the CSP2 authors publ
 steps so that each alignment is its own job:
 
 1. Decide which pairs to align.
-2. Align each pair with MUMmer `dnadiff` and compile the alignment into CSP2's `.snpdiffs`
+2. Split the collection into the isolates that are a query of some pair and those that are a
+   reference of some pair, cross the two, and keep the listed pairs.
+3. Align each pair with MUMmer `dnadiff` and compile the alignment into CSP2's `.snpdiffs`
    format with `compileMUMmer.py`.
-3. Summarise all alignments with `saveSNPDiffs.py`.
+4. Summarise all alignments with `saveSNPDiffs.py`.
 
 The alignment and summary steps are the same embedded tools as in `csp2-screen` and
 `csp2-snp-distance`.
@@ -41,14 +43,20 @@ Which pairs are aligned follows CSP2's `align` mode:
 
 No isolate is aligned with itself.
 
+Pairing is collection bookkeeping in Galaxy, not jobs, but it is not free on a large pool. With
+references, the queries are crossed with the references only, so `n` isolates and `r` references
+give the `(n - r) * r` pairs that are aligned and nothing more. In all-vs-all, every isolate but
+the last is crossed with every isolate but the first, `(n - 1)^2` elements, and the half that are
+not aligned (self-pairs and the reverse direction) are then dropped; with 1000 isolates that is
+about a million elements kept apart from the 499,500 alignments themselves, which dominate.
+
 Each element identifier is used unchanged as the isolate ID. CSP2 takes the ID from the file
 name with its extension removed, so if a collection is built from uploads named `sample.fasta`,
 rename the elements to `sample` to get the names CSP2 would report.
 
 Isolate IDs may use only letters, digits, `.`, `_` and `-`, and may not start with `-` or
 contain `__vs__` (the separator in CSP2's file names). CSP2 builds file names and command
-arguments from these IDs, so anything else is rejected before
-alignment. So is a set of IDs where two pairs would get the same CSP2 file name, such as
+arguments from these IDs, so anything else is rejected before alignment. So is a set of IDs where two pairs would get the same CSP2 file name, such as
 `a__vs` with `b` and `a` with `vs__b` (both `a__vs__vs__b.snpdiffs`), or where the two IDs of a
 pair add up to more than 240 characters, which would make that file name too long.
 
@@ -98,13 +106,29 @@ CSP2 also keeps the raw `dnadiff` output of every pair (`MUMmer_Output/`), a log
 
 ## Validation
 
-The tests run two cases on three of the soil isolates in the CSP2 test data (Sample_A,
-Sample_B and Sample_D). One names Sample_A as the reference; the other aligns all three
-all-vs-all. Expected outputs come from running upstream's own Nextflow pipeline
-(`CSP2.nf --runmode align`) in the CSP2 image on the same assemblies, and the two pairs against
-Sample_A also match the `.snpdiffs` files CSP2's authors publish with that data. The `.snpdiffs`
+The tests run four cases on three of the soil isolates in the CSP2 test data (Sample_A,
+Sample_B and Sample_D). One names Sample_A as the reference. One names Sample_B and Sample_A,
+written with spaces around one ID and one ID repeated, so Sample_D is aligned against both and
+the two references are not aligned with each other. Two align all three all-vs-all, once in
+alphabetical collection order and once in the order Sample_D, Sample_B, Sample_A, which pins
+the direction of each pair to collection order rather than to the isolate names. Expected
+outputs come from running upstream's own Nextflow pipeline (`CSP2.nf --runmode align`) in the
+CSP2 image on the same assemblies, and the two pairs against Sample_A also match the
+`.snpdiffs` files CSP2's authors publish with that data. For the reversed all-vs-all case the
+expected files come from an upstream run in which CSP2's order-dependent choice gave the same
+three directions. The `.snpdiffs`
 files are compared in full apart from the assembly paths in their header line, and every row of
 the two tables is checked.
+
+MUMmer `dnadiff` in the CSP2 image does not always return the same alignments for one of the
+test pairs, Sample_A as the query against Sample_B: repeated runs sometimes keep an extra 228 bp
+alignment, which adds one aligned region to the `.snpdiffs` file and moves
+`Median_Alignment_Length` from 51097 to 50330. That pair's test accepts either result. The other
+pairs gave the same alignments on every repeat.
+
+The rejection of isolate IDs outside the rules above, and of reference IDs that name no isolate,
+is not covered by the tests: Planemo's workflow tests report a failed run as an error and cannot
+expect one. Those checks were exercised by hand.
 
 The k-mer counts in a `.snpdiffs` header (`Shared_Kmers`, `Reference_Unique_Kmers`,
 `Query_Unique_Kmers`) are allowed to be one higher than upstream's. CSP2 v.0.9.7.8 counts an
