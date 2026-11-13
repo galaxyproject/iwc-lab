@@ -1,0 +1,37 @@
+{
+  "command": "gxwf validate galaxy-workflow.gxwf.yml --connections --strict --json",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "not_run_reason": null,
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "message": "connection_report.step_results for every consumer of the __FLATTEN__ output report source_step 'NaN' and status 'skip' with \"Cannot resolve output 'output' on step NaN\"; connection_report.valid is still true. The same report resolves the flatten step's own input connection (0 -> 3, status ok), so collection compatibility through the built-in step is not actually checked.",
+      "step": ["fastqc", "trim", "multiqc"],
+      "field": "connection_report",
+      "routes_to": "none (gxwf validator defect; recorded as foundry feedback)"
+    }
+  ],
+  "residual_runtime_risks": [
+    {
+      "risk": "Mapping FastQC/seqtk over a list flattened from a list:paired_or_unpaired collection (mixed paired and unpaired elements).",
+      "evidence_that_would_settle_it": "planemo test invocation: 6 FastQC jobs (one per flattened file) with no collection-algebra error."
+    },
+    {
+      "risk": "devteam FastQC 0.74 writes output.html/output.txt without preserve naming; the wrapper may fail on .fastq.gz inputs or on multiple mapped elements.",
+      "evidence_that_would_settle_it": "planemo job logs for the FastQC steps and the html_file/text_file outputs."
+    },
+    {
+      "risk": "The embedded GalaxyUserTool (cowpy) requires enable_beta_tool_formats and the Custom Tool Execution role on the Planemo-managed Galaxy; its container must pull.",
+      "evidence_that_would_settle_it": "planemo invocation succeeding with the cowpy step ok and cowpy_text matching md5 9c8be9f4550989b40901f379cb1a605f."
+    },
+    {
+      "risk": "Galaxy's seqtk wrapper re-compresses output, so fastqsanger.gz outputs cannot be byte-compared with the source snapshot.",
+      "evidence_that_would_settle_it": "trimmed_reads element count 6 and successful decompression thereof."
+    },
+    {
+      "risk": "workflow input is declared list:paired_or_unpaired; galaxy may reject the built-in __FLATTEN__ input collection_type constraint at invocation time even though static validation passes.",
+      "evidence_that_would_settle_it": "planemo invocation of step flatten_inputs status ok."
+    }
+  ]
+}

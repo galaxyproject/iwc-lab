@@ -1,0 +1,111 @@
+entries:
+- id: flatten-paired-or-unpaired-mapped-output
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  blocking: false
+  unmet: flat `list` of FastQC HTML reports for the `fastqc_html` workflow output and flat `list` of raw QC data for the MultiQC
+    input
+  missing: mapping a single-dataset tool over a `list:paired_or_unpaired` input mirrors the nested shape
+  resolved_by: compare-against-iwc-exemplar
+  note: IWC transcriptomics/rnaseq-pe flattens the input collection once with __FLATTEN__ (join_identifier '_') and maps per-file
+    steps over the flat list; output flattening is unnecessary. Adopted; the paired_or_unpaired variant was confirmed by Galaxy
+    FlattenTool.add_elements recursing over any nesting.
+- id: multiqc-wrapper-config-input-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  blocking: false
+  unmet: multiqc_config exposed as an optional Galaxy input
+  missing: unverified whether the Galaxy MultiQC wrapper accepts a config file input and its datatype
+  resolved_by: implement-galaxy-tool-step
+  note: The iuc/multiqc 1.35+galaxy5 wrapper has no config-file input (results, image_content_input, title, comment, flat,
+    export, png_plots only). The `multiqc_config` workflow input was removed; config styling is a recorded loss.
+- id: fastqc-raw-output-port-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-template
+  blocking: false
+  step: fastqc
+  unmet: FastQC raw-data output that MultiQC can consume
+  missing: the wrapper was deferred; its raw-data port was unknown
+  resolved_by: implement-galaxy-tool-step
+  note: devteam fastqc 0.74+galaxy1 has no zip output; MultiQC consumes `text_file` (raw FastQC data). Wired as fastqc/text_file.
+- id: paired-input-shape-dropped
+  status: open
+  kind: dropped
+  raised_by: implement-galaxy-workflow-test
+  units: paired-or-unpaired input shape and per-sample row grouping (3 sample rows -> 6 per-file elements)
+  because: planemo's collection stager (galaxy.tool_util.cwl.util.to_elements) requires every element of a nested collection
+    to itself be a collection, so a mixed paired/unpaired list cannot be staged for a workflow test; observed 2026-11-09 on
+    planemo 0.75.48.
+  unmet: workflow input preserves the source samplesheet's per-sample grouping
+  missing: input is a flat per-file FASTQ list; sample identity survives only in element identifiers
+  note: 'Downstream effect is nil: the workflow''s first step flattens to per-file lists regardless.'
+discoveries:
+- id: wrapper-pins-resolved
+  raised_by: implement-galaxy-tool-step
+  evidence: 'Shed pins: devteam/fastqc 0.74+galaxy1 (2c64fded1286), iuc/seqtk_trimfq 1.4+galaxy0 (a019807f4e67), iuc/multiqc
+    1.35+galaxy5 (94b6bea727ae). FastQC offers no version newer than 0.74 on the shed; seqtk 1.5 also exists but 1.4 matches
+    the source.'
+  impact: Workflow tools are pinned; FastQC runs 0.74 instead of the source's 0.12.1 (recorded loss, reports are structurally
+    comparable).
+- id: reference-params-declared-but-unused
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: summary-nextflow.json reference_assets[fasta].used_by is empty; workflow DEMO takes only ch_samplesheet, multiqc_config,
+    multiqc_logo, multiqc_methods_description, outdir; main.nf:29 assigns params.fasta = getGenomeAttribute('fasta') from
+    the nf-core template.
+  impact: Do not expose --genome/--fasta/--igenomes_* as Galaxy workflow inputs; there is no reference-data surface to design.
+- id: flatten-accepts-arbitrary-nesting
+  raised_by: nextflow-summary-to-galaxy-template
+  evidence: Galaxy lib/galaxy/tools/__init__.py FlattenTool.add_elements recurses over nested DatasetCollectionElements, so
+    __FLATTEN__ is not limited to list:paired; it also flattens paired_or_unpaired.
+  impact: The workflow-tier flatten_inputs step is valid for a list:paired_or_unpaired input; no unzip fallback is needed.
+- id: multiqc-consumes-fastqc-raw-only
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: workflows/demo.nf mixes FASTQC.out.zip into ch_multiqc_files; trimmed reads are not passed to MULTIQC. versions/workflow_summary/methods
+    YAML are nf-core reporting plumbing.
+  impact: MultiQC input is the flat FastQC raw-data list; no trimmed-reads fan-in, no versions collection to reconstruct.
+- id: sample-sheet-has-only-identifier-metadata
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: assets/schema_input.json columns are sample (meta), fastq_1 (data, required), fastq_2 (data, optional); sample
+    is the only non-path column.
+  impact: Galaxy element identifiers carry the sample name, so a plain list collection loses no typed metadata; sample_sheet
+    collections add nothing here.
+- id: planemo-stager-cannot-build-mixed-paired-or-unpaired
+  raised_by: implement-galaxy-workflow-test
+  evidence: galaxy.tool_util.cwl.util.to_elements asserts 'elements' on every outer element of a nested collection type; a
+    paired_or_unpaired collection staged with Collection (paired) and File (unpaired) elements fails during planemo staging
+    (AssertionError in to_elements), before any job runs.
+  impact: A workflow input declared list:paired_or_unpaired cannot be exercised through a planemo workflow test with the mixed
+    rows this pipeline needs.
+decisions:
+- id: no-reference-inputs
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: Expose no reference-data inputs and no genome selector in the Galaxy workflow.
+  rationale: The pipeline declares template reference params but no process consumes them; classification is 'none'.
+  evidence:
+  - reference-params-declared-but-unused
+- id: flatten-inputs-once-per-file
+  decided_by: compare-against-iwc-exemplar
+  decision: Flatten the input collection once with __FLATTEN__ (join_identifier '_') and map FastQC/trim/MultiQC over the
+    flat per-file list; expose trimmed_reads as a flat list.
+  rationale: IWC rnaseq-pe precedent avoids nested map-over outputs and keeps every downstream list flat.
+  evidence:
+  - flatten-paired-or-unpaired-mapped-output
+  - flatten-accepts-arbitrary-nesting
+- id: input-as-paired-or-unpaired-list
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Workflow input `input_samples` is a `list:paired_or_unpaired` collection.
+  rationale: Per-row layout is fastq_1 required + fastq_2 optional, and there is no typed metadata beyond the element identifier.
+  evidence:
+  - sample-sheet-has-only-identifier-metadata
+- id: cowpy-as-user-defined-tool
+  decided_by: advance-galaxy-draft-step
+  decision: Keep the COWPY artifact by embedding an authored GalaxyUserTool (cowpy 1.1.5) in the workflow.
+  rationale: No Tool Shed wrapper exists; the step is a fixed one-line command with no inputs, so a UDT is small and self-contained.
+    Galaxy imports embedded tools without prior registration when enable_beta_tool_formats is on.
+- id: flat-list-input
+  decided_by: implement-galaxy-workflow-test
+  decision: Declare `input_samples` as a flat `list` of FASTQ files (one element per R1/R2) instead of `list:paired_or_unpaired`.
+  rationale: Planemo cannot stage a mixed paired_or_unpaired collection, and every downstream step is per-file after __FLATTEN__.
+  evidence:
+  - planemo-stager-cannot-build-mixed-paired-or-unpaired
+  supersedes: input-as-paired-or-unpaired-list

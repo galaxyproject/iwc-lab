@@ -1,0 +1,47 @@
+# Foundry model test — nf-core/demo → Galaxy
+
+- **Model:** deepseek-v4.1-flash-thinking (claude-cz profile, CERIT-SC; context 1m)
+- **Run directory:** `~/Galaxy/biohackathon-31/runs/nf-core-demo-deepseek`
+- **Start time:** 2026-11-09T18:16:37+01:00
+
+## Phase log
+
+> **Timestamps:** the phase start/end times recorded for phases 1–11 were estimated, not read from the clock; treat them as approximate. Real times can be taken from the artifact file modification times in this directory. From phase 12 onward every timestamp is read with `date +%H:%M:%S` at phase start and end.
+
+| Phase | Start | End | Result | Notes |
+|-------|-------|-----|--------|-------|
+| setup | 18:16 | 18:18 | pass | run dir + `model-test-log.md`, `foundry-run.yml`, `foundry-feedback.ledger.yml`; cloned nf-core/demo @ 671a072 (2026-10-07) into `source/`. Run dir is the harness's `./<run-slug>/`, so artifact prefix is `./` not `./nf-core-demo-deepseek/`. |
+| 1 summarize-nextflow | 18:18 | 18:19 | pass | `foundry summarize-nextflow source --out summary-nextflow.json` (5.5 s), schema-sha256 check OK, `validate-summary-nextflow` → valid. 4 processes, 4 tools, 1 selected test candidate (`tests/default.nf.test::-profile test`). Emitted edges include junk fragments and channels[] misses `ch_samplesheet` → 1 feedback entry. |
+| 2 reference-data | 18:19 | 18:21 | pass | Classification: **none** (fasta/genome are template params, `reference_assets[fasta].used_by` empty, `DEMO` takes no reference). Wrote brief + started `open-requirements.ledger.yml`. 1 feedback entry (fasta getGenomeAttribute override lost in summary params provenance). |
+| 3 interface | 18:21 | 18:24 | pass | Wrote `nextflow-galaxy-interface.md`: input `list:paired_or_unpaired` (sample = element id), `skip_trim` bool, optional `multiqc_title`/`multiqc_config`; outputs fastqc_html, trimmed_reads, multiqc_report (+optional multiqc_data), cowpy_text. Ledger: 1 gap, 1 discovery, 1 decision. Feedback pass: **no feedback**. |
+| 4 data-flow | 18:24 | 18:28 | pass | 7 nodes (fastqc, trim, cowpy, flatten×2, multiqc), map-over + one reduction; `skip_trim` as inline `when:`; recorded dropped nf-core reporting plumbing. Ledger: +1 gap (flatten nested outputs), +1 discovery. 1 feedback entry (channel-shape mapping lacks flatten guidance). |
+| 5 compare-iwc | 18:28 | 18:35 | pass | IWC @ 9f111cb (used read-only, no pull — shared clone with the parallel run). Nearest: MGnify amplicon QC SE (medium); `rnaseq-pe` supplies `__FLATTEN__`-input + `when:` + `pick_value` precedents. Extracted 3-step subgraph, `gxwf convert --to format2 --compact` OK. This **supersedes** the data-flow flatten placeholders → flatten input once. Ledger: resolved 1 gap, +1 decision. 1 feedback entry (shared IWC clone pull races). |
+| 6 template | 18:36 | 18:41 | pass | `galaxy-workflow-draft.gxwf.yml`: 5 steps (flatten_inputs resolved built-in; fastqc/trim/cowpy deferred; multiqc identity-pinned iuc 1.35+galaxy5), 4 inputs, 4 outputs, `when:` on trim, 2 stage frames. `draft-validate` clean (exit 0) after fixing 1 structure error: the comments-note example (array + `text:`) is rejected; keyed map + `title:` is required. 1 feedback entry. |
+| 7 draft loop | 18:41 | 18:53 | pass | 4 iterations: **cowpy** (Shed miss → authored `GalaxyUserTool`, embedded under `run:`), **fastqc** (devteam 0.74+galaxy1; shed has nothing newer), **trim** (iuc seqtk_trimfq 1.4+galaxy0, quality mode q=0.05 l=30), **multiqc** (iuc 1.35+galaxy5; no config input → `multiqc_config` input removed). `draft-validate --concrete --strict-state` green after each; `draft-next-step` → `draft:false`; `draft-extract` → `galaxy-workflow.gxwf.yml`; `gxwf validate` 5/5 tool states OK. 1 feedback entry (tool-cache CLI friction). |
+| 8 test-data | 18:53 | 18:55 | pass | Branch resolved first leg: `nextflow-to-test-data` (no fallback needed). Fetched samplesheet + 4 FASTQs (6 files across 4 elements), SHA-1 recorded; SAMPLE3_SE's two rows split into two unpaired elements (documented prep). `test-data-refs.json` validates. **no feedback**. |
+| 9 test plan | 18:55 | 18:58 | pass | `galaxy-test-plan.yml`: 1 case, 3 inputs, 4 outputs, assertions from snapshot (cowpy md5 verified == `9c8be9f4…` by running the wave container locally; element counts 6/6). 2 non-blocking unresolved, 3 omissions, 2 warnings. Validated. **no feedback**. |
+| 10 test impl | 18:58 | 19:00 | pass | `galaxy-workflow.gxwf-tests.yml`: 4-element `list:paired_or_unpaired` job (remote URLs + SHA-1), assertions element_count 6/6, ftype checks, cowpy md5 checksum + has_text. `gxwf validate-tests --workflow` → OK. Planemo run deferred to phase 12 (run-workflow-test). **no feedback**. |
+| 11 validate | 19:00 | 19:02 | pass | `gxwf validate --connections --strict --json` → 5/5 ok, 0 skipped, `connection_report.valid: true`. Found gxwf bug: connections sourced from `__FLATTEN__` report `source_step: NaN` (skip), so cross-step collection checking is bypassed. Wrote `galaxy-workflow-validation-result.json` (pass + 5 residual runtime risks). 1 feedback entry. |
+| 12 planemo | 19:03 | | | attempt 1: bad flag `--verbose` (exit 2, nothing ran). attempt 2: planemo's bundled gxformat2 converter rejects dict-keyed steps (`ValueError: invalid literal for int(): 'flatten_inputs'` when resolving `flatten_inputs/output`); rewrote `galaxy-workflow.gxwf.yml` inputs/outputs/steps to list form (comments stay a mapping for gxwf), revalidated clean. attempt 3: planemo's gxformat2 converter resolves step references **by `label` when present** (`_register_labels: label or id`), so `flatten_inputs/output` still failed even in list form; removed the `label:` field from the 5 steps (ids are the handles), verified conversion locally with planemo's own gxformat2. attempt 3 reached Galaxy but the **import was rejected**: comment frame `color: "#d9edf7"` — Galaxy accepts only named literals (none/black/blue/turquoise/green/lime/orange/yellow/red/pink). Changed to `blue`/`green` in draft + workflow, revalidated. attempt 4 (19:10–19:12): planemo's collection stager (`galaxy.tool_util.cwl.util.to_elements`) asserts every outer element of a nested collection has `elements`, so a `list:paired_or_unpaired` with mixed paired/unpaired rows cannot be staged → switched `input_samples` to a flat `list` (6 per-file elements) in workflow, draft and tests; ledger updated (`paired-input-shape-dropped`, decision `flat-list-input`). attempt 5 (19:13–19:19): workflow imported and ran, but **FastQC jobs failed with exit 127** — the conda env `~/miniforge3/envs/__fastqc@0.12.1` (created 18:36, shared with the parallel run) is broken (no `bin/`), so activation fails and `fastqc` is not found. attempt 6 (19:20–19:25): rerun with `--biocontainers --docker` so each tool runs in its own image instead of the shared conda env. **PASS** — `All 1 test(s) executed passed` (exit 0): 6 FastQC HTML, 6 trimmed FASTQ, MultiQC report, cowpy md5 + text all asserted. Containers: biocontainers fastqc 0.12.1, mulled-v2 for seqtk, wave cowpy. `workflow-test-result.json` written. |
+| 13 debug | 19:26 | 19:28 | pass | Green run → nothing to debug. `workflow-debug-report.md` classifies all six attempts by surface (CLI/import/staging/env) and confirms the only red run (attempt 5) was a host conda-env failure, not a workflow defect. **no feedback**. |
+
+## Result
+
+**PASS** — `planemo test` (container mode) executed 1/1 tests green on 2026-11-09 19:25:38. 13/13 phases done; run record `status: complete`; 9 feedback entries recorded (nothing filed).
+
+## Revision phase (2026-11-10)
+
+Source of the requested changes: `orchestrator-findings-2026-11-10.md`. Baseline preserved as `galaxy-workflow.before-revision.gxwf.yml`.
+
+| Phase | Start | End | Result | Notes |
+|-------|-------|-----|--------|-------|
+| revision setup | 15:31:53 | 15:33:02 | pass | Read findings; copied `galaxy-workflow.before-revision.gxwf.yml`; revision workspace `revision/`. |
+| rev-1 summarize-galaxy-workflow | 15:33:28 | 15:36:37 | pass | `revision/summary-galaxy-workflow.json` validated (`foundry validate-summary-galaxy-workflow`); `revision/starting-galaxy-workflow.gxwf.yml`. Two schema fixes needed (enum spellings). **no feedback**. |
+| rev-2 changeset | 15:36:37 | 15:40:46 | pass | `revision/galaxy-workflow-changeset.md` (initial write 15:37:50; final after apply-time schema probe): 6 findings classified; only `fastqc.min_length: null` and `multiqc.comment: ""` are expressible — optional data params reject explicit null. |
+| rev-3 apply | 15:37:50 | 15:40:27 | pass | Direct edits only (draft loop no-op). Applied diff = 2 lines; nothing else touched; `gxwf validate --strict` green. Tool errors: `image_content_input: null` and `contaminants: null` rejected by the validator → left absent. |
+| rev-4 loop | 15:40:27 | 15:40:27 | no-op | No drafty steps (all direct edits). |
+| rev-5/6 test plan + test | 15:40:27 | 15:41:07 | pass | No behavioural delta: baseline `galaxy-test-plan.yml` and `galaxy-workflow.gxwf-tests.yml` carried unchanged; `gxwf validate-tests` OK. |
+| rev-7 validate | 15:41:07 | 15:41:20 | pass | `gxwf validate --connections --strict`: 5/5 ok, connections valid (`revision/validation.json`). |
+| rev-8 planemo | 15:41:20 | 15:45:20 | **pass** | `flock … planemo test … --biocontainers --docker` → `All 1 test(s) executed passed`, exit 0. No retries. **no feedback**. |
+| rev-9 debug | 15:45:20 | 15:45:20 | n/a | Green run; nothing to triage. |
+| revision report | 15:47:00 | 15:48:00 | pass | `revision-report.md` written. |

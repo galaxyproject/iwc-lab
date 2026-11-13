@@ -1,0 +1,271 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-demo-deepseek
+  status: complete
+  phases:
+  - n: 1
+    kind: mold
+    skill: summarize-nextflow
+    status: done
+    feedback_checked: true
+  - n: 2
+    kind: mold
+    skill: nextflow-summary-to-galaxy-reference-data
+    status: done
+    feedback_checked: true
+  - n: 3
+    kind: mold
+    skill: nextflow-summary-to-galaxy-interface
+    status: done
+    feedback_checked: true
+  - n: 4
+    kind: mold
+    skill: nextflow-summary-to-galaxy-data-flow
+    status: done
+    feedback_checked: true
+  - n: 5
+    kind: mold
+    skill: compare-against-iwc-exemplar
+    status: done
+    feedback_checked: true
+  - n: 6
+    kind: mold
+    skill: nextflow-summary-to-galaxy-template
+    status: done
+    feedback_checked: true
+  - n: 7
+    kind: mold
+    skill: advance-galaxy-draft-step
+    status: done
+    iterations: 4
+    feedback_checked: true
+  - n: 8
+    kind: branch
+    pattern: test-data-resolution
+    status: done
+    selected: nextflow-to-test-data
+    feedback_checked: true
+  - n: 9
+    kind: mold
+    skill: nextflow-test-to-galaxy-test-plan
+    status: done
+    feedback_checked: true
+  - n: 10
+    kind: mold
+    skill: implement-galaxy-workflow-test
+    status: done
+    feedback_checked: true
+  - n: 11
+    kind: mold
+    skill: validate-galaxy-workflow
+    status: done
+    feedback_checked: true
+  - n: 12
+    kind: mold
+    skill: run-workflow-test
+    status: done
+    feedback_checked: true
+  - n: 13
+    kind: mold
+    skill: debug-galaxy-workflow-output
+    status: done
+    feedback_checked: true
+entries:
+- id: workflow-edges-contain-non-channel-fragments
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: summarize-nextflow workflow-graph extraction
+    locator: package://@galaxy-foundry/gxwf-foundry#summarize-nextflow
+  kind: defect
+  severity: major
+  what: 'On nf-core/demo the emitted workflow.edges contain non-channel fragments as `from` values (''['', '']'', ''}'', ''files'', "[id: ''demo'']"), and
+    workflow.channels[] lists only the anonymous main.nf glue channels while the edges come from workflows/demo.nf (ch_samplesheet referenced by edges is
+    absent from channels[]).'
+  expected: Reconcile edges against declared channels and process outputs only; drop or flag fragments that are not channel names, and emit channels[] for
+    the same workflow that produced the edges.
+  evidence: 'summary-nextflow.json for nf-core/demo @671a072: 14 edges into MULTIQC, 10 of which have `from` fragments from a multi-line list literal; ch_samplesheet
+    missing from workflow.channels[].'
+  status: open
+  issue: null
+- id: fasta-getgenomeattribute-override-lost
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: summarize-nextflow params provenance (getGenomeAttribute override)
+    locator: package://@galaxy-foundry/gxwf-foundry#summarize-nextflow
+  kind: defect
+  severity: minor
+  what: The procedure names `params.fasta = getGenomeAttribute('fasta')` as the example of a config-load-time value to record, but when the param also exists
+    in nextflow_schema.json the emitted params[] entry keeps source_kind=nextflow_schema and drops the main.nf override, so the key-expanded-bundle signal
+    is absent.
+  expected: Record a later config-load-time assignment (main.nf getGenomeAttribute) over the schema declaration, or carry the override expression alongside
+    the schema source_kind.
+  evidence: 'summary-nextflow.json for nf-core/demo @671a072: params[fasta].source_kind=''nextflow_schema'', source_expression=null, while main.nf:29 assigns
+    params.fasta = getGenomeAttribute(''fasta'').'
+  status: open
+  issue: null
+- id: flatten-guidance-missing-for-paired-or-unpaired-map-outputs
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  observed_in:
+    mold: nextflow-summary-to-galaxy-data-flow
+    path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+    revision: null
+    content_hash: null
+    foundry_head: null
+  subject:
+    kind: research
+    label: nextflow-to-galaxy-channel-shape-mapping
+    locator: content/research/nextflow-to-galaxy-channel-shape-mapping/index.md
+  kind: gap
+  severity: minor
+  what: The shape-mapping note lists __FLATTEN__ as an explicit collection operation but does not say whether it applies to the output of a tool mapped
+    over a `paired_or_unpaired` collection, or which builder to use when the mapped output needs a flat list.
+  expected: Add a row or paragraph covering map-over output nesting for each collection type (list, paired, paired_or_unpaired) and the de-nesting recipe
+    (__FLATTEN__ vs __UNZIP_COLLECTION__ + flatten).
+  evidence: 'nf-core/demo: FASTQC mapped over a paired_or_unpaired input must yield a flat html list for a workflow output and a flat zip list for MultiQC;
+    the data-flow brief had to record the transform as medium-confidence with two candidate idioms.'
+  status: open
+  issue: null
+- id: shared-iwc-clone-pull-races-parallel-runs
+  raised_by: compare-against-iwc-exemplar
+  observed_in:
+    mold: compare-against-iwc-exemplar
+    path: content/molds/compare-against-iwc-exemplar/index.md
+    revision: null
+    content_hash: null
+    foundry_head: null
+  subject:
+    kind: mold
+    label: compare-against-iwc-exemplar
+    locator: content/molds/compare-against-iwc-exemplar/index.md
+  kind: friction
+  severity: minor
+  what: The procedure says to clone or pull-and-merge the IWC corpus into the single shared ~/.foundry/iwc path. Two pipeline runs on one machine (as in
+    this model test) race on that git checkout, so a run cannot follow the instruction safely.
+  expected: Make the pull opt-in or per-run (e.g. a run-scoped worktree/cache keyed by commit), or state that an existing checkout is used read-only without
+    pulling.
+  evidence: This run skipped `git pull` on ~/.foundry/iwc and used the checkout at 9f111cb read-only because a parallel model-test run shares the machine.
+  status: open
+  issue: null
+- id: comments-example-contradicts-draft-validator
+  raised_by: nextflow-summary-to-galaxy-template
+  observed_in:
+    mold: nextflow-summary-to-galaxy-template
+    path: content/molds/nextflow-summary-to-galaxy-template/index.md
+    revision: null
+    content_hash: null
+    foundry_head: null
+  subject:
+    kind: research
+    label: galaxy-workflow-comments
+    locator: content/research/galaxy-workflow-comments/index.md
+  kind: defect
+  severity: minor
+  what: 'The note''s example writes `comments:` as a YAML array of items with `- type: frame` and a `text:` field; `gxwf draft-validate` rejects that shape
+    and expects a mapping keyed by comment id whose entries carry `type: frame`, `title:` and `contains_steps:`.'
+  expected: 'Show the validator-accepted mapping form (keyed by id, `type: frame`, `title`) and note that the array form is rejected.'
+  evidence: 'gxwf 1.15.0 draft-validate on a draft authored from the note''s example: 1 structure error, expected `[x: string]: {type: ''text''|''markdown''|''frame''|''freehand'',
+    ...}`; exit 2. Switching to the keyed mapping passed with exit 0.'
+  status: open
+  issue: null
+- id: tool-cache-local-add-requires-tool-id-and-summarize-requires-version
+  raised_by: author-galaxy-tool-wrapper
+  observed_in:
+    mold: author-galaxy-tool-wrapper
+    path: content/molds/author-galaxy-tool-wrapper/index.md
+    revision: null
+    content_hash: null
+    foundry_head: null
+  subject:
+    kind: related-project
+    label: '@galaxy-tool-util/cli galaxy-tool-cache (add-local / summarize)'
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts/tree/main/packages/cli
+  kind: friction
+  severity: minor
+  what: '`galaxy-tool-cache add-local galaxy-user-tool.yml` parses the tool but exits 1 asking for --tool-id, and the subsequent `summarize <id>` fails
+    with ''Tool not found in cache'' unless --tool-version is also passed even though the local entry has exactly one version.'
+  expected: Either make add-local derive the id from the document's `id` field, or make summarize resolve the single cached version when only one is present.
+  evidence: 'add-local: ''Parsed tool: cowpy v1.1.5'' + exit 1; summarize cowpy: ''Tool not found in cache'' + exit 1; summarize cowpy --tool-version 1.1.5:
+    exit 0.'
+  status: open
+  issue: null
+- id: connections-report-nan-for-builtin-step-sources
+  raised_by: validate-galaxy-workflow
+  observed_in:
+    mold: validate-galaxy-workflow
+    path: content/molds/validate-galaxy-workflow/index.md
+    revision: null
+    content_hash: null
+    foundry_head: null
+  subject:
+    kind: related-project
+    label: gxwf validate --connections (built-in step connection resolution)
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts/tree/main/packages/cli
+  kind: defect
+  severity: minor
+  what: 'In `gxwf validate --connections`, any connection whose source step is the built-in `__FLATTEN__` is reported with source_step ''NaN'', status ''skip''
+    and ''Cannot resolve output output on step NaN'', so collection compatibility across a built-in step is never checked while the report still says valid:
+    true.'
+  expected: Resolve connections out of built-in/collection-operation steps by their step index (the flatten step's own input connection resolves as 0 ->
+    3 ok), or surface an explicit unsupported-source diagnostic instead of NaN.
+  evidence: 'nf-core/demo galaxy-workflow.gxwf.yml: steps fastqc/trim/multiqc each source flatten_inputs/output and all three report source_step NaN; connection_report.valid
+    true; validate exit 0.'
+  status: open
+  issue: null
+- id: planemo-staging-rejects-mixed-paired-or-unpaired
+  raised_by: implement-galaxy-workflow-test
+  observed_in:
+    mold: implement-galaxy-workflow-test
+    path: content/molds/implement-galaxy-workflow-test/index.md
+    revision: null
+    content_hash: null
+    foundry_head: null
+  subject:
+    kind: related-project
+    label: '@galaxy-tool-util/cli: workflow-test collection staging (galaxy.tool_util.cwl.util.to_elements)'
+    locator: https://github.com/galaxyproject/galaxy/tree/dev/lib/galaxy/tool_util/cwl/util.py
+  kind: gap
+  severity: minor
+  what: Staging a nested collection whose collection_type contains ':' asserts that every outer element has 'elements', so a `list:paired_or_unpaired` collection
+    with mixed Collection (paired) and File (unpaired) elements cannot be staged for a planemo workflow test; the run dies with a bare AssertionError before
+    any job starts.
+  expected: Support the paired_or_unpaired element model (a File element is a valid unpaired row) or raise a descriptive staging error naming the unsupported
+    shape.
+  evidence: 'nf-core/demo galaxy-workflow.gxwf-tests.yml with 2 paired + 2 unpaired elements: planemo 0.75.48 fails in to_elements with AssertionError;
+    converting the input to a flat list made the same test stage cleanly.'
+  status: open
+  issue: null
+- id: gxformat2-converter-label-shadows-step-id
+  raised_by: run-workflow-test
+  observed_in:
+    mold: run-workflow-test
+    path: content/molds/run-workflow-test/index.md
+    revision: null
+    content_hash: null
+    foundry_head: null
+  subject:
+    kind: related-project
+    label: gxformat2 normalized converter (step reference resolution)
+    locator: https://github.com/galaxyproject/gxformat2/blob/main/gxformat2/normalized/_conversion.py
+  kind: defect
+  severity: minor
+  what: 'The converter''s _register_labels records only `step.label or step.id` per step, so a format2 workflow that gives each step both an `id` and a
+    human `label` cannot be referenced by id: converting connections like `flatten_inputs/output` raises ValueError(''invalid literal for int(): flatten_inputs'').'
+  expected: Register the step id as a reference key in addition to the label, so id-based references resolve when a label is present.
+  evidence: 'galaxy-workflow.gxwf.yml as emitted by draft-extract (dict-keyed steps with id + label, and list form after rewrite): planemo 0.75.48 / bundled
+    gxformat2 fails on the first id reference; removing every step `label:` made conversion succeed.'
+  status: open
+  issue: null

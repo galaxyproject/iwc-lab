@@ -1,0 +1,46 @@
+{
+  "status": "pass",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "test_definition": "galaxy-workflow.gxwf-tests.yml",
+  "galaxy_mode": "planemo-managed (local galaxy_root ~/Galaxy/galaxy-arash, dev branch) with --biocontainers --docker",
+  "command": "flock /tmp/galaxy-arash-planemo.lock planemo test galaxy-workflow.gxwf.yml --biocontainers --docker --test_output test-output --test_output_json planemo-test-result.json",
+  "planemo": {
+    "exit_code": 0,
+    "summary": { "num_tests": 1, "num_errors": 0, "num_failures": 0, "num_skips": 0 },
+    "result_json": "planemo-test-result.json",
+    "report_dir": "test-output",
+    "log": "planemo-test.log"
+  },
+  "galaxy_ids": {
+    "invocation_id": "b6ea0edf932c37ad",
+    "history_id": null,
+    "workflow_id": null,
+    "note": "invocation id scraped from the Galaxy server log in planemo-test.log; history/workflow ids were not exposed by this planemo run."
+  },
+  "containers": [
+    "biocontainers/fastqc:0.12.1--hdfd78af_0",
+    "biocontainers/mulled-v2-8374e50c663bfd36021a9219b02d97e9c4baaad5:783e4c36591c28e0c25d1c1084e0a4a5ca32fd17-0",
+    "community.wave.seqera.io/library/cowpy:1.1.5--3db457ae1977a273"
+  ],
+  "inputs": {
+    "input_samples": "6-element flat FASTQ list (nf-core viralrecon/amplicon test reads, SHA-1 verified on upload)",
+    "skip_trim": false,
+    "multiqc_title": "nf-core/demo test"
+  },
+  "assertions_passed": [
+    "fastqc_html: collection list, element_count 6, SAMPLE1_PE_1 ftype html",
+    "trimmed_reads: collection list, element_count 6, SAMPLE1_PE_1 ftype fastqsanger.gz",
+    "multiqc_report: dataset ftype html",
+    "cowpy_text: dataset ftype txt, checksum md5$9c8be9f4550989b40901f379cb1a605f, has_text 'nf-core rules!'"
+  ],
+  "attempts": [
+    { "attempt": 1, "outcome": "not-run", "reason": "planemo test has no --verbose flag (exit 2)" },
+    { "attempt": 2, "outcome": "not-run", "reason": "planemo's gxformat2 converter rejects dict-keyed steps when a step label shadows the id" },
+    { "attempt": 3, "outcome": "not-run", "reason": "workflow import rejected: comment frame colour must be a named literal, not hex" },
+    { "attempt": 4, "outcome": "not-run", "reason": "collection staging: planemo cannot build a mixed paired_or_unpaired collection; input switched to a flat list" },
+    { "attempt": 5, "outcome": "fail", "reason": "FastQC jobs exit 127: shared conda env __fastqc@0.12.1 is broken (no bin/); workflow itself imported and invoked" },
+    { "attempt": 6, "outcome": "pass", "reason": "rerun with --biocontainers --docker; all 1 test passed" }
+  ],
+  "started_at": "19:20",
+  "finished_at": "19:25:38"
+}
