@@ -1,0 +1,247 @@
+{
+  "name": "Single-Cell RNA-Seq Fastq to Gene Matrix (STARsolo and MultiQC)",
+  "a_galaxy_workflow": "true",
+  "format-version": "0.1",
+  "annotation": "This workflow is a Galaxy translation of the nf-core/scrnaseq pipeline (https://nf-co.re/scrnaseq).\nIt performs single-cell RNA-seq alignment, demultiplexing, and barcode error correction\nusing STARsolo to generate raw and filtered gene expression matrices, and aggregates\nquality control reports with MultiQC.\n",
+  "tags": [
+    "single-cell",
+    "transcriptomics",
+    "10x-genomics",
+    "star",
+    "nf-core",
+    "nf-core/scrnaseq"
+  ],
+  "license": "MIT",
+  "release": "0.1",
+  "uuid": "155dfb35-7f3f-4401-9902-2144a5c5e317",
+  "creator": [
+    {
+      "name": "nf-core",
+      "url": "https://nf-co.re/scrnaseq",
+      "class": "Organization"
+    },
+    {
+      "name": "Rand Zoabi",
+      "email": "rand.zoabi@rz.uni-freiburg.de",
+      "class": "Person"
+    },
+    {
+      "name": "Intergalactic Workflow Commission",
+      "url": "https://github.com/galaxyproject/iwc",
+      "class": "Organization"
+    }
+  ],
+  "comments": [],
+  "steps": {
+    "0": {
+      "id": 0,
+      "name": "reads",
+      "type": "data_collection_input",
+      "label": "reads",
+      "annotation": "FASTQ collection containing cell barcode and UMI (Read 1) paired with cDNA read (Read 2)",
+      "tool_state": "{\"name\": \"reads\", \"format\": [\"fastqsanger.gz\"], \"collection_type\": \"list:paired\"}",
+      "position": {
+        "top": 0,
+        "left": 0
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "reads",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "1": {
+      "id": 1,
+      "name": "fasta",
+      "type": "data_input",
+      "label": "fasta",
+      "annotation": "Reference genome sequence in FASTA format",
+      "tool_state": "{\"name\": \"fasta\", \"format\": [\"fasta\"]}",
+      "position": {
+        "top": 100,
+        "left": 0
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "fasta",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "2": {
+      "id": 2,
+      "name": "gtf",
+      "type": "data_input",
+      "label": "gtf",
+      "annotation": "Reference gene annotation file in GTF format",
+      "tool_state": "{\"name\": \"gtf\", \"format\": [\"gtf\"]}",
+      "position": {
+        "top": 200,
+        "left": 0
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "gtf",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "3": {
+      "id": 3,
+      "name": "barcode_whitelist",
+      "type": "data_input",
+      "label": "barcode_whitelist",
+      "annotation": "Whitelist of known cell barcodes for error correction (optional)",
+      "tool_state": "{\"name\": \"barcode_whitelist\", \"optional\": true, \"format\": [\"txt\"]}",
+      "position": {
+        "top": 300,
+        "left": 0
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "barcode_whitelist",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "4": {
+      "id": 4,
+      "name": "toolshed.g2.bx.psu.edu/repos/iuc/rna_starsolo/rna_starsolo/2.7.11b+galaxy3",
+      "type": "tool",
+      "label": "starsolo",
+      "annotation": "Align reads, demultiplex cell barcodes and UMIs, and quantify gene expression",
+      "tool_state": "{\"__page__\": 0, \"algo\": {\"params\": {\"settingsType\": \"default\"}}, \"chimOutType\": \"\", \"outWig\": {\"outWigStrand\": \"false\", \"outWigType\": \"None\"}, \"refGenomeSource\": {\"geneSource\": \"history\", \"genomeFastaFiles\": {\"__class__\": \"ConnectedValue\"}, \"genomeSAindexNbases\": 12, \"sjdbGTFfeatureExon\": \"exon\", \"sjdbGTFfile\": {\"__class__\": \"ConnectedValue\"}, \"sjdbOverhang\": 100}, \"sc\": {\"input_types\": {\"input_collection\": {\"__class__\": \"ConnectedValue\"}, \"use\": \"list_paired\"}, \"params\": {\"chemistry\": \"Cv2\"}, \"soloBarcodeReadLength\": true, \"soloCBmatchWLtype\": \"1MM_multi\", \"soloCBwhitelist\": {\"__class__\": \"ConnectedValue\"}, \"solo_type\": \"CB_UMI_Simple\", \"umidedup\": {\"soloUMIdedup\": \"1MM_CR\", \"soloUMIfiltering\": \"-\"}}, \"solo\": {\"filter\": {\"filter_type\": \"cellranger2\", \"n_expected\": 5000, \"max_perc\": 0.99, \"max_min_ratio\": 10.0, \"output_raw\": true}, \"outSAMattributes\": [\"NH\", \"HI\", \"AS\", \"nM\", \"GX\", \"GN\", \"CB\", \"UB\"], \"outSAMmapqUnique\": 60, \"outSAMunmapped\": false, \"quantModeGene\": true, \"soloFeatures\": [\"Gene$\"], \"soloOutFormatFeaturesGeneField3\": \"Gene Expression\", \"soloStrand\": \"Forward\", \"wasp_conditional\": {\"waspOutputMode\": \"\"}}}",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/rna_starsolo/rna_starsolo/2.7.11b+galaxy3",
+      "tool_version": "2.7.11b+galaxy3",
+      "tool_shed_repository": {
+        "name": "rna_starsolo",
+        "changeset_revision": "9b1940be9da1",
+        "owner": "iuc",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "position": {
+        "top": 0,
+        "left": 220
+      },
+      "input_connections": {
+        "refGenomeSource|genomeFastaFiles": [
+          {
+            "id": 1,
+            "output_name": "output"
+          }
+        ],
+        "refGenomeSource|sjdbGTFfile": [
+          {
+            "id": 2,
+            "output_name": "output"
+          }
+        ],
+        "sc|input_types|input_collection": [
+          {
+            "id": 0,
+            "output_name": "output"
+          }
+        ],
+        "sc|soloCBwhitelist": [
+          {
+            "id": 3,
+            "output_name": "output"
+          }
+        ]
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "label": "Raw Gene Expression Matrix",
+          "output_name": "output_matrix"
+        },
+        {
+          "label": "Cell Barcodes",
+          "output_name": "output_barcodes"
+        },
+        {
+          "label": "Gene Features",
+          "output_name": "output_genes"
+        },
+        {
+          "label": "Filtered Gene Expression Matrix",
+          "output_name": "output_matrix_filtered"
+        },
+        {
+          "label": "Filtered Cell Barcodes",
+          "output_name": "output_barcodes_filtered"
+        },
+        {
+          "label": "Filtered Gene Features",
+          "output_name": "output_genes_filtered"
+        },
+        {
+          "label": "STARsolo Summary",
+          "output_name": "output_stats"
+        }
+      ],
+      "post_job_actions": {}
+    },
+    "5": {
+      "id": 5,
+      "name": "toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy4",
+      "type": "tool",
+      "label": "multiqc",
+      "annotation": "Aggregate STARsolo alignment and quantification quality metrics into an interactive HTML report",
+      "tool_state": "{\"__page__\": 0, \"comment\": \"\", \"export\": false, \"flat\": false, \"png_plots\": false, \"results\": [{\"software_cond\": {\"software\": \"star\", \"output\": [{\"type\": {\"type\": \"log\", \"input\": {\"__class__\": \"ConnectedValue\"}}}, {\"type\": {\"type\": \"genecounts\", \"input\": {\"__class__\": \"ConnectedValue\"}}}]}}], \"title\": \"\", \"image_content_input\": null}",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy4",
+      "tool_version": "1.35+galaxy4",
+      "tool_shed_repository": {
+        "name": "multiqc",
+        "changeset_revision": "97255f6fdf7e",
+        "owner": "iuc",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "position": {
+        "top": 0,
+        "left": 440
+      },
+      "input_connections": {
+        "results_0|software_cond|output_0|type|input": [
+          {
+            "id": 4,
+            "output_name": "output_log"
+          }
+        ],
+        "results_0|software_cond|output_1|type|input": [
+          {
+            "id": 4,
+            "output_name": "reads_per_gene"
+          }
+        ]
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "label": "MultiQC Quality Report",
+          "output_name": "html_report"
+        }
+      ],
+      "post_job_actions": {}
+    }
+  }
+}

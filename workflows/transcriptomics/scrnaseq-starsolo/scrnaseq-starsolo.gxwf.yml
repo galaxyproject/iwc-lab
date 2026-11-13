@@ -1,0 +1,202 @@
+class: GalaxyWorkflow
+label: Single-Cell RNA-Seq Fastq to Gene Matrix (STARsolo and MultiQC)
+doc: |
+  This workflow is a Galaxy translation of the nf-core/scrnaseq pipeline (https://nf-co.re/scrnaseq).
+  It performs single-cell RNA-seq alignment, demultiplexing, and barcode error correction
+  using STARsolo to generate raw and filtered gene expression matrices, and aggregates
+  quality control reports with MultiQC.
+release: '0.1'
+license: MIT
+tags:
+- single-cell
+- transcriptomics
+- 10x-genomics
+- star
+- nf-core
+- nf-core/scrnaseq
+creator:
+- class: Organization
+  name: nf-core
+  url: https://nf-co.re/scrnaseq
+- class: Person
+  name: Rand Zoabi
+  email: rand.zoabi@rz.uni-freiburg.de
+- class: Organization
+  name: Intergalactic Workflow Commission
+  url: https://github.com/galaxyproject/iwc
+inputs:
+  reads:
+    type: collection
+    collection_type: list:paired
+    format: fastqsanger.gz
+    label: Paired-end single-cell RNA-seq reads
+    doc: FASTQ collection containing cell barcode and UMI (Read 1) paired with cDNA
+      read (Read 2)
+    position:
+      left: 0
+      top: 0
+  fasta:
+    type: data
+    format: fasta
+    label: Reference genome FASTA
+    doc: Reference genome sequence in FASTA format
+    position:
+      left: 0
+      top: 100
+  gtf:
+    type: data
+    format: gtf
+    label: Reference gene annotation GTF
+    doc: Reference gene annotation file in GTF format
+    position:
+      left: 0
+      top: 200
+  barcode_whitelist:
+    type: data
+    format: txt
+    optional: true
+    label: Cell barcode whitelist
+    doc: Whitelist of known cell barcodes for error correction (optional)
+    position:
+      left: 0
+      top: 300
+outputs:
+  Raw Gene Expression Matrix:
+    outputSource: starsolo/output_matrix
+  Cell Barcodes:
+    outputSource: starsolo/output_barcodes
+  Gene Features:
+    outputSource: starsolo/output_genes
+  Filtered Gene Expression Matrix:
+    outputSource: starsolo/output_matrix_filtered
+  Filtered Cell Barcodes:
+    outputSource: starsolo/output_barcodes_filtered
+  Filtered Gene Features:
+    outputSource: starsolo/output_genes_filtered
+  STARsolo Summary:
+    outputSource: starsolo/output_stats
+  MultiQC Quality Report:
+    outputSource: multiqc/html_report
+steps:
+- id: starsolo
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/rna_starsolo/rna_starsolo/2.7.11b+galaxy3
+  tool_version: 2.7.11b+galaxy3
+  tool_shed_repository:
+    changeset_revision: 9b1940be9da1
+    name: rna_starsolo
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  label: starsolo
+  doc: Align reads, demultiplex cell barcodes and UMIs, and quantify gene expression
+  in:
+    refGenomeSource|genomeFastaFiles: fasta
+    refGenomeSource|sjdbGTFfile: gtf
+    sc|input_types|input_collection: reads
+    sc|soloCBwhitelist: barcode_whitelist
+  out:
+  - id: output_matrix
+  - id: output_barcodes
+  - id: output_genes
+  - id: output_matrix_filtered
+  - id: output_barcodes_filtered
+  - id: output_genes_filtered
+  - id: output_stats
+  - id: output_log
+  - id: reads_per_gene
+  state:
+    algo:
+      params:
+        settingsType: default
+    chimOutType: ''
+    outWig:
+      outWigStrand: 'false'
+      outWigType: None
+    refGenomeSource:
+      geneSource: history
+      genomeFastaFiles:
+        __class__: ConnectedValue
+      genomeSAindexNbases: 12
+      sjdbGTFfeatureExon: exon
+      sjdbGTFfile:
+        __class__: ConnectedValue
+      sjdbOverhang: 100
+    sc:
+      input_types:
+        input_collection:
+          __class__: ConnectedValue
+        use: list_paired
+      params:
+        chemistry: Cv2
+      soloBarcodeReadLength: true
+      soloCBmatchWLtype: 1MM_multi
+      soloCBwhitelist:
+        __class__: ConnectedValue
+      solo_type: CB_UMI_Simple
+      umidedup:
+        soloUMIdedup: 1MM_CR
+        soloUMIfiltering: '-'
+    solo:
+      filter:
+        filter_type: cellranger2
+        n_expected: 5000
+        max_perc: 0.99
+        max_min_ratio: 10.0
+        output_raw: true
+      outSAMattributes:
+      - NH
+      - HI
+      - AS
+      - nM
+      - GX
+      - GN
+      - CB
+      - UB
+      outSAMmapqUnique: 60
+      outSAMunmapped: false
+      quantModeGene: true
+      soloFeatures: Gene$
+      soloOutFormatFeaturesGeneField3: Gene Expression
+      soloStrand: Forward
+      wasp_conditional:
+        waspOutputMode: ''
+  position:
+    left: 220
+    top: 0
+- id: multiqc
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy4
+  tool_version: 1.35+galaxy4
+  label: multiqc
+  doc: Aggregate STARsolo alignment and quantification quality metrics into an interactive
+    HTML report
+  in:
+    results_0|software_cond|output_0|type|input: starsolo/output_log
+    results_0|software_cond|output_1|type|input: starsolo/reads_per_gene
+  out:
+  - id: html_report
+  - id: stats
+  tool_shed_repository:
+    changeset_revision: 97255f6fdf7e
+    name: multiqc
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  state:
+    comment: ''
+    export: false
+    flat: false
+    png_plots: false
+    results:
+    - software_cond:
+        software: star
+        output:
+        - type:
+            type: log
+            input:
+              __class__: ConnectedValue
+        - type:
+            type: genecounts
+            input:
+              __class__: ConnectedValue
+    title: ''
+  position:
+    left: 440
+    top: 0

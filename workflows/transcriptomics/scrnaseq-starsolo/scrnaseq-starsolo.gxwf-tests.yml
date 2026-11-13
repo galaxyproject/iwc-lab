@@ -1,0 +1,78 @@
+- doc: Test single-cell RNA-seq Galaxy workflow using STARsolo and MultiQC on sample dataset
+  job:
+    reads:
+      class: Collection
+      collection_type: list:paired
+      elements:
+        - class: Collection
+          collection_type: paired
+          identifier: Sample_X
+          elements:
+            - identifier: forward
+              class: File
+              location: https://raw.githubusercontent.com/nf-core/test-datasets/scrnaseq/testdata/cellranger/Sample_X_S1_L001_R1_001.fastq.gz
+              filetype: fastqsanger.gz
+            - identifier: reverse
+              class: File
+              location: https://raw.githubusercontent.com/nf-core/test-datasets/scrnaseq/testdata/cellranger/Sample_X_S1_L001_R2_001.fastq.gz
+              filetype: fastqsanger.gz
+    fasta:
+      class: File
+      location: https://github.com/nf-core/test-datasets/raw/scrnaseq/reference/GRCm38.p6.genome.chr19.fa
+      filetype: fasta
+    gtf:
+      class: File
+      location: https://github.com/nf-core/test-datasets/raw/scrnaseq/reference/gencode.vM19.annotation.chr19.gtf
+      filetype: gtf
+    barcode_whitelist:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/scrnaseq/master/assets/whitelist/10x_V2_barcode_whitelist.txt.gz
+      decompress: true
+      filetype: txt
+  outputs:
+    Raw Gene Expression Matrix:
+      element_tests:
+        Sample_X:
+          asserts:
+            has_text:
+              text: "%%MatrixMarket"
+    Cell Barcodes:
+      element_tests:
+        Sample_X:
+          asserts:
+            has_n_lines:
+              min: 1
+    Gene Features:
+      element_tests:
+        Sample_X:
+          asserts:
+            has_text:
+              text: "Gene Expression"
+    Filtered Gene Expression Matrix:
+      element_tests:
+        Sample_X:
+          asserts:
+            has_text:
+              text: "%%MatrixMarket"
+    Filtered Cell Barcodes:
+      element_tests:
+        Sample_X:
+          asserts:
+            has_n_lines:
+              min: 1
+    Filtered Gene Features:
+      element_tests:
+        Sample_X:
+          asserts:
+            has_text:
+              text: "Gene Expression"
+    STARsolo Summary:
+      element_tests:
+        Sample_X:
+          asserts:
+            has_text:
+              text: "yesCellBarcodes"
+    MultiQC Quality Report:
+      asserts:
+        has_text:
+          text: "MultiQC"
