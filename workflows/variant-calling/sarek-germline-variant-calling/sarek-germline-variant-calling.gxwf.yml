@@ -1,0 +1,247 @@
+class: GalaxyWorkflow
+label: Sarek germline variant calling
+doc: This workflow performs quality control, short-read mapping with BWA-MEM, duplicate
+  marking with Picard, and germline variant calling with Strelka to analyze genomic
+  variation in paired-end sequencing data, derived from the nf-core/sarek pipeline.
+tags:
+- variant-calling
+- nf-core
+- genomics
+license: MIT
+release: "0.1"
+creator:
+- class: Organization
+  name: nf-core
+  url: https://nf-co.re
+- class: Organization
+  name: IWC
+  url: https://github.com/iwc-workflows
+- class: Person
+  name: Rand Zoabi
+  email: rand.zoabi@rz.uni-freiburg.de
+inputs:
+- id: reads
+  type: collection
+  collection_type: list:paired
+  optional: false
+  format:
+  - fastqsanger.gz
+  - fastqsanger
+  fields: null
+  column_definitions: null
+  doc: Paired-end FASTQ sequencing reads collection
+  position:
+    top: 0
+    left: 0
+- id: reference_genome
+  type: data
+  optional: false
+  format:
+  - fasta
+  doc: Reference genome sequence in FASTA format
+  position:
+    top: 360
+    left: 0
+outputs:
+- id: FastQC quality report
+  outputSource: FastQC/html_file
+- id: Deduplicated aligned reads
+  outputSource: Picard MarkDuplicates/outFile
+- id: MultiQC report
+  outputSource: MultiQC/html_report
+- id: Germline variants
+  outputSource: Strelka Germline/out_variants
+steps:
+- id: FastQC
+  label: FastQC
+  doc: Generate quality control reports for raw sequencing reads.
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.72+galaxy1
+  tool_version: 0.72+galaxy1
+  tool_shed_repository:
+    changeset_revision: e7b2202befea
+    name: fastqc
+    owner: devteam
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_file
+    source: reads
+  out: []
+  tool_state:
+    adapters: null
+    contaminants: null
+    input_file:
+      __class__: ConnectedValue
+    kmers: '7'
+    limits: null
+    min_length: null
+    nogroup: false
+  position:
+    top: 0
+    left: 320
+  uuid: 66334f35-47ce-443e-921f-e9cd1782b3ef
+- id: BWA-MEM
+  label: BWA-MEM
+  doc: Align paired-end reads to reference genome.
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/bwa/bwa_mem/0.7.17.1
+  tool_version: 0.7.17.1
+  tool_shed_repository:
+    changeset_revision: 3fe632431b68
+    name: bwa
+    owner: devteam
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: fastq_input|fastq_input1
+    source: reads
+  - id: reference_source|ref_file
+    source: reference_genome
+  out: []
+  tool_state:
+    analysis_type:
+      analysis_type_selector: illumina
+      __current_case__: 0
+    fastq_input:
+      fastq_input_selector: paired_collection
+      __current_case__: 2
+      fastq_input1:
+        __class__: ConnectedValue
+      iset_stats: ''
+    reference_source:
+      reference_source_selector: history
+      __current_case__: 1
+      ref_file:
+        __class__: ConnectedValue
+      index_a: auto
+    rg:
+      rg_selector: do_not_set
+      __current_case__: 3
+  position:
+    top: 330
+    left: 320
+  uuid: 440c8658-c2f3-4302-a036-5a2110bf409c
+- id: Picard MarkDuplicates
+  label: Picard MarkDuplicates
+  doc: Identify and mark duplicate reads in aligned BAM.
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/picard/picard_MarkDuplicates/2.18.2.2
+  tool_version: 2.18.2.2
+  tool_shed_repository:
+    changeset_revision: a1f0b3f4b781
+    name: picard
+    owner: devteam
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: inputFile
+    source: BWA-MEM/bam_output
+  out: []
+  tool_state:
+    assume_sorted: true
+    barcode_tag: ''
+    comments: []
+    duplicate_scoring_strategy: SUM_OF_BASE_QUALITIES
+    inputFile:
+      __class__: ConnectedValue
+    optical_duplicate_pixel_distance: '100'
+    read_name_regex: ''
+    remove_duplicates: false
+    validation_stringency: LENIENT
+  position:
+    top: 330
+    left: 640
+  uuid: 670f0060-bcd8-4d55-86c2-9fa25eaa428a
+- id: MultiQC
+  label: MultiQC
+  doc: Aggregate QC metrics across FastQC and Picard duplicate marking.
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.9+galaxy1
+  tool_version: 1.9+galaxy1
+  tool_shed_repository:
+    changeset_revision: 75c93c70d094
+    name: multiqc
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: results_0|software_cond|output_0|input
+    source: FastQC/text_file
+  - id: results_1|software_cond|output_0|input
+    source: Picard MarkDuplicates/metrics_file
+  out: []
+  tool_state:
+    comment: ''
+    export: false
+    flat: false
+    results:
+    - __index__: 0
+      software_cond:
+        software: fastqc
+        __current_case__: 8
+        output:
+        - __index__: 0
+          type: data
+          input:
+            __class__: ConnectedValue
+    - __index__: 1
+      software_cond:
+        software: picard
+        __current_case__: 17
+        output:
+        - __index__: 0
+          type: markdups
+          input:
+            __class__: ConnectedValue
+    saveLog: false
+    title: ''
+  position:
+    top: 40
+    left: 960
+  uuid: 73cad830-2df8-4e31-9e29-1637fe232a84
+- id: Strelka Germline
+  label: Strelka Germline
+  doc: Call germline SNVs and small indels.
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/strelka_germline/strelka_germline/2.9.10+galaxy0
+  tool_version: 2.9.10+galaxy0
+  tool_shed_repository:
+    changeset_revision: 19481653a22f
+    name: strelka_germline
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: bam
+    source: Picard MarkDuplicates/outFile
+  - id: ref_cond|ref
+    source: reference_genome
+  out: []
+  tool_state:
+    bam:
+      __class__: ConnectedValue
+    expert_settings:
+      s_e_e: ''
+      evs:
+        selector: enableEVS
+        __current_case__: 1
+        snvScoringModelFile: null
+        indelScoringModelFile: null
+        reportEVSFeatures: false
+    forced_regions: []
+    oo:
+      vcf_type: false
+      gvcf:
+        emit_gvcfs: 'no'
+        __current_case__: 0
+    optimization: ''
+    pl:
+      ploidy: null
+      callContinuousVf: ''
+    ref_cond:
+      ref_sel: history
+      __current_case__: 1
+      ref:
+        __class__: ConnectedValue
+    regions:
+      restrict_to_region: genome
+      __current_case__: 0
+    strelka:
+      minMapq: '20'
+      maxIndelSize: '49'
+  position:
+    top: 380
+    left: 960
+  uuid: a5dec918-1dbe-43e4-be91-e8d2e5925542
+

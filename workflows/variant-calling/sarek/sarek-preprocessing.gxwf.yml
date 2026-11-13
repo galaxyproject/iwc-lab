@@ -1,0 +1,146 @@
+class: GalaxyWorkflow
+id: sarek-preprocessing
+label: 'Sarek: Fastq Preprocessing and Alignment'
+doc: 'Fastp adapter trimming, BWA-MEM2 reference mapping, GATK MarkDuplicates, and GATK BaseRecalibrator/ApplyBQSR'
+license: MIT
+creator:
+  - class: Organization
+    name: 'nf-core'
+    url: 'https://nf-co.re'
+  - class: Organization
+    name: 'IWC'
+    url: 'https://github.com/iwc-workflows'
+  - class: Person
+    name: 'Rand Zoabi'
+    email: 'rand.zoabi@rz.uni-freiburg.de'
+
+inputs:
+  reads_paired:
+    type: data_collection
+    collection_type: 'paired'
+    label: 'Paired-end reads'
+    doc: 'Input FASTQ paired collection'
+  reference_fasta:
+    type: data
+    format: fasta
+    label: 'Reference genome FASTA'
+    doc: 'Reference genome in FASTA format'
+  known_sites:
+    type: data
+    format: vcf
+    label: 'Known polymorphic sites VCF (dbSNP/indels)'
+    doc: 'Known polymorphic sites VCF for BQSR'
+  target_intervals:
+    type: data
+    format: bed
+    optional: true
+    label: 'Target intervals (BED format)'
+    doc: 'Optional target intervals or exome capture BED'
+
+steps:
+  fastp:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/fastp/fastp/0.23.4+galaxy2'
+    doc: 'Adapter trimming and quality filtering with fastp'
+    in:
+      single_paired:
+        paired_input: reads_paired
+    outputs:
+      output_paired_coll: trimmed_reads
+      report_json: fastp_json
+      report_html: fastp_html
+
+  bwa_mem2:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/bwa_mem2/bwa_mem2/2.2.1+galaxy1'
+    doc: 'Read alignment to reference FASTA with BWA-MEM2'
+    in:
+      reads:
+        reads_select: 'collection'
+        coll: fastp/trimmed_reads
+      reference_source:
+        reference_source_selector: 'history'
+        ref_file: reference_fasta
+    outputs:
+      bam_output: mapped_bam
+
+  markduplicates:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/picard/picard_MarkDuplicates/2.18.2.2'
+    doc: 'Identify and mark duplicate reads with Picard MarkDuplicates'
+    in:
+      inputFile: bwa_mem2/bam_output
+    outputs:
+      outFile: dedup_bam
+      metrics_file: markdup_metrics
+
+  base_recalibrator:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/gatk4_base_recalibrator/gatk4_base_recalibrator/4.4.0.0+galaxy0'
+    doc: 'Calculate base recalibration table with GATK BaseRecalibrator'
+    in:
+      input: markduplicates/dedup_bam
+      reference_source:
+        ref_file: reference_fasta
+      known_sites: known_sites
+      intervals: target_intervals
+    outputs:
+      recalibration_report: bqsr_table
+
+  apply_bqsr:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/gatk4_apply_bqsr/gatk4_apply_bqsr/4.4.0.0+galaxy0'
+    doc: 'Apply base recalibration table to BAM with GATK ApplyBQSR'
+    in:
+      input: markduplicates/dedup_bam
+      reference_source:
+        ref_file: reference_fasta
+      bqsr_report: base_recalibrator/bqsr_table
+    outputs:
+      output: recalibrated_bam
+
+  samtools_stats:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.5'
+    doc: 'Compute alignment statistics with Samtools stats'
+    in:
+      input_file: apply_bqsr/recalibrated_bam
+    outputs:
+      output: samtools_stats_report
+
+  mosdepth:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/mosdepth/mosdepth/0.3.8+galaxy0'
+    doc: 'Calculate BAM coverage and depth distribution with Mosdepth'
+    in:
+      input_bam: apply_bqsr/recalibrated_bam
+      bed: target_intervals
+    outputs:
+      global_dist: mosdepth_global_dist
+      region_dist: mosdepth_region_dist
+      summary: mosdepth_summary
+
+outputs:
+  recalibrated_bam:
+    outputSource: apply_bqsr/recalibrated_bam
+    type: data
+    format: bam
+    label: 'Recalibrated BAM'
+  fastp_html:
+    outputSource: fastp/fastp_html
+    type: data
+    format: html
+    label: 'fastp Report'
+  markdup_metrics:
+    outputSource: markduplicates/metrics_file
+    type: data
+    format: txt
+    label: 'MarkDuplicates Metrics'
+  bqsr_table:
+    outputSource: base_recalibrator/recalibration_report
+    type: data
+    format: tabular
+    label: 'BQSR Recalibration Table'
+  samtools_stats:
+    outputSource: samtools_stats/output
+    type: data
+    format: txt
+    label: 'Samtools Stats'
+  mosdepth_summary:
+    outputSource: mosdepth/summary
+    type: data
+    format: tabular
+    label: 'Mosdepth Summary'

@@ -1,0 +1,70 @@
+class: GalaxyWorkflow
+id: sarek-qc-reporting
+label: 'Sarek: Comprehensive QC and Reporting'
+doc: 'Aggregate MultiQC reporting for fastp, MarkDuplicates, Samtools stats, Mosdepth, and variant calling metrics'
+license: MIT
+creator:
+  - class: Organization
+    name: 'nf-core'
+    url: 'https://nf-co.re'
+  - class: Organization
+    name: 'IWC'
+    url: 'https://github.com/iwc-workflows'
+  - class: Person
+    name: 'Rand Zoabi'
+    email: 'rand.zoabi@rz.uni-freiburg.de'
+
+inputs:
+  fastqc_metrics:
+    type: data
+    format: txt
+    label: 'FastQC raw metrics'
+    doc: 'FastQC raw text metrics'
+    optional: true
+  fastp_json:
+    type: data
+    format: json
+    label: 'fastp JSON report'
+    doc: 'fastp JSON summary file'
+    optional: true
+  markdup_metrics:
+    type: data
+    format: txt
+    label: 'MarkDuplicates metrics'
+    doc: 'Picard MarkDuplicates metrics report'
+    optional: true
+  samtools_stats:
+    type: data
+    format: txt
+    label: 'Samtools stats'
+    doc: 'Samtools stats text report'
+    optional: true
+  mosdepth_summary:
+    type: data
+    format: tabular
+    label: 'Mosdepth summary'
+    doc: 'Mosdepth global distribution summary'
+    optional: true
+  snpeff_summary:
+    type: data
+    format: html
+    label: 'SnpEff summary'
+    doc: 'SnpEff HTML summary report'
+    optional: true
+
+steps:
+  multiqc:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.24.1+galaxy0'
+    doc: 'Aggregate quality control metrics across tools into an interactive MultiQC report'
+    in:
+      results_0|software_cond|output_0|type|input: samtools_stats
+    outputs:
+      html_report: multiqc_html
+      stats: multiqc_stats
+
+outputs:
+  multiqc_report:
+    outputSource: multiqc/html_report
+    type: data
+    format: html
+    label: 'MultiQC HTML Report'

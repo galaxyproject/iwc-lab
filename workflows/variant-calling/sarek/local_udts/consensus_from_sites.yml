@@ -1,0 +1,47 @@
+class: GalaxyUserTool
+id: consensus_from_sites
+version: "1.0.0"
+name: Consensus VCF from bcftools isec
+description: Replicates nf-core/sarek CONSENSUS_FROM_SITES local module using bcftools isec sites.txt
+container: quay.io/biocontainers/bcftools:1.20--h8b25389_0
+shell_command: |
+  set -euo pipefail
+  awk -v callers="$(inputs.callers)" '
+  BEGIN {
+      OFS="\t"
+      n=split(callers, c, ",")
+      print "##fileformat=VCFv4.2"
+      print "##INFO=<ID=CALLERS,Number=.,Type=String,Description=\"Variant callers that found this variant\">"
+      print "##INFO=<ID=NCALLERS,Number=1,Type=Integer,Description=\"Number of callers\">"
+      print "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"
+  }
+  {
+      split($5, bits, "")
+      caller_list=""; count=0
+      for (i=1; i<=n; i++) {
+          if (bits[i]=="1") {
+              caller_list = caller_list (caller_list?",":"") c[i]
+              count++
+          }
+      }
+      print $1, $2, ".", $3, $4, ".", ".", "CALLERS="caller_list";NCALLERS="count
+  }' "$(inputs.sites_file.path)" > consensus.vcf
+inputs:
+  - name: sites_file
+    type: data
+    format:
+      - tabular
+    label: sites.txt from bcftools isec
+  - name: callers
+    type: text
+    label: Comma-separated caller names in order
+outputs:
+  - name: consensus_vcf
+    type: data
+    format: vcf
+    from_work_dir: consensus.vcf
+    label: Consensus VCF
+help:
+  format: markdown
+  content: |
+    Replicates nf-core/sarek CONSENSUS_FROM_SITES to generate a caller-annotated consensus VCF from bcftools isec sites.txt.

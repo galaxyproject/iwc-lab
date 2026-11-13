@@ -1,0 +1,39 @@
+- doc: Test full Sarek Galaxy genomic variant calling pipeline on minimal test fixtures
+  job:
+    reads_paired:
+      class: Collection
+      collection_type: paired
+      elements:
+        - identifier: forward
+          class: File
+          location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/illumina/fastq/test_1.fastq.gz
+          filetype: fastqsanger.gz
+        - identifier: reverse
+          class: File
+          location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/illumina/fastq/test_2.fastq.gz
+          filetype: fastqsanger.gz
+    reference_fasta:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      filetype: fasta
+    known_sites:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/vcf/dbsnp_146.hg38.vcf.gz
+      filetype: vcf_bgzip
+    germline_resource:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/vcf/gnomAD.r2.1.1.vcf.gz
+      filetype: vcf_bgzip
+  outputs:
+    recalibrated_bam:
+      asserts:
+        has_size:
+          min: 1000
+    strelka_vcf:
+      asserts:
+        has_text:
+          text: "##fileformat=VCF"
+    multiqc_report:
+      asserts:
+        has_text:
+          text: "MultiQC"

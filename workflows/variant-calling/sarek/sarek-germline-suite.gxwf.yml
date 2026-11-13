@@ -1,0 +1,102 @@
+class: GalaxyWorkflow
+id: sarek-germline-suite
+label: 'Sarek: Germline Variant Calling Suite'
+doc: 'Comprehensive germline variant calling with Strelka, GATK HaplotypeCaller, FreeBayes, and BCFtools norm'
+license: MIT
+creator:
+  - class: Organization
+    name: 'nf-core'
+    url: 'https://nf-co.re'
+  - class: Organization
+    name: 'IWC'
+    url: 'https://github.com/iwc-workflows'
+  - class: Person
+    name: 'Rand Zoabi'
+    email: 'rand.zoabi@rz.uni-freiburg.de'
+
+inputs:
+  bam_input:
+    type: data
+    format: bam
+    label: 'Recalibrated BAM'
+    doc: 'Input BAM file from preprocessing'
+  reference_fasta:
+    type: data
+    format: fasta
+    label: 'Reference genome FASTA'
+    doc: 'Reference genome FASTA file'
+  dbsnp_vcf:
+    type: data
+    format: vcf
+    label: 'dbSNP VCF'
+    doc: 'dbSNP known variants VCF'
+    optional: true
+  target_intervals:
+    type: data
+    format: bed
+    label: 'Target intervals (BED)'
+    doc: 'Genomic target intervals for targeted sequencing'
+    optional: true
+
+steps:
+  strelka_germline:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/strelka_germline/strelka_germline/2.9.10+galaxy0'
+    doc: 'Call germline SNVs and indels with Strelka'
+    in:
+      bam: bam_input
+      ref_cond:
+        ref: reference_fasta
+    outputs:
+      variants: strelka_variants
+
+  haplotypecaller:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/gatk4_haplotype_caller/gatk4_haplotype_caller/4.4.0.0+galaxy0'
+    doc: 'Call germline SNPs and indels via local de-novo assembly with GATK HaplotypeCaller'
+    in:
+      input: bam_input
+      reference_source:
+        ref_file: reference_fasta
+    outputs:
+      output_vcf: haplotypecaller_variants
+
+  freebayes:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/devteam/freebayes/freebayes/1.3.6+galaxy0'
+    doc: 'Bayesian haplotype-based germline caller FreeBayes'
+    in:
+      reference_source:
+        ref_file: reference_fasta
+      reference_source|batchmode|input_bams: bam_input
+    outputs:
+      output_vcf: freebayes_variants
+
+  bcftools_norm:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/bcftools_norm/bcftools_norm/1.15.1+galaxy3'
+    doc: 'Normalize indels and split multiallelic sites with BCFtools norm'
+    in:
+      input_file: strelka_germline/strelka_variants
+      reference_source:
+        ref_file: reference_fasta
+    outputs:
+      output_file: normalized_vcf
+
+outputs:
+  strelka_vcf:
+    outputSource: strelka_germline/strelka_variants
+    type: data
+    format: vcf
+    label: 'Strelka Germline VCF'
+  haplotypecaller_vcf:
+    outputSource: haplotypecaller/output_vcf
+    type: data
+    format: vcf
+    label: 'GATK HaplotypeCaller VCF'
+  freebayes_vcf:
+    outputSource: freebayes/freebayes_variants
+    type: data
+    format: vcf
+    label: 'FreeBayes VCF'
+  normalized_strelka_vcf:
+    outputSource: bcftools_norm/output_file
+    type: data
+    format: vcf
+    label: 'Normalized Strelka VCF'

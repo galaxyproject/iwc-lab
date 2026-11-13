@@ -1,0 +1,262 @@
+{
+  "a_galaxy_workflow": "true",
+  "format-version": "0.1",
+  "name": "Sarek: Somatic and Tumor-Only Variant Calling Suite",
+  "annotation": "Somatic paired and tumor-only variant calling using GATK Mutect2, Strelka Somatic, and LoFreq",
+  "tags": [],
+  "uuid": "b5eacd32-855b-4917-8d3b-faa9f347f9d1",
+  "license": "MIT",
+  "steps": {
+    "0": {
+      "id": 0,
+      "type": "data_input",
+      "label": "tumor_bam",
+      "name": "tumor_bam",
+      "annotation": "Tumor sample BAM alignment",
+      "tool_state": {
+        "name": "tumor_bam",
+        "format": "bam"
+      },
+      "position": {
+        "left": 0,
+        "top": 0
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "tumor_bam",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "1": {
+      "id": 1,
+      "type": "data_input",
+      "label": "normal_bam",
+      "name": "normal_bam",
+      "annotation": "Matched normal sample BAM alignment",
+      "tool_state": {
+        "name": "normal_bam",
+        "optional": true,
+        "format": "bam"
+      },
+      "position": {
+        "left": 10,
+        "top": 10
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "normal_bam",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "2": {
+      "id": 2,
+      "type": "data_input",
+      "label": "reference_fasta",
+      "name": "reference_fasta",
+      "annotation": "Reference genome FASTA file",
+      "tool_state": {
+        "name": "reference_fasta",
+        "format": "fasta"
+      },
+      "position": {
+        "left": 20,
+        "top": 20
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "reference_fasta",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "3": {
+      "id": 3,
+      "type": "data_input",
+      "label": "germline_resource",
+      "name": "germline_resource",
+      "annotation": "Population germline resource VCF for Mutect2",
+      "tool_state": {
+        "name": "germline_resource",
+        "optional": true,
+        "format": "vcf"
+      },
+      "position": {
+        "left": 30,
+        "top": 30
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "germline_resource",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "4": {
+      "id": 4,
+      "type": "data_input",
+      "label": "target_intervals",
+      "name": "target_intervals",
+      "annotation": "Target intervals for exome or targeted sequencing",
+      "tool_state": {
+        "name": "target_intervals",
+        "optional": true,
+        "format": "bed"
+      },
+      "position": {
+        "left": 40,
+        "top": 40
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "target_intervals",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "5": {
+      "id": 5,
+      "type": "tool",
+      "label": "mutect2",
+      "name": "toolshed.g2.bx.psu.edu/repos/iuc/gatk4_mutect2/gatk4_mutect2/4.1.7.0+galaxy0",
+      "annotation": "Somatic short variant calling with GATK Mutect2",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/gatk4_mutect2/gatk4_mutect2/4.1.7.0+galaxy0",
+      "tool_state": {
+        "__page__": 0
+      },
+      "input_connections": {
+        "input": [
+          {
+            "id": 0,
+            "output_name": "output"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "left": 50,
+        "top": 50
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "mutect2_unfiltered_vcf",
+          "label": "Mutect2 Unfiltered VCF"
+        }
+      ]
+    },
+    "6": {
+      "id": 6,
+      "type": "tool",
+      "label": "strelka_somatic",
+      "name": "toolshed.g2.bx.psu.edu/repos/iuc/strelka_somatic/strelka_somatic/2.9.10+galaxy0",
+      "annotation": "Somatic SNV and small indel calling with Strelka Somatic",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/strelka_somatic/strelka_somatic/2.9.10+galaxy0",
+      "tool_state": {
+        "__page__": 0
+      },
+      "input_connections": {
+        "tumor_bam": [
+          {
+            "id": 0,
+            "output_name": "output"
+          }
+        ],
+        "normal_bam": [
+          {
+            "id": 1,
+            "output_name": "output"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "left": 60,
+        "top": 60
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "snvs",
+          "label": "Strelka Somatic SNVs"
+        },
+        {
+          "output_name": "indels",
+          "label": "Strelka Somatic InDels"
+        }
+      ]
+    },
+    "7": {
+      "id": 7,
+      "type": "tool",
+      "label": "lofreq",
+      "name": "toolshed.g2.bx.psu.edu/repos/iuc/lofreq_call/lofreq_call/2.1.5+galaxy3",
+      "annotation": "Fast and sensitive variant calling with LoFreq",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/lofreq_call/lofreq_call/2.1.5+galaxy3",
+      "tool_state": {
+        "__page__": 0
+      },
+      "input_connections": {
+        "reads": [
+          {
+            "id": 0,
+            "output_name": "output"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "left": 70,
+        "top": 70
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "output",
+          "label": "LoFreq VCF"
+        }
+      ]
+    }
+  },
+  "creator": [
+    {
+      "class": "Organization",
+      "name": "nf-core",
+      "url": "https://nf-co.re"
+    },
+    {
+      "class": "Organization",
+      "name": "IWC",
+      "url": "https://github.com/iwc-workflows"
+    },
+    {
+      "class": "Person",
+      "name": "Rand Zoabi",
+      "email": "rand.zoabi@rz.uni-freiburg.de"
+    }
+  ]
+}

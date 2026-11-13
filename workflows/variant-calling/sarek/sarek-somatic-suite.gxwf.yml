@@ -1,0 +1,100 @@
+class: GalaxyWorkflow
+id: sarek-somatic-suite
+label: 'Sarek: Somatic and Tumor-Only Variant Calling Suite'
+doc: 'Somatic paired and tumor-only variant calling using GATK Mutect2, Strelka Somatic, and LoFreq'
+license: MIT
+creator:
+  - class: Organization
+    name: 'nf-core'
+    url: 'https://nf-co.re'
+  - class: Organization
+    name: 'IWC'
+    url: 'https://github.com/iwc-workflows'
+  - class: Person
+    name: 'Rand Zoabi'
+    email: 'rand.zoabi@rz.uni-freiburg.de'
+
+inputs:
+  tumor_bam:
+    type: data
+    format: bam
+    label: 'Tumor BAM'
+    doc: 'Tumor sample BAM alignment'
+  normal_bam:
+    type: data
+    format: bam
+    label: 'Normal BAM'
+    doc: 'Matched normal sample BAM alignment'
+    optional: true
+  reference_fasta:
+    type: data
+    format: fasta
+    label: 'Reference genome FASTA'
+    doc: 'Reference genome FASTA file'
+  germline_resource:
+    type: data
+    format: vcf
+    label: 'Germline resource (gnomAD/dbSNP)'
+    doc: 'Population germline resource VCF for Mutect2'
+    optional: true
+  target_intervals:
+    type: data
+    format: bed
+    label: 'Target intervals (BED)'
+    doc: 'Target intervals for exome or targeted sequencing'
+    optional: true
+
+steps:
+  mutect2:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/gatk4_mutect2/gatk4_mutect2/4.1.7.0+galaxy0'
+    doc: 'Somatic short variant calling with GATK Mutect2'
+    in:
+      input: tumor_bam
+      reference_source:
+        ref_file: reference_fasta
+    outputs:
+      output_vcf: mutect2_unfiltered_vcf
+
+  strelka_somatic:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/strelka_somatic/strelka_somatic/2.9.10+galaxy0'
+    doc: 'Somatic SNV and small indel calling with Strelka Somatic'
+    in:
+      tumor_bam: tumor_bam
+      normal_bam: normal_bam
+      ref_cond:
+        ref: reference_fasta
+    outputs:
+      snvs: strelka_snvs
+      indels: strelka_indels
+
+  lofreq:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/lofreq_call/lofreq_call/2.1.5+galaxy3'
+    doc: 'Fast and sensitive variant calling with LoFreq'
+    in:
+      reads: tumor_bam
+      reference_source:
+        ref_file: reference_fasta
+    outputs:
+      output: lofreq_vcf
+
+outputs:
+  mutect2_vcf:
+    outputSource: mutect2/mutect2_unfiltered_vcf
+    type: data
+    format: vcf
+    label: 'Mutect2 Unfiltered VCF'
+  strelka_snvs_vcf:
+    outputSource: strelka_somatic/snvs
+    type: data
+    format: vcf
+    label: 'Strelka Somatic SNVs'
+  strelka_indels_vcf:
+    outputSource: strelka_somatic/indels
+    type: data
+    format: vcf
+    label: 'Strelka Somatic InDels'
+  lofreq_vcf:
+    outputSource: lofreq/output
+    type: data
+    format: vcf
+    label: 'LoFreq VCF'

@@ -1,0 +1,48 @@
+- doc: Test Sarek germline variant calling workflow execution
+  job:
+    reference_genome:
+      class: File
+      filetype: fasta
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta
+    reads:
+      class: Collection
+      collection_type: list:paired
+      elements:
+        - class: Collection
+          collection_type: paired
+          identifier: test_L1
+          elements:
+            - class: File
+              identifier: forward
+              filetype: fastqsanger.gz
+              location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/illumina/fastq/test_1.fastq.gz
+            - class: File
+              identifier: reverse
+              filetype: fastqsanger.gz
+              location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/illumina/fastq/test_2.fastq.gz
+  outputs:
+    "FastQC quality report":
+      class: Collection
+      element_tests:
+        test_L1:
+          class: Collection
+          element_tests:
+            forward:
+              asserts:
+                has_text:
+                  text: FastQC
+    "Deduplicated aligned reads":
+      class: Collection
+      element_tests:
+        test_L1:
+          asserts:
+            has_size:
+              min: 100k
+    "Germline variants":
+      asserts:
+        has_text:
+          text: "##fileformat=VCF"
+    "MultiQC report":
+      asserts:
+        has_text:
+          text: MultiQC

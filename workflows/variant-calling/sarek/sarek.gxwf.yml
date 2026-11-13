@@ -1,0 +1,250 @@
+class: GalaxyWorkflow
+id: sarek-master
+label: 'Sarek: End-to-End Genomic Variant Calling Pipeline'
+doc: 'End-to-end Galaxy implementation of nf-core/sarek: read QC, BWA-MEM2 alignment, GATK MarkDuplicates & BQSR, germline (Strelka, HaplotypeCaller, FreeBayes) and somatic (Mutect2) calling, structural variants (Manta), SnpEff annotation, and MultiQC reporting.'
+license: MIT
+creator:
+  - class: Organization
+    name: 'nf-core'
+    url: 'https://nf-co.re'
+  - class: Organization
+    name: 'IWC'
+    url: 'https://github.com/iwc-workflows'
+  - class: Person
+    name: 'Rand Zoabi'
+    email: 'rand.zoabi@rz.uni-freiburg.de'
+
+inputs:
+  reads_paired:
+    type: data_collection
+    collection_type: 'paired'
+    label: 'Paired-end reads'
+    doc: 'Input FASTQ paired collection'
+  reference_fasta:
+    type: data
+    format: fasta
+    label: 'Reference genome FASTA'
+    doc: 'Reference genome FASTA'
+  known_sites:
+    type: data
+    format: vcf
+    label: 'Known polymorphic sites VCF'
+    doc: 'Known polymorphic sites VCF for BQSR'
+  germline_resource:
+    type: data
+    format: vcf
+    label: 'Germline resource (gnomAD/dbSNP)'
+    doc: 'Germline resource VCF for somatic calling'
+    optional: true
+  target_intervals:
+    type: data
+    format: bed
+    label: 'Target intervals (BED)'
+    doc: 'Target intervals for exome/targeted sequencing'
+    optional: true
+
+steps:
+  fastp:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/fastp/fastp/0.23.4+galaxy2'
+    doc: 'Adapter trimming and quality filtering with fastp'
+    in:
+      single_paired:
+        paired_input: reads_paired
+    outputs:
+      output_paired_coll: trimmed_reads
+      report_json: fastp_json
+      report_html: fastp_html
+
+  bwa_mem2:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/bwa_mem2/bwa_mem2/2.2.1+galaxy1'
+    doc: 'Reference genome alignment with BWA-MEM2'
+    in:
+      reads:
+        reads_select: 'collection'
+        coll: fastp/trimmed_reads
+      reference_source:
+        reference_source_selector: 'history'
+        ref_file: reference_fasta
+    outputs:
+      bam_output: mapped_bam
+
+  markduplicates:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/picard/picard_MarkDuplicates/2.18.2.2'
+    doc: 'Identify duplicate reads with Picard MarkDuplicates'
+    in:
+      inputFile: bwa_mem2/bam_output
+    outputs:
+      outFile: dedup_bam
+      metrics_file: markdup_metrics
+
+  base_recalibrator:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/gatk4_base_recalibrator/gatk4_base_recalibrator/4.4.0.0+galaxy0'
+    doc: 'Generate BQSR recalibration table with GATK BaseRecalibrator'
+    in:
+      input: markduplicates/dedup_bam
+      reference_source:
+        ref_file: reference_fasta
+      known_sites: known_sites
+      intervals: target_intervals
+    outputs:
+      recalibration_report: bqsr_table
+
+  apply_bqsr:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/gatk4_apply_bqsr/gatk4_apply_bqsr/4.4.0.0+galaxy0'
+    doc: 'Apply BQSR table with GATK ApplyBQSR'
+    in:
+      input: markduplicates/dedup_bam
+      reference_source:
+        ref_file: reference_fasta
+      bqsr_report: base_recalibrator/bqsr_table
+    outputs:
+      output: recalibrated_bam
+
+  samtools_stats:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.5'
+    doc: 'Compute alignment statistics with Samtools stats'
+    in:
+      input_file: apply_bqsr/recalibrated_bam
+    outputs:
+      output: samtools_stats_report
+
+  mosdepth:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/mosdepth/mosdepth/0.3.8+galaxy0'
+    doc: 'BAM coverage calculation with Mosdepth'
+    in:
+      input_bam: apply_bqsr/recalibrated_bam
+      bed: target_intervals
+    outputs:
+      summary: mosdepth_summary
+
+  strelka_germline:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/strelka_germline/strelka_germline/2.9.10+galaxy0'
+    doc: 'Germline calling with Strelka'
+    in:
+      bam: apply_bqsr/recalibrated_bam
+      ref_cond:
+        ref: reference_fasta
+    outputs:
+      variants: strelka_variants
+
+  haplotypecaller:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/gatk4_haplotype_caller/gatk4_haplotype_caller/4.4.0.0+galaxy0'
+    doc: 'Germline calling with GATK HaplotypeCaller'
+    in:
+      input: apply_bqsr/recalibrated_bam
+      reference_source:
+        ref_file: reference_fasta
+    outputs:
+      output_vcf: haplotypecaller_variants
+
+  freebayes:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/devteam/freebayes/freebayes/1.3.6+galaxy0'
+    doc: 'Bayesian germline calling with FreeBayes'
+    in:
+      reference_source:
+        ref_file: reference_fasta
+      reference_source|batchmode|input_bams: apply_bqsr/recalibrated_bam
+    outputs:
+      output_vcf: freebayes_variants
+
+  bcftools_norm:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/bcftools_norm/bcftools_norm/1.15.1+galaxy3'
+    doc: 'Normalize variants with BCFtools norm'
+    in:
+      input_file: strelka_germline/strelka_variants
+      reference_source:
+        ref_file: reference_fasta
+    outputs:
+      output_file: normalized_vcf
+
+  mutect2:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/gatk4_mutect2/gatk4_mutect2/4.1.7.0+galaxy0'
+    doc: 'Somatic variant calling with GATK Mutect2'
+    in:
+      input: apply_bqsr/recalibrated_bam
+      reference_source:
+        ref_file: reference_fasta
+    outputs:
+      output_vcf: mutect2_variants
+
+  manta:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/artbio/manta/manta/1.6+galaxy10'
+    doc: 'Structural variant calling with Manta'
+    in:
+      reference_source:
+        reference_source_selector: 'history'
+        ref_file: reference_fasta
+      bam_input:
+        bam_input_selector: 'tumor_bam'
+        tumor_bam_file: apply_bqsr/recalibrated_bam
+    outputs:
+      candidateSV: manta_structural_variants
+
+  snpeff:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/snpeff/snpEff/4.3+T.galaxy2'
+    doc: 'Variant annotation with SnpEff'
+    in:
+      input: bcftools_norm/output_file
+    outputs:
+      snpeff_output: snpeff_vcf
+      statsFile: snpeff_stats
+
+  add_info:
+    tool_id: 'add_info_to_vcf'
+    doc: 'Inject custom provenance and caller tags into VCF via UDT'
+    in:
+      vcf_gz: snpeff/snpeff_output
+    state:
+      source_name: 'sarek_variant_caller'
+    outputs:
+      out_vcf: final_annotated_vcf
+
+  multiqc:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.24.1+galaxy0'
+    doc: 'MultiQC summary report aggregation'
+    in:
+      results_0|software_cond|output_0|type|input: samtools_stats/output
+    outputs:
+      html_report: multiqc_html
+
+outputs:
+  recalibrated_bam:
+    outputSource: apply_bqsr/recalibrated_bam
+    type: data
+    format: bam
+    label: 'Recalibrated BAM'
+  strelka_vcf:
+    outputSource: strelka_germline/strelka_variants
+    type: data
+    format: vcf
+    label: 'Strelka Germline VCF'
+  haplotypecaller_vcf:
+    outputSource: haplotypecaller/output_vcf
+    type: data
+    format: vcf
+    label: 'GATK HaplotypeCaller VCF'
+  freebayes_vcf:
+    outputSource: freebayes/freebayes_variants
+    type: data
+    format: vcf
+    label: 'FreeBayes VCF'
+  mutect2_vcf:
+    outputSource: mutect2/mutect2_variants
+    type: data
+    format: vcf
+    label: 'GATK Mutect2 VCF'
+  manta_sv_vcf:
+    outputSource: manta/candidateSV
+    type: data
+    format: vcf
+    label: 'Manta SV VCF'
+  annotated_vcf:
+    outputSource: add_info/out_vcf
+    type: data
+    format: vcf
+    label: 'Annotated Germline VCF'
+  multiqc_report:
+    outputSource: multiqc/html_report
+    type: data
+    format: html
+    label: 'MultiQC Report'

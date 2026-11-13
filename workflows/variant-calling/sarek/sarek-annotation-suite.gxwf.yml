@@ -1,0 +1,64 @@
+class: GalaxyWorkflow
+id: sarek-annotation-suite
+label: 'Sarek: Variant Annotation Suite'
+doc: 'Comprehensive variant annotation with SnpEff and consensus enrichment using local UDTs'
+license: MIT
+creator:
+  - class: Organization
+    name: 'nf-core'
+    url: 'https://nf-co.re'
+  - class: Organization
+    name: 'IWC'
+    url: 'https://github.com/iwc-workflows'
+  - class: Person
+    name: 'Rand Zoabi'
+    email: 'rand.zoabi@rz.uni-freiburg.de'
+
+inputs:
+  vcf_input:
+    type: data
+    format: vcf
+    label: 'Input VCF'
+    doc: 'Raw or filtered VCF from variant calling'
+  reference_fasta:
+    type: data
+    format: fasta
+    label: 'Reference genome FASTA'
+    doc: 'Reference genome FASTA'
+  snpeff_db_name:
+    type: text
+    label: 'SnpEff database genome version'
+    doc: 'SnpEff database name (e.g. GRCh38.86)'
+    default: 'GRCh38.86'
+
+steps:
+  snpeff:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/snpeff/snpEff/4.3+T.galaxy2'
+    doc: 'Annotate variants and predict coding effects with SnpEff'
+    in:
+      input: vcf_input
+    outputs:
+      snpeff_output: snpeff_vcf
+      statsFile: snpeff_stats
+
+  add_info:
+    tool_id: 'add_info_to_vcf'
+    doc: 'Inject custom provenance and caller tags into VCF via UDT'
+    in:
+      vcf_gz: snpeff/snpeff_output
+    state:
+      source_name: 'sarek_variant_caller'
+    outputs:
+      out_vcf: annotated_vcf
+
+outputs:
+  annotated_vcf:
+    outputSource: add_info/out_vcf
+    type: data
+    format: vcf
+    label: 'Final Annotated VCF'
+  snpeff_metrics:
+    outputSource: snpeff/statsFile
+    type: data
+    format: html
+    label: 'SnpEff Annotation Summary'

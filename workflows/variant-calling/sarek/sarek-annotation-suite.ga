@@ -1,0 +1,169 @@
+{
+  "a_galaxy_workflow": "true",
+  "format-version": "0.1",
+  "name": "Sarek: Variant Annotation Suite",
+  "annotation": "Comprehensive variant annotation with SnpEff and consensus enrichment using local UDTs",
+  "tags": [],
+  "uuid": "031880a8-bed7-4322-8601-94fd19eee6e4",
+  "license": "MIT",
+  "steps": {
+    "0": {
+      "id": 0,
+      "type": "data_input",
+      "label": "vcf_input",
+      "name": "vcf_input",
+      "annotation": "Raw or filtered VCF from variant calling",
+      "tool_state": {
+        "name": "vcf_input",
+        "format": "vcf"
+      },
+      "position": {
+        "left": 0,
+        "top": 0
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "vcf_input",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "1": {
+      "id": 1,
+      "type": "data_input",
+      "label": "reference_fasta",
+      "name": "reference_fasta",
+      "annotation": "Reference genome FASTA",
+      "tool_state": {
+        "name": "reference_fasta",
+        "format": "fasta"
+      },
+      "position": {
+        "left": 10,
+        "top": 10
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "reference_fasta",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "2": {
+      "id": 2,
+      "type": "parameter_input",
+      "label": "snpeff_db_name",
+      "name": "snpeff_db_name",
+      "annotation": "SnpEff database name (e.g. GRCh38.86)",
+      "tool_state": {
+        "name": "snpeff_db_name",
+        "parameter_type": "text",
+        "default": "GRCh38.86"
+      },
+      "position": {
+        "left": 20,
+        "top": 20
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "snpeff_db_name",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "3": {
+      "id": 3,
+      "type": "tool",
+      "label": "snpeff",
+      "name": "toolshed.g2.bx.psu.edu/repos/iuc/snpeff/snpEff/4.3+T.galaxy2",
+      "annotation": "Annotate variants and predict coding effects with SnpEff",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/snpeff/snpEff/4.3+T.galaxy2",
+      "tool_state": {
+        "__page__": 0
+      },
+      "input_connections": {
+        "input": [
+          {
+            "id": 0,
+            "output_name": "output"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "left": 30,
+        "top": 30
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "statsFile",
+          "label": "SnpEff Annotation Summary"
+        }
+      ]
+    },
+    "4": {
+      "id": 4,
+      "type": "tool",
+      "label": "add_info",
+      "name": "add_info_to_vcf",
+      "annotation": "Inject custom provenance and caller tags into VCF via UDT",
+      "tool_id": "add_info_to_vcf",
+      "tool_state": {
+        "__page__": 0,
+        "source_name": "sarek_variant_caller"
+      },
+      "input_connections": {
+        "vcf_gz": [
+          {
+            "id": 3,
+            "output_name": "snpeff_output"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "left": 40,
+        "top": 40
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "out_vcf",
+          "label": "Final Annotated VCF"
+        }
+      ]
+    }
+  },
+  "creator": [
+    {
+      "class": "Organization",
+      "name": "nf-core",
+      "url": "https://nf-co.re"
+    },
+    {
+      "class": "Organization",
+      "name": "IWC",
+      "url": "https://github.com/iwc-workflows"
+    },
+    {
+      "class": "Person",
+      "name": "Rand Zoabi",
+      "email": "rand.zoabi@rz.uni-freiburg.de"
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+class: GalaxyWorkflow
+id: sarek-structural-suite
+label: 'Sarek: Structural Variants and Copy Number Variation Suite'
+doc: 'Comprehensive detection of structural variations and CNVs using Manta and BCFtools'
+license: MIT
+creator:
+  - class: Organization
+    name: 'nf-core'
+    url: 'https://nf-co.re'
+  - class: Organization
+    name: 'IWC'
+    url: 'https://github.com/iwc-workflows'
+  - class: Person
+    name: 'Rand Zoabi'
+    email: 'rand.zoabi@rz.uni-freiburg.de'
+
+inputs:
+  tumor_bam:
+    type: data
+    format: bam
+    label: 'Tumor BAM'
+    doc: 'Tumor alignment BAM'
+  normal_bam:
+    type: data
+    format: bam
+    label: 'Normal BAM'
+    doc: 'Matched normal alignment BAM'
+    optional: true
+  reference_fasta:
+    type: data
+    format: fasta
+    label: 'Reference genome FASTA'
+    doc: 'Reference genome FASTA file'
+  target_intervals:
+    type: data
+    format: bed
+    label: 'Target intervals (BED)'
+    doc: 'Targeted sequencing intervals'
+    optional: true
+
+steps:
+  manta:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/artbio/manta/manta/1.6+galaxy10'
+    doc: 'Structural variant and indel calling with Manta'
+    in:
+      reference_source:
+        reference_source_selector: 'history'
+        ref_file: reference_fasta
+      bam_input:
+        bam_input_selector: 'tumor_bam'
+        tumor_bam_file: tumor_bam
+        normal_bam_file: normal_bam
+    outputs:
+      somaticSV: manta_somatic_sv
+      candidateSV: manta_candidate_sv
+
+  bcftools_view:
+    tool_id: 'toolshed.g2.bx.psu.edu/repos/iuc/bcftools_view/bcftools_view/1.15.1+galaxy3'
+    doc: 'Filter and inspect candidate structural variants with BCFtools view'
+    in:
+      input_file: manta/candidateSV
+    outputs:
+      output_file: filtered_structural_variants
+
+outputs:
+  manta_somatic_sv:
+    outputSource: manta/somaticSV
+    type: data
+    format: vcf
+    label: 'Manta Somatic SV VCF'
+  manta_candidate_sv:
+    outputSource: manta/candidateSV
+    type: data
+    format: vcf
+    label: 'Manta Candidate SV VCF'
+  filtered_structural_variants:
+    outputSource: bcftools_view/output_file
+    type: data
+    format: vcf
+    label: 'Filtered Structural Variants VCF'
