@@ -1,0 +1,1936 @@
+class: GalaxyWorkflowDraft
+label: nf-core/mag 5.5.0 -> Galaxy (draft)
+doc: |
+  gxformat2 draft translated from nf-core/mag 5.5.0 (db7772f) per
+  nextflow-galaxy-interface.md / nextflow-galaxy-data-flow.md / iwc-comparison-notes.md.
+  Topology settled here; wrapper tier deferred per step via TODO + _plan_*.
+  Design notes:
+  - The 14 source stage subworkflows are nested `run: GalaxyWorkflowDraft`
+    subworkflow steps gated by `when:` (probe-confirmed: draft-validate and
+    draft-next-step descend nested drafts recursively; nested `class: GalaxyWorkflow`
+    would hide draft state from the loop). Inner steps keep full `_plan_*`.
+  - Conditional guards are direct ES5.1 `when:` expressions over workflow inputs
+    (decision when-guards-direct-input-expressions refines exemplar-idioms-adopted:
+    the exemplar's map_param_value->named-when knot gates a *derived* selector;
+    input-derived booleans/enums/null-checks need no intermediate step).
+    The exemplar's pick_value merge idiom (0.2.0, styles first/first_or_skip/
+    the_only_non_null) is adopted verbatim for every branch rejoin.
+  - Skipped-branch tolerance (bin_summary join, MultiQC fan-in): each optional
+    per-bin table branch gets a twin filler step emitting a header-only TSV under
+    the negated guard, rejoined by pick_value(first_or_skip) - skipped producers
+    yield the expression.json "skipped" sentinel that pick_value detects (decision
+    tolerant-fillers-for-bin-summary; runtime confirmation pending, ledger
+    bin-summary-tolerant-join).
+  - `!expr` and `$(input) != null` guard spellings are authored per the engine
+    notes; compound-gate import behavior is the carried ledger question (data-flow
+    open question 6).
+  - software_versions checkpoint had no wired producer evidence (blocking entry
+    versions-checkpoint-blocked); topology repair 1 dropped the step and the
+    promoted output - the interface ships 7 outputs, versions evidence only via
+    the Galaxy runtime, not a workflow output.
+tags: [mag, metagenome-assembled-genomes, metagenomics, assembly, binning, taxonomy, annotation, multiqc]
+license: MIT
+inputs:
+  # ---- mode ----
+  input_mode:
+    type: string
+    restrictions: [reads, assemblies]
+    default: reads
+    optional: false
+    doc: reads runs sheet->QC->assembly->binning; assemblies starts at the pre-assembled input.
+  # ---- samplesheets ----
+  short_reads_samplesheet:
+    type: collection
+    collection_type: sample_sheet:paired_or_unpaired
+    format: [fastqsanger.gz]
+    optional: true
+    doc: |
+      sample | run | group | short_reads_1 | short_reads_2 | short_reads_platform.
+      Split-sheet fallback of the record design (ledger mixed-modality-samplesheet-record-slots,
+      executed by topology repair 2 - no tool can project sample_sheet:record slots into typed
+      collections); use with input_mode == reads; per-row one modality minimum across the two sheets.
+    column_definitions:
+      - { name: sample, type: string, optional: false, validators: [ { type: regex, expression: '^\S+$' } ] }
+      - { name: run, type: string, optional: true, validators: [ { type: regex, expression: '^\S+$' } ] }
+      - { name: group, type: string, optional: false, validators: [ { type: regex, expression: '^\S+$' } ] }
+      - name: short_reads_platform
+        type: string
+        optional: true
+        restrictions: [ILLUMINA, BGISEQ, LS454, ION_TORRENT, DNBSEQ, ELEMENT, ULTIMA, VELA_DIAGNOSTICS, GENAPSYS, GENEMIND, TAPESTRI]
+  long_reads_samplesheet:
+    type: collection
+    collection_type: sample_sheet
+    format: [fastqsanger.gz]
+    optional: true
+    doc: |
+      sample | run | group | long_reads | long_reads_platform - second half of the split-sheet
+      fallback (repair 2); use with input_mode == reads together with short_reads_samplesheet.
+    column_definitions:
+      - { name: sample, type: string, optional: false, validators: [ { type: regex, expression: '^\S+$' } ] }
+      - { name: run, type: string, optional: true, validators: [ { type: regex, expression: '^\S+$' } ] }
+      - { name: group, type: string, optional: false, validators: [ { type: regex, expression: '^\S+$' } ] }
+      - name: long_reads_platform
+        type: string
+        optional: true
+        restrictions: [OXFORD_NANOPORE, OXFORD_NANOPORE_HQ, PACBIO_CLR, PACBIO_HIFI]
+  assembly_samplesheet:
+    type: collection
+    collection_type: sample_sheet
+    format: [fasta, fasta.gz]
+    optional: true
+    doc: id | group | assembler | fasta - use with input_mode == assemblies.
+    column_definitions:
+      - { name: id, type: string, optional: false, validators: [ { type: regex, expression: '^\S+$' } ] }
+      - { name: group, type: string, optional: false, validators: [ { type: regex, expression: '^\S+$' } ] }
+      - name: assembler
+        type: string
+        optional: false
+        restrictions: [MEGAHIT, SPAdes, SPAdesHybrid, Flye, MetaMDBG]
+  # ---- reference data (presence gates the branch; run_* flags merged in) ----
+  phix_reference: { type: data, format: [fasta], optional: true, doc: absent => no phiX removal (replaces keep_phix/phix removal switch). }
+  lambda_reference: { type: data, format: [fasta], optional: true, doc: absent => no lambda (NANOLYSE/chopper) long-read step. }
+  host_genome: { type: data, format: [fasta], optional: true, doc: host read removal; bowtie2 index built in-tool (decision host-index-in-tool-rebuild). }
+  busco_db: { type: data, optional: true, doc: 'tar.gz, unpacked in-tool; presence => BUSCO QC (run_busco merged).' }
+  busco_db_lineage: { type: string, optional: true, doc: BUSCO lineage directory name within busco_db. }
+  checkm_db: { type: data, optional: true, doc: tar.gz; presence => CheckM QC (run_checkm merged). }
+  checkm2_db: { type: data, optional: true, doc: 'tar.gz; presence => CheckM2 QC (run_checkm2 merged; wrapper-managed DB possible, ledger discovery).' }
+  gunc_db: { type: data, optional: true, doc: presence => GUNC (run_gunc merged). }
+  gtdbtk_db: { type: data, optional: true, doc: tar.gz (GTDB-Tk); needed with skip_gtdbtk=false. }
+  cat_db: { type: data, optional: true, doc: 'CAT pack tar.gz; presence => CAT/BAT taxonomy (cat_db_generate not carried, ledger).' }
+  genomad_db: { type: data, optional: true, doc: geNomad DB; unpack in-tool. }
+  metaeuk_db: { type: data, optional: true, doc: mmseqs DB (directory); name-based MMSEQS_DATABASES download not carried. }
+  # ---- scientific switches (defaults: false unless noted) ----
+  single_end: { type: boolean, default: false }
+  skip_clipping: { type: boolean, default: false }
+  skip_shortread_qc: { type: boolean, default: false }
+  skip_fastqc: { type: boolean, default: false }
+  skip_longread_qc: { type: boolean, default: false }
+  skip_longread_filtering: { type: boolean, default: false }
+  filtlong_filtering_by_shortreads: { type: boolean, default: false }
+  bbnorm: { type: boolean, default: false }
+  coassemble_group: { type: boolean, default: false }
+  skip_spades: { type: boolean, default: false }
+  skip_spadeshybrid: { type: boolean, default: false }
+  skip_megahit: { type: boolean, default: false }
+  skip_flye: { type: boolean, default: false }
+  skip_metamdbg: { type: boolean, default: false }
+  run_pypolca: { type: boolean, default: false }
+  skip_binning: { type: boolean, default: false }
+  skip_metabat2: { type: boolean, default: false }
+  skip_maxbin2: { type: boolean, default: false }
+  skip_concoct: { type: boolean, default: false }
+  skip_comebin: { type: boolean, default: false }
+  skip_metabinner: { type: boolean, default: false }
+  skip_semibin: { type: boolean, default: false }
+  skip_ale: { type: boolean, default: true }
+  refine_bins_dastool: { type: boolean, default: false }
+  exclude_unbins_from_postbinning: { type: boolean, default: false }
+  bin_domain_classification: { type: boolean, default: false }
+  ancient_dna: { type: boolean, default: false }
+  skip_ancient_damagecorrection: { type: boolean, default: false }
+  skip_quast: { type: boolean, default: false }
+  skip_prodigal: { type: boolean, default: false }
+  skip_prokka: { type: boolean, default: false }
+  skip_binqc: { type: boolean, default: false }
+  skip_gtdbtk: { type: boolean, default: false }
+  cat_classify_unbinned: { type: boolean, default: false }
+  run_virus_identification: { type: boolean, default: false }
+  generate_bigmag_file: { type: boolean, default: false }
+  # ---- selectors ----
+  clip_tool: { type: string, restrictions: [trimmomatic, adapterremoval, fastp], default: trimmomatic }
+  longread_adaptertrimming_tool: { type: string, restrictions: [porechop_abi, porechop, none], default: porechop_abi }
+  longread_filtering_tool: { type: string, restrictions: [chopper, filtlong, nanoq, none], default: chopper }
+  binning_map_mode: { type: string, restrictions: [own, group, all], default: group }
+  postbinning_input: { type: string, restrictions: [raw_bins_only, raw_bins_and_unbinned, refined_bins_only], default: raw_bins_only }
+  # ---- numbers / text ----
+  min_length_unbinned_contigs: { type: int, doc: contigs >= this may become unbinned-contigs output }
+  max_unbinned_contigs: { type: int, doc: cap on retained unbinned contigs }
+  refine_bins_dastool_threshold: { type: float, doc: DAS Tool score threshold (source default 0.2) }
+  gtdbtk_min_completeness: { type: float, doc: GTDB-Tk bin filter (source default 50) }
+  gtdbtk_max_contamination: { type: float, doc: GTDB-Tk bin filter (source default 10) }
+  multiqc_title: { type: string, optional: true }
+outputs:
+  multiqc_report: { outputSource: multiqc/html_report, label: multiqc_report }
+  bin_summary: { outputSource: bin_summary_join/TODO_joined, label: bin_summary, doc: 'per-bin checkpoint TSV, one row per bin, key group_binN' }
+  bins: { outputSource: postbin_routing/TODO_bins, label: bins }
+  unbinned_contigs: { outputSource: postbin_routing/TODO_unbinned, label: unbinned_contigs }
+  assemblies: { outputSource: asm_final_merge/TODO_merged, label: assemblies }
+  quast_assembly_summary: { outputSource: assembly/quast_summary, label: quast_assembly_summary }
+  taxonomy_tables: { outputSource: tax_tables/TODO_taxlist, label: taxonomy_tables }
+steps:
+  materialize_reads:
+    type: subworkflow
+    label: materialize_reads
+    doc: Stage 1 - samplesheet materialization (source PIPELINE_INITIALISATION samplesheetToList); gated on input_mode. Split short/long sheets per repair 2 (record-slot projection ruled out).
+    when: $(inputs.input_mode) == 'reads'
+    runtime_inputs: [short_reads_samplesheet, long_reads_samplesheet]
+    in:
+      short_reads_samplesheet: short_reads_samplesheet
+      long_reads_samplesheet: long_reads_samplesheet
+    out: [ { id: meta_table }, { id: sr_paired }, { id: lr_list } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        short_reads_samplesheet: { type: collection, collection_type: 'sample_sheet:paired_or_unpaired', format: [fastqsanger.gz] }
+        long_reads_samplesheet: { type: collection, collection_type: sample_sheet, format: [fastqsanger.gz] }
+      outputs:
+        meta_table: { outputSource: s2t/output }
+        sr_paired: { outputSource: build_pairs/output }
+        lr_list: { outputSource: extract_lr/output }
+      steps:
+        s2t:
+          type: tool
+          tool_id: __SAMPLE_SHEET_TO_TABULAR__
+          tool_version: 1.0.0
+          label: s2t
+          doc: metadata columns (sample, run, group, platforms) as tabular - re-attached after map-overs downstream. Post-repair-2 covers short-read rows only (split-sheet cost, ledger mixed-modality-samplesheet-record-slots).
+          in: { input: short_reads_samplesheet }
+          out: [ { id: output } ]
+        build_pairs:
+          type: tool
+          tool_id: __CONVERT_SAMPLE_SHEET__
+          tool_version: 1.0.0
+          label: build_pairs
+          in: { input: short_reads_samplesheet }
+          out: [ { id: output } ]
+        extract_lr:
+          type: tool
+          tool_id: __CONVERT_SAMPLE_SHEET__
+          tool_version: 1.0.0
+          label: extract_lr
+          in: { input: long_reads_samplesheet }
+          out: [ { id: output } ]
+  assembly_input_route:
+    type: subworkflow
+    label: assembly_input_route
+    doc: Stage 1x - pre-assembled input branch (source assembly_input path), bypasses QC+assembly.
+    when: $(inputs.input_mode) == 'assemblies'
+    runtime_inputs: [assembly_samplesheet]
+    in: { assembly_samplesheet: assembly_samplesheet }
+    out: [ { id: sr_assemblies }, { id: lr_assemblies } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        assembly_samplesheet: { type: collection, collection_type: sample_sheet, format: [fasta, fasta.gz] }
+      outputs:
+        sr_assemblies: { outputSource: asm_split/output_filtered }
+        lr_assemblies: { outputSource: asm_split/output_discarded }
+      steps:
+        asm_s2t:
+          type: tool
+          tool_id: __SAMPLE_SHEET_TO_TABULAR__
+          tool_version: 1.0.0
+          label: asm_s2t
+          in: { input: assembly_samplesheet }
+          out: [ { id: output } ]
+        asm_list:
+          type: tool
+          tool_id: __CONVERT_SAMPLE_SHEET__
+          tool_version: 1.0.0
+          label: asm_list
+          in: { input: assembly_samplesheet }
+          out: [ { id: output } ]
+        asm_ids_sr:
+          type: tool
+          tool_id: Filter1
+          tool_version: 1.1.1
+          label: asm_ids_sr
+          in: { input: asm_s2t/output }
+          state: { cond: '^(MEGAHIT|SPAdesHybrid|SPAdes)$', columnList: '3', header_lines: 1 }
+          out: [ { id: output } ]
+        asm_ids:
+          type: tool
+          tool_id: Cut1
+          tool_version: 1.0.2
+          label: asm_ids
+          in: { input: asm_ids_sr/output }
+          state: { columnList: '1' }
+          out: [ { id: output } ]
+        asm_split:
+          type: tool
+          tool_id: __FILTER_FROM_FILE__
+          tool_version: 1.0.0
+          label: asm_split
+          in:
+            input: asm_list/output
+            'how|filter_source': asm_ids/output
+          state: { 'how|how_filter': remove_if_absent }
+          out: [ { id: output_filtered }, { id: output_discarded } ]
+  shortread_preprocess:
+    type: subworkflow
+    label: shortread_preprocess
+    doc: Stage 2 - SHORTREAD_PREPROCESSING. clip-tool swap, host + phiX removal, FASTQC, BBnorm.
+    when: $(inputs.input_mode) == 'reads'
+    runtime_inputs: [sr_paired, clip_tool, skip_clipping, skip_shortread_qc, skip_fastqc, single_end, bbnorm, host_genome, phix_reference]
+    in:
+      sr_paired: materialize_reads/sr_paired
+      clip_tool: clip_tool
+      skip_clipping: skip_clipping
+      skip_shortread_qc: skip_shortread_qc
+      skip_fastqc: skip_fastqc
+      single_end: single_end
+      bbnorm: bbnorm
+      host_genome: host_genome
+      phix_reference: phix_reference
+    out: [ { id: clean_sr }, { id: fastqc_raw }, { id: fastqc_trimmed }, { id: bbnorm_stats } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        sr_paired: { type: collection, collection_type: 'list:paired', format: [fastqsanger.gz] }
+        clip_tool: { type: string }
+        skip_clipping: { type: boolean }
+        skip_shortread_qc: { type: boolean }
+        skip_fastqc: { type: boolean }
+        single_end: { type: boolean }
+        bbnorm: { type: boolean }
+        host_genome: { type: data, format: [fasta], optional: true }
+        phix_reference: { type: data, format: [fasta], optional: true }
+      outputs:
+        clean_sr: { outputSource: clean_final/data_param }
+        fastqc_raw: { outputSource: fastqc_raw/html_file }
+        fastqc_trimmed: { outputSource: fastqc_trimmed/html_file }
+        bbnorm_stats: { outputSource: bbnorm_step/kmer_hist_input }
+      steps:
+        fastqc_raw:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc
+          tool_version: 0.74+galaxy1
+          label: fastqc_raw
+          when: '!$(inputs.skip_shortread_qc) && !$(inputs.skip_fastqc)'
+          in: { input_file: sr_paired }
+          out: [ { id: html_file } ]
+        trim_trimmomatic:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/pjbriggs/trimmomatic/trimmomatic
+          tool_version: 0.39+galaxy4
+          label: trim_trimmomatic
+          when: "$(inputs.clip_tool) == 'trimmomatic' && !$(inputs.skip_clipping)"
+          in: { 'readtype|fastq_pair': sr_paired }
+          state:
+            readtype: { single_or_paired: collection }
+            output_logs: true
+          out: [ { id: fastq_out_paired }, { id: log_file } ]
+          doc: source TRIMMOMATIC runs with empty ext.args/ext.args2 (preprocessing_shortread/main.nf:76, no overrides) - no ILLUMINACLIP/LEADING/SLIDINGWINDOW operations; log fans into MultiQC. Template _plan over-specified this; corrected from source evidence.
+        trim_adapterremoval:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/adapter_removal/adapter_removal
+          tool_version: 3.0.2+galaxy0
+          label: trim_adapterremoval
+          when: "$(inputs.clip_tool) == 'adapterremoval' && !$(inputs.skip_clipping)"
+          in: { 'input_type_cond|reads_collection': sr_paired }
+          state:
+            input_type_cond: { input_type: paired, interleaved_output: 'no' }
+          out: [ { id: output_forward_truncated }, { id: output_reverse_truncated } ]
+          doc: repair 3 - wrapper emits fwd/rev datasets per pair; zip_ar re-pairs to list:paired for the clip_picked fan-in.
+        zip_ar:
+          type: tool
+          tool_id: __ZIP_COLLECTION__
+          tool_version: 1.0.0
+          label: zip_ar
+          when: "$(inputs.clip_tool) == 'adapterremoval' && !$(inputs.skip_clipping)"
+          in:
+            input_forward: trim_adapterremoval/output_forward_truncated
+            input_reverse: trim_adapterremoval/output_reverse_truncated
+          out: [ { id: output } ]
+        trim_fastp:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/fastp/fastp
+          tool_version: 1.4.0+galaxy0
+          label: trim_fastp
+          when: "$(inputs.clip_tool) == 'fastp' && !$(inputs.skip_clipping)"
+          in: { 'single_paired|paired_input': sr_paired }
+          state:
+            single_paired: { single_paired_selector: paired_collection }
+            output_options: { report_html: true, report_json: true }
+          out: [ { id: output_paired_coll }, { id: report_json } ]
+        clip_picked:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+          tool_version: 0.2.0
+          label: clip_picked
+          in:
+            'style_cond|type_cond|pick_from_0|value': trim_trimmomatic/fastq_out_paired
+            'style_cond|type_cond|pick_from_1|value': zip_ar/output
+            'style_cond|type_cond|pick_from_2|value': trim_fastp/output_paired_coll
+            'style_cond|type_cond|pick_from_3|value': sr_paired
+          state:
+            style_cond: { pick_style: first, type_cond: { param_type: data } }
+          out: [ { id: data_param } ]
+        fastqc_trimmed:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc
+          tool_version: 0.74+galaxy1
+          label: fastqc_trimmed
+          when: '!$(inputs.skip_shortread_qc) && !$(inputs.skip_fastqc)'
+          in: { input_file: clip_picked/data_param }
+          out: [ { id: html_file } ]
+        host_map:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/devteam/bowtie2/bowtie2
+          tool_version: 2.5.5+galaxy0
+          label: host_map
+          when: $(inputs.host_genome) != null
+          in: { 'library|input_1': clip_picked/data_param, 'reference_genome|own_file': host_genome }
+          state:
+            library: { type: paired_collection }
+            reference_genome: { source: history }
+            analysis_type: { analysis_type_selector: simple, presets: '--very-sensitive-local' }
+            save_mapping_stats: true
+          out: [ { id: output_unaligned_read_pairs }, { id: mapping_stats } ]
+        pre_phix:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+          tool_version: 0.2.0
+          label: pre_phix
+          in:
+            'style_cond|type_cond|pick_from_0|value': host_map/output_unaligned_read_pairs
+            'style_cond|type_cond|pick_from_1|value': clip_picked/data_param
+          state:
+            style_cond: { pick_style: first, type_cond: { param_type: data } }
+          out: [ { id: data_param } ]
+        phix_map:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/devteam/bowtie2/bowtie2
+          tool_version: 2.5.5+galaxy0
+          label: phix_map
+          when: $(inputs.phix_reference) != null
+          in: { 'library|input_1': pre_phix/data_param, 'reference_genome|own_file': phix_reference }
+          state:
+            library: { type: paired_collection }
+            reference_genome: { source: history }
+            analysis_type: { analysis_type_selector: simple, presets: '--very-sensitive-local' }
+            save_mapping_stats: true
+          out: [ { id: output_unaligned_read_pairs }, { id: mapping_stats } ]
+        clean_pick:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+          tool_version: 0.2.0
+          label: clean_pick
+          in:
+            'style_cond|type_cond|pick_from_0|value': phix_map/output_unaligned_read_pairs
+            'style_cond|type_cond|pick_from_1|value': pre_phix/data_param
+          state:
+            style_cond: { pick_style: first, type_cond: { param_type: data } }
+          out: [ { id: data_param } ]
+        bbnorm_step:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bbtools_bbnorm/bbtools_bbnorm
+          tool_version: 39.08+galaxy4
+          label: bbnorm_step
+          when: $(inputs.bbnorm)
+          in: { 'input_type_cond|reads_collection': clean_pick/data_param }
+          state:
+            input_type_cond: { input_type: paired }
+            output_options: { save_kmer_hists: true }
+          out: [ { id: output_pair }, { id: kmer_hist_input } ]
+          doc: source interleaves pairs (SEQTK_MERGEPE) to run BBNorm single-end; the wrapper's native paired branch (reads_collection -> output_pair) is the Galaxy-side equivalent. target/min defaults (100/5) equal source bbnorm_target/bbnorm_min defaults.
+        clean_final:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+          tool_version: 0.2.0
+          label: clean_final
+          in:
+            'style_cond|type_cond|pick_from_0|value': bbnorm_step/output_pair
+            'style_cond|type_cond|pick_from_1|value': clean_pick/data_param
+          state:
+            style_cond: { pick_style: first, type_cond: { param_type: data } }
+          out: [ { id: data_param } ]
+  longread_preprocess:
+    type: subworkflow
+    label: longread_preprocess
+    doc: Stage 2 - LONGREAD_PREPROCESSING. nanoplot QC, porechop swap, lambda, chopper/filtlong/nanoq, host removal. Empty lr_list maps over to empty - no extra gate needed.
+    when: $(inputs.input_mode) == 'reads'
+    runtime_inputs: [lr_list, sr_clean, longread_adaptertrimming_tool, longread_filtering_tool, skip_longread_qc, skip_longread_filtering, filtlong_filtering_by_shortreads, lambda_reference, host_genome]
+    in:
+      lr_list: materialize_reads/lr_list
+      sr_clean: shortread_preprocess/clean_sr
+      longread_adaptertrimming_tool: longread_adaptertrimming_tool
+      longread_filtering_tool: longread_filtering_tool
+      skip_longread_qc: skip_longread_qc
+      skip_longread_filtering: skip_longread_filtering
+      filtlong_filtering_by_shortreads: filtlong_filtering_by_shortreads
+      lambda_reference: lambda_reference
+      host_genome: host_genome
+    out: [ { id: clean_lr }, { id: nanplot_html } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        lr_list: { type: collection, collection_type: list, format: [fastqsanger.gz], optional: true }
+        sr_clean: { type: collection, collection_type: 'list:paired', format: [fastqsanger.gz] }
+        longread_adaptertrimming_tool: { type: string }
+        longread_filtering_tool: { type: string }
+        skip_longread_qc: { type: boolean }
+        skip_longread_filtering: { type: boolean }
+        filtlong_filtering_by_shortreads: { type: boolean }
+        lambda_reference: { type: data, format: [fasta], optional: true }
+        host_genome: { type: data, format: [fasta], optional: true }
+      outputs:
+        clean_lr: { outputSource: lr_final/data_param }
+        nanplot_html: { outputSource: nanplot_qc/output_html }
+      steps:
+        nanplot_qc:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/nanoplot/nanoplot
+          tool_version: 1.48.0+galaxy0
+          label: nanplot_qc
+          when: '!$(inputs.skip_longread_qc)'
+          in: { 'mode|reads|files': lr_list }
+          state:
+            mode: { choice: batch, reads: { type: fastq } }
+          out: [ { id: output_html } ]
+        trim_porechop_abi:
+          type: tool
+          label: trim_porechop_abi
+          # porechop_abi absent from Tool Shed (searched porechop_abi / porechop-abi, 0 hits) -> authored user tool.
+          # Source modules/nf-core/porechop/abi: `porechop_abi --input <reads> --threads N --output <prefix>.fastq.gz`.
+          # custom_adapters omitted: nf-core/mag never passes params.custom_read_adapters to PORECHOP_ABI.
+          when: "$(inputs.longread_adaptertrimming_tool) == 'porechop_abi'"
+          run:
+            class: GalaxyUserTool
+            id: porechop_abi
+            version: 0.1.0
+            name: Porechop ABI
+            container: quay.io/biocontainers/porechop_abi:0.5.0post1--py310h275bdba_0
+            shell_command: "porechop_abi --input $(inputs.reads.path) --output trimmed.fastq.gz > porechop_abi.log"
+            inputs:
+              - name: reads
+                type: data
+            outputs:
+              - name: output
+                type: data
+                format: fastqsanger.gz
+                from_work_dir: trimmed.fastq.gz
+          in: { reads: lr_list }
+          out: [ { id: output } ]
+        trim_porechop:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/porechop/porechop
+          tool_version: 0.2.4+galaxy1
+          label: trim_porechop
+          when: "$(inputs.longread_adaptertrimming_tool) == 'porechop'"
+          in: { input_file: lr_list }
+          out: [ { id: outfile } ]
+        lr_trimmed:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+          tool_version: 0.2.0
+          label: lr_trimmed
+          in:
+            'style_cond|type_cond|pick_from_0|value': trim_porechop_abi/output
+            'style_cond|type_cond|pick_from_1|value': trim_porechop/outfile
+            'style_cond|type_cond|pick_from_2|value': lr_list
+          state:
+            style_cond: { pick_style: first, type_cond: { param_type: data } }
+          out: [ { id: data_param } ]
+        lambda_nanolyse:
+          type: tool
+          label: lambda_nanolyse
+          # NanoLyse absent from Tool Shed (nanolyse/lambda searches) -> authored user tool.
+          # Source modules/nf-core/nanolyse: `gunzip -c $fastq | NanoLyse -r $fasta | gzip > <prefix>.fastq.gz`.
+          when: "$(inputs.lambda_reference) != null && $(inputs.longread_filtering_tool) != 'chopper'"
+          run:
+            class: GalaxyUserTool
+            id: nanolyse
+            version: 0.1.0
+            name: NanoLyse
+            container: quay.io/biocontainers/nanolyse:1.2.0--py_0
+            shell_command: "gunzip -c $(inputs.reads.path) | NanoLyse -r $(inputs.reference.path) | gzip > lambda_removed.fastq.gz"
+            inputs:
+              - name: reads
+                type: data
+              - name: reference
+                type: data
+            outputs:
+              - name: output
+                type: data
+                format: fastqsanger.gz
+                from_work_dir: lambda_removed.fastq.gz
+          in: { reads: lr_trimmed/data_param, reference: lambda_reference }
+          out: [ { id: output } ]
+        lr_lambdaped:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+          tool_version: 0.2.0
+          label: lr_lambdaped
+          in:
+            'style_cond|type_cond|pick_from_0|value': lambda_nanolyse/output
+            'style_cond|type_cond|pick_from_1|value': lr_trimmed/data_param
+          state:
+            style_cond: { pick_style: first, type_cond: { param_type: data } }
+          out: [ { id: data_param } ]
+        filtlong_combine:
+          type: tool
+          tool_id: __UNZIP_COLLECTION__
+          tool_version: 1.0.0
+          label: filtlong_combine
+          # Re-scoped at implement: the shed filtlong wrapper takes short_1/short_2 as separate data
+          # params (no pair input), so combine becomes an unzip - split the SR list:paired into aligned
+          # forward/reverse lists; Galaxy pairs input_file + short_1 + short_2 per element identifier.
+          when: "$(inputs.longread_filtering_tool) == 'filtlong' && $(inputs.filtlong_filtering_by_shortreads)"
+          in: { input: sr_clean }
+          out: [ { id: forward }, { id: reverse } ]
+        filter_chopper:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/chopper/chopper
+          tool_version: 0.15.0+galaxy0
+          label: filter_chopper
+          when: "$(inputs.longread_filtering_tool) == 'chopper' && !$(inputs.skip_longread_filtering)"
+          # contam is optional in the wrapper; an absent lambda_reference simply leaves it empty.
+          in: { input: lr_lambdaped/data_param, contam: lambda_reference }
+          out: [ { id: fq_filt } ]
+        filter_filtlong:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/filtlong/filtlong
+          tool_version: 0.3.1+galaxy0
+          label: filter_filtlong
+          # Galaxy pairs the three aligned list inputs (identifiers = sample_run) per element, one job per
+          # sample. When filtlong_filtering_by_shortreads is false, filtlong_combine is skipped and the
+          # optional short_1/short_2 arrive empty -> long-read-only scoring, matching the source branch.
+          when: "$(inputs.longread_filtering_tool) == 'filtlong' && !$(inputs.skip_longread_filtering)"
+          in:
+            input_file: lr_lambdaped/data_param
+            'external_references|short_1': filtlong_combine/forward
+            'external_references|short_2': filtlong_combine/reverse
+          out: [ { id: outfile } ]
+        filter_nanoq:
+          type: tool
+          label: filter_nanoq
+          # nanoq absent from Tool Shed (0 hits) -> authored user tool.
+          # Source modules/nf-core/nanoq: `nanoq -i <reads> -r <stats> -o <prefix>.fastq.gz`; mag passes no extra args.
+          when: "$(inputs.longread_filtering_tool) == 'nanoq' && !$(inputs.skip_longread_filtering)"
+          run:
+            class: GalaxyUserTool
+            id: nanoq
+            version: 0.1.0
+            name: nanoq
+            container: quay.io/biocontainers/nanoq:0.10.0--h031d066_2
+            shell_command: "nanoq -i $(inputs.reads.path) -o filtered.fastq.gz"
+            inputs:
+              - name: reads
+                type: data
+            outputs:
+              - name: output
+                type: data
+                format: fastqsanger.gz
+                from_work_dir: filtered.fastq.gz
+          in: { reads: lr_lambdaped/data_param }
+          out: [ { id: output } ]
+        lr_filtered:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+          tool_version: 0.2.0
+          label: lr_filtered
+          in:
+            'style_cond|type_cond|pick_from_0|value': filter_chopper/fq_filt
+            'style_cond|type_cond|pick_from_1|value': filter_filtlong/outfile
+            'style_cond|type_cond|pick_from_2|value': filter_nanoq/output
+            'style_cond|type_cond|pick_from_3|value': lr_lambdaped/data_param
+          state:
+            style_cond: { pick_style: first, type_cond: { param_type: data } }
+          out: [ { id: data_param } ]
+        lr_host_map:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/minimap2/minimap2
+          tool_version: 2.31+galaxy1
+          label: lr_host_map
+          # Source hostremoval_longread: MINIMAP2_ALIGN with no -x preset (minimap2 default == map-ont);
+          # analysis_type_selector left unset so the wrapper emits no -x. Index built in-tool from history FASTA.
+          when: $(inputs.host_genome) != null
+          in: { 'reference_source|ref_file': host_genome, 'fastq_input|fastq_input1': lr_filtered/data_param }
+          state:
+            reference_source: { reference_source_selector: history }
+            fastq_input: { fastq_input_selector: single }
+          out: [ { id: alignment_output } ]
+        lr_host_unmapped:
+          type: tool
+          label: lr_host_unmapped
+          # Source modules/local/samtools_unmapped: `samtools view -f 4 <bam> | samtools fastq -0 out.fastq.gz`
+          # (ext.args '-f 4' from conf/modules.config). No shed wrapper chains view->fastq, so authored.
+          when: $(inputs.host_genome) != null
+          run:
+            class: GalaxyUserTool
+            id: samtools_unmapped
+            version: 0.1.0
+            name: Unmapped reads to FASTQ
+            container: quay.io/biocontainers/samtools:1.21--h50ea8bc_0
+            shell_command: "samtools view --threads 4 -f 4 '$(inputs.bam.path)' | samtools fastq --threads 4 -0 unmapped.fastq.gz -"
+            inputs:
+              - name: bam
+                type: data
+                format: [bam]
+            outputs:
+              - name: output
+                type: data
+                format: fastqsanger.gz
+                from_work_dir: unmapped.fastq.gz
+          in: { bam: lr_host_map/alignment_output }
+          out: [ { id: output } ]
+        lr_final:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+          tool_version: 0.2.0
+          label: lr_final
+          in:
+            'style_cond|type_cond|pick_from_0|value': lr_host_unmapped/output
+            'style_cond|type_cond|pick_from_1|value': lr_filtered/data_param
+          state:
+            style_cond: { pick_style: first, type_cond: { param_type: data } }
+          out: [ { id: data_param } ]
+  assembly:
+    type: subworkflow
+    label: assembly
+    doc: Stage 3 - ASSEMBLY. Five additive when-gated assemblers, QUAST, Prodigal, PyPolca.
+    when: $(inputs.input_mode) == 'reads'
+    runtime_inputs: [clean_sr, clean_lr, meta_table, single_end, coassemble_group, skip_spades, skip_spadeshybrid, skip_megahit, skip_flye, skip_metamdbg, skip_quast, skip_prodigal, run_pypolca]
+    in:
+      clean_sr: shortread_preprocess/clean_sr
+      clean_lr: longread_preprocess/clean_lr
+      meta_table: materialize_reads/meta_table
+      single_end: single_end
+      coassemble_group: coassemble_group
+      skip_spades: skip_spades
+      skip_spadeshybrid: skip_spadeshybrid
+      skip_megahit: skip_megahit
+      skip_flye: skip_flye
+      skip_metamdbg: skip_metamdbg
+      skip_quast: skip_quast
+      skip_prodigal: skip_prodigal
+      run_pypolca: run_pypolca
+    out: [ { id: assemblies_asm }, { id: quast_summary }, { id: prodigal_gff } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        clean_sr: { type: collection, collection_type: 'list:paired', format: [fastqsanger.gz] }
+        clean_lr: { type: collection, collection_type: list, format: [fastqsanger.gz], optional: true }
+        meta_table: { type: data, format: [tabular] }
+        single_end: { type: boolean }
+        coassemble_group: { type: boolean }
+        skip_spades: { type: boolean }
+        skip_spadeshybrid: { type: boolean }
+        skip_megahit: { type: boolean }
+        skip_flye: { type: boolean }
+        skip_metamdbg: { type: boolean }
+        skip_quast: { type: boolean }
+        skip_prodigal: { type: boolean }
+        run_pypolca: { type: boolean }
+      outputs:
+        assemblies_asm: { outputSource: asm_merge/TODO_merged }
+        quast_summary: { outputSource: quast_asm/TODO_summary }
+        prodigal_gff: { outputSource: prodigal_asm/TODO_gff }
+      steps:
+        group_pool:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/fastq_groupmerge/fastq_groupmerge
+          tool_version: 1.0.2+galaxy0
+          label: group_pool
+          # Source COASSEMBLE_GROUP (groupTuple by meta.group + concat). Exemplar names fastq_groupmerge
+          # for exactly this: concatenates reads per group from a metadata table, preserving paired structure.
+          when: $(inputs.coassemble_group)
+          in: { 'input|samples': clean_sr, metadata: meta_table }
+          state:
+            input: { is_select: pair }
+            group_col: group
+          out: [ { id: merged_samples_pairs } ]
+        sr_asm_in:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+          tool_version: TODO
+          label: sr_asm_in
+          in:
+            'style_cond|type_cond|pick_from_0|value': group_pool/merged_samples_pairs
+            'style_cond|type_cond|pick_from_1|value': clean_sr
+          out: [ { id: picked } ]
+          _plan_state: first_or_skip - pooled else per-sample reads. megahit consumes this; per-sample fan-out after group assembly handled in _plan of run_megahit.
+        run_megahit:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/megahit/megahit
+          tool_version: TODO
+          label: run_megahit
+          when: '!$(inputs.skip_megahit)'
+          in: { TODO_reads: sr_asm_in/picked }
+          out: [ { id: TODO_contigs } ]
+          _plan_state: exemplar attests this wrapper (iuc/megahit 1.2.9+galaxy2, changeset ab208c87d973) - pin version there. min contig len + k-list per source MEGAHIT module; output pigz'd in source, wrapper fasta.
+          _plan_context: 'when coassemble_group - assembly keyed by group -> duplicate/fan-out to samples (identifier map, data-flow 3.x, Medium).'
+        run_spades:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/nml/metaspades/metaspades
+          tool_version: TODO
+          label: run_spades
+          when: '!$(inputs.skip_spades) && !$(inputs.single_end)'
+          in: { TODO_reads: clean_sr }
+          out: [ { id: TODO_contigs } ]
+          _plan_state: exemplar attests nml/metaspades 4.3.0+galaxy1 (changeset 04d81e5f25e9). per-sample assembly, ids sample_assembler.
+        run_spadeshybrid:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/nml/metaspades/metaspades
+          tool_version: TODO
+          label: run_spadeshybrid
+          when: '!$(inputs.skip_spadeshybrid) && !$(inputs.single_end)'
+          in: { TODO_sr: clean_sr, TODO_lr: clean_lr }
+          out: [ { id: TODO_contigs } ]
+          _plan_state: hybrid SPAdes mode (arf/nanopore-pacbio conditional; exemplar step shows wiring). needs SR+LR collections keyed by sample.
+        run_flye:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/flye/flye
+          tool_version: 2.9.6+galaxy1
+          label: run_flye
+          # Owner corrected at pick: flye is under bgruening on the Tool Shed (iuc pin contradicted).
+          # ext.args '--meta' per conf/modules.config. Source picks mode per meta.lr_platform
+          # (--nano-raw/--nano-hq/--pacbio-hifi/--pacbio-raw); a Galaxy step state cannot vary per
+          # element, so the default OXFORD_NANOPORE mode is fixed here - ASSUMPTION: ONT-raw cohorts.
+          when: '!$(inputs.skip_flye)'
+          in: { inputs: clean_lr }
+          state:
+            mode: --nano-raw
+            meta: true
+          out: [ { id: consensus } ]
+        run_metamdbg:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/metamdbg_asm/metamdbg_asm
+          tool_version: 1.4+galaxy0
+          label: run_metamdbg
+          # Shed wrapper found (plan expected none). Source METAMDBG_ASM mode from meta.lr_platform
+          # (ont | hifi); per-element state is impossible - ASSUMPTION: ONT cohorts (hifi selectable post-import).
+          when: '!$(inputs.skip_metamdbg)'
+          in: { 'inputs|reads': clean_lr }
+          state:
+            inputs: { read_type: ont }
+          out: [ { id: contigs } ]
+        asm_merge:
+          type: tool
+          tool_id: TODO
+          label: asm_merge
+          in:
+            TODO_megahit: run_megahit/TODO_contigs
+            TODO_spades: run_spades/TODO_contigs
+            TODO_hybrid: run_spadeshybrid/TODO_contigs
+            TODO_flye: run_flye/consensus
+            TODO_metamdbg: run_metamdbg/contigs
+          out: [ { id: TODO_merged } ]
+          _plan_state: tolerant fan-in of the 5 additive assembler lists (skipped branches yield skipped sentinels) -> list keyed sample_assembler. built-in __BUILD_LIST__/__MERGE_COLLECTIONS__ candidate; identifier suffix = assembler.
+        quast_asm:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/quast/quast
+          tool_version: TODO
+          label: quast_asm
+          when: '!$(inputs.skip_quast)'
+          in: { TODO_contigs: asm_merge/TODO_merged }
+          out: [ { id: TODO_summary }, { id: TODO_report } ]
+          _plan_state: metaQUAST mode over whole list; --min-contig-len 500 per source QUAST module; summary tsv promoted.
+        prodigal_asm:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/prodigal/prodigal
+          tool_version: TODO
+          label: prodigal_asm
+          when: '!$(inputs.skip_prodigal)'
+          in: { TODO_contigs: asm_merge/TODO_merged }
+          out: [ { id: TODO_gff } ]
+        pypolca_combine:
+          type: tool
+          tool_id: TODO
+          label: pypolca_combine
+          when: $(inputs.run_pypolca)
+          in: { TODO_asm: asm_merge/TODO_merged, TODO_reads: clean_sr }
+          out: [ { id: TODO_sets } ]
+          _plan_state: combine assemblies x reads keyed by sample (strip assembler suffix); paired BAM inputs for pypolca.
+        run_pypolca:
+          type: tool
+          tool_id: TODO
+          label: run_pypolca
+          when: $(inputs.run_pypolca)
+          in: { TODO_sets: pypolca_combine/TODO_sets }
+          out: [ { id: TODO_polished } ]
+          _plan_state: PyPolca (python tool, no shed wrapper expected) - discover else author. unpolished assemblies mixed back downstream (data-flow 3.6, Medium-Low).
+  virus_identification:
+    type: subworkflow
+    label: virus_identification
+    doc: Stage 3.5 - VIRUS_IDENTIFICATION (geNomad).
+    when: "$(inputs.input_mode) == 'reads' && $(inputs.run_virus_identification)"
+    runtime_inputs: [assemblies_in, genomad_db]
+    in:
+      assemblies_in: asm_final_merge/TODO_merged
+      genomad_db: genomad_db
+    out: [ { id: virus_tables } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        assemblies_in: { type: collection, collection_type: list, format: [fasta.gz] }
+        genomad_db: { type: data, optional: true }
+      outputs:
+        virus_tables: { outputSource: genomad/TODO_tables }
+      steps:
+        genomad:
+          type: tool
+          tool_id: TODO
+          label: genomad
+          in: { TODO_contigs: assemblies_in, TODO_db: genomad_db }
+          out: [ { id: TODO_tables } ]
+          _plan_state: geNomad predict per source module; DB tar unpacked in-tool; iuc/genomad wrapper candidate else author.
+  asm_final_merge:
+    type: tool
+    tool_id: TODO
+    label: asm_final_merge
+    doc: rejoin the two input-mode cascades (twin-cascade; only one producer ever runs).
+    in:
+      TODO_reads_mode: assembly/assemblies_asm
+      TODO_asm_sr: assembly_input_route/sr_assemblies
+      TODO_asm_lr: assembly_input_route/lr_assemblies
+    out: [ { id: TODO_merged } ]
+    _plan_state: tolerant merge of at most one running producer list (merge-collections / build-list built-ins; skipped sentinels dropped). ids sample_assembler preserved.
+    _plan_context: input_mode guarantees exactly one source side is non-skipped.
+  binning_preparation:
+    type: subworkflow
+    label: binning_preparation
+    doc: Stage 4 - BINNING_PREPARATION. reads mapped to per-unit assemblies; ALE optional.
+    when: '!$(inputs.skip_binning) || $(inputs.ancient_dna)'
+    runtime_inputs: [contigs, clean_sr, clean_lr, meta_table, binning_map_mode, skip_binning, skip_ale]
+    in:
+      contigs: asm_final_merge/TODO_merged
+      clean_sr: shortread_preprocess/clean_sr
+      clean_lr: longread_preprocess/clean_lr
+      meta_table: materialize_reads/meta_table
+      binning_map_mode: binning_map_mode
+      skip_binning: skip_binning
+      skip_ale: skip_ale
+    out: [ { id: bams_sr }, { id: bams_lr }, { id: ale_scores } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        contigs: { type: collection, collection_type: list, format: [fasta.gz] }
+        clean_sr: { type: collection, collection_type: 'list:paired', format: [fastqsanger.gz] }
+        clean_lr: { type: collection, collection_type: list, format: [fastqsanger.gz], optional: true }
+        meta_table: { type: data, format: [tabular] }
+        binning_map_mode: { type: string }
+        skip_binning: { type: boolean }
+        skip_ale: { type: boolean }
+      outputs:
+        bams_sr: { outputSource: map_sr/TODO_bam }
+        bams_lr: { outputSource: map_lr/TODO_bam }
+        ale_scores: { outputSource: run_ale/TODO_scores }
+      steps:
+        derive_map_units:
+          type: tool
+          tool_id: TODO
+          label: derive_map_units
+          in: { TODO_contigs: contigs, TODO_meta: meta_table }
+          out: [ { id: TODO_readside }, { id: TODO_asm_side } ]
+          _plan_state: |
+            harmonize reads (ids sample_run) and assemblies (ids sample_assembler) onto map units
+            per binning_map_mode own|group|all: relabel/derive via meta_table + Apply Rules,
+            duplicate assemblies where a unit needs several (data-flow 4.2, Medium).
+        map_sr:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bowtie2/bowtie2
+          tool_version: TODO
+          label: map_sr
+          when: '!$(inputs.skip_binning)'
+          in: { TODO_reads: derive_map_units/TODO_readside, TODO_ref: derive_map_units/TODO_asm_side }
+          out: [ { id: TODO_bam } ]
+          _plan_state: bowtie2 index built in-tool per assembly (reference brief); MAPQ>=3 filtered? per source BOWTIE_ALIGN defaults (--no-unal).
+        map_lr:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/minimap2/minimap2
+          tool_version: TODO
+          label: map_lr
+          when: '!$(inputs.skip_binning)'
+          in: { TODO_reads: derive_map_units/TODO_readside, TODO_ref: derive_map_units/TODO_asm_side }
+          out: [ { id: TODO_bam } ]
+          _plan_state: minimap2 -ax map-ont per source.
+        run_ale:
+          type: tool
+          tool_id: TODO
+          label: run_ale
+          when: '!$(inputs.skip_ale)'
+          in: { TODO_bam: map_sr/TODO_bam }
+          out: [ { id: TODO_scores } ]
+          _plan_state: ALE contig QC (niche tool, authoring plausible). default skip_ale=true.
+  ancient_dna:
+    type: subworkflow
+    label: ancient_dna
+    doc: Stage 4.5 - ANCIENT_DNA. pydamage QC + consensus recall that can replace contigs into binning.
+    when: $(inputs.ancient_dna)
+    runtime_inputs: [bams_in, contigs_in, skip_ancient_damagecorrection]
+    in:
+      bams_in: binning_preparation/bams_sr
+      contigs_in: asm_final_merge/TODO_merged
+      skip_ancient_damagecorrection: skip_ancient_damagecorrection
+    out: [ { id: pydamage_reports }, { id: recalled_contigs } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        bams_in: { type: collection, collection_type: list, format: [bam], optional: true }
+        contigs_in: { type: collection, collection_type: list, format: [fasta.gz] }
+        skip_ancient_damagecorrection: { type: boolean }
+      outputs:
+        pydamage_reports: { outputSource: pydamage_analyze/TODO_txt }
+        recalled_contigs: { outputSource: bcftools_consensus/TODO_consensus }
+      steps:
+        pydamage_analyze:
+          type: tool
+          tool_id: TODO
+          label: pydamage_analyze
+          in: { TODO_bam: bams_in }
+          out: [ { id: TODO_txt } ]
+          _plan_state: pydamage/2 analyze over BAMs; MAPD filter downstream via tabular filter (data-flow 4.5). python tool - author candidate.
+        recall_freebayes:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/freebayes/freebayes
+          tool_version: TODO
+          label: recall_freebayes
+          when: '!$(inputs.skip_ancient_damagecorrection)'
+          in: { TODO_bam: bams_in, TODO_ref: contigs_in }
+          out: [ { id: TODO_vcf } ]
+          _plan_state: recall damaged positions (pysam-derived variant list per source); options per source RECALL_VARIANTS_FREEBAYES.
+        bcftools_consensus:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bcftools/bcftools
+          tool_version: TODO
+          label: bcftools_consensus
+          when: '!$(inputs.skip_ancient_damagecorrection)'
+          in: { TODO_vcf: recall_freebayes/TODO_vcf, TODO_ref: contigs_in }
+          out: [ { id: TODO_consensus } ]
+          _plan_state: bcftools consensus -> damage-corrected contigs replacing mapping input into BINNING.
+  mapping_input_pick:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: TODO
+    label: mapping_input_pick
+    doc: aDNA consensus-vs-original twin-cascade rejoin (data-flow 4.5).
+    when: '!$(inputs.skip_binning) || $(inputs.ancient_dna)'
+    in:
+      'style_cond|type_cond|pick_from_0|value': ancient_dna/recalled_contigs
+      'style_cond|type_cond|pick_from_1|value': asm_final_merge/TODO_merged
+    out: [ { id: picked } ]
+    _plan_state: first_or_skip - corrected contigs when aDNA recall ran, else plain assemblies.
+  binning:
+    type: subworkflow
+    label: binning
+    doc: Stage 5 - BINNING. depth prep + six additive binners + unbinned split.
+    when: '!$(inputs.skip_binning)'
+    runtime_inputs: [contigs, bams_sr, bams_lr, skip_metabat2, skip_maxbin2, skip_concoct, skip_comebin, skip_metabinner, skip_semibin, min_length_unbinned_contigs, max_unbinned_contigs]
+    in:
+      contigs: mapping_input_pick/picked
+      bams_sr: binning_preparation/bams_sr
+      bams_lr: binning_preparation/bams_lr
+      skip_metabat2: skip_metabat2
+      skip_maxbin2: skip_maxbin2
+      skip_concoct: skip_concoct
+      skip_comebin: skip_comebin
+      skip_metabinner: skip_metabinner
+      skip_semibin: skip_semibin
+      min_length_unbinned_contigs: min_length_unbinned_contigs
+      max_unbinned_contigs: max_unbinned_contigs
+    out: [ { id: raw_bins }, { id: unbinned } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        contigs: { type: collection, collection_type: list, format: [fasta.gz] }
+        bams_sr: { type: collection, collection_type: list, format: [bam], optional: true }
+        bams_lr: { type: collection, collection_type: list, format: [bam], optional: true }
+        skip_metabat2: { type: boolean }
+        skip_maxbin2: { type: boolean }
+        skip_concoct: { type: boolean }
+        skip_comebin: { type: boolean }
+        skip_metabinner: { type: boolean }
+        skip_semibin: { type: boolean }
+        min_length_unbinned_contigs: { type: int }
+        max_unbinned_contigs: { type: int }
+      outputs:
+        raw_bins: { outputSource: bins_merge/TODO_bins }
+        unbinned: { outputSource: unbinned_split/TODO_unbinned }
+      steps:
+        jgi_depths:
+          type: tool
+          tool_id: TODO
+          label: jgi_depths
+          in: { TODO_bams: bams_sr, TODO_contigs: contigs }
+          out: [ { id: TODO_matrix }, { id: TODO_percontig } ]
+          _plan_state: jgi_summarize_bam_contig_depths (ships with MetaBAT2 suite) over bams grouped per map-unit; group-reduce then run (data-flow 5.1).
+        depths_maxbin:
+          type: tool
+          tool_id: TODO
+          label: depths_maxbin
+          in: { TODO_matrix: jgi_depths/TODO_matrix }
+          out: [ { id: TODO_profile } ]
+          _plan_state: BAM-depth matrix -> MaxBin2 profile (source CONVERT_DEPTHS bioawk transform) - author candidate.
+        run_metabat2:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/metabat2/metabat2
+          tool_version: TODO
+          label: run_metabat2
+          when: '!$(inputs.skip_metabat2)'
+          in: { TODO_contigs: contigs, TODO_depth: jgi_depths/TODO_matrix }
+          out: [ { id: TODO_bins } ]
+        run_maxbin2:
+          type: tool
+          tool_id: TODO
+          label: run_maxbin2
+          when: '!$(inputs.skip_maxbin2)'
+          in: { TODO_contigs: contigs, TODO_profile: depths_maxbin/TODO_profile }
+          out: [ { id: TODO_bins } ]
+          _plan_state: MaxBin2.1; iuc/maxbin2 wrapper candidate, unverified - discover else author.
+        concoct_cutup:
+          type: tool
+          tool_id: TODO
+          label: concoct_cutup
+          when: '!$(inputs.skip_concoct)'
+          in: { TODO_contigs: contigs }
+          out: [ { id: TODO_fasta }, { id: TODO_lengths } ]
+          _plan_state: concoct cutup_fasta (source 5-process chain kept expanded per source structure; iuc/concoct* module family).
+        concoct_coverage:
+          type: tool
+          tool_id: TODO
+          label: concoct_coverage
+          when: '!$(inputs.skip_concoct)'
+          in: { TODO_fasta: concoct_cutup/TODO_fasta, TODO_matrix: jgi_depths/TODO_matrix }
+          out: [ { id: TODO_txt } ]
+        concoct_clustering:
+          type: tool
+          tool_id: TODO
+          label: concoct_clustering
+          when: '!$(inputs.skip_concoct)'
+          in: { TODO_cov: concoct_coverage/TODO_txt, TODO_lengths: concoct_cutup/TODO_lengths }
+          out: [ { id: TODO_clust } ]
+        concoct_merge:
+          type: tool
+          tool_id: TODO
+          label: concoct_merge
+          when: '!$(inputs.skip_concoct)'
+          in: { TODO_clust: concoct_clustering/TODO_clust }
+          out: [ { id: TODO_md } ]
+        concoct_extract:
+          type: tool
+          tool_id: TODO
+          label: concoct_extract
+          when: '!$(inputs.skip_concoct)'
+          in: { TODO_md: concoct_merge/TODO_md, TODO_fasta: concoct_cutup/TODO_fasta }
+          out: [ { id: TODO_bins } ]
+        run_comebin:
+          type: tool
+          tool_id: TODO
+          label: run_comebin
+          when: '!$(inputs.skip_comebin)'
+          in: { TODO_contigs: contigs, TODO_matrix: jgi_depths/TODO_matrix }
+          out: [ { id: TODO_bins } ]
+          _plan_state: COMEBin - no shed wrapper expected, author candidate (source module).
+        run_metabinner:
+          type: tool
+          tool_id: TODO
+          label: run_metabinner
+          when: '!$(inputs.skip_metabinner)'
+          in: { TODO_contigs: contigs, TODO_bams: bams_sr }
+          out: [ { id: TODO_bins } ]
+          _plan_state: 'MetaBinner: kmer->tooshort->bins->inner chain (source subchain); single TODO now, per-step loop may escalate expansion via repair if needed. author candidate.'
+        run_semibin:
+          type: tool
+          tool_id: TODO
+          label: run_semibin
+          when: '!$(inputs.skip_semibin)'
+          in: { TODO_contigs: contigs, TODO_matrix: jgi_depths/TODO_matrix }
+          out: [ { id: TODO_bins } ]
+          _plan_state: SemiBin2; iuc/semibin wrapper candidate, unverified.
+        bins_merge:
+          type: tool
+          tool_id: TODO
+          label: bins_merge
+          in:
+            TODO_metabat2: run_metabat2/TODO_bins
+            TODO_maxbin2: run_maxbin2/TODO_bins
+            TODO_concoct: concoct_extract/TODO_bins
+            TODO_comebin: run_comebin/TODO_bins
+            TODO_metabinner: run_metabinner/TODO_bins
+            TODO_semibin: run_semibin/TODO_bins
+          out: [ { id: TODO_bins } ]
+          _plan_state: tolerant fan-in -> list:list group/unit -> bins; flatten binner level, element ids group_binN shared by all per-bin tabulars (identifier-scheme decision).
+        unbinned_split:
+          type: tool
+          tool_id: TODO
+          label: unbinned_split
+          in: { TODO_contigs: contigs, TODO_bins: bins_merge/TODO_bins }
+          out: [ { id: TODO_unbinned } ]
+          _plan_state: 'contigs >= min_length_unbinned_contigs not in bins, keep <= max_unbinned_contigs. corpus shape - split_file_to_collection (iwc mags-building binning-evaluation).'
+  binning_refinement:
+    type: subworkflow
+    label: binning_refinement
+    doc: Stage 5.4 - BINNING_REFINEMENT (DAS Tool chain, per exemplar multi-sample-binning precedent).
+    when: $(inputs.refine_bins_dastool)
+    runtime_inputs: [raw_bins, bams_sr, refine_bins_dastool_threshold]
+    in:
+      raw_bins: binning/raw_bins
+      bams_sr: binning_preparation/bams_sr
+      refine_bins_dastool_threshold: refine_bins_dastool_threshold
+    out: [ { id: refined_bins }, { id: refined_unbinned } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        raw_bins: { type: collection, collection_type: 'list:list', format: [fasta] }
+        bams_sr: { type: collection, collection_type: list, format: [bam], optional: true }
+        refine_bins_dastool_threshold: { type: float }
+      outputs:
+        refined_bins: { outputSource: das_filter/TODO_refined }
+        refined_unbinned: { outputSource: das_filter/TODO_unbinned }
+      steps:
+        scaffold2bin:
+          type: tool
+          tool_id: TODO
+          label: scaffold2bin
+          in: { TODO_bins: raw_bins }
+          out: [ { id: TODO_hgt } ]
+          _plan_state: DAS Tool suite fasta_to_contig2bin per binner output (exemplar multi-sample-binning chain); iuc/das_tool family wrapper.
+        das_tool:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/das_tool/das_tool
+          tool_version: TODO
+          label: das_tool
+          in: { TODO_hgt: scaffold2bin/TODO_hgt }
+          out: [ { id: TODO_clusters } ]
+          _plan_state: DAS Tool per source BINNING_REFINEMENT; corpus-attested wrapper.
+        das_filter:
+          type: tool
+          tool_id: TODO
+          label: das_filter
+          in: { TODO_clusters: das_tool/TODO_clusters, TODO_bins: raw_bins }
+          out: [ { id: TODO_refined }, { id: TODO_unbinned } ]
+          _plan_state: filter clusters by score threshold ($inputs threshold 0.2 default), rename outputs, split refined vs unbinned (source rename-post + filter steps; DAS Tool toolkit wrapper filter step).
+  domain_classification:
+    type: subworkflow
+    label: domain_classification
+    doc: Stage 5.5 - DOMAIN_CLASSIFICATION (tiara + rollup), adds domain per bin.
+    when: $(inputs.bin_domain_classification)
+    runtime_inputs: [raw_bins]
+    in: { raw_bins: binning/raw_bins }
+    out: [ { id: domain_table } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        raw_bins: { type: collection, collection_type: 'list:list', format: [fasta] }
+      outputs:
+        domain_table: { outputSource: rollup/TODO_domain }
+      steps:
+        tiara:
+          type: tool
+          tool_id: TODO
+          label: tiara
+          in: { TODO_bins: raw_bins }
+          out: [ { id: TODO_txt } ]
+          _plan_state: Tiara contig domain classification per source module; shed presence unverified - discover else author.
+        rollup:
+          type: tool
+          tool_id: TODO
+          label: rollup
+          in: { TODO_txt: tiara/TODO_txt }
+          out: [ { id: TODO_domain } ]
+          _plan_state: R rollup script (source assets) contig->bin majority domain -> tabular bin,domain. author candidate.
+  postbin_routing:
+    type: tool
+    tool_id: TODO
+    label: postbin_routing
+    doc: stage 5.6 - route raw/refined/unbinned per postbinning_input + exclude_unbins.
+    when: '!$(inputs.skip_binning)'
+    in:
+      TODO_raw: binning/raw_bins
+      TODO_unbinned: binning/unbinned
+      TODO_refined: binning_refinement/refined_bins
+      TODO_ref_unbinned: binning_refinement/refined_unbinned
+    out: [ { id: TODO_bins }, { id: TODO_unbinned } ]
+    _plan_state: |
+      postbinning_input raw_bins_only -> raw bins; refined_bins_only -> refined;
+      raw_bins_and_unbinned -> raw + unbinned appended to QC fan-out.
+      exclude_unbins_from_postbinning strips unbinned from downstream routing (output still emitted).
+      refined inputs optional - tolerated skipped when refine flag off.
+  depths_bins:
+    type: subworkflow
+    label: depths_bins
+    doc: Stage 6 DEPTHS - bins x per-group BAMs (ledger bins-x-bams-cross-product closed by corpus recipe).
+    when: '!$(inputs.skip_binning)'
+    runtime_inputs: [bins, bams_sr]
+    in:
+      bins: postbin_routing/TODO_bins
+      bams_sr: binning_preparation/bams_sr
+    out: [ { id: depths_summary } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        bins: { type: collection, collection_type: 'list:list', format: [fasta] }
+        bams_sr: { type: collection, collection_type: list, format: [bam], optional: true }
+      outputs:
+        depths_summary: { outputSource: depths_rollup/TODO_table }
+      steps:
+        xprod:
+          type: tool
+          tool_id: __CROSS_PRODUCT_NESTED__
+          tool_version: TODO
+          label: xprod
+          in: { left_input: bins, right_input: bams_sr }
+          out: [ { id: TODO_pairs } ]
+          _plan_state: corpus attests __CROSS_PRODUCT_NESTED__ + Apply Rules for bins x BAMs (iwc multi-sample-binning); pin built-in version at implementation.
+        pair_filter:
+          type: tool
+          tool_id: TODO
+          label: pair_filter
+          in: { TODO_pairs: xprod/TODO_pairs }
+          out: [ { id: TODO_matching } ]
+          _plan_state: 'keep pairs whose bin group == bam group (source combine lacks by-style grouping - the by-group filter). Apply Rules on nested pair collection.'
+        depth_calc:
+          type: tool
+          tool_id: TODO
+          label: depth_calc
+          in: { TODO_matching: pair_filter/TODO_matching }
+          out: [ { id: TODO_depths } ]
+          _plan_state: per-bin depth/coverage stats over matched BAM (samtools idxstats/bedcov or coverM iuc candidates; source mag-depths scripts).
+        depths_rollup:
+          type: tool
+          tool_id: TODO
+          label: depths_rollup
+          in: { TODO_depths: depth_calc/TODO_depths }
+          out: [ { id: TODO_table } ]
+          _plan_state: roll to one tabular, one row per bin id group_binN (source MAG_depths summary scripts; author candidate).
+  bin_qc:
+    type: subworkflow
+    label: bin_qc
+    doc: Stage 6 BIN_QC - DB-presence pick-list over bins.
+    when: '!$(inputs.skip_binqc)'
+    runtime_inputs: [bins, busco_db, busco_db_lineage, checkm_db, checkm2_db, gunc_db]
+    in:
+      bins: postbin_routing/TODO_bins
+      busco_db: busco_db
+      busco_db_lineage: busco_db_lineage
+      checkm_db: checkm_db
+      checkm2_db: checkm2_db
+      gunc_db: gunc_db
+    out: [ { id: busco_table }, { id: checkm_table }, { id: checkm2_table }, { id: gunc_table }, { id: seqkit_table } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        bins: { type: collection, collection_type: 'list:list', format: [fasta] }
+        busco_db: { type: data, optional: true }
+        busco_db_lineage: { type: string, optional: true }
+        checkm_db: { type: data, optional: true }
+        checkm2_db: { type: data, optional: true }
+        gunc_db: { type: data, optional: true }
+      outputs:
+        busco_table: { outputSource: run_busco/TODO_table }
+        checkm_table: { outputSource: run_checkm/TODO_table }
+        checkm2_table: { outputSource: run_checkm2/TODO_table }
+        gunc_table: { outputSource: run_gunc/TODO_table }
+        seqkit_table: { outputSource: seqkit_stats/TODO_table }
+      steps:
+        run_busco:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/busco/busco
+          tool_version: TODO
+          label: run_busco
+          when: $(inputs.busco_db) != null
+          in: { TODO_bins: bins, TODO_db: busco_db }
+          out: [ { id: TODO_table } ]
+          _plan_state: db tar unpack in-tool; lineage from busco_db_lineage (meta_db option); --mode genome. outputs per source BUSCO process.
+        run_checkm:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/checkm/checkm
+          tool_version: TODO
+          label: run_checkm
+          when: $(inputs.checkm_db) != null
+          in: { TODO_bins: bins, TODO_db: checkm_db }
+          out: [ { id: TODO_table } ]
+          _plan_state: lineage_wf + qa extension table (source 2 processes; expand at implementation if the wrapper splits them).
+        run_checkm2:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/checkm2/checkm2
+          tool_version: TODO
+          label: run_checkm2
+          when: $(inputs.checkm2_db) != null
+          in: { TODO_bins: bins, TODO_db: checkm2_db }
+          out: [ { id: TODO_table } ]
+          _plan_state: quality_report tsv -> bin_summary columns + MultiQC custom content. IWC exemplar shows wrapper-managed DB by version string - prefer where supplied (ledger discovery exemplar-wrapper-db-provisioning).
+        run_gunc:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/gunc/gunc
+          tool_version: TODO
+          label: run_gunc
+          when: $(inputs.gunc_db) != null
+          in: { TODO_bins: bins, TODO_db: gunc_db }
+          out: [ { id: TODO_table } ]
+          _plan_state: run + merge_checkm (source 2 processes; single TODO, expand if wrapper splits).
+        seqkit_stats:
+          type: tool
+          tool_id: TODO
+          label: seqkit_stats
+          in: { TODO_bins: bins }
+          out: [ { id: TODO_table } ]
+          _plan_state: seqkit stats per bin -> tabular (bin size/N50 columns of bin_summary base table). iuc/seqkit wrapper candidate.
+  gtdbtk:
+    type: subworkflow
+    label: gtdbtk
+    doc: Stage 6 GTDBTK - QC-filtered classify (compound gate incl. DB presence; import-check pending, data-flow q6).
+    when: '!$(inputs.skip_gtdbtk) && $(inputs.gtdbtk_db) != null'
+    runtime_inputs: [bins, gtdbtk_db, gtdbtk_min_completeness, gtdbtk_max_contamination, qc_table]
+    in:
+      bins: postbin_routing/TODO_bins
+      gtdbtk_db: gtdbtk_db
+      gtdbtk_min_completeness: gtdbtk_min_completeness
+      gtdbtk_max_contamination: gtdbtk_max_contamination
+      qc_table: bin_qc/checkm2_table
+    out: [ { id: gtdbtk_table } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        bins: { type: collection, collection_type: 'list:list', format: [fasta] }
+        gtdbtk_db: { type: data, optional: true }
+        gtdbtk_min_completeness: { type: float }
+        gtdbtk_max_contamination: { type: float }
+        qc_table: { type: data, format: [tabular], optional: true }
+      outputs:
+        gtdbtk_table: { outputSource: summarize/TODO_table }
+      steps:
+        filter_bins:
+          type: tool
+          tool_id: TODO
+          label: filter_bins
+          in: { TODO_bins: bins, TODO_qc: qc_table }
+          out: [ { id: TODO_kept } ]
+          _plan_state: when a QC table is wired, keep bins with completeness>=min && contamination<=max (tabular filter + collection filter by label list). qc_table optional - tolerated skipped.
+        classify:
+          type: tool
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/gtdbtk/gtdbtk
+          tool_version: TODO
+          label: classify
+          in: { TODO_bins: filter_bins/TODO_kept, TODO_db: gtdbtk_db }
+          out: [ { id: TODO_summary }, { id: TODO_misplaced } ]
+          _plan_state: classify_wf; db unpack in-tool (source GTDBTK_DB_PREPARATION). wrapper id is iuc/gtdbtk (name exact at discovery).
+        summarize:
+          type: tool
+          tool_id: TODO
+          label: summarize
+          in: { TODO_summary: classify/TODO_summary }
+          out: [ { id: TODO_table } ]
+          _plan_state: gtdbtk_summary.py rollup (source assets) -> per-bin taxonomy table. author candidate.
+  catpack:
+    type: subworkflow
+    label: catpack
+    doc: Stage 6 CATPACK - CAT/BAT taxonomy chain (authoring-plausible chain per data-flow).
+    when: $(inputs.cat_db) != null
+    runtime_inputs: [bins, unbinned_in, cat_db, cat_classify_unbinned]
+    in:
+      bins: postbin_routing/TODO_bins
+      unbinned_in: postbin_routing/TODO_unbinned
+      cat_db: cat_db
+      cat_classify_unbinned: cat_classify_unbinned
+    out: [ { id: cat_table } ]
+    run:
+      class: GalaxyWorkflowDraft
+      inputs:
+        bins: { type: collection, collection_type: 'list:list', format: [fasta] }
+        unbinned_in: { type: collection, collection_type: list, format: [fasta.gz], optional: true }
+        cat_db: { type: data, optional: true }
+        cat_classify_unbinned: { type: boolean }
+      outputs:
+        cat_table: { outputSource: summarise/TODO_table }
+      steps:
+        cat_bins:
+          type: tool
+          tool_id: TODO
+          label: cat_bins
+          in: { TODO_bins: bins, TODO_db: cat_db }
+          out: [ { id: TODO_out } ]
+          _plan_state: CAT add-levels/accumulate chain, pack unpacked in-tool (cat_db_generate not carried). no shed wrapper -> author.
+        bat_add_names:
+          type: tool
+          tool_id: TODO
+          label: bat_add_names
+          in: { TODO_in: cat_bins/TODO_out }
+          out: [ { id: TODO_out } ]
+          _plan_state: bat add_names (part of same authored chain as cat_bins - implementation may fold).
+        cat_unbinned:
+          type: tool
+          tool_id: TODO
+          label: cat_unbinned
+          when: $(inputs.cat_classify_unbinned)
+          in: { TODO_contigs: unbinned_in, TODO_db: cat_db }
+          out: [ { id: TODO_out } ]
+        summarise:
+          type: tool
+          tool_id: TODO
+          label: summarise
+          in: { TODO_bins: bat_add_names/TODO_out, TODO_unbinned: cat_unbinned/TODO_out }
+          out: [ { id: TODO_table } ]
+          _plan_state: CAT summarise (rowskey-capable tsv per source QSV_CAT). author candidate.
+  pydamage_bins:
+    type: tool
+    tool_id: TODO
+    label: pydamage_bins
+    doc: Stage 6 - per-bin damage summaries (source summarise_pydamagebins.py).
+    when: $(inputs.ancient_dna)
+    in:
+      TODO_bins: postbin_routing/TODO_bins
+      TODO_reports: ancient_dna/pydamage_reports
+    out: [ { id: TODO_table } ]
+    _plan_state: join contig->bin map + pydamage txt -> per-bin medians tabular. author candidate (source python asset).
+  filter_prokka_bins:
+    type: tool
+    tool_id: __FILTER_FROM_LIST__
+    tool_version: TODO
+    label: filter_prokka_bins
+    when: '!$(inputs.skip_prokka)'
+    in:
+      input: postbin_routing/TODO_bins
+      TODO_labels: domain_classification/domain_table
+    out: [ { id: TODO_kept } ]
+    _plan_state: keep domain != eukarya (bacteria/archaea/unclassified). labels list derived from domain_table (tabular bridge); when domain_classification skipped keep ALL bins (labels input optional).
+  prokka_bins:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/prokka/prokka
+    tool_version: TODO
+    label: prokka_bins
+    when: '!$(inputs.skip_prokka)'
+    in: { TODO_bins: filter_prokka_bins/TODO_kept }
+    out: [ { id: TODO_tbl } ]
+    _plan_state: per-bin annotation (map-over); outputs feed report only.
+  filter_metaeuk_bins:
+    type: tool
+    tool_id: __FILTER_FROM_LIST__
+    tool_version: TODO
+    label: filter_metaeuk_bins
+    when: $(inputs.metaeuk_db) != null
+    in:
+      input: postbin_routing/TODO_bins
+      TODO_labels: domain_classification/domain_table
+    out: [ { id: TODO_kept } ]
+    _plan_state: keep eukarya/unclassified; optional labels input - all bins when domain classification skipped.
+  metaeuk_run:
+    type: tool
+    tool_id: TODO
+    label: metaeuk_run
+    when: $(inputs.metaeuk_db) != null
+    in:
+      TODO_bins: filter_metaeuk_bins/TODO_kept
+      TODO_db: metaeuk_db
+    out: [ { id: TODO_table } ]
+    _plan_state: MetaEuk vs mmseqs DB (directory input); name-based MMSEQS_DATABASES not carried (ledger metaeuk-remote-db-name-gap). mmseqs createdb only if DB not prebuilt.
+  quast_bins:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/quast/quast
+    tool_version: TODO
+    label: quast_bins
+    when: '!$(inputs.skip_quast)'
+    in: { TODO_bins: postbin_routing/TODO_bins }
+    out: [ { id: TODO_summary } ]
+    _plan_state: metaQUAST over routed bins; report rows key bin id for bin_summary (source QUAST bins branch).
+  # ---- tolerant fillers + rejoins for bin_summary inputs (decision tolerant-fillers-for-bin-summary) ----
+  f_depths:
+    type: tool
+    label: f_depths
+    when: $(inputs.skip_binning)
+    run:
+      class: GalaxyUserTool
+      id: header_table
+      version: 0.1.0
+      name: Header-only table
+      container: quay.io/biocontainers/python:3.13
+      shell_command: "printf '%s\n' '$(inputs.columns)' | tr ',' '\t' > header.tsv"
+      inputs:
+        - name: columns
+          type: text
+          value: bin_id
+      outputs:
+        - name: output
+          type: data
+          format: tabular
+          from_work_dir: header.tsv
+    out: [ { id: output } ]
+    state:
+      columns: bin_id
+  t_depths:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: TODO
+    label: t_depths
+    in:
+      'style_cond|type_cond|pick_from_0|value': depths_bins/depths_summary
+      'style_cond|type_cond|pick_from_1|value': f_depths/output
+    out: [ { id: picked } ]
+    _plan_state: first_or_skip over tabular data (param_type data).
+  f_quastbins:
+    type: tool
+    label: f_quastbins
+    when: $(inputs.skip_quast)
+    run:
+      class: GalaxyUserTool
+      id: header_table
+      version: 0.1.0
+      name: Header-only table
+      container: quay.io/biocontainers/python:3.13
+      shell_command: "printf '%s\n' '$(inputs.columns)' | tr ',' '\t' > header.tsv"
+      inputs:
+        - name: columns
+          type: text
+          value: bin_id
+      outputs:
+        - name: output
+          type: data
+          format: tabular
+          from_work_dir: header.tsv
+    out: [ { id: output } ]
+    state:
+      columns: bin_id
+  t_quastbins:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: TODO
+    label: t_quastbins
+    in:
+      'style_cond|type_cond|pick_from_0|value': quast_bins/TODO_summary
+      'style_cond|type_cond|pick_from_1|value': f_quastbins/output
+    out: [ { id: picked } ]
+    _plan_state: first_or_skip.
+  f_busco:
+    type: tool
+    label: f_busco
+    when: "$(inputs.skip_binqc) || $(inputs.busco_db) == null"
+    run:
+      class: GalaxyUserTool
+      id: header_table
+      version: 0.1.0
+      name: Header-only table
+      container: quay.io/biocontainers/python:3.13
+      shell_command: "printf '%s\n' '$(inputs.columns)' | tr ',' '\t' > header.tsv"
+      inputs:
+        - name: columns
+          type: text
+          value: bin_id
+      outputs:
+        - name: output
+          type: data
+          format: tabular
+          from_work_dir: header.tsv
+    out: [ { id: output } ]
+    state:
+      columns: bin_id
+  t_busco:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: TODO
+    label: t_busco
+    in:
+      'style_cond|type_cond|pick_from_0|value': bin_qc/busco_table
+      'style_cond|type_cond|pick_from_1|value': f_busco/output
+    out: [ { id: picked } ]
+    _plan_state: first_or_skip.
+  f_checkm:
+    type: tool
+    label: f_checkm
+    when: "$(inputs.skip_binqc) || $(inputs.checkm_db) == null"
+    run:
+      class: GalaxyUserTool
+      id: header_table
+      version: 0.1.0
+      name: Header-only table
+      container: quay.io/biocontainers/python:3.13
+      shell_command: "printf '%s\n' '$(inputs.columns)' | tr ',' '\t' > header.tsv"
+      inputs:
+        - name: columns
+          type: text
+          value: bin_id
+      outputs:
+        - name: output
+          type: data
+          format: tabular
+          from_work_dir: header.tsv
+    out: [ { id: output } ]
+    state:
+      columns: bin_id
+  t_checkm:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: TODO
+    label: t_checkm
+    in:
+      'style_cond|type_cond|pick_from_0|value': bin_qc/checkm_table
+      'style_cond|type_cond|pick_from_1|value': f_checkm/output
+    out: [ { id: picked } ]
+    _plan_state: first_or_skip.
+  f_checkm2:
+    type: tool
+    label: f_checkm2
+    when: "$(inputs.skip_binqc) || $(inputs.checkm2_db) == null"
+    run:
+      class: GalaxyUserTool
+      id: header_table
+      version: 0.1.0
+      name: Header-only table
+      container: quay.io/biocontainers/python:3.13
+      shell_command: "printf '%s\n' '$(inputs.columns)' | tr ',' '\t' > header.tsv"
+      inputs:
+        - name: columns
+          type: text
+          value: bin_id
+      outputs:
+        - name: output
+          type: data
+          format: tabular
+          from_work_dir: header.tsv
+    out: [ { id: output } ]
+    state:
+      columns: bin_id
+  t_checkm2:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: TODO
+    label: t_checkm2
+    in:
+      'style_cond|type_cond|pick_from_0|value': bin_qc/checkm2_table
+      'style_cond|type_cond|pick_from_1|value': f_checkm2/output
+    out: [ { id: picked } ]
+    _plan_state: first_or_skip.
+  f_gunc:
+    type: tool
+    label: f_gunc
+    when: "$(inputs.skip_binqc) || $(inputs.gunc_db) == null"
+    run:
+      class: GalaxyUserTool
+      id: header_table
+      version: 0.1.0
+      name: Header-only table
+      container: quay.io/biocontainers/python:3.13
+      shell_command: "printf '%s\n' '$(inputs.columns)' | tr ',' '\t' > header.tsv"
+      inputs:
+        - name: columns
+          type: text
+          value: bin_id
+      outputs:
+        - name: output
+          type: data
+          format: tabular
+          from_work_dir: header.tsv
+    out: [ { id: output } ]
+    state:
+      columns: bin_id
+  t_gunc:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: TODO
+    label: t_gunc
+    in:
+      'style_cond|type_cond|pick_from_0|value': bin_qc/gunc_table
+      'style_cond|type_cond|pick_from_1|value': f_gunc/output
+    out: [ { id: picked } ]
+    _plan_state: first_or_skip.
+  f_seqkit:
+    type: tool
+    label: f_seqkit
+    when: $(inputs.skip_binqc)
+    run:
+      class: GalaxyUserTool
+      id: header_table
+      version: 0.1.0
+      name: Header-only table
+      container: quay.io/biocontainers/python:3.13
+      shell_command: "printf '%s\n' '$(inputs.columns)' | tr ',' '\t' > header.tsv"
+      inputs:
+        - name: columns
+          type: text
+          value: bin_id
+      outputs:
+        - name: output
+          type: data
+          format: tabular
+          from_work_dir: header.tsv
+    out: [ { id: output } ]
+    state:
+      columns: bin_id
+  t_seqkit:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: TODO
+    label: t_seqkit
+    in:
+      'style_cond|type_cond|pick_from_0|value': bin_qc/seqkit_table
+      'style_cond|type_cond|pick_from_1|value': f_seqkit/output
+    out: [ { id: picked } ]
+    _plan_state: first_or_skip.
+  f_gtdbtk:
+    type: tool
+    label: f_gtdbtk
+    when: "$(inputs.skip_gtdbtk) || $(inputs.gtdbtk_db) == null"
+    run:
+      class: GalaxyUserTool
+      id: header_table
+      version: 0.1.0
+      name: Header-only table
+      container: quay.io/biocontainers/python:3.13
+      shell_command: "printf '%s\n' '$(inputs.columns)' | tr ',' '\t' > header.tsv"
+      inputs:
+        - name: columns
+          type: text
+          value: bin_id
+      outputs:
+        - name: output
+          type: data
+          format: tabular
+          from_work_dir: header.tsv
+    out: [ { id: output } ]
+    state:
+      columns: bin_id
+  t_gtdbtk:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: TODO
+    label: t_gtdbtk
+    in:
+      'style_cond|type_cond|pick_from_0|value': gtdbtk/gtdbtk_table
+      'style_cond|type_cond|pick_from_1|value': f_gtdbtk/output
+    out: [ { id: picked } ]
+    _plan_state: first_or_skip.
+  f_cat:
+    type: tool
+    label: f_cat
+    when: $(inputs.cat_db) == null
+    run:
+      class: GalaxyUserTool
+      id: header_table
+      version: 0.1.0
+      name: Header-only table
+      container: quay.io/biocontainers/python:3.13
+      shell_command: "printf '%s\n' '$(inputs.columns)' | tr ',' '\t' > header.tsv"
+      inputs:
+        - name: columns
+          type: text
+          value: bin_id
+      outputs:
+        - name: output
+          type: data
+          format: tabular
+          from_work_dir: header.tsv
+    out: [ { id: output } ]
+    state:
+      columns: bin_id
+  t_cat:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: TODO
+    label: t_cat
+    in:
+      'style_cond|type_cond|pick_from_0|value': catpack/cat_table
+      'style_cond|type_cond|pick_from_1|value': f_cat/output
+    out: [ { id: picked } ]
+    _plan_state: first_or_skip.
+  f_pydamage:
+    type: tool
+    label: f_pydamage
+    when: '!$(inputs.ancient_dna)'
+    run:
+      class: GalaxyUserTool
+      id: header_table
+      version: 0.1.0
+      name: Header-only table
+      container: quay.io/biocontainers/python:3.13
+      shell_command: "printf '%s\n' '$(inputs.columns)' | tr ',' '\t' > header.tsv"
+      inputs:
+        - name: columns
+          type: text
+          value: bin_id
+      outputs:
+        - name: output
+          type: data
+          format: tabular
+          from_work_dir: header.tsv
+    out: [ { id: output } ]
+    state:
+      columns: bin_id
+  t_pydamage:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: TODO
+    label: t_pydamage
+    in:
+      'style_cond|type_cond|pick_from_0|value': pydamage_bins/TODO_table
+      'style_cond|type_cond|pick_from_1|value': f_pydamage/output
+    out: [ { id: picked } ]
+    _plan_state: first_or_skip.
+  # ---- tail ----
+  bin_summary_join:
+    type: tool
+    tool_id: TODO
+    label: bin_summary_join
+    doc: Stage 7.1 - tolerant n-way key join (QSV_CAT rowskey equivalent).
+    in:
+      TODO_depths: t_depths/picked
+      TODO_seqkit: t_seqkit/picked
+      TODO_quast: t_quastbins/picked
+      TODO_busco: t_busco/picked
+      TODO_checkm: t_checkm/picked
+      TODO_checkm2: t_checkm2/picked
+      TODO_gunc: t_gunc/picked
+      TODO_gtdbtk: t_gtdbtk/picked
+      TODO_cat: t_cat/picked
+      TODO_pydamage: t_pydamage/picked
+    out: [ { id: TODO_joined } ]
+    _plan_state: |
+      outer key-join on first column (bin id), missing cells '.', header dedup - QSV 'rowskey'
+      equivalent. every input always fed (branch table or filler via t_* picks), so the join
+      itself needs no sentinel tolerance (decision tolerant-fillers-for-bin-summary; ledger
+      bin-summary-tolerant-join open half now only the pick_value runtime check).
+      collection_column_join (exemplar attested) applies instead if inputs arrive as one collection.
+  bigmag:
+    type: tool
+    tool_id: TODO
+    label: bigmag
+    when: $(inputs.generate_bigmag_file)
+    in:
+      TODO_summary: bin_summary_join/TODO_joined
+      TODO_gunc: t_gunc/picked
+    out: [ { id: TODO_bigmag } ]
+    _plan_state: BigMag prepare (R script, source BIGMAG process). author candidate; not a promoted output.
+  tax_tables:
+    type: tool
+    tool_id: TODO
+    label: tax_tables
+    in:
+      TODO_gtdbtk: t_gtdbtk/picked
+      TODO_cat: t_cat/picked
+    out: [ { id: TODO_taxlist } ]
+    _plan_state: build list of taxonomy summary tables (promoted output taxonomy_tables). built-in __BUILD_LIST__ candidate.
+  multiqc:
+    type: tool
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc
+    tool_version: TODO
+    label: multiqc
+    in:
+      'results_0|software_cond|input': shortread_preprocess/fastqc_raw
+      'results_1|software_cond|input': shortread_preprocess/fastqc_trimmed
+      'results_2|software_cond|input': longread_preprocess/nanplot_html
+      'results_3|software_cond|input': assembly/quast_summary
+      'results_4|software_cond|input': shortread_preprocess/bbnorm_stats
+      'results_5|software_cond|input': ancient_dna/pydamage_reports
+      'results_6|software_cond|input': virus_identification/virus_tables
+      'results_7|software_cond|input': t_seqkit/picked
+      'results_8|software_cond|input': t_checkm2/picked
+      'results_9|software_cond|input': t_gunc/picked
+      'results_10|software_cond|input': bin_summary_join/TODO_joined
+    out: [ { id: html_report } ]
+    _plan_state: |
+      results repeat: fastqc/quast/nanoplot native parsers + custom_content tsv tables
+      (exemplar shows the software_cond/custom_content wiring incl. __current_case__ per parser).
+      optional inputs tolerate skipped sources. multiqc_title -> title.
+      multiqc_config/methods baked as tool configuration (decision multiqc-configs-not-inputs).
+comments:
+  - type: frame
+    label: '1 - Inputs & sheet materialization'
+    contains_steps: [materialize_reads, assembly_input_route]
+  - type: frame
+    label: '2 - Read preprocessing'
+    contains_steps: [shortread_preprocess, longread_preprocess]
+  - type: frame
+    label: '3 - Assembly'
+    contains_steps: [assembly, virus_identification, asm_final_merge]
+  - type: frame
+    label: '4 - Binning preparation'
+    contains_steps: [binning_preparation, ancient_dna, mapping_input_pick]
+  - type: frame
+    label: '5 - Binning & refinement'
+    contains_steps: [binning, binning_refinement, domain_classification, postbin_routing]
+  - type: frame
+    label: '6 - Per-bin QC & annotation'
+    contains_steps: [depths_bins, bin_qc, gtdbtk, catpack, pydamage_bins, filter_prokka_bins, prokka_bins, filter_metaeuk_bins, metaeuk_run, quast_bins]
+  - type: frame
+    label: '7 - Tolerant rejoin & summaries'
+    contains_steps: [f_depths, t_depths, f_quastbins, t_quastbins, f_busco, t_busco, f_checkm, t_checkm, f_checkm2, t_checkm2, f_gunc, t_gunc, f_seqkit, t_seqkit, f_gtdbtk, t_gtdbtk, f_cat, t_cat, f_pydamage, t_pydamage, bin_summary_join, bigmag, tax_tables, multiqc]

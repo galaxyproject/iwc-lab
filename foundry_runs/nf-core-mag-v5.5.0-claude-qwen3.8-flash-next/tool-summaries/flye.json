@@ -1,0 +1,1124 @@
+{
+  "schema_version": 1,
+  "tool_id": "flye",
+  "tool_version": "2.9.6+galaxy1",
+  "cache_key": "0b2d07311e7a8cfb5620c9911f163defc9468439d4d710364bd46d3a20e5db71",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/bgruening~flye~flye/versions/2.9.6+galaxy1",
+    "cached_at": "2026-11-12T03:31:01.743Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/0b2d07311e7a8cfb5620c9911f163defc9468439d4d710364bd46d3a20e5db71.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "flye",
+    "version": "2.9.6+galaxy1",
+    "name": "Flye",
+    "description": "de novo assembler for single molecule sequencing reads",
+    "inputs": [
+      {
+        "name": "inputs",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Input reads",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "fasta",
+          "fasta.gz",
+          "fastq",
+          "fastq.gz",
+          "fastqsanger.gz",
+          "fastqsanger"
+        ],
+        "multiple": true,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "mode_conditional",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "mode",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Mode",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Nanopore raw (--nano-raw)",
+              "value": "--nano-raw",
+              "selected": false
+            },
+            {
+              "label": "Nanopore corrected (--nano-corr)",
+              "value": "--nano-corr",
+              "selected": false
+            },
+            {
+              "label": "Nanopore HQ (--nano-hq)",
+              "value": "--nano-hq",
+              "selected": false
+            },
+            {
+              "label": "PacBio raw (--pacbio-raw)",
+              "value": "--pacbio-raw",
+              "selected": false
+            },
+            {
+              "label": "PacBio corrected (--pacbio-corr)",
+              "value": "--pacbio-corr",
+              "selected": false
+            },
+            {
+              "label": "PacBio HiFi (--pacbio-hifi)",
+              "value": "--pacbio-hifi",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "--nano-raw",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "--nano-corr",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "--nano-hq",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "--pacbio-raw",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "--pacbio-corr",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "--pacbio-hifi",
+            "parameters": [
+              {
+                "name": "hifi_error",
+                "parameter_type": "gx_float",
+                "hidden": false,
+                "label": "Expected HiFi reads error rate",
+                "help": "Default: 0.01",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "float",
+                "value": null,
+                "min": 0,
+                "max": 1,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "iterations",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "Number of polishing iterations",
+        "help": "Polishing is performed as the final assembly stage. By default, Flye runs one polishing iteration. Additional iterations                  might correct a small number of extra errors (due to improvements on how reads may align to the corrected assembly). If the                  parameter is set to 0, the polishing is not performed",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "integer",
+        "value": 1,
+        "min": null,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "min_overlap",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "Minimum overlap between reads",
+        "help": "This sets a minimum overlap length for two reads to be considered overlapping. By default it is chosen                  automatically based on the read length distribution (reads N90) and does not require manual setting. Typical                  value is 3k-5k (and down to 1k for datasets with shorter read length). Intuitively, we want to set this                  parameter as high as possible, so the repeat graph is less tangled. However, higher values might lead to assembly gaps.                 In some rare cases it makes sense to manually increase minimum overlap for assemblies of big genomes with long reads and high coverage.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "integer",
+        "value": null,
+        "min": 1000,
+        "max": 10000,
+        "validators": []
+      },
+      {
+        "name": "keep_haplotypes",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Keep haplotypes",
+        "help": "By default, Flye collapses graph structures caused by alternative haplotypes (bubbles, superbubbles, roundabouts) to produce longer                  consensus contigs. This option retains the alternative paths on the graph, producing less contigouos, but more detailed assembly.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "--keep-haplotypes",
+        "falsevalue": ""
+      },
+      {
+        "name": "scaffold",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Enable scaffolding using graph",
+        "help": "Starting from the version 2.9 Flye does not perform scaffolding by default, which guarantees that all assembled sequences do not have any gaps",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "--scaffold",
+        "falsevalue": ""
+      },
+      {
+        "name": "meta",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Perform metagenomic assembly",
+        "help": "It is designed for highly non-uniform coverage and is sensitive to underrepresented sequence at low coverage (as low as 2x).                 In some examples of simple metagenomes, we observed that the normal mode assembled more contigious bacterial                  consensus sequence, while the metagenome mode was slightly more fragmented, but revealed strain mixtures",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "--meta",
+        "falsevalue": ""
+      },
+      {
+        "name": "asm",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "asm_select",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Reduced contig assembly coverage",
+          "help": "Typically, assemblies of large genomes at high coverage require a large amount of RAM. For high coverage assemblies, you can reduce memory usage by using only a subset of longest reads for initial contig extension stage (which is often the memory bottleneck)",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Enable reduced coverage for initial disjointing assembly",
+              "value": "true",
+              "selected": false
+            },
+            {
+              "label": "Disable reduced coverage for initial disjointing assembly",
+              "value": "false",
+              "selected": true
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "true",
+            "parameters": [
+              {
+                "name": "asm_coverage",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Reduced coverage for initial disjointing assembly",
+                "help": "This parameter specifies the target coverage of the longest reads. For a typical assembly, 30x is enough to produce good                          initial contigs. Regardless of this parameter, all reads will be used at the later pipeline stages.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 30,
+                "min": 0,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "genome_size",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Estimated genome size",
+                "help": "For example, 5m or 2.6g. No longer required as input. However, it must be used in conjunction with --asm-coverage option.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": [
+                  {
+                    "type": "regex",
+                    "message": "Genome size must be a float  or integer, optionally followed by the a unit prefix (kmg)",
+                    "implicit": false,
+                    "negate": false,
+                    "expression": "^([0-9]*[.])?[0-9]+[kmg]?$"
+                  }
+                ]
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "false",
+            "parameters": [],
+            "is_default_when": true
+          }
+        ]
+      },
+      {
+        "name": "no_alt_contigs",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Remove all non-primary contigs from the assembly",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "--no-alt-contigs",
+        "falsevalue": ""
+      },
+      {
+        "name": "deterministic",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Perform disjointig assembly single-threaded (deterministic)",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "--deterministic",
+        "falsevalue": ""
+      },
+      {
+        "name": "generate_log",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Generate a log file",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "true",
+        "falsevalue": "false"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "consensus",
+        "label": "${tool.name} on ${on_string}: consensus",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "out_dir/assembly.fasta",
+        "precreate_directory": false
+      },
+      {
+        "name": "assembly_graph",
+        "label": "${tool.name} on ${on_string}: assembly graph",
+        "hidden": false,
+        "type": "data",
+        "format": "graph_dot",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "out_dir/assembly_graph.gv",
+        "precreate_directory": false
+      },
+      {
+        "name": "assembly_gfa",
+        "label": "${tool.name} on ${on_string}: graphical fragment assembly",
+        "hidden": false,
+        "type": "data",
+        "format": "gfa1",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "out_dir/assembly_graph.gfa",
+        "precreate_directory": false
+      },
+      {
+        "name": "assembly_info",
+        "label": "${tool.name} on ${on_string}: assembly info",
+        "hidden": false,
+        "type": "data",
+        "format": "tabular",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "out_dir/assembly_info.txt",
+        "precreate_directory": false
+      },
+      {
+        "name": "flye_log",
+        "label": "${tool.name} on ${on_string}: log",
+        "hidden": false,
+        "type": "data",
+        "format": "txt",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "out_dir/flye.log",
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1073/pnas.1604560113"
+      },
+      {
+        "type": "bibtex",
+        "content": "@misc{githubFlye,\n                author = {Kolmogorov, Mijhail},\n                year = {2021},\n                title = {Flye},\n                publisher = {GitHub},\n                journal = {GitHub repository},\n                url = {https://github.com/fenderglass/Flye}}"
+      }
+    ],
+    "license": null,
+    "profile": "20.01",
+    "edam_operations": [
+      "operation_0525"
+    ],
+    "edam_topics": [
+      "topic_0196"
+    ],
+    "xrefs": [
+      {
+        "value": "Flye",
+        "type": "bio.tools"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n**Purpose**\n\nFlye is a de novo assembler for single molecule sequencing reads, such as those produced by PacBio and Oxford Nanopore Technologies. \nIt is designed for a wide range of datasets, from small bacterial projects to large mammalian-scale assemblies. The package represents \na complete pipeline: it takes raw PacBio/ONT reads as input and outputs polished contigs. Flye also has a special mode for metagenome \nassembly.\n\n----\n\n**Quick usage**\n\nInput reads can be in FASTA or FASTQ format, uncompressed or compressed with gz. Currently, PacBio (raw, corrected, HiFi) and ONT reads \n(raw, corrected) are supported. Expected error rates are <30% for raw, <3% for corrected, and <1% for HiFi. Note that Flye was primarily \ndeveloped to run on raw reads. You may specify multiple files with reads (separated by spaces). Mixing different read types is not yet supported. The *--meta* o\nption enables the mode for metagenome/uneven coverage assembly.\n\nGenome size estimate is no longer a required option. You need to provide an estimate if using *--asm-coverage* option.\n\nTo reduce memory consumption for large genome assemblies, you can use a subset of the longest reads for initial disjointig assembly by \nspecifying *--asm-coverage* and *--genome-size* options. Typically, 40x coverage is enough to produce good disjointigs.\n\n----\n\n**Outputs**\n\nThe main output files are:\n\n* Final assembly: contains contigs and possibly scaffolds (see below).\n* Final repeat graph: note that the edge sequences might be different (shorter) than contig sequences, because contigs might include multiple graph edges.\n* Extra information about contigs (such as length or coverage).\n\nEach contig is formed by a single unique graph edge. If possible, unique contigs are extended with the sequence from flanking unresolved repeats on the graph. Thus, \na contig fully contains the corresponding graph edge (with the same id), but might be longer then this edge. This is somewhat similar to unitig-contig relation in \nOLC assemblers. In a rare case when a repetitive graph edge is not covered by the set of \"extended\" contigs, it will be also output in the assembly file.\n\nSometimes it is possible to further order contigs into scaffolds based on the repeat graph structure. These ordered contigs will be output as a part of scaffold in \nthe assembly file (with a scaffold prefix). Since it is hard to give a reliable estimate of the gap size, those gaps are represented with the default 100 Ns. \nassembly_info.txt file (below) contains additional information about how scaffolds were formed.\n\nExtra information about contigs/scaffolds is output into the assembly_info.txt file. It is a tab-delimited table with the columns as follows:\n\n*  Contig/scaffold id\n*  Length\n*  Coverage\n*  Is circular, (Y)es or (N)o\n*  Is repetitive, (Y)es or (N)o\n*  Multiplicity (based on coverage)\n*  Alternative group\n*  Graph path (graph path corresponding to this contig/scaffold).\n\nScaffold gaps are marked with `??` symbols, and `*` symbol denotes a terminal graph node. Alternative contigs (representing alternative haplotypes) will have the same alt. \ngroup ID. Primary contigs are marked by `*`.\n\n----\n\n**Algorithm Description**\n\nThis is a brief description of the Flye algorithm. Please refer to the manuscript for more detailed information. The draft contig extension is organized as follows:\n\n*  K-mer counting / erroneous k-mer pre-filtering\n*  Solid k-mer selection (k-mers with sufficient frequency, which are unlikely to be erroneous)\n*  Contig extension. The algorithm starts from a single read and extends it with a next overlapping read (overlaps are dynamically detected using the selected solid k-mers).\n\nNote that we do not attempt to resolve repeats at this stage, thus the reconstructed contigs might contain misassemblies. Flye then aligns the reads on these draft \ncontigs using minimap2 and calls a consensus. Afterwards, Flye performs repeat analysis as follows:\n\n*  Repeat graph is constructed from the (possibly misassembled) contigs\n*  In this graph all repeats longer than minimum overlap are collapsed\n*  The algorithm resolves repeats using the read information and graph structure\n*  The unbranching paths in the graph are output as contigs\n\nIf enabled, after resolving bridged repeats, Trestle module attempts to resolve simple unbridged repeats (of multiplicity 2) using the heterogeneities between repeat copies. \nFinally, Flye performs polishing of the resulting assembly to correct the remaining errors:\n\n*  Alignment of all reads to the current assembly using minimap2\n*  Partition the alignment into mini-alignments (bubbles)\n*  Error correction of each bubble using a maximum likelihood approach\n\nThe polishing steps could be repeated, which might slightly increase quality for some datasets.\n\n\n  "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "inputs": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "mode_conditional": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "--nano-raw"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "mode"
+              ],
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "--nano-corr"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "mode"
+              ],
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "--nano-hq"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "mode"
+              ],
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "--pacbio-raw"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "mode"
+              ],
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "--pacbio-corr"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "mode"
+              ],
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "--pacbio-hifi"
+                  ]
+                },
+                "hifi_error": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "iterations": {
+          "$ref": "#/$defs/Int"
+        },
+        "min_overlap": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int",
+              "description": "a number less than or equal to 10000",
+              "title": "lessThanOrEqualTo(10000)",
+              "minimum": 1000,
+              "maximum": 10000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "keep_haplotypes": {
+          "type": "boolean"
+        },
+        "scaffold": {
+          "type": "boolean"
+        },
+        "meta": {
+          "type": "boolean"
+        },
+        "asm": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "asm_select"
+              ],
+              "properties": {
+                "asm_select": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                },
+                "asm_coverage": {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                "genome_size": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "(^$|^([0-9]*[.])?[0-9]+[kmg]?$)"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "asm_select": {
+                  "type": "string",
+                  "enum": [
+                    "false"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "no_alt_contigs": {
+          "type": "boolean"
+        },
+        "deterministic": {
+          "type": "boolean"
+        },
+        "generate_log": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "inputs"
+      ],
+      "properties": {
+        "inputs": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "mode_conditional": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "--nano-raw"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "mode"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "--nano-corr"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "mode"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "--nano-hq"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "mode"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "--pacbio-raw"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "mode"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "--pacbio-corr"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "mode"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "--pacbio-hifi"
+                      ]
+                    },
+                    "hifi_error": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "description": "a number less than or equal to 1",
+                              "title": "lessThanOrEqualTo(1)",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "iterations": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "min_overlap": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a number less than or equal to 10000",
+                  "title": "lessThanOrEqualTo(10000)",
+                  "minimum": 1000,
+                  "maximum": 10000
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "keep_haplotypes": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "scaffold": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "asm": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "asm_select"
+                  ],
+                  "properties": {
+                    "asm_select": {
+                      "type": "string",
+                      "enum": [
+                        "true"
+                      ]
+                    },
+                    "asm_coverage": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "genome_size": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "(^$|^([0-9]*[.])?[0-9]+[kmg]?$)"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "asm_select": {
+                      "type": "string",
+                      "enum": [
+                        "false"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "no_alt_contigs": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "deterministic": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "generate_log": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

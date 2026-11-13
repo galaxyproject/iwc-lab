@@ -1,0 +1,246 @@
+{
+  "id": "prodigal",
+  "version": "2.6.3+galaxy0",
+  "name": "Prodigal Gene Predictor",
+  "description": "A tool for gene prediction in microbial genomes",
+  "inputs": [
+    {
+      "name": "input_fa",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "Specify input file",
+      "help": "-i",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data",
+      "extensions": [
+        "fasta"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "input_train",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "Specify training file",
+      "help": "Read and use the specified training file (-t)",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "data",
+      "extensions": [
+        "fasta"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "out_format",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "Specify output format",
+      "help": "-f",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "select",
+      "options": [
+        {
+          "label": "GBK (default)",
+          "value": "gbk",
+          "selected": true
+        },
+        {
+          "label": "GFF",
+          "value": "gff",
+          "selected": false
+        },
+        {
+          "label": "SQN",
+          "value": "sqn",
+          "selected": false
+        },
+        {
+          "label": "SCO",
+          "value": "sco",
+          "selected": false
+        }
+      ],
+      "multiple": false,
+      "validators": []
+    },
+    {
+      "name": "procedure",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "Specify mode",
+      "help": "-p",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "select",
+      "options": [
+        {
+          "label": "Single : Single genome, any number of\n                sequences (default)",
+          "value": "single",
+          "selected": true
+        },
+        {
+          "label": "Meta : Anonymous sequences, analyze\n                using preset training files, ideal for metagenomic data or single short sequences",
+          "value": "meta",
+          "selected": false
+        }
+      ],
+      "multiple": false,
+      "validators": []
+    },
+    {
+      "name": "trans_table",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "Specify a translation table to use",
+      "help": "-g",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "select",
+      "options": [
+        {
+          "label": "11 : Standard Bacteria/Archaea (default)",
+          "value": "11",
+          "selected": false
+        },
+        {
+          "label": "4 : Mycoplasma/Spiroplasma",
+          "value": "4",
+          "selected": false
+        },
+        {
+          "label": "# : Other genetic codes 1-25",
+          "value": "#",
+          "selected": false
+        }
+      ],
+      "multiple": false,
+      "validators": []
+    },
+    {
+      "name": "closed",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Closed ends",
+      "help": "Closed ends.  Do not allow partial genes         at edges of sequence (-c)",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "boolean",
+      "value": null,
+      "truevalue": "-c",
+      "falsevalue": ""
+    },
+    {
+      "name": "force_nonsd",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Force Prodigal to scan for         motifs",
+      "help": "Do not use the Shine-Dalgarno RBS finder and instead force Prodigal to scan for motifs (-n)",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "boolean",
+      "value": null,
+      "truevalue": "-n",
+      "falsevalue": ""
+    },
+    {
+      "name": "masked_seq",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Treat runs of N as masked sequence",
+      "help": "Treat runs of N as masked sequence; don't build genes across them (-m)",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "boolean",
+      "value": null,
+      "truevalue": "-m",
+      "falsevalue": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output",
+      "label": "${tool.name} on ${on_string} : coordinates",
+      "hidden": false,
+      "type": "data",
+      "format": "genbank",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    },
+    {
+      "name": "output_faa",
+      "label": "${tool.name} on ${on_string} : protein translations file",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    },
+    {
+      "name": "output_fnn",
+      "label": "${tool.name} on ${on_string} : nucleotide sequences file",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    },
+    {
+      "name": "output_start",
+      "label": "${tool.name} on ${on_string} : complete starts file",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1186/1471-2105-11-119"
+    }
+  ],
+  "license": null,
+  "profile": "22.05",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "prodigal",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\nFast, reliable protein-coding gene prediction for prokaryotic genomes.\n\nFeatures:\n* Predicts protein-coding genes: Prodigal provides fast, accurate protein-coding gene predictions in GFF3, Genbank, or Sequin table format.\n* Handles draft genomes and metagenomes: Prodigal runs smoothly on finished genomes, draft genomes, and metagenomes.\n* Runs quickly: Prodigal analyzes the E. coli K-12 genome in 10 seconds on a modern MacBook Pro.\n* Runs unsupervised: Prodigal is an unsupervised machine learning algorithm. It does not need to be provided with any training data, and instead automatically learns the properties of the genome from the sequence itself, including RBS motif usage, start codon usage, and coding statistics.\n* Handles gaps and partial genes: The user can specify if Prodigal should build genes across runs of N's as well as how to handle genes at the edges of contigs.\n* Identifies translation initiation sites: Prodigal predicts the correct translation initiation site for most genes, and can output information about every potential start site in the genome, including confidence score, RBS motif, and much more.\n\n    "
+  }
+}

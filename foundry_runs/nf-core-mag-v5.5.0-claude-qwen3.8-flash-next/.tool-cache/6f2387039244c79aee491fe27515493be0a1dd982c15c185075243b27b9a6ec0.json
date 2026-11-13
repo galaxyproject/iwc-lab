@@ -1,0 +1,49 @@
+{
+  "id": "__NEST__",
+  "version": "1.0.0",
+  "name": "Nest collection",
+  "description": "by adding a nesting level",
+  "inputs": [
+    {
+      "name": "input",
+      "hidden": false,
+      "label": "Input Collection",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "parameter_type": "gx_data_collection",
+      "type": "data_collection",
+      "collection_type": "list,paired",
+      "extensions": [
+        "data"
+      ],
+      "value": null
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output",
+      "label": "${on_string} (nested)",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list:list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": []
+    }
+  ],
+  "citations": [],
+  "license": null,
+  "profile": "16.01",
+  "edam_operations": [
+    "operation_2409"
+  ],
+  "edam_topics": [],
+  "xrefs": [],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\n========\nSynopsis\n========\n\nWraps each element of a collection inside its own inner list, adding one nesting level.\n\n===========\nDescription\n===========\n\nThis tool takes a collection and produces a nested collection (``list:list``) where each top-level element becomes a single-element inner list. The inner list and its sole element share the same identifier.\n\nFor example, a ``list`` with elements ``[A, B, C]`` becomes a ``list:list`` where the outer list has three elements, each containing a one-element inner list: ``[A→[A], B→[B], C→[C]]``.\n\nIf the input is already nested (e.g. ``list:paired``), the output gains one more level of nesting (``list:list:paired``), where each inner ``list`` contains a single paired collection.\n\n========\nExamples\n========\n\n**Nest a flat list**\n\nInput ``list``::\n\n List: \"Samples\"\n\n   sample1  →  Dataset 1\n   sample2  →  Dataset 2\n   sample3  →  Dataset 3\n\nOutput ``list:list``::\n\n Nested list: \"Samples (nested)\"\n\n   sample1/\n     sample1  →  Dataset 1\n   sample2/\n     sample2  →  Dataset 2\n   sample3/\n     sample3  →  Dataset 3\n\n-------\n\n**Why is this useful?**\n\nSome Galaxy tools expect a ``list`` as input — when you feed them a ``list``, Galaxy runs the tool once on the entire list. If you want Galaxy to run the tool separately on each element (map over the collection), you need the input to be a ``list:list`` so that Galaxy maps over the outer list and passes each inner list to the tool individually. Nesting provides that extra level.\n\n-------\n\n.. image:: ${static_path}/images/tools/collection_ops/nest.svg\n  :alt: Nest a collection by adding a nesting level\n  :width: 500\n\n-------\n\n.. class:: infomark\n\nThis tool will create new history datasets copied from your input collections but your quota usage will not increase.\n\n    "
+  }
+}

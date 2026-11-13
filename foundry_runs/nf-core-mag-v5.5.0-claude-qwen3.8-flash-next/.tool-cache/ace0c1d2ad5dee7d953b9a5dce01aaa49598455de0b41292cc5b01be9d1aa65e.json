@@ -1,0 +1,300 @@
+{
+  "id": "gtdbtk_classify_wf",
+  "version": "2.8.0+galaxy0",
+  "name": "GTDB-Tk Classify genomes",
+  "description": "by placement in GTDB reference tree",
+  "inputs": [
+    {
+      "name": "input",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "Fasta (Genome) files",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data",
+      "extensions": [
+        "fasta",
+        "fasta.gz"
+      ],
+      "multiple": true,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "gtdbtk_db",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "GTDB-Tk database",
+      "help": "This version of GTDB-Tk requires GTDB release 232. Please contact your service administrator if this version is not available to select.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "select",
+      "options": null,
+      "multiple": false,
+      "validators": []
+    },
+    {
+      "name": "advanced",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "min_perc_aa",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Exclude genomes that do not have at least this percentage of AA in the MSA",
+          "help": "Inclusive bound",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 10,
+          "min": 0,
+          "max": 100,
+          "validators": []
+        },
+        {
+          "name": "force",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Continue processing if an error occurs on a single genome?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--force",
+          "falsevalue": ""
+        },
+        {
+          "name": "min_af",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Minimum alignment fraction to consider closest genome",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 0.5,
+          "min": 0,
+          "max": 1,
+          "validators": []
+        },
+        {
+          "name": "full_tree",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Use the full tree",
+          "help": "Use the unsplit bacterial tree for the classify step; this is the original GTDB-Tk approach (version < 2) and requires more than 320 GB of RAM to load the reference tree (default: False)",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--full_tree",
+          "falsevalue": ""
+        },
+        {
+          "name": "place_species",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Place species in the reference tree",
+          "help": "By default, genomes classified by the ANI pre-screening step (skani) are not placed in the pplacer reference tree. Enable this option to place all genomes in the reference tree regardless of skani classification.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--place_species",
+          "falsevalue": ""
+        },
+        {
+          "name": "output_process_log",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Output process log file?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "yes",
+          "falsevalue": "no"
+        },
+        {
+          "name": "output_ani_screen",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Output ANI screen unassigned result?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "yes",
+          "falsevalue": "no"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output_align",
+      "label": "${tool.name} on ${on_string} (align)",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "fasta.gz",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output_dir/align",
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.+)\\.fasta.gz"
+        }
+      ]
+    },
+    {
+      "name": "output_identfy",
+      "label": "${tool.name} on ${on_string} (identify)",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "tsv",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output_dir/identify",
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.+)\\.tsv"
+        }
+      ]
+    },
+    {
+      "name": "output_classify",
+      "label": "${tool.name} on ${on_string} (classify)",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "newick",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output_dir/classify",
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.+)\\.tree"
+        }
+      ]
+    },
+    {
+      "name": "output_summary",
+      "label": "${tool.name} on ${on_string} (summary)",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "tsv",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output_dir",
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.+)\\.tsv"
+        }
+      ]
+    },
+    {
+      "name": "process_log",
+      "label": "${tool.name} on ${on_string} (process log)",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    },
+    {
+      "name": "ani_screen",
+      "label": "${tool.name} on ${on_string} (ANI screen unassigned hits)",
+      "hidden": false,
+      "type": "data",
+      "format": "gz",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output_dir/classify/ani_screen/gtdbtk.ani_screen_unassigned_hits.tsv.gz",
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/btz848"
+    }
+  ],
+  "license": null,
+  "profile": "25.1",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "GTDB-Tk",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n**What it does**\n\nGTDB-Tk is a software toolkit for assigning objective taxonomic classifications to bacterial and archaeal genomes\nbased on the Genome Database Taxonomy GTDB. It is designed to work with recent advances that allow hundreds or\nthousands of metagenome-assembled genomes (MAGs) to be obtained directly from environmental samples. It can also\nbe applied to isolate and single-cell genomes.\n\nThis tool accepts one or more fasta (genome) files and determines taxonomic classification of genomes by\nmaximum-likelihood (ML) placement.  The classification workflow consists of four steps: ANI screening, identify,\nalign, and classify.\n\nThe ANI screening step compares all input genomes against a pre-sketched skani database of GTDB representative\ngenomes. Genomes with a sufficiently high ANI to a reference genome are classified by skani and excluded from\ndownstream placement.\n\nThe identify step calls genes using Prodigal, and uses HMM models and the HMMER package to identify the 120 bacterial\nand 122 archaeal marker genes used for phylogenetic inference.  Multiple sequence alignments (MSA) are obtained by\naligning marker genes to their respective HMM model.\n\nThe align step concatenates the aligned marker genes and filters the concatenated MSA to approximately 5,000\namino acids.\n\nFinally, the classify step uses pplacer to find the maximum-likelihood placement of each genome in the GTDB-Tk\nreference tree. GTDB-Tk classifies each genome based on its placement in the reference tree, its relative evolutionary\ndivergence, and/or average nucleotide identity (ANI) to reference genomes.\n\nResults can be impacted by a lack of marker genes or contamination.\n    "
+  }
+}

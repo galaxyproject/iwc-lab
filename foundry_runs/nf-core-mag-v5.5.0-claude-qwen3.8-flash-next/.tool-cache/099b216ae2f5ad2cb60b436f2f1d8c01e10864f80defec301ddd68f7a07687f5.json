@@ -1,0 +1,2154 @@
+{
+  "id": "freebayes",
+  "version": "1.3.10+galaxy1",
+  "name": "FreeBayes",
+  "description": "bayesian genetic variant detector",
+  "inputs": [
+    {
+      "name": "reference_source",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "reference_source_selector",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Choose the source for the reference genome",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Locally cached",
+            "value": "cached",
+            "selected": false
+          },
+          {
+            "label": "History",
+            "value": "history",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "cached",
+          "parameters": [
+            {
+              "name": "batchmode",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "processmode",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Run in batch mode?",
+                "help": "Selecting individual mode will generate one VCF dataset for each input BAM dataset. Selecting the merge option will produce one VCF dataset for all input BAM datasets",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Run individually",
+                    "value": "individual",
+                    "selected": true
+                  },
+                  {
+                    "label": "Merge output VCFs",
+                    "value": "merge",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "individual",
+                  "parameters": [
+                    {
+                      "name": "input_bams",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "BAM or CRAM dataset",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "bam",
+                        "cram"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": true
+                },
+                {
+                  "discriminator": "merge",
+                  "parameters": [
+                    {
+                      "name": "input_bams",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "BAM or CRAM dataset(s)",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "bam",
+                        "cram"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                }
+              ]
+            },
+            {
+              "name": "ref_file",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Using reference genome",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": null,
+              "multiple": false,
+              "validators": [
+                {
+                  "type": "no_options",
+                  "message": "A built-in reference genome is not available for the build associated with the selected input dataset",
+                  "implicit": false,
+                  "negate": false
+                }
+              ]
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "history",
+          "parameters": [
+            {
+              "name": "batchmode",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "processmode",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Run in batch mode?",
+                "help": "Selecting individual mode will generate one VCF dataset for each input BAM dataset. Selecting the merge option will produce one VCF dataset for all input BAM datasets",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Run individually",
+                    "value": "individual",
+                    "selected": true
+                  },
+                  {
+                    "label": "Merge output VCFs",
+                    "value": "merge",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "individual",
+                  "parameters": [
+                    {
+                      "name": "input_bams",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "BAM or CRAM dataset",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "bam",
+                        "cram"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": true
+                },
+                {
+                  "discriminator": "merge",
+                  "parameters": [
+                    {
+                      "name": "input_bams",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "BAM or CRAM dataset(s)",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "bam",
+                        "cram"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                }
+              ]
+            },
+            {
+              "name": "ref_file",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Use the following dataset as the reference sequence",
+              "help": "You can upload a FASTA sequence to the history and use it as reference",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fasta"
+              ],
+              "multiple": false,
+              "min": null,
+              "max": null,
+              "url_default": null
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "target_limit_type",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "target_limit_type_selector",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Limit variant calling to a set of regions?",
+        "help": "Sets --targets or --region options",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Do not limit",
+            "value": "do_not_limit",
+            "selected": true
+          },
+          {
+            "label": "Limit by target file",
+            "value": "limit_by_target_file",
+            "selected": false
+          },
+          {
+            "label": "Limit to region",
+            "value": "limit_by_region",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "do_not_limit",
+          "parameters": [],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "limit_by_target_file",
+          "parameters": [
+            {
+              "name": "input_target_bed",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Limit analysis to regions in this BED dataset",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "bed"
+              ],
+              "multiple": false,
+              "min": null,
+              "max": null,
+              "url_default": null
+            }
+          ],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "limit_by_region",
+          "parameters": [
+            {
+              "name": "region_chromosome",
+              "parameter_type": "gx_text",
+              "hidden": false,
+              "label": "Region Chromosome",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": true,
+              "type": "text",
+              "area": false,
+              "value": null,
+              "default_options": [],
+              "validators": []
+            },
+            {
+              "name": "region_start",
+              "parameter_type": "gx_integer",
+              "hidden": false,
+              "label": "Region Start",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "integer",
+              "value": null,
+              "min": null,
+              "max": null,
+              "validators": []
+            },
+            {
+              "name": "region_end",
+              "parameter_type": "gx_integer",
+              "hidden": false,
+              "label": "Region End",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "integer",
+              "value": null,
+              "min": null,
+              "max": null,
+              "validators": []
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "coverage_options",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "coverage_options_selector",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Read coverage",
+        "help": "Sets --min-coverage, --limit-coverage, and --skip-coverage",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Use defaults",
+            "value": "do_not_set",
+            "selected": true
+          },
+          {
+            "label": "Specify coverage options",
+            "value": "set",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "set",
+          "parameters": [
+            {
+              "name": "min_coverage",
+              "parameter_type": "gx_integer",
+              "hidden": false,
+              "label": "Require at least this coverage to process a site",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "integer",
+              "value": 0,
+              "min": null,
+              "max": null,
+              "validators": []
+            },
+            {
+              "name": "limit_coverage",
+              "parameter_type": "gx_integer",
+              "hidden": false,
+              "label": "Downsample per-sample coverage to this level if greater than this coverage",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "integer",
+              "value": 0,
+              "min": null,
+              "max": null,
+              "validators": []
+            },
+            {
+              "name": "skip_coverage",
+              "parameter_type": "gx_integer",
+              "hidden": false,
+              "label": "Skip processing of alignments overlapping positions with coverage greater than this",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "integer",
+              "value": 0,
+              "min": null,
+              "max": null,
+              "validators": []
+            }
+          ],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "do_not_set",
+          "parameters": [],
+          "is_default_when": true
+        }
+      ]
+    },
+    {
+      "name": "options_type",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "options_type_selector",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Choose parameter selection level",
+        "help": "Select how much control over the freebayes run you need",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "1. Simple diploid calling",
+            "value": "simple",
+            "selected": true
+          },
+          {
+            "label": "2. Simple diploid calling with filtering and coverage",
+            "value": "simple_w_filters",
+            "selected": false
+          },
+          {
+            "label": "3. Frequency-based pooled calling",
+            "value": "naive",
+            "selected": false
+          },
+          {
+            "label": "4. Frequency-based pooled calling with filtering and coverage",
+            "value": "naive_w_filters",
+            "selected": false
+          },
+          {
+            "label": "5. Full list of options",
+            "value": "full",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "full",
+          "parameters": [
+            {
+              "name": "optional_inputs",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "optional_inputs_selector",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Additional inputs",
+                "help": "Sets --samples, --populations, --cnv-map, --trace, --failed-alleles, --variant-input, --only-use-input-alleles, --haplotype-basis-alleles, --report-all-haplotype-alleles, --report-monomorphic options, --observation-bias, --contamination-estimates and --trim-complex-tail",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Do not provide additional inputs",
+                    "value": "do_not_set",
+                    "selected": true
+                  },
+                  {
+                    "label": "Provide additional inputs",
+                    "value": "set",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "set",
+                  "parameters": [
+                    {
+                      "name": "output_failed_alleles_option",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Write out failed alleles file",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "--failed-alleles",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "output_trace_option",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Write out algorithm trace file",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "--trace",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "samples",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Limit analysis to samples listed (one per line) in this dataset",
+                      "help": "By default FreeBayes will analyze all samples in its input BAM datasets",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "data",
+                      "extensions": [
+                        "txt"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "populations",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Populations dataset",
+                      "help": "Each line of this dataset should list a sample and a population which it is part of. The population-based bayesian inference model will then be partitioned on the basis of the populations",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "data",
+                      "extensions": [
+                        "txt"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "A",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Read a copy number map from a BED dataset",
+                      "help": "The BED dataset should have the format: 'reference sequence, start, end, sample name, copy number' for each region in each sample which does not have the default copy number as set by --ploidy. If not specified, copy number is set to as specified by --ploidy",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "data",
+                      "extensions": [
+                        "bed"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "input_variant_type",
+                      "parameter_type": "gx_conditional",
+                      "hidden": false,
+                      "label": null,
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "conditional",
+                      "test_parameter": {
+                        "name": "input_variant_type_selector",
+                        "parameter_type": "gx_select",
+                        "hidden": false,
+                        "label": "Provide variants dataset",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "select",
+                        "options": [
+                          {
+                            "label": "Do not provide",
+                            "value": "do_not_provide",
+                            "selected": true
+                          },
+                          {
+                            "label": "Provide VCF dataset",
+                            "value": "provide_vcf",
+                            "selected": false
+                          }
+                        ],
+                        "multiple": false,
+                        "validators": []
+                      },
+                      "whens": [
+                        {
+                          "discriminator": "do_not_provide",
+                          "parameters": [],
+                          "is_default_when": true
+                        },
+                        {
+                          "discriminator": "provide_vcf",
+                          "parameters": [
+                            {
+                              "name": "input_variant_vcf",
+                              "parameter_type": "gx_data",
+                              "hidden": false,
+                              "label": "Use variants reported in this VCF dataset as input to the algorithm",
+                              "help": null,
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "data",
+                              "extensions": [
+                                "vcf_bgzip"
+                              ],
+                              "multiple": false,
+                              "min": null,
+                              "max": null,
+                              "url_default": null
+                            },
+                            {
+                              "name": "only_use_input_alleles",
+                              "parameter_type": "gx_boolean",
+                              "hidden": false,
+                              "label": "Only provide variant calls and genotype likelihoods for sites in VCF",
+                              "help": null,
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "boolean",
+                              "value": false,
+                              "truevalue": "--only-use-input-alleles",
+                              "falsevalue": ""
+                            }
+                          ],
+                          "is_default_when": false
+                        }
+                      ]
+                    },
+                    {
+                      "name": "haplotype_basis_alleles",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Only use variant alleles provided in this input VCF for the construction of complex or haplotype alleles",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "data",
+                      "extensions": [
+                        "vcf"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "report_monomorphic",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Report even loci which appear to be monomorphic, and report all considered alleles, even those which are not in called genotypes",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "--report-monomorphic",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "observation_bias",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Load read length-dependent allele observation biases from",
+                      "help": "The format is [length] [alignment efficiency relative to reference] where the efficiency is 1 if there is no relative observation bias",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "data",
+                      "extensions": [
+                        "tabular"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "contamination_estimates",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Upload per-sample estimates of contamination from",
+                      "help": "The format should be: sample p(read=R|genotype=AR) p(read=A|genotype=AA) Sample '*' can be used to set default contamination estimates",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "data",
+                      "extensions": [
+                        "tabular"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "trim_complex_tail",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Trim trailing reference matches",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "--trim-complex-tail",
+                      "falsevalue": ""
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "do_not_set",
+                  "parameters": [],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "reporting",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "reporting_selector",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Reporting options",
+                "help": "Sets -P --pvar option",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Use defaults",
+                    "value": "do_not_set",
+                    "selected": true
+                  },
+                  {
+                    "label": "Set reporting options",
+                    "value": "set",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "set",
+                  "parameters": [
+                    {
+                      "name": "pvar",
+                      "parameter_type": "gx_float",
+                      "hidden": false,
+                      "label": "Report sites if the probability that there is a polymorphism at the site is greater than",
+                      "help": "Note that post-filtering is generally recommended over the use of this parameter",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "float",
+                      "value": 0,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "do_not_set",
+                  "parameters": [],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "population_model",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "population_model_selector",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Population model options",
+                "help": "Sets --theta, --ploidy, --pooled-discrete, and --pooled-continuous options",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Use defaults",
+                    "value": "do_not_set",
+                    "selected": true
+                  },
+                  {
+                    "label": "Set population model options",
+                    "value": "set",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "set",
+                  "parameters": [
+                    {
+                      "name": "T",
+                      "parameter_type": "gx_float",
+                      "hidden": false,
+                      "label": "The expected mutation rate or pairwise nucleotide diversity among the population under analysis",
+                      "help": "This serves as the single parameter to the Ewens Sampling Formula prior model",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "float",
+                      "value": 0.001,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "P",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Set ploidy for the analysis",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 2,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "J",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Assume that samples result from pooled sequencing",
+                      "help": "Model pooled samples using discrete genotypes across pools. When using this flag, set --ploidy to the number of alleles in each sample or use the --cnv-map to define per-sample ploidy",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "-J",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "K",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Output all alleles which pass input filters, regardles of genotyping outcome or model",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "-K",
+                      "falsevalue": ""
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "do_not_set",
+                  "parameters": [],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "reference_allele",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "reference_allele_selector",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Reference allele options",
+                "help": "Sets --use-reference-allele and --reference-quality options",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Use defaults",
+                    "value": "do_not_set",
+                    "selected": true
+                  },
+                  {
+                    "label": "Set reference allele options",
+                    "value": "set",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "set",
+                  "parameters": [
+                    {
+                      "name": "Z",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Include the reference allele in the analysis as if it is another sample from the same population",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "-Z",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "reference_quality",
+                      "parameter_type": "gx_text",
+                      "hidden": false,
+                      "label": "Assign mapping quality of MQ (100) to the reference allele at each site and base quality of BQ (60)",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "text",
+                      "area": false,
+                      "value": null,
+                      "default_options": [],
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "do_not_set",
+                  "parameters": [],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "allele_scope",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "allele_scope_selector",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Allelic scope options",
+                "help": "Sets -I, i, -X, -u, -n, --haplotype-length, --min-repeat-size, --min-repeat-entropy, and --no-partial-observations options",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Use defaults",
+                    "value": "do_not_set",
+                    "selected": true
+                  },
+                  {
+                    "label": "Set alleic scope options",
+                    "value": "set",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "set",
+                  "parameters": [
+                    {
+                      "name": "I",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Ignore SNP alleles",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "-I",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "i",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Ignore indels alleles",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "-i",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "X",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Ignore multi-nucleotide polymorphisms, MNPs",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "-X",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "u",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Ignore complex events (composites of other classes)",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "-u",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "n",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "How many best SNP alleles to evaluate",
+                      "help": "Alleles are ranked by the sum of supporting quality scores. Set to 0 to evaluate all",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 0,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "haplotype_length",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Allow haplotype calls with contiguous embedded matches of up to (nucleotides)",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 3,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "min_repeat_length",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "When assembling observations across repeats, require the total repeat length at least this many bp",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 5,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "min_repeat_entropy",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "To detect interrupted repeats, build across sequence until it has entropy > (bits per bp)",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 1,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "no_partial_observations",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Exclude observations which do not fully span the dynamically-determined detection window",
+                      "help": "By default, FreeBayes uses all observations, dividing partial support across matching haplotypes when generating haplotypes",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "--no-partial-observations",
+                      "falsevalue": ""
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "do_not_set",
+                  "parameters": [],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "O",
+              "parameter_type": "gx_boolean",
+              "hidden": false,
+              "label": "Turn off left-alignment of indels",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "boolean",
+              "value": false,
+              "truevalue": "-O",
+              "falsevalue": ""
+            },
+            {
+              "name": "input_filters",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "input_filters_selector",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Input filters",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "No input filters (default)",
+                    "value": "do_not_set",
+                    "selected": true
+                  },
+                  {
+                    "label": "Set input filters",
+                    "value": "set",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "set",
+                  "parameters": [
+                    {
+                      "name": "standard_filters",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Use stringent input base and mapping quality filters",
+                      "help": "--min-mapping-quality 30 --min-base-quality 20, --min-supporting-allele-qsum 0 --genotype-variant-threshold 0",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "--standard-filters",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "use_duplicate_reads",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Include duplicate-marked alignments in the analysis",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "--use-duplicate-reads",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "min_mapping_quality",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Exclude alignments from analysis if they have a mapping quality less than",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 1,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "min_base_quality",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Exclude alleles from analysis if their supporting base quality less than",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 0,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "min_supporting_allele_qsum",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Consider any allele in which the sum of qualities of supporting observations is at least",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 0,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "min_supporting_mapping_qsum",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Consider any allele in which and the sum of mapping qualities of supporting reads is at least",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 0,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "mismatch_filters",
+                      "parameter_type": "gx_conditional",
+                      "hidden": false,
+                      "label": null,
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "conditional",
+                      "test_parameter": {
+                        "name": "mismatch_filters_selector",
+                        "parameter_type": "gx_select",
+                        "hidden": false,
+                        "label": "Mismatch filters",
+                        "help": "Sets -Q, -U, -z, and $ options",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "select",
+                        "options": [
+                          {
+                            "label": "No mismatch filters (default)",
+                            "value": "do_not_set",
+                            "selected": true
+                          },
+                          {
+                            "label": "Set mismatch filters",
+                            "value": "set",
+                            "selected": false
+                          }
+                        ],
+                        "multiple": false,
+                        "validators": []
+                      },
+                      "whens": [
+                        {
+                          "discriminator": "set",
+                          "parameters": [
+                            {
+                              "name": "mismatch_base_quality_threshold",
+                              "parameter_type": "gx_integer",
+                              "hidden": false,
+                              "label": "Count mismatches toward -U (option below) if the base quality of the mismatch is >=",
+                              "help": null,
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "integer",
+                              "value": 10,
+                              "min": null,
+                              "max": null,
+                              "validators": []
+                            },
+                            {
+                              "name": "read_mismatch_limit",
+                              "parameter_type": "gx_integer",
+                              "hidden": false,
+                              "label": "Exclude reads with more than N mismatches where each mismatch has base quality >= mismatch-base-quality-threshold (option above)",
+                              "help": "default=~unbounded",
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": true,
+                              "type": "integer",
+                              "value": 1000,
+                              "min": null,
+                              "max": null,
+                              "validators": []
+                            },
+                            {
+                              "name": "read_max_mismatch_fraction",
+                              "parameter_type": "gx_float",
+                              "hidden": false,
+                              "label": "Exclude reads with more than N [0,1] fraction of mismatches where each mismatch has base quality >= mismatch-base-quality-threshold (second option above)",
+                              "help": null,
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "float",
+                              "value": 1,
+                              "min": 0,
+                              "max": 1,
+                              "validators": []
+                            },
+                            {
+                              "name": "read_snp_limit",
+                              "parameter_type": "gx_integer",
+                              "hidden": false,
+                              "label": "Exclude reads with more than N base mismatches, ignoring gaps with quality >= mismatch-base-quality-threshold (third option above)",
+                              "help": "default=~unbounded",
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "integer",
+                              "value": 1000,
+                              "min": null,
+                              "max": null,
+                              "validators": []
+                            }
+                          ],
+                          "is_default_when": false
+                        },
+                        {
+                          "discriminator": "do_not_set",
+                          "parameters": [],
+                          "is_default_when": true
+                        }
+                      ]
+                    },
+                    {
+                      "name": "read_indel_limit",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Exclude reads with more than this number of separate gaps",
+                      "help": "default=~unbounded",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 1000,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "min_alternate_fraction",
+                      "parameter_type": "gx_float",
+                      "hidden": false,
+                      "label": "Require at least this fraction of observations supporting an alternate allele within a single individual in the in order to evaluate the position",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "float",
+                      "value": 0.05,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "min_alternate_qsum",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Require at least this sum of quality of observations supporting an alternate allele within a single individual in order to evaluate the position",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 0,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "min_alternate_count",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Require at least this count of observations supporting an alternate allele within a single individual in order to evaluate the position",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 2,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "min_alternate_total",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Require at least this count of observations supporting an alternate allele within the total population in order to use the allele in analysis",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 1,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "do_not_set",
+                  "parameters": [],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "population_mappability_priors",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "population_mappability_priors_selector",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Population and mappability priors",
+                "help": "Sets -k, -w, -V, and -a options",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Use defaults",
+                    "value": "do_not_set",
+                    "selected": true
+                  },
+                  {
+                    "label": "Set population and mappability priors",
+                    "value": "set",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "set",
+                  "parameters": [
+                    {
+                      "name": "k",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "No population priors",
+                      "help": "Equivalent to --pooled-discrete --hwe-priors-off and removal of Ewens Sampling Formula component of priors",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "-k",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "w",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Disable estimation of the probability of the combination arising under HWE given the allele frequency as estimated by observation frequency",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "-w",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "V",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Disable incorporation of prior expectations about observations",
+                      "help": "Uses read placement probability, strand balance probability, and read position (5''-3'') probability",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "-V",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "a",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Disable use of aggregate probability of observation balance between alleles as a component of the priors",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "-a",
+                      "falsevalue": ""
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "do_not_set",
+                  "parameters": [],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "genotype_likelihoods",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "genotype_likelihoods_selector",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Genotype likelihood options",
+                "help": "Sets --base-quality-cap, --experimental-gls, and --prob-contamination options",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Use defaults",
+                    "value": "do_not_set",
+                    "selected": true
+                  },
+                  {
+                    "label": "Set genotype likelihood options",
+                    "value": "set",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "set",
+                  "parameters": [
+                    {
+                      "name": "base_quality_cap",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Limit estimated observation quality by capping base quality at",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 0,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "experimental_gls",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Generate genotype likelihoods using 'effective base depth' metric qual = 1-BaseQual * 1-MapQual",
+                      "help": "Incorporate partial observations. This is the default when contamination estimates are provided. Optimized for diploid samples",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "--experimental-gls",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "prob_contamination",
+                      "parameter_type": "gx_float",
+                      "hidden": false,
+                      "label": "An estimate of contamination to use for all samples",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "float",
+                      "value": 1e-8,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "do_not_set",
+                  "parameters": [],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "algorithmic_features",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "algorithmic_features_selector",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Algorithmic features",
+                "help": "Sets --report-genotypes-likelihood-max, -B, --genotyping-max-banddepth, -W, -N, S, -j, -H, -D, -= options",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Use defaults",
+                    "value": "do_not_set",
+                    "selected": true
+                  },
+                  {
+                    "label": "Set algorithmic features",
+                    "value": "set",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "set",
+                  "parameters": [
+                    {
+                      "name": "report_genotype_likelihood_max",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Report genotypes using the maximum-likelihood estimate provided from genotype likelihoods",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "--report-genotype-likelihood-max",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "B",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Iterate no more than N times during genotyping step",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 1000,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "genotyping_max_banddepth",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Integrate no deeper than the Nth best genotype by likelihood when genotyping",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 6,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "W",
+                      "parameter_type": "gx_text",
+                      "hidden": false,
+                      "label": "Integrate all genotype combinations in our posterior space which include no more than N (1) samples with their Mth (3) best data likelihood",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "text",
+                      "area": false,
+                      "value": null,
+                      "default_options": [],
+                      "validators": []
+                    },
+                    {
+                      "name": "N",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Skip sample genotypings for which the sample has no supporting reads",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "--exclude-unobserved-genotypes",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "genotype_variant_threshold",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Limit posterior integration to samples where the second-best genotype likelihood is no more than log(N) from the highest genotype likelihood for the sample",
+                      "help": "default=~unbounded",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "integer",
+                      "value": null,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "j",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Use mapping quality of alleles when calculating data likelihoods",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "-j",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "H",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Use a weighted sum of base qualities around an indel, scaled by the distance from the indel",
+                      "help": "By default, FreeBayes uses a minimum Base Quality in flanking sequence",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "-H",
+                      "falsevalue": ""
+                    },
+                    {
+                      "name": "D",
+                      "parameter_type": "gx_float",
+                      "hidden": false,
+                      "label": "Incorporate non-independence of reads by scaling successive observations by this factor during data likelihood calculations",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "float",
+                      "value": 0.9,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    },
+                    {
+                      "name": "genotype_qualities",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Calculate the marginal probability of genotypes and report as GQ in each sample field in the VCF output",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "--genotype-qualities",
+                      "falsevalue": ""
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "do_not_set",
+                  "parameters": [],
+                  "is_default_when": true
+                }
+              ]
+            }
+          ],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "simple",
+          "parameters": [],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "simple_w_filters",
+          "parameters": [],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "naive",
+          "parameters": [],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "naive_w_filters",
+          "parameters": [],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "output_options",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "flavor",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Type of main output to produce",
+        "help": "The tool will, by default, produce VCF output with information about sites with called variants. If you want also information (such as depth of coverage) about non-called sites, you can use the gVCF or gVCF with custom block size options. The first collapses the stats of entire blocks of consecutive non-called sites into one non-call record. The second gives you control over how many consecutive non-called sites should be combined into a non-call record.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "VCF (default)",
+            "value": "vcf",
+            "selected": false
+          },
+          {
+            "label": "gVCF (--gvcf)",
+            "value": "gvcf",
+            "selected": false
+          },
+          {
+            "label": "gVCF with custom block size",
+            "value": "gvcf_custom",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "vcf",
+          "parameters": [],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "gvcf",
+          "parameters": [],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "gvcf_custom",
+          "parameters": [
+            {
+              "name": "gvcf_block_size",
+              "parameter_type": "gx_integer",
+              "hidden": false,
+              "label": "Maximal block size for consecutive non-called sites",
+              "help": "Consolidate data from any non-called site together with the N next non-called sites into one gVCF record, i.e. produce gVCF block records of maximally N+1 sites. Blocks can be shorter if terminated by the end of a chromosome or a site with a called variant. Setting this parameter to 0 produces a separate record for every non-called site, but can result in very large output.",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "integer",
+              "value": 0,
+              "min": 0,
+              "max": 2147483647,
+              "validators": []
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output_vcf",
+      "label": "${tool.name} on ${on_string} (variants)",
+      "hidden": false,
+      "type": "data",
+      "format": "vcf",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    },
+    {
+      "name": "output_failed_alleles_bed",
+      "label": "${tool.name} on ${on_string} (failed alleles)",
+      "hidden": false,
+      "type": "data",
+      "format": "bed",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    },
+    {
+      "name": "output_trace",
+      "label": "${tool.name} on ${on_string} (trace)",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "bibtex",
+      "content": "@misc{1207.3907,\n                    Author = {Erik Garrison},\n                    Title = {Haplotype-based variant detection from short-read sequencing},\n                    Year = {2012},\n                    Eprint = {arXiv:1207.3907},\n                    url = {http://arxiv.org/abs/1207.3907}\n                }"
+    },
+    {
+      "type": "bibtex",
+      "content": "@article{Tange2011a,\n                title = {GNU Parallel - The Command-Line Power Tool},\n                author = {O. Tange},\n                address = {Frederiksberg, Denmark},\n                journal = {;login: The USENIX Magazine},\n                month = {Feb},\n                number = {1},\n                volume = {36},\n                url = {http://www.gnu.org/s/parallel},\n                year = {2011},\n                pages = {42-47}\n            }"
+    }
+  ],
+  "license": null,
+  "profile": "23.0",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "freebayes",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n**What it does**\n\nFreeBayes is a Bayesian genetic variant detector designed to find small polymorphisms, specifically SNPs (single-nucleotide polymorphisms), indels (insertions and deletions), MNPs (multi-nucleotide polymorphisms), and complex events (composite insertion and substitution events) smaller than the length of a short-read sequencing alignment.\n\nSee https://github.com/ekg/freebayes for details on FreeBayes.\n\n------\n\n**Description**\n\nProvided some BAM dataset(s) and a reference sequence, FreeBayes will produce a VCF dataset describing SNPs, indels, and complex variants in samples in the input alignments.\n\nBy default, FreeBayes will consider variants supported by at least 2 observations in a single sample (-C) and also by at least 20% of the reads from a single sample (-F).  These settings are suitable to low to high depth sequencing in haploid and diploid samples, but users working with polyploid or pooled samples may wish to adjust them depending on the characteristics of their sequencing data.\n\nFreeBayes is capable of calling variant haplotypes shorter than a read length where multiple polymorphisms segregate on the same read.  The maximum distance between polymorphisms phased in this way is determined by the --max-complex-gap, which defaults to 3bp.  In practice, this can comfortably be set to half the read length.\n\nPloidy may be set to any level (-p), but by default all samples are assumed to be diploid.  FreeBayes can model per-sample and per-region variation in copy-number (-A) using a copy-number variation map.\n\nFreeBayes can act as a frequency-based pooled caller and describe variants and haplotypes in terms of observation frequency rather than called genotypes. To do so, use --pooled-continuous and set input filters to a suitable level. Allele observation counts will be described by AO and RO fields in the VCF output.\n\n-------\n\n**Galaxy-specific options**\n\nGalaxy allows five levels of control over FreeBayes options, provided by the **Choose parameter selection level** menu option. These are:\n\n 1. *Simple diploid calling*: The simplest possible FreeBayes application. Equivalent to using FreeBayes with only a BAM input and no other parameter options.\n 2. *Simple diploid calling with filtering and coverage*: Same as #1 plus two additional options: -0 (standard filters: --min-mapping-quality 30 --min-base-quality 20 --min-supporting-allele-qsum 0 --genotype-variant-threshold 0) and --min-coverage.\n 3. *Frequency-based pooled calling*: This is equivalent to using FreeBayes with the following options: --haplotype-length 0 --min-alternate-count 1 --min-alternate-fraction 0 --pooled-continuous --report-monomorphic. This is the best choice for calling variants in mixtures such as viral, bacterial, or organellar genomes.\n 4. *Frequency-based pooled calling with filtering and coverage*: Same as #3 but adds -0 and --min-coverage like in #2.\n 5. *Complete list of all options*: Gives you full control by exposing all FreeBayes options as Galaxy parameters.\n\n------\n\n**Command-line parameters**\n\n**Input**::\n\n    --bam FILE                          The file or set of BAM files to be analyzed.\n    --bam-list FILE                     A file containing a list of BAM files to be analyzed.\n\n    --stdin                             Read BAM input on stdin.\n    --fasta-reference FILE              Use FILE as the reference sequence for analysis.\n                                        An index file (FILE.fai) will be created if none exists.\n                                        If neither --targets nor --region are specified, FreeBayes\n                                        will analyze every position in this reference.\n    --targets FILE                      Limit analysis to targets listed in the BED-format FILE.\n    --region <chrom>:<start>-<end>      Limit analysis to the specified region, 0-base coordinates,\n                                        end_position not included (same as BED format).\n                                        Either '-' or '..' maybe used as a separator.\n    --samples FILE                      Limit analysis to samples listed (one per line) in the FILE.\n                                        By default FreeBayes will analyze all samples in its input\n                                        BAM files.\n    --populations FILE                  Each line of FILE should list a sample and a population which\n                                        it is part of.  The population-based bayesian inference model\n                                        will then be partitioned on the basis of the populations.\n    --cnv-map FILE                      Read a copy number map from the BED file FILE, which has\n                                        either a sample-level ploidy:\n                                        sample_name copy_number\n                                        or a region-specific format:\n                                        seq_name start end sample_name copy_number\n                                        ... for each region in each sample which does not have the\n                                        default copy number as set by --ploidy. These fields can be delimited\n                                        by space or tab.\n\n**Output**::\n\n    --vcf FILE                          Output VCF-format results to FILE. (default: stdout)\n    --gvcf                              Write gVCF output, which indicates coverage in uncalled regions.\n    --gvcf-chunk NUM                    When writing gVCF output emit a record for every NUM bases.\n    --gvcf-dont-use-chunk               When writing the gVCF output emit a record for all bases if\n                                        set to \"true\" , will also route an int to --gvcf-chunk\n                                        similar to --output-mode EMIT_ALL_SITES from GATK\n    --variant-input VCF                 Use variants reported in VCF file as input to the algorithm.\n                                        Variants in this file will included in the output even if\n                                        there is not enough support in the data to pass input filters.\n    --only-use-input-alleles            Only provide variant calls and genotype likelihoods for sites\n                                        and alleles which are provided in the VCF input, and provide\n                                        output in the VCF for all input alleles, not just those which\n                                        have support in the data.\n    --haplotype-basis-alleles VCF       When specified, only variant alleles provided in this input\n                                        VCF will be used for the construction of complex or haplotype\n                                        alleles.\n    --report-all-haplotype-alleles      At sites where genotypes are made over haplotype alleles,\n                                        provide information about all alleles in output, not only\n                                        those which are called.\n    --report-monomorphic                Report even loci which appear to be monomorphic, and report all\n                                        considered alleles, even those which are not in called genotypes.\n                                        Loci which do not have any potential alternates have '.' for ALT.\n    --pvar N                            Report sites if the probability that there is a polymorphism\n                                        at the site is greater than N.  default: 0.0.  Note that post-\n                                        filtering is generally recommended over the use of this parameter.\n    --strict-vcf                        Generate strict VCF format (FORMAT/GQ will be an int)\n\n**Population model**::\n\n    --theta N                           The expected mutation rate or pairwise nucleotide diversity\n                                        among the population under analysis.  This serves as the\n                                        single parameter to the Ewens Sampling Formula prior model\n                                        default: 0.001\n    --ploidy N                          Sets the default ploidy for the analysis to N.  default: 2\n    --pooled-discrete                   Assume that samples result from pooled sequencing.\n                                        Model pooled samples using discrete genotypes across pools.\n                                        When using this flag, set --ploidy to the number of\n                                        alleles in each sample or use the --cnv-map to define\n                                        per-sample ploidy.\n    --pooled-continuous                 Output all alleles which pass input filters, regardles of\n                                        genotyping outcome or model.\n\n**Reference allele**::\n\n    --use-reference-allele              This flag includes the reference allele in the analysis as\n                                        if it is another sample from the same population.\n    --reference-quality MQ,BQ           Assign mapping quality of MQ to the reference allele at each\n                                        site and base quality of BQ.  default: 100,60\n\n**Allele scope**::\n\n    --use-best-n-alleles N              Evaluate only the best N SNP alleles, ranked by sum of\n                                        supporting quality scores.  (Set to 0 to use all; default: all)\n    --max-complex-gap\n    --haplotype-length N                Allow haplotype calls with contiguous embedded matches of up\n                                        to this length. Set N=-1 to disable clumping. (default: 3)\n    --min-repeat-size                   When assembling observations across repeats, require the total repeat\n                                        length at least this many bp.  (default: 5)\n    --min-repeat-entropy N              To detect interrupted repeats, build across sequence until it has\n                                        entropy > N bits per bp. Set to 0 to turn off. (default: 1)\n    --no-partial-observations           Exclude observations which do not fully span the dynamically-determined\n                                        detection window.  (default, use all observations, dividing partial\n                                        support across matching haplotypes when generating haplotypes.)\n\n**Indel realignment**::\n\n    --dont-left-align-indels            Turn off left-alignment of indels, which is enabled by default.\n\n**Input filters**::\n\n    --use-duplicate-reads               Include duplicate-marked alignments in the analysis.\n                                        default: exclude duplicates marked as such in alignments\n    --min-mapping-quality Q             Exclude alignments from analysis if they have a mapping\n                                        quality less than Q.  default: 1\n    --min-base-quality Q                Exclude alleles from analysis if their supporting base\n                                        quality is less than Q.  default: 0\n    --min-supporting-allele-qsum Q      Consider any allele in which the sum of qualities of supporting\n                                        observations is at least Q.  default: 0\n    --min-supporting-mapping-qsum Q     Consider any allele in which and the sum of mapping qualities of\n                                        supporting reads is at least Q.  default: 0\n    --mismatch-base-quality-threshold Q Count mismatches toward --read-mismatch-limit if the base\n                                        quality of the mismatch is >= Q.  default: 10\n    --read-mismatch-limit N             Exclude reads with more than N mismatches where each mismatch\n                                        has base quality >= mismatch-base-quality-threshold.\n                                        default: ~unbounded\n    --read-max-mismatch-fraction N      Exclude reads with more than N [0,1] fraction of mismatches where\n                                        each mismatch has base quality >= mismatch-base-quality-threshold\n                                        default: 1.0\n    --read-snp-limit N                  Exclude reads with more than N base mismatches, ignoring gaps\n                                        with quality >= mismatch-base-quality-threshold.\n                                        default: ~unbounded\n    --read-indel-limit N                Exclude reads with more than N separate gaps.\n                                        default: ~unbounded\n    --standard-filters                  Use stringent input base and mapping quality filters\n                                        Equivalent to -m 30 -q 20 -R 0 -S 0\n    --min-alternate-fraction N          Require at least this fraction of observations supporting\n                                        an alternate allele within a single individual in the\n                                        in order to evaluate the position.  default: 0.05\n    --min-alternate-count N             Require at least this count of observations supporting\n                                        an alternate allele within a single individual in order\n                                        to evaluate the position.  default: 2\n    --min-alternate-qsum N              Require at least this sum of quality of observations supporting\n                                        an alternate allele within a single individual in order\n                                        to evaluate the position.  default: 0\n    --min-alternate-total N             Require at least this count of observations supporting\n                                        an alternate allele within the total population in order\n                                        to use the allele in analysis.  default: 1\n    --min-coverage N                    Require at least this coverage to process a site. default: 0\n    --limit-coverage N                  Downsample per-sample coverage to this level if greater than this coverage.\n                                        default: no limit\n    --skip-coverage N                   Skip processing of alignments overlapping positions with coverage >N.\n                                        This filters sites above this coverage, but will also reduce data nearby.\n                                        default: no limit\n\n**Population priors**::\n\n    --no-population-priors              Equivalent to --pooled-discrete --hwe-priors-off and removal of\n                                        Ewens Sampling Formula component of priors.\n\n**Mappability priors**::\n\n    --hwe-priors-off                    Disable estimation of the probability of the combination\n                                        arising under HWE given the allele frequency as estimated\n                                        by observation frequency.\n    --binomial-obs-priors-off           Disable incorporation of prior expectations about observations.\n                                        Uses read placement probability, strand balance probability,\n                                        and read position (5'-3') probability.\n    --allele-balance-priors-off         Disable use of aggregate probability of observation balance between alleles\n                                        as a component of the priors.\n\n**Genotype likelihoods**::\n\n    --observation-bias FILE             Read length-dependent allele observation biases from FILE.\n                                        The format is [length] [alignment efficiency relative to reference]\n                                        where the efficiency is 1 if there is no relative observation bias.\n    --base-quality-cap Q                Limit estimated observation quality by capping base quality at Q.\n    --prob-contamination F              An estimate of contamination to use for all samples.  default: 10e-9\n    --legacy-gls                        Use legacy (polybayes equivalent) genotype likelihood calculations\n    --contamination-estimates FILE      A file containing per-sample estimates of contamination, such as\n                                        those generated by VerifyBamID.  The format should be:\n                                        sample p(read=R|genotype=AR) p(read=A|genotype=AA)\n                                        Sample '*' can be used to set default contamination estimates.\n\n**Algorithmic features**::\n\n    --report-genotype-likelihood-max    Report genotypes using the maximum-likelihood estimate provided\n                                        from genotype likelihoods.\n    --genotyping-max-iterations N       Iterate no more than N times during genotyping step. default: 1000.\n    --genotyping-max-banddepth N        Integrate no deeper than the Nth best genotype by likelihood when\n                                        genotyping. default: 6.\n    --posterior-integration-limits N,M  Integrate all genotype combinations in our posterior space\n                                        which include no more than N samples with their Mth best\n                                        data likelihood. default: 1,3.\n    --exclude-unobserved-genotypes      Skip sample genotypings for which the sample has no supporting reads.\n    --genotype-variant-threshold N      Limit posterior integration to samples where the second-best\n                                        genotype likelihood is no more than log(N) from the highest\n                                        genotype likelihood for the sample.  default: ~unbounded\n    --use-mapping-quality               Use mapping quality of alleles when calculating data likelihoods.\n    --harmonic-indel-quality            Use a weighted sum of base qualities around an indel, scaled by the\n                                        distance from the indel.  By default use a minimum BQ in flanking sequence.\n    --read-dependence-factor N          Incorporate non-independence of reads by scaling successive\n                                        observations by this factor during data likelihood\n                                        calculations.  default: 0.9\n    --genotype-qualities                Calculate the marginal probability of genotypes and report as GQ in\n                                        each sample field in the VCF output.\n\n------\n\n**Acknowledgments**\n\nThe initial version of the wrapper was produced by Dan Blankenberg and upgraded by Anton Nekrutenko.\nTNG was developed by Bjoern Gruening.\n\n    "
+  }
+}

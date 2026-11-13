@@ -1,0 +1,154 @@
+{
+  "id": "__EXTRACT_DATASET__",
+  "version": "1.0.2",
+  "name": "Extract dataset",
+  "description": "from a collection by index or identifier",
+  "inputs": [
+    {
+      "name": "input",
+      "parameter_type": "gx_data_collection",
+      "hidden": false,
+      "label": "Input List",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data_collection",
+      "collection_type": "list,paired,paired_or_unpaired,record",
+      "extensions": [
+        "data"
+      ],
+      "value": null
+    },
+    {
+      "name": "which",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "which_dataset",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "How should a dataset be selected?",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "The first dataset",
+            "value": "first",
+            "selected": false
+          },
+          {
+            "label": "Select by element identifier",
+            "value": "by_identifier",
+            "selected": false
+          },
+          {
+            "label": "Select by index",
+            "value": "by_index",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "first",
+          "parameters": [],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "by_identifier",
+          "parameters": [
+            {
+              "name": "identifier",
+              "parameter_type": "gx_text",
+              "hidden": false,
+              "label": "Element identifier:",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "text",
+              "area": false,
+              "value": null,
+              "default_options": [],
+              "validators": []
+            }
+          ],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "by_index",
+          "parameters": [
+            {
+              "name": "index",
+              "parameter_type": "gx_integer",
+              "hidden": false,
+              "label": "Element index:",
+              "help": "Starting from 0",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "integer",
+              "value": 0,
+              "min": null,
+              "max": null,
+              "validators": []
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output",
+      "label": "${on_string} (extracted element)",
+      "hidden": false,
+      "type": "data",
+      "format": "data",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": null,
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": null,
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "primary_DATASET_ID_(?P<designation>[^_]+)_(?P<visible>[^_]+)_(?P<ext>[^_]+)(_(?P<dbkey>[^_]+))?"
+        }
+      ],
+      "from_work_dir": null,
+      "precreate_directory": false
+    }
+  ],
+  "citations": [],
+  "license": null,
+  "profile": "16.01",
+  "edam_operations": [
+    "operation_3695"
+  ],
+  "edam_topics": [],
+  "xrefs": [],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\n========\nSynopsis\n========\n\nExtracts a single dataset from a collection by position or identifier.\n\n===========\nDescription\n===========\n\nThis tool pulls one dataset out of a collection and places it in your history as a standalone dataset. You can select the dataset in three ways:\n\n- **The first dataset** — takes the first element of the collection.\n- **Select by index** — takes the element at a specific position (starting from 0).\n- **Select by element identifier** — takes the element whose name matches the given identifier.\n\nThe extracted dataset is a copy of the original, so the input collection is not modified.\n\n========\nExamples\n========\n\n**Extract from a flat list** (case **A** in the image below)\n\nGiven a list collection with three elements::\n\n List: \"RNA-seq samples\"\n\n   control    →  control.fastq\n   treated    →  treated.fastq\n   reference  →  reference.fastq\n\nSelecting **by element identifier** = ``treated`` produces a single standalone dataset: ``treated.fastq``. Selecting **by index** = ``0`` would extract ``control.fastq`` instead.\n\n-------\n\n**Extract from a nested collection** (case **B** in the image below)\n\nWhen the input is a nested collection such as ``list:list``, Galaxy automatically maps the extraction over the outer list. The same selection is applied to every inner list, and the result is a flat list — one nesting level is removed.\n\nFor example, given a ``list:list``::\n\n list:list: \"Paired analysis\"\n\n   sampleA  →  [Dataset 1, Dataset 2, Dataset 3]\n   sampleB  →  [Dataset A, Dataset B, Dataset C]\n\nExtracting **by index** = ``1`` pulls element 1 from each inner list and produces a flat list::\n\n List: \"Paired analysis (extracted element)\"\n\n   sampleA  →  Dataset 2\n   sampleB  →  Dataset B\n\nThe outer identifiers (``sampleA``, ``sampleB``) are preserved. The inner lists are replaced by the single extracted element from each.\n\n-------\n\n.. image:: ${static_path}/images/tools/collection_ops/extract_dataset.svg\n  :alt: Extract dataset from collection\n  :width: 800\n\n-------\n\n.. class:: warningmark\n\n**Note**: Dataset index (numbering) begins with 0 (zero).\n\n-----\n\n.. class:: infomark\n\nThis tool will create new history datasets copied from your input collections but your quota usage will not increase.\n\n  "
+  }
+}

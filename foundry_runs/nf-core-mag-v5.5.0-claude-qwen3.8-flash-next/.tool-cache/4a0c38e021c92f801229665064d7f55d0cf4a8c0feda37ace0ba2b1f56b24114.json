@@ -1,0 +1,1093 @@
+{
+  "id": "bcftools_consensus",
+  "version": "1.24+galaxy0",
+  "name": "bcftools consensus",
+  "description": "Create consensus sequence by applying VCF variants to a reference fasta file",
+  "inputs": [
+    {
+      "name": "input_file",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "VCF/BCF Data",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data",
+      "extensions": [
+        "vcf",
+        "vcf_bgzip",
+        "bcf"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "reference_source",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "reference_source_selector",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Choose the source for the reference genome",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Use a built-in genome",
+            "value": "cached",
+            "selected": false
+          },
+          {
+            "label": "Use a genome from the history",
+            "value": "history",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "cached",
+          "parameters": [
+            {
+              "name": "fasta_ref",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Reference genome",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": null,
+              "multiple": false,
+              "validators": []
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "history",
+          "parameters": [
+            {
+              "name": "fasta_ref",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Reference genome",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fasta"
+              ],
+              "multiple": false,
+              "min": null,
+              "max": null,
+              "url_default": null
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "mode",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "select",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Consensus building mode; at each variant site ...",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "ignore any sample genotypes; incorporate first allele from ALT column (-s -)",
+            "value": "-s -",
+            "selected": false
+          },
+          {
+            "label": "ignore any sample genotypes; incorporate IUPAC code representing all alleles from REF/ALT coulmns (-I -s -)",
+            "value": "-I -s -",
+            "selected": false
+          },
+          {
+            "label": "incorporate IUPAC code representing the genotypes of all selected samples (default)",
+            "value": "",
+            "selected": true
+          },
+          {
+            "label": "incorporate specific haplotype allele of one selected sample",
+            "value": "-H",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "-s -",
+          "parameters": [],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "-I -s -",
+          "parameters": [],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "",
+          "parameters": [
+            {
+              "name": "specify_samples",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "how",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "How do you want to select samples?",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Specify samples manually",
+                    "value": "-s",
+                    "selected": false
+                  },
+                  {
+                    "label": "Provide sample file",
+                    "value": "-S",
+                    "selected": false
+                  },
+                  {
+                    "label": "No selection; just use all samples found in input",
+                    "value": "",
+                    "selected": true
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "-s",
+                  "parameters": [
+                    {
+                      "name": "samples_spec",
+                      "parameter_type": "gx_text",
+                      "hidden": false,
+                      "label": "Sample(s)",
+                      "help": "Specify a single sample by name or a comma-separated list of sample names.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "text",
+                      "area": false,
+                      "value": null,
+                      "default_options": [],
+                      "validators": [
+                        {
+                          "type": "expression",
+                          "message": "Please specify a single sample by name or a comma-separated list of sample names",
+                          "implicit": false,
+                          "negate": false,
+                          "expression": "value.strip() and value[0] not in \"^,\" and \",,\" not in value"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "invert_samples",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Exclude these samples instead of including them?",
+                      "help": "Equivalent to prefixing the list of samples with \"^\" on the command line.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "^",
+                      "falsevalue": ""
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "-S",
+                  "parameters": [
+                    {
+                      "name": "samples_file",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Samples file",
+                      "help": "File listing samples to include one per line.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "tabular"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "invert_samples",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Exclude the samples listed in the file instead of including them?",
+                      "help": "Equivalent to prefixing the file with \"^\" on the command line.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "^",
+                      "falsevalue": ""
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "",
+                  "parameters": [],
+                  "is_default_when": true
+                }
+              ]
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "-H",
+          "parameters": [
+            {
+              "name": "sample",
+              "parameter_type": "gx_text",
+              "hidden": false,
+              "label": "Sample",
+              "help": "The name of the single sample alleles of which should get used for the consensus sequence. This field is optional only if your input VCF dataset specifies exactly one sample.",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": true,
+              "type": "text",
+              "area": false,
+              "value": null,
+              "default_options": [],
+              "validators": []
+            },
+            {
+              "name": "haplotype",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "rule",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "From the selected sample's genotype use ...'",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "the Nth allele (for both phased and unphased genotypes) (-H N)",
+                    "value": "",
+                    "selected": false
+                  },
+                  {
+                    "label": "the Nth allele if the genotype is phased, the IUPAC code representing the genotype if it's unphased (-H NpIu)",
+                    "value": "pIu",
+                    "selected": false
+                  },
+                  {
+                    "label": "the ALT allele where the sample is homozygous, the REF allele otherwise (-H R)",
+                    "value": "R",
+                    "selected": false
+                  },
+                  {
+                    "label": "the ALT allele where the sample is homozygous or heterozygous (-H A)",
+                    "value": "A",
+                    "selected": false
+                  },
+                  {
+                    "label": "the ALT allele where the sample is homozygous, the REF allele where it's heterozygous unless the ALT allele is longer (-H LR)",
+                    "value": "LR",
+                    "selected": false
+                  },
+                  {
+                    "label": "the ALT allele where the sample is homozygous, the ALT allele where it's heterozygous unless the REF allele is longer (-H LA)",
+                    "value": "LA",
+                    "selected": false
+                  },
+                  {
+                    "label": "the ALT allele where the sample is homozygous, the REF allele where it's heterozygous unless the ALT allele is shorter (-H SR",
+                    "value": "SR",
+                    "selected": false
+                  },
+                  {
+                    "label": "the ALT allele where the sample is homozygous, the ALT allele where it's heterozygous unless the REF allele is shorter (-H SA)",
+                    "value": "SA",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "",
+                  "parameters": [
+                    {
+                      "name": "allele_n",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "where N is",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 1,
+                      "min": 1,
+                      "max": null,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": true
+                },
+                {
+                  "discriminator": "pIu",
+                  "parameters": [
+                    {
+                      "name": "allele_n",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "where N is",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 1,
+                      "min": 1,
+                      "max": null,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "R",
+                  "parameters": [],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "A",
+                  "parameters": [],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "LR",
+                  "parameters": [],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "LA",
+                  "parameters": [],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "SR",
+                  "parameters": [],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "SA",
+                  "parameters": [],
+                  "is_default_when": false
+                }
+              ]
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "masking_options",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": "The various options in this section are applied in the order they appear, i.e. 1) masking, 2) marking of absent sites, 3) SNV/indel marking.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "mask",
+          "parameter_type": "gx_data",
+          "hidden": false,
+          "label": "Mask",
+          "help": "Replace regions according to the next --mask-with option",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "data",
+          "extensions": [
+            "tabular"
+          ],
+          "multiple": true,
+          "min": null,
+          "max": null,
+          "url_default": null
+        },
+        {
+          "name": "mask_with",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Mask with",
+          "help": "Replace with CHAR (skips overlapping variants; default: N); use \"uc\" or \"lc\" to change to uppercase or lowercase, respectively. If you have provided more than one Mask dataset and you would like to apply a unique mask for the regions in each of them, then you can specify a comma-separated list of masking instructions (as many as mask datasets).",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": []
+        },
+        {
+          "name": "absent",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Mark absent",
+          "help": "Replace reference bases at positions absent from the VCF input with a custom character.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": [
+            {
+              "type": "regex",
+              "message": "Value '%s' does not match regular expression '^.$'",
+              "implicit": false,
+              "negate": false,
+              "expression": "^.$"
+            }
+          ]
+        },
+        {
+          "name": "mark_del",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Mark deletions",
+          "help": "Instead of removing the reference base at deleted positions, replace the base with a custom character.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": [
+            {
+              "type": "regex",
+              "message": "Value '%s' does not match regular expression '^.$'",
+              "implicit": false,
+              "negate": false,
+              "expression": "^.$"
+            }
+          ]
+        },
+        {
+          "name": "insertions",
+          "parameter_type": "gx_conditional",
+          "hidden": false,
+          "label": null,
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "conditional",
+          "test_parameter": {
+            "name": "mark_ins",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Mark insertions",
+            "help": "Highlight insertions in uppercase or lowercase, or by using a fixed character instead of inserted bases, leaving the rest as is",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "Do not mark insertions",
+                "value": "",
+                "selected": false
+              },
+              {
+                "label": "Uppercase (uc)",
+                "value": "--mark-ins uc",
+                "selected": false
+              },
+              {
+                "label": "Lowercase (lc)",
+                "value": "--mark-ins lc",
+                "selected": false
+              },
+              {
+                "label": "Custom character",
+                "value": "--mark-ins",
+                "selected": false
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          "whens": [
+            {
+              "discriminator": "",
+              "parameters": [],
+              "is_default_when": true
+            },
+            {
+              "discriminator": "--mark-ins uc",
+              "parameters": [],
+              "is_default_when": false
+            },
+            {
+              "discriminator": "--mark-ins lc",
+              "parameters": [],
+              "is_default_when": false
+            },
+            {
+              "discriminator": "--mark-ins",
+              "parameters": [
+                {
+                  "name": "ins_cutom",
+                  "parameter_type": "gx_text",
+                  "hidden": false,
+                  "label": "Character to use instead of an inserted base",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "text",
+                  "area": false,
+                  "value": null,
+                  "default_options": [],
+                  "validators": [
+                    {
+                      "type": "empty_field",
+                      "message": "Field requires a value",
+                      "implicit": false,
+                      "negate": false
+                    }
+                  ]
+                }
+              ],
+              "is_default_when": false
+            }
+          ]
+        },
+        {
+          "name": "snvs",
+          "parameter_type": "gx_conditional",
+          "hidden": false,
+          "label": null,
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "conditional",
+          "test_parameter": {
+            "name": "mark_snv",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Mark substitutions",
+            "help": "Highlight substitutions in uppercase or lowercase, or by using a fixed character instead of substituted bases, leaving the rest as is",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "Do not mark substitutions",
+                "value": "",
+                "selected": false
+              },
+              {
+                "label": "Uppercase (uc)",
+                "value": "--mark-snv uc",
+                "selected": false
+              },
+              {
+                "label": "Lowercase (lc)",
+                "value": "--mark-snv lc",
+                "selected": false
+              },
+              {
+                "label": "Custom character",
+                "value": "--mark-snv",
+                "selected": false
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          "whens": [
+            {
+              "discriminator": "",
+              "parameters": [],
+              "is_default_when": true
+            },
+            {
+              "discriminator": "--mark-snv uc",
+              "parameters": [],
+              "is_default_when": false
+            },
+            {
+              "discriminator": "--mark-snv lc",
+              "parameters": [],
+              "is_default_when": false
+            },
+            {
+              "discriminator": "--mark-snv",
+              "parameters": [
+                {
+                  "name": "snv_custom",
+                  "parameter_type": "gx_text",
+                  "hidden": false,
+                  "label": "Character to use instead of a subtituted base",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "text",
+                  "area": false,
+                  "value": null,
+                  "default_options": [],
+                  "validators": [
+                    {
+                      "type": "empty_field",
+                      "message": "Field requires a value",
+                      "implicit": false,
+                      "negate": false
+                    }
+                  ]
+                }
+              ],
+              "is_default_when": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sec_restrict",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "include",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Include",
+          "help": "Select sites for which the expression is true",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": [
+            {
+              "type": "expression",
+              "message": "Single quote or trailing backslash not allowed",
+              "implicit": false,
+              "negate": false,
+              "expression": "\"'\" not in value and value[-1] != \"\\\\\""
+            }
+          ]
+        },
+        {
+          "name": "exclude",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Exclude",
+          "help": "Exclude sites for which the expression is true",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": [
+            {
+              "type": "expression",
+              "message": "Single quote or trailing backslash not allowed",
+              "implicit": false,
+              "negate": false,
+              "expression": "\"'\" not in value and value[-1] != \"\\\\\""
+            }
+          ]
+        },
+        {
+          "name": "regions",
+          "parameter_type": "gx_conditional",
+          "hidden": false,
+          "label": null,
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "conditional",
+          "test_parameter": {
+            "name": "regions_src",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Restrict consensus building to only specified regions of reference?",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "Do not restrict to Regions",
+                "value": "__none__",
+                "selected": false
+              },
+              {
+                "label": "Specify one or more Region(s) directly",
+                "value": "regions",
+                "selected": false
+              },
+              {
+                "label": "Operate on Regions specified in a history dataset",
+                "value": "regions_file",
+                "selected": false
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          "whens": [
+            {
+              "discriminator": "__none__",
+              "parameters": [],
+              "is_default_when": true
+            },
+            {
+              "discriminator": "regions",
+              "parameters": [
+                {
+                  "name": "region_specs",
+                  "parameter_type": "gx_repeat",
+                  "hidden": false,
+                  "label": null,
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "repeat",
+                  "parameters": [
+                    {
+                      "name": "chrom",
+                      "parameter_type": "gx_text",
+                      "hidden": false,
+                      "label": "Region chromosome",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "text",
+                      "area": false,
+                      "value": null,
+                      "default_options": [],
+                      "validators": [
+                        {
+                          "type": "expression",
+                          "message": "A chromosome identifier is required when specifying a Region filter",
+                          "implicit": false,
+                          "negate": false,
+                          "expression": "value.strip()"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "start",
+                      "parameter_type": "gx_text",
+                      "hidden": false,
+                      "label": "Region start position",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "text",
+                      "area": false,
+                      "value": null,
+                      "default_options": [],
+                      "validators": [
+                        {
+                          "type": "expression",
+                          "message": "an integer number is required",
+                          "implicit": false,
+                          "negate": false,
+                          "expression": "not value or value.isdigit()"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "stop",
+                      "parameter_type": "gx_text",
+                      "hidden": false,
+                      "label": "Region end position",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "text",
+                      "area": false,
+                      "value": null,
+                      "default_options": [],
+                      "validators": [
+                        {
+                          "type": "expression",
+                          "message": "an integer number is required",
+                          "implicit": false,
+                          "negate": false,
+                          "expression": "not value or value.isdigit()"
+                        }
+                      ]
+                    }
+                  ],
+                  "min": 1,
+                  "max": null
+                },
+                {
+                  "name": "regions_overlap",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Consider variant calls with partial overlap with Region(s) if ...",
+                  "help": "Set to 0 if the record has to have POS inside a region; set to 1 if also overlapping records with POS outside a region should be included (this includes indels with POS at the end of a region, which are technically outside the region); or set to 2 to include only true overlapping variation (compare the full VCF representation 'TA>T-' vs the true sequence variation 'A>-').",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "0: the variant's POS falls in the region",
+                      "value": "0",
+                      "selected": false
+                    },
+                    {
+                      "label": "1: any part of the variant's representation overlaps the region",
+                      "value": "1",
+                      "selected": true
+                    },
+                    {
+                      "label": "2: the variant's actual sequence change falls in the region",
+                      "value": "2",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                }
+              ],
+              "is_default_when": false
+            },
+            {
+              "discriminator": "regions_file",
+              "parameters": [
+                {
+                  "name": "regions_file",
+                  "parameter_type": "gx_data",
+                  "hidden": false,
+                  "label": "Regions File",
+                  "help": "restrict to Regions listed in a file",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "data",
+                  "extensions": [
+                    "tabular"
+                  ],
+                  "multiple": false,
+                  "min": null,
+                  "max": null,
+                  "url_default": null
+                },
+                {
+                  "name": "regions_overlap",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Region overlap",
+                  "help": "Include if POS in the region (0), record overlaps (1), variant overlaps (2)",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "0: POS in the region",
+                      "value": "0",
+                      "selected": false
+                    },
+                    {
+                      "label": "1: Record overlaps",
+                      "value": "1",
+                      "selected": true
+                    },
+                    {
+                      "label": "2: Variant overlaps",
+                      "value": "2",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                }
+              ],
+              "is_default_when": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "chain",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Write a chain file for liftover",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": "yes",
+      "falsevalue": "no"
+    },
+    {
+      "name": "rename",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Set output FASTA ID from name of VCF",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": "yes",
+      "falsevalue": "no"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output_file",
+      "label": "${tool.name} on ${on_string}: consensus fasta",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    },
+    {
+      "name": "chain_file",
+      "label": "${tool.name} on ${on_string}: chain",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/btp352"
+    }
+  ],
+  "license": null,
+  "profile": "24.1",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "bcftools",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n=====================================\n bcftools consensus plugin\n=====================================\n\n\nCreate consensus sequence by applying VCF variants to a reference fasta file.\n\nhttps://www.htslib.org/doc/bcftools.html#consensus\n\nhttps://samtools.github.io/bcftools/howtos/index.html\n\nThe option to set the new consensus' FASTA ID from the name of the VCF is provided by post-processing\nthe bcftools consensus output. It is primarily intended for use when the VCF is coming from a list\ncollection where the elements of the list are named meaningfully (e.g. named after sample names). This\nis useful when consensus sequences are being prepared for, for example, feeding a multiple sequence\nalignment to a phylogeny program.\n\n    "
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "id": "__CROSS_PRODUCT_NESTED__",
+  "version": "1.0.0",
+  "name": "Nested Cross Product",
+  "description": "of two collections into nested lists for all-vs-all comparison",
+  "inputs": [
+    {
+      "name": "input_a",
+      "parameter_type": "gx_data_collection",
+      "hidden": false,
+      "label": "Input Collection A",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data_collection",
+      "collection_type": "list",
+      "extensions": [
+        "data"
+      ],
+      "value": null
+    },
+    {
+      "name": "input_b",
+      "parameter_type": "gx_data_collection",
+      "hidden": false,
+      "label": "Input Collection B",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data_collection",
+      "collection_type": "list",
+      "extensions": [
+        "data"
+      ],
+      "value": null
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output_a",
+      "label": "${on_string} (A files)",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list:list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": []
+    },
+    {
+      "name": "output_b",
+      "label": "${on_string} (B files)",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list:list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": []
+    }
+  ],
+  "citations": [],
+  "license": null,
+  "profile": "16.01",
+  "edam_operations": [
+    "operation_3436"
+  ],
+  "edam_topics": [],
+  "xrefs": [],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\n========\nSynopsis\n========\n\nCreates two nested lists (``list:list``) that, when processed element-wise by a downstream tool, produce every pairwise combination (all-vs-all) of the two input collections, organized by the first input.\n\n===========\nDescription\n===========\n\nThis tool takes two flat list collections and produces two ``list:list`` output collections that encode the **Cartesian product** (cross product) of the inputs. The outer list has one element per element of Input A, and each inner list has one element per element of Input B.\n\nWhen you feed these two outputs into a tool that takes two inputs, Galaxy matches elements at each nesting level. The result is a nested list where the outer identifier tells you which element from Input A was used, and the inner identifier tells you which element from Input B was used.\n\nThis is similar to **Flat Cross Product**, but the output preserves structure: results are grouped by the first input, making it easier to see all comparisons for a given element of Input A.\n\n========\nExamples\n========\n\n**All-vs-all comparison with nested output**\n\nGiven::\n\n Input A:  [a1]  [a2]\n Input B:  [b1]  [b2]\n\nThe tool produces two ``list:list`` collections::\n\n Output A (list:list):\n\n   a1/\n     b1  →  a1\n     b2  →  a1\n   a2/\n     b1  →  a2\n     b2  →  a2\n\n Output B (list:list):\n\n   a1/\n     b1  →  b1\n     b2  →  b2\n   a2/\n     b1  →  b1\n     b2  →  b2\n\nFeeding both outputs to a comparison tool produces::\n\n Result (list:list):\n\n   a1/\n     b1  →  compare(a1, b1)\n     b2  →  compare(a1, b2)\n   a2/\n     b1  →  compare(a2, b1)\n     b2  →  compare(a2, b2)\n\n-------\n\n.. image:: ${static_path}/images/tools/collection_ops/cross_product_nested.svg\n  :alt: Nested cross product of two collections\n  :width: 620\n\n-------\n\n==================================\nHow element-wise matching works\n==================================\n\nNormally, when you connect two lists to a tool, Galaxy matches them element-wise (dot product). This tool rearranges the inputs so that the same matching mechanism produces every combination instead, with results grouped into a nested structure.\n\n.. image:: ${static_path}/images/tools/collection_ops/dot_product.png\n  :alt: Element-wise (dot product) matching\n  :width: 500\n\n-------\n\n.. class:: infomark\n\nFor a flat output list instead of nested, use **Flat Cross Product**.\n\n-------\n\n.. class:: infomark\n\nThis tool will create new history datasets copied from your input collections but your quota usage will not increase.\n\n    "
+  }
+}

@@ -1,0 +1,1507 @@
+{
+  "id": "busco",
+  "version": "6.1.0+galaxy0",
+  "name": "Busco",
+  "description": "Assess genome assembly and annotation completeness",
+  "inputs": [
+    {
+      "name": "test",
+      "parameter_type": "gx_hidden",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "hidden",
+      "value": null,
+      "validators": []
+    },
+    {
+      "name": "input",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "Sequences to analyse",
+      "help": "Can be an assembled genome or transcriptome (DNA), or protein sequences from an annotated gene set.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data",
+      "extensions": [
+        "fasta",
+        "fasta.gz"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "cached_db",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "Cached database with lineage",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "select",
+      "options": null,
+      "multiple": false,
+      "validators": []
+    },
+    {
+      "name": "busco_mode",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "mode",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Mode",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Genome assemblies (DNA)",
+            "value": "geno",
+            "selected": false
+          },
+          {
+            "label": "Transcriptome assemblies (DNA)",
+            "value": "tran",
+            "selected": false
+          },
+          {
+            "label": "Annotated gene sets (protein)",
+            "value": "prot",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "geno",
+          "parameters": [
+            {
+              "name": "use_augustus",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "use_augustus_selector",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Select a gene predictor",
+                "help": "In the case of a prokaryotic genome, Prodigal is the default gene predictor",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Augustus",
+                    "value": "augustus",
+                    "selected": false
+                  },
+                  {
+                    "label": "Metaeuk",
+                    "value": "metaeuk",
+                    "selected": false
+                  },
+                  {
+                    "label": "Miniprot",
+                    "value": "miniprot",
+                    "selected": true
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "metaeuk",
+                  "parameters": [],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "miniprot",
+                  "parameters": [],
+                  "is_default_when": true
+                },
+                {
+                  "discriminator": "augustus",
+                  "parameters": [
+                    {
+                      "name": "aug_prediction",
+                      "parameter_type": "gx_conditional",
+                      "hidden": false,
+                      "label": null,
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "conditional",
+                      "test_parameter": {
+                        "name": "augustus_mode",
+                        "parameter_type": "gx_select",
+                        "hidden": false,
+                        "label": "Augustus species model",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "select",
+                        "options": [
+                          {
+                            "label": "Use the default species for selected lineage",
+                            "value": "no",
+                            "selected": true
+                          },
+                          {
+                            "label": "Use another predefined species model",
+                            "value": "builtin",
+                            "selected": false
+                          },
+                          {
+                            "label": "Use a custom species model",
+                            "value": "history",
+                            "selected": false
+                          }
+                        ],
+                        "multiple": false,
+                        "validators": []
+                      },
+                      "whens": [
+                        {
+                          "discriminator": "no",
+                          "parameters": [],
+                          "is_default_when": true
+                        },
+                        {
+                          "discriminator": "history",
+                          "parameters": [
+                            {
+                              "name": "augustus_model",
+                              "parameter_type": "gx_data",
+                              "hidden": false,
+                              "label": "Augustus model",
+                              "help": null,
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "data",
+                              "extensions": [
+                                "augustus"
+                              ],
+                              "multiple": false,
+                              "min": null,
+                              "max": null,
+                              "url_default": null
+                            }
+                          ],
+                          "is_default_when": false
+                        },
+                        {
+                          "discriminator": "builtin",
+                          "parameters": [
+                            {
+                              "name": "augustus_species",
+                              "parameter_type": "gx_select",
+                              "hidden": false,
+                              "label": "Augustus species model",
+                              "help": "If model name is different than species name it is shown in parentheses.",
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "select",
+                              "options": [
+                                {
+                                  "label": "Apis dorsata (adorsata)",
+                                  "value": "adorsata",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Aedes aegypti (aedes)",
+                                  "value": "aedes",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Amphimedon queenslandica",
+                                  "value": "amphimedon",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Ancylostoma ceylanicum",
+                                  "value": "ancylostoma_ceylanicum",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Aspergillus nidulans (anidulans)",
+                                  "value": "anidulans",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Anopheles gambiae",
+                                  "value": "Anopheles_gambiae",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Arabidopsis thaliana (arabidopsis)",
+                                  "value": "arabidopsis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Argopecten irradians",
+                                  "value": "Argopecten_irradians",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Aspergillus fumigatus",
+                                  "value": "aspergillus_fumigatus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Aspergillus nidulans",
+                                  "value": "aspergillus_nidulans",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Aspergillus oryzae",
+                                  "value": "aspergillus_oryzae",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Aspergillus terreus",
+                                  "value": "aspergillus_terreus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Aurelia aurita",
+                                  "value": "Aurelia_aurita",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Bathycoccus prasinos",
+                                  "value": "Bathycoccus_prasinos",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Berviolum minutum",
+                                  "value": "Berviolum_minutum",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Bombus impatiens1",
+                                  "value": "bombus_impatiens1",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Bombus terrestris2",
+                                  "value": "bombus_terrestris2",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Botrytis cinerea",
+                                  "value": "botrytis_cinerea",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Burkholderia pseudomallei (b_pseudomallei)",
+                                  "value": "b_pseudomallei",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Branchiostoma floridae",
+                                  "value": "Branchiostoma_floridae",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Brugia malayi (brugia)",
+                                  "value": "brugia",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "(cacao)",
+                                  "value": "cacao",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Caenorhabditis elegans (caenorhabditis)",
+                                  "value": "caenorhabditis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Camponotus floridanus",
+                                  "value": "camponotus_floridanus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Candida albicans",
+                                  "value": "candida_albicans",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Candida guilliermondii",
+                                  "value": "candida_guilliermondii",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Candida tropicalis",
+                                  "value": "candida_tropicalis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Cassiopea xamachana",
+                                  "value": "Cassiopea_xamachana",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Chaetomium globosum",
+                                  "value": "chaetomium_globosum",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Gallus gallus (chicken)",
+                                  "value": "chicken",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Chiloscyllium punctatum (chiloscyllium)",
+                                  "value": "chiloscyllium",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "chlamy2011",
+                                  "value": "chlamy2011",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Chlamydomonas reinhardtii (chlamydomonas)",
+                                  "value": "chlamydomonas",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Chlamydomonas eustigma",
+                                  "value": "Chlamydomonas_eustigma",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "chlorella",
+                                  "value": "chlorella",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Chloropicon primus",
+                                  "value": "Chloropicon_primus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Chrysaora chesapeakei",
+                                  "value": "Chrysaora_chesapeakei",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "ciona",
+                                  "value": "ciona",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Coccidioides immitis",
+                                  "value": "coccidioides_immitis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Conidiobolus coronatus",
+                                  "value": "Conidiobolus_coronatus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "coprinus",
+                                  "value": "coprinus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Coprinus cinereus",
+                                  "value": "coprinus_cinereus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Coyote tobacco",
+                                  "value": "coyote_tobacco",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "cryptococcus",
+                                  "value": "cryptococcus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Cryptococcus neoformans gattii",
+                                  "value": "cryptococcus_neoformans_gattii",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Cryptococcus neoformans neoformans B",
+                                  "value": "cryptococcus_neoformans_neoformans_B",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Cryptococcus neoformans neoformans JEC21",
+                                  "value": "cryptococcus_neoformans_neoformans_JEC21",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Cryptosporidium hominis",
+                                  "value": "Cryptosporidium_hominis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "culex",
+                                  "value": "culex",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Cyclotella cryptica",
+                                  "value": "Cyclotella_cryptica",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Debaryomyces hansenii",
+                                  "value": "debaryomyces_hansenii",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Dermasterias imbricata",
+                                  "value": "Dermasterias_imbricata",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Dunaliella salina",
+                                  "value": "Dunaliella_salina",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Escherichia K12 (E_coli_K12)",
+                                  "value": "E_coli_K12",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Ectocarpus siliculosus",
+                                  "value": "Ectocarpus_siliculosus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Callorhinchus milii (elephant_shark)",
+                                  "value": "elephant_shark",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Encephalitozoon cuniculi",
+                                  "value": "Encephalitozoon_cuniculi",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Encephalitozoon cuniculi GB",
+                                  "value": "encephalitozoon_cuniculi_GB",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Eremothecium gossypii",
+                                  "value": "eremothecium_gossypii",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Fistulifera solaris",
+                                  "value": "Fistulifera_solaris",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Drosophila melanogaster (fly)",
+                                  "value": "fly",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Drosophila melanogaster (fly) experimental parameters",
+                                  "value": "fly_exp",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Fragilariopsis cylindrus CCMP1102",
+                                  "value": "Fragilariopsis_cylindrus_CCMP1102",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "fusarium",
+                                  "value": "fusarium",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Fusarium graminearum",
+                                  "value": "fusarium_graminearum",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Galdieria sulphuraria (galdieria)",
+                                  "value": "galdieria",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "generic",
+                                  "value": "generic",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Gigaspora margarita",
+                                  "value": "gigaspora_margarita",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Gonapodya prolifera",
+                                  "value": "Gonapodya_prolifera",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Heliconius melpomene1",
+                                  "value": "heliconius_melpomene1",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "histoplasma",
+                                  "value": "histoplasma",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Histoplasma capsulatum",
+                                  "value": "histoplasma_capsulatum",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Apis mellifera (honeybee1)",
+                                  "value": "honeybee1",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Homo sapiens (human)",
+                                  "value": "human",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Hydra vulgaris",
+                                  "value": "Hydra_vulgaris",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Hymenolepis microstoma",
+                                  "value": "hymenolepis_microstoma",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Lethenteron camtschaticum (japaneselamprey)",
+                                  "value": "japaneselamprey",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Kluyveromyces lactis",
+                                  "value": "kluyveromyces_lactis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Laccaria bicolor",
+                                  "value": "laccaria_bicolor",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Leishmania tarentolae",
+                                  "value": "leishmania_tarentolae",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Leptasterias sp",
+                                  "value": "Leptasterias_sp",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Loa loa",
+                                  "value": "Loa_loa",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Lodderomyces elongisporus",
+                                  "value": "lodderomyces_elongisporus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Magnaporthe grisea",
+                                  "value": "magnaporthe_grisea",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Zea mays (maize)",
+                                  "value": "maize",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Zea mays (maize5)",
+                                  "value": "maize5",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Micromonas commoda",
+                                  "value": "Micromonas_commoda",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Micromonas pusilla",
+                                  "value": "Micromonas_pusilla",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Mnemiopsis leidyi",
+                                  "value": "mnemiopsis_leidyi",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Monoraphidium neglectum",
+                                  "value": "Monoraphidium_neglectum",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Monosiga brevicollis",
+                                  "value": "Monosiga_brevicollis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Naegleria gruberi",
+                                  "value": "Naegleria_gruberi",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Nasonia vitripennis (nasonia)",
+                                  "value": "nasonia",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Nematostella vectensis",
+                                  "value": "nematostella_vectensis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Nemopilema nomurai",
+                                  "value": "Nemopilema_nomurai",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "neurospora",
+                                  "value": "neurospora",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Neurospora crassa",
+                                  "value": "neurospora_crassa",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Notospermus geniculatus",
+                                  "value": "Notospermus_geniculatus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Ostreococcus sp lucimarinus",
+                                  "value": "Ostreococcus_sp_lucimarinus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Ostreococcus tauri",
+                                  "value": "Ostreococcus_tauri",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Paramecium tetraurelia",
+                                  "value": "Paramecium_tetraurelia",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Parasteatoda tepidariorum (parasteatoda)",
+                                  "value": "parasteatoda",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Phanerochaete chrysosporium (pchrysosporium)",
+                                  "value": "pchrysosporium",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Acyrthosiphon pisum (pea_aphid)",
+                                  "value": "pea_aphid",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Pediculus humanus",
+                                  "value": "Pediculus_humanus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Perkinsus marinus",
+                                  "value": "Perkinsus_marinus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Plasmodium falciparum (pfalciparum)",
+                                  "value": "pfalciparum",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Phaeodactylum tricornutum",
+                                  "value": "Phaeodactylum_tricornutum",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Phanerochaete chrysosporium",
+                                  "value": "phanerochaete_chrysosporium",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Physcomitrium patens",
+                                  "value": "Physcomitrium_patens",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Pichia stipitis",
+                                  "value": "pichia_stipitis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Pisaster ochraceus (pisaster)",
+                                  "value": "pisaster",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "pneumocystis",
+                                  "value": "pneumocystis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Populus trichocarpa",
+                                  "value": "Populus_trichocarpa",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Pseudo-nitzschia multistriata",
+                                  "value": "Pseudo-nitzschia_multistriata",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Ptychodera flava",
+                                  "value": "Ptychodera_flava",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Pycnopodia helianthoides",
+                                  "value": "Pycnopodia_helianthoides",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Raphidocelis subcapitata",
+                                  "value": "Raphidocelis_subcapitata",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Rhincodon typus (rhincodon)",
+                                  "value": "rhincodon",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Rhizopus oryzae",
+                                  "value": "rhizopus_oryzae",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Rhodnius",
+                                  "value": "rhodnius",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Rhopilema esculentum",
+                                  "value": "Rhopilema_esculentum",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Oryza (rice)",
+                                  "value": "rice",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Ricinus communis",
+                                  "value": "Ricinus_communis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Saccharomyces",
+                                  "value": "saccharomyces",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Saccharomyces cerevisiae rm11-1a 1",
+                                  "value": "saccharomyces_cerevisiae_rm11-1a_1",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Saccharomyces cerevisiae S288C",
+                                  "value": "saccharomyces_cerevisiae_S288C",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Staphylococcus aureus (s_aureus)",
+                                  "value": "s_aureus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Schistosoma mansoni (schistosoma)",
+                                  "value": "schistosoma",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Schistosoma mansoni (schistosoma2)",
+                                  "value": "schistosoma2",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Schizosaccharomyces pombe",
+                                  "value": "schizosaccharomyces_pombe",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Sclerotinia sclerotiorum",
+                                  "value": "Sclerotinia_sclerotiorum",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Scyliorhinus torazame (scyliorhinus)",
+                                  "value": "scyliorhinus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Petromyzon marinus (sealamprey)",
+                                  "value": "sealamprey",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Skeletonema costatum",
+                                  "value": "Skeletonema_costatum",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Sordaria macrospora",
+                                  "value": "Sordaria_macrospora",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Sphaceloma murrayae",
+                                  "value": "Sphaceloma_murrayae",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Streptococcus pneumoniae (s_pneumoniae)",
+                                  "value": "s_pneumoniae",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Strongylocentrotus purpuratus",
+                                  "value": "strongylocentrotus_purpuratus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Sulfolobus solfataricus",
+                                  "value": "sulfolobus_solfataricus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Helianthus annuus (sunflower)",
+                                  "value": "sunflower",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Taeniopygia guttata",
+                                  "value": "Taeniopygia_guttata",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Template prokaryotic",
+                                  "value": "template_prokaryotic",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "tetrahymena",
+                                  "value": "tetrahymena",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Thalassiosira pseudonana CCMP1335",
+                                  "value": "Thalassiosira_pseudonana_CCMP1335",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Thermoanaerobacter tengcongensis",
+                                  "value": "thermoanaerobacter_tengcongensis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Solanum lycopersicum (tomato)",
+                                  "value": "tomato",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Toxoplasma gondii (toxoplasma)",
+                                  "value": "toxoplasma",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "tribolium2012",
+                                  "value": "tribolium2012",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Trichinella",
+                                  "value": "trichinella",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Trichoplax adhaerens",
+                                  "value": "Trichoplax_adhaerens",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Trypanosoma cruzi",
+                                  "value": "Trypanosoma_cruzi",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Ustilago",
+                                  "value": "ustilago",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Ustilago maydis",
+                                  "value": "ustilago_maydis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Verticillium albo atrum1",
+                                  "value": "verticillium_albo_atrum1",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Verticillium longisporum1",
+                                  "value": "verticillium_longisporum1",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Vitis vinifera",
+                                  "value": "Vitis_vinifera",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Vitrella brassicaformis",
+                                  "value": "Vitrella_brassicaformis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "volvox",
+                                  "value": "volvox",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "wheat",
+                                  "value": "wheat",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Xenopus tropicalis",
+                                  "value": "Xenopus_tropicalis",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Xiphophorus maculatus",
+                                  "value": "Xiphophorus_maculatus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Xipophorus maculatus",
+                                  "value": "Xipophorus_maculatus",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Yarrowia lipolytica",
+                                  "value": "yarrowia_lipolytica",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "Danio rerio (zebrafish)",
+                                  "value": "zebrafish",
+                                  "selected": false
+                                }
+                              ],
+                              "multiple": false,
+                              "validators": []
+                            }
+                          ],
+                          "is_default_when": false
+                        }
+                      ]
+                    },
+                    {
+                      "name": "long",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Optimization mode Augustus self-training",
+                      "help": "Adds considerably to run time, but can improve results for some non-model organisms",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "--long",
+                      "falsevalue": ""
+                    }
+                  ],
+                  "is_default_when": false
+                }
+              ]
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "tran",
+          "parameters": [],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "prot",
+          "parameters": [],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "lineage",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "lineage_mode",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Auto-detect or select lineage?",
+        "help": "Let BUSCO decide the best lineage automatically, or select from known lineage",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Auto-detect",
+            "value": "auto_detect",
+            "selected": false
+          },
+          {
+            "label": "Select lineage",
+            "value": "select_lineage",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "auto_detect",
+          "parameters": [
+            {
+              "name": "auto_lineage",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "auto-lineage group",
+              "help": "Taxonomic group to run with auto-lineage.",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "All taxonomic groups (--auto-lineage)",
+                  "value": "--auto-lineage",
+                  "selected": false
+                },
+                {
+                  "label": "Prokaryotes (--auto-lineage-prok)",
+                  "value": "--auto-lineage-prok",
+                  "selected": false
+                },
+                {
+                  "label": "Eukaryotes (--auto-lineage-euk)",
+                  "value": "--auto-lineage-euk",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            {
+              "name": "generic_results",
+              "parameter_type": "gx_boolean",
+              "hidden": false,
+              "label": "Do you want to display the results from the generic lineage",
+              "help": "BUSCO generates files for the parent lineage (generic) and the final selected lineage (specific). Generally, the lineage to select for your assessments should be the most specific lineage available. The generic lineage datasets for the domains archaea, bacteria and eukaryota.",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "boolean",
+              "value": false,
+              "truevalue": null,
+              "falsevalue": null
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "select_lineage",
+          "parameters": [
+            {
+              "name": "lineage_dataset",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Lineage",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": null,
+              "multiple": false,
+              "validators": []
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "outputs",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "Which outputs should be generated",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "select",
+      "options": [
+        {
+          "label": "Short summary text",
+          "value": "short_summary",
+          "selected": true
+        },
+        {
+          "label": "List with missing IDs",
+          "value": "missing",
+          "selected": false
+        },
+        {
+          "label": "Summary image",
+          "value": "image",
+          "selected": false
+        },
+        {
+          "label": "gff",
+          "value": "gff",
+          "selected": false
+        },
+        {
+          "label": "Protein sequences",
+          "value": "faa",
+          "selected": false
+        },
+        {
+          "label": "Nucleotide sequences",
+          "value": "fna",
+          "selected": false
+        }
+      ],
+      "multiple": true,
+      "validators": []
+    },
+    {
+      "name": "plot_percentages",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "lot the percentages of BUSCOs instead of the number of BUSCOs",
+      "help": "Only relevant for summary image output",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": "--plot_percentages",
+      "falsevalue": ""
+    },
+    {
+      "name": "adv",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "evalue",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "E-value cutoff for BLAST searches.",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 0.001,
+          "min": 0,
+          "max": 1,
+          "validators": []
+        },
+        {
+          "name": "limit",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "How many candidate regions to consider",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 3,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "contig_break",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Number of contiguous Ns to signify a break between contigs",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 10,
+          "min": null,
+          "max": null,
+          "validators": []
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "busco_sum",
+      "label": "${tool.name} on ${on_string}: Short summary - Specific lineage",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "busco_galaxy/short_summary.specific.*.txt",
+      "precreate_directory": false
+    },
+    {
+      "name": "busco_sum_generic",
+      "label": "${tool.name} on ${on_string}: Short summary - Generic lineage",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "busco_galaxy/short_summary.generic.*.txt",
+      "precreate_directory": false
+    },
+    {
+      "name": "busco_table",
+      "label": "${tool.name} on ${on_string}: Full table - Specific lineage",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "busco_galaxy/full_table_specific_lineage.tsv",
+      "precreate_directory": false
+    },
+    {
+      "name": "busco_table_generic",
+      "label": "${tool.name} on ${on_string}: Full table - Generic lineage",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "busco_galaxy/full_table_generic_lineage.tsv",
+      "precreate_directory": false
+    },
+    {
+      "name": "busco_missing",
+      "label": "${tool.name} on ${on_string}: Missing buscos - Specific lineage",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "busco_galaxy/missing_busco_list_specific_lineage.tsv",
+      "precreate_directory": false
+    },
+    {
+      "name": "busco_missing_generic",
+      "label": "${tool.name} on ${on_string}: Missing buscos - Generic lineage",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "busco_galaxy/missing_busco_list_generic_lineage.tsv",
+      "precreate_directory": false
+    },
+    {
+      "name": "summary_image",
+      "label": "${tool.name} on ${on_string}: Summary image",
+      "hidden": false,
+      "type": "data",
+      "format": "png",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "busco_galaxy/busco_figure.png",
+      "precreate_directory": false
+    },
+    {
+      "name": "busco_gff",
+      "label": "${tool.name} on ${on_string}: GFF - Specific lineage",
+      "hidden": false,
+      "type": "data",
+      "format": "gff3",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "busco_galaxy/busco_output_specific.gff",
+      "precreate_directory": false
+    },
+    {
+      "name": "busco_gff_generic",
+      "label": "${tool.name} on ${on_string}: GFF - Generic lineage",
+      "hidden": false,
+      "type": "data",
+      "format": "gff3",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "busco_galaxy/busco_output_generic.gff",
+      "precreate_directory": false
+    },
+    {
+      "name": "busco_faa",
+      "label": "${tool.name} on ${on_string}: Protein sequences - Specific lineage",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "busco_galaxy/busco_output_specific.faa",
+      "precreate_directory": false
+    },
+    {
+      "name": "busco_faa_generic",
+      "label": "${tool.name} on ${on_string}: Protein sequences - Generic lineage",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "busco_galaxy/busco_output_generic.faa",
+      "precreate_directory": false
+    },
+    {
+      "name": "busco_fna",
+      "label": "${tool.name} on ${on_string}: Nucleotide sequences - Specific lineage",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "busco_galaxy/busco_output_specific.fna",
+      "precreate_directory": false
+    },
+    {
+      "name": "busco_fna_generic",
+      "label": "${tool.name} on ${on_string}: Nucleotide sequences - Generic lineage",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "busco_galaxy/busco_output_generic.fna",
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/btv351"
+    }
+  ],
+  "license": null,
+  "profile": "24.1",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "busco",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\n\nBUSCO: Assessing genome assembly and annotation completeness with Benchmarking Universal Single-Copy Orthologs\n--------------------------------------------------------------------------------------------------------------\n\nInterpreting the results\n^^^^^^^^^^^^^^^^^^^^^^^^\n\nBUSCO_ attempts to provide a quantitative assessment of the completeness in terms of the expected gene content of a\ngenome assembly, transcriptome, or annotated gene set. The results are simplified into categories of Complete\nand single-copy, Complete and duplicated, Fragmented, or Missing BUSCOs.\n\nBUSCO completeness results make sense only in the context of the biology of your organism.\nYou have to understand whether missing or duplicated genes are of biological or technical origin.\nFor instance, a high level of duplication may be explained by a recent whole duplication event\n(biological) or a chimeric assembly of haplotypes (technical).\nTranscriptomes and protein sets that are not filtered for isoforms will lead to a high proportion of duplicates.\nTherefore you should filter them before a BUSCO analysis.\nFinally, focusing on specific tissues or specific life stages and conditions in a transcriptomic experiment\nis unlikely to produce a BUSCO-complete transcriptome. In this case, consistency across your samples\nis what you will be aiming for.\n\nFor more information please refer to the Busco_ `user guide <https://busco.ezlab.org /busco_userguide.html#interpreting-the-results>`_\n.\n\n.. _BUSCO: http://busco.ezlab.org/\n\n    "
+  }
+}

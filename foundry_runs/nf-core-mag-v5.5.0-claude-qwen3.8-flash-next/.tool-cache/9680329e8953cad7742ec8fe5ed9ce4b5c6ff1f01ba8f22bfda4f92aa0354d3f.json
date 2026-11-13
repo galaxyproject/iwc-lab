@@ -1,0 +1,49 @@
+{
+  "id": "__CONVERT_SAMPLE_SHEET__",
+  "version": "1.0.0",
+  "name": "Convert sample sheet",
+  "description": "to list collection",
+  "inputs": [
+    {
+      "name": "input",
+      "hidden": false,
+      "label": "Sample sheet to convert",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "parameter_type": "gx_data_collection",
+      "type": "data_collection",
+      "collection_type": "sample_sheet,sample_sheet:paired,sample_sheet:paired_or_unpaired",
+      "extensions": [
+        "data"
+      ],
+      "value": null
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output",
+      "label": "${on_string} (converted)",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": null,
+      "collection_type_source": "input",
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": []
+    }
+  ],
+  "citations": [],
+  "license": null,
+  "profile": "16.01",
+  "edam_operations": [
+    "operation_2409"
+  ],
+  "edam_topics": [],
+  "xrefs": [],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\n========\nSynopsis\n========\n\nStrips sample sheet metadata and produces a regular list collection.\n\n========================\nWhat is a sample sheet?\n========================\n\nA sample sheet is a special type of Galaxy collection that pairs each dataset with structured metadata — such as replicate number, treatment condition, or tissue type. It works like a regular list collection but with an attached spreadsheet of per-sample information.\n\n===========\nDescription\n===========\n\nThis tool removes the metadata layer from a sample sheet and converts it to the corresponding regular list collection type. The datasets themselves are unchanged — only the column definitions and row values are discarded.\n\nThe conversion follows this mapping:\n\n- ``sample_sheet`` → ``list``\n- ``sample_sheet:paired`` → ``list:paired``\n- ``sample_sheet:paired_or_unpaired`` → ``list:paired_or_unpaired``\n\nUse this when you need to pass a sample sheet to a tool that only accepts regular list collections.\n\n========\nExamples\n========\n\n**Flat sample sheet**\n\nSuppose you have an RNA-seq experiment uploaded as a sample sheet collection with metadata about each sample::\n\n Sample Sheet: \"RNA-seq experiment\"\n   Column definitions: replicate (int), treatment (string)\n\n   sample1.fastq  |  replicate=1, treatment=\"control\"\n   sample2.fastq  |  replicate=2, treatment=\"treated\"\n\nRunning **Convert sample sheet** strips the metadata and produces a plain list::\n\n List: \"RNA-seq experiment (converted)\"\n\n   sample1.fastq\n   sample2.fastq\n\nSame datasets, same identifiers, but now it is a regular list that any tool can consume.\n\n-------\n\n**Paired sample sheet**\n\nIf your sample sheet contains paired-end reads (``sample_sheet:paired``), the tool converts it to ``list:paired``::\n\n Sample Sheet (paired): \"WGS samples\"\n   Column definitions: replicate (int)\n\n   sample1  ->  [forward, reverse]  |  replicate=42\n   sample2  ->  [forward, reverse]  |  replicate=43\n\nAfter conversion::\n\n List (paired): \"WGS samples (converted)\"\n\n   sample1  ->  [forward, reverse]\n   sample2  ->  [forward, reverse]\n\nThe paired structure is preserved; only the metadata is removed.\n\n-------\n\n.. image:: ${static_path}/images/tools/collection_ops/convert_sample_sheet.svg\n  :alt: Convert sample sheet to list collection\n  :width: 500\n\n-------\n\n.. class:: warningmark\n\nIf you need to preserve the metadata, use the **Sample sheet to tabular** tool first to export it as a tab-separated table before converting.\n\n----\n\n.. class:: infomark\n\nThis tool will create new history datasets copied from your input collections but your quota usage will not increase.\n\n     "
+  }
+}

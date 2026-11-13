@@ -1,0 +1,713 @@
+{
+  "id": "megahit",
+  "version": "1.2.9+galaxy2",
+  "name": "MEGAHIT",
+  "description": "for metagenomics assembly",
+  "inputs": [
+    {
+      "name": "input_option",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "choice",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Select your input option",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Single",
+            "value": "single",
+            "selected": true
+          },
+          {
+            "label": "Interleaved-paired-end",
+            "value": "interleaved",
+            "selected": false
+          },
+          {
+            "label": "Paired-end",
+            "value": "paired",
+            "selected": false
+          },
+          {
+            "label": "Paired-end collection",
+            "value": "paired_collection",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "single",
+          "parameters": [
+            {
+              "name": "single_files",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Single-end file(s)",
+              "help": "Accepts fasta (.fasta, .fa) and fastq (.fastq) formats as well as gzip (.gz) and gzip2 (.bz2) files",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fastq",
+                "fastqsanger",
+                "fasta",
+                "fastq.gz",
+                "fastqsanger.gz",
+                "fastq.bz2"
+              ],
+              "multiple": true,
+              "min": null,
+              "max": null,
+              "url_default": null
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "interleaved",
+          "parameters": [
+            {
+              "name": "interleaved_file",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Interleaved-paired-end file(s)",
+              "help": "Accepts fasta (.fasta, .fa) and fastq (.fastq) formats as well as gzip (.gz) and gzip2 (.bz2) files",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fastq",
+                "fastqsanger",
+                "fasta",
+                "fastq.gz",
+                "fastqsanger.gz",
+                "fastq.bz2"
+              ],
+              "multiple": true,
+              "min": null,
+              "max": null,
+              "url_default": null
+            }
+          ],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "paired",
+          "parameters": [
+            {
+              "name": "fastq_input1",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Mate 1 input reads",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fastq",
+                "fastqsanger",
+                "fasta",
+                "fastq.gz",
+                "fastqsanger.gz"
+              ],
+              "multiple": true,
+              "min": null,
+              "max": null,
+              "url_default": null
+            },
+            {
+              "name": "fastq_input2",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Mate 2 input reads",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fastq",
+                "fastqsanger",
+                "fasta",
+                "fastq.gz",
+                "fastqsanger.gz"
+              ],
+              "multiple": true,
+              "min": null,
+              "max": null,
+              "url_default": null
+            }
+          ],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "paired_collection",
+          "parameters": [
+            {
+              "name": "batchmode",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "processmode",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Run in batch mode?",
+                "help": "Selecting individual mode will generate one assembly dataset for each fastq pair-end dataset. Selecting the merge option will produce one assembly dataset for all input fastq pair-end datasets",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Run individually",
+                    "value": "individual",
+                    "selected": true
+                  },
+                  {
+                    "label": "Merge all fastq pair-end",
+                    "value": "merge",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "individual",
+                  "parameters": [
+                    {
+                      "name": "pair_input",
+                      "parameter_type": "gx_data_collection",
+                      "hidden": false,
+                      "label": "Select a paired collection",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data_collection",
+                      "collection_type": "paired",
+                      "extensions": [
+                        "fastq",
+                        "fastqsanger",
+                        "fasta",
+                        "fastq.gz",
+                        "fastqsanger.gz"
+                      ],
+                      "value": null
+                    }
+                  ],
+                  "is_default_when": true
+                },
+                {
+                  "discriminator": "merge",
+                  "parameters": [
+                    {
+                      "name": "pair_input_list",
+                      "parameter_type": "gx_data_collection",
+                      "hidden": false,
+                      "label": "Select a paired collection",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data_collection",
+                      "collection_type": "list:paired",
+                      "extensions": [
+                        "fastq",
+                        "fastqsanger",
+                        "fasta",
+                        "fastq.gz",
+                        "fastqsanger.gz"
+                      ],
+                      "value": null
+                    }
+                  ],
+                  "is_default_when": false
+                }
+              ]
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "basic_section",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "min_count",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "minimum multiplicity for filtering (k_min+1)-mers",
+          "help": "(kmin+1)-mer with multiplicity lower than d (default 2, specified by --min-count option) will be discarded. You should be cautious to set d less than 2, which will lead to a much larger and noisy graph. We recommend using the default value 2 for metagenomics assembly. If you want to use MEGAHIT to do generic assemblies, please change this value according to the sequencing depth. (recommend --min-count 3 for >40x).",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 2,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "k_mer",
+          "parameter_type": "gx_conditional",
+          "hidden": false,
+          "label": null,
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "conditional",
+          "test_parameter": {
+            "name": "k_mer_method",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "K-mer specification method",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "Specify list",
+                "value": "klist_method",
+                "selected": false
+              },
+              {
+                "label": "Specify min, max, and step values",
+                "value": "klim_method",
+                "selected": false
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          "whens": [
+            {
+              "discriminator": "klist_method",
+              "parameters": [
+                {
+                  "name": "k_list",
+                  "parameter_type": "gx_text",
+                  "hidden": false,
+                  "label": "Comma-separated list of kmer size",
+                  "help": "all must be odd, in the range 15-255, and with increments <= 28",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "text",
+                  "area": false,
+                  "value": null,
+                  "default_options": [],
+                  "validators": []
+                }
+              ],
+              "is_default_when": true
+            },
+            {
+              "discriminator": "klim_method",
+              "parameters": [
+                {
+                  "name": "k_min",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "Minimum kmer size",
+                  "help": "Must be odd number. For ultra complex metagenomics data such as soil, a larger kmin, say 27, is recommended to reduce the complexity of the de Bruijn graph. Quality trimming is also recommended. For high-depth generic data, large --k-min (25 to 31) is recommended. Smaller --k-step, say 10, is more friendly to low-coverage datasets.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "integer",
+                  "value": 21,
+                  "min": null,
+                  "max": 255,
+                  "validators": []
+                },
+                {
+                  "name": "k_max",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "Maximum kmer size",
+                  "help": "must be odd number",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "integer",
+                  "value": 141,
+                  "min": null,
+                  "max": 255,
+                  "validators": []
+                },
+                {
+                  "name": "k_step",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "Increment of kmer size of each iteration",
+                  "help": "must be even number",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "integer",
+                  "value": 12,
+                  "min": null,
+                  "max": 28,
+                  "validators": []
+                }
+              ],
+              "is_default_when": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "advanced_section",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "nomercy",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Do not add mercy kmers",
+          "help": "Mercy kmers are specially designed for metagenomics assembly to recover low coverage sequences. For generic dataset >= 30x, MEGAHIT may generate better results with no mercy kmers.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--no-mercy",
+          "falsevalue": ""
+        },
+        {
+          "name": "bubble_level",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Intensity of bubble merging (0-2), 0 to disable",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 2,
+          "min": 0,
+          "max": 2,
+          "validators": []
+        },
+        {
+          "name": "merge_level",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Merge complex bubbles of length",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": []
+        },
+        {
+          "name": "prune_level",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Strength of low depth pruning",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 2,
+          "min": 0,
+          "max": 3,
+          "validators": []
+        },
+        {
+          "name": "prune_depth",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Remove unitigs with avg kmer depth less than this value",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 2,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "disconnect_ratio",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Disconnect unitigs if its depth is less than this ratio times the total depth of itself and its siblings",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 0.1,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "low_local_ratio",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Remove unitigs if its depth is less than this ratio times the average depth of the neighborhoods",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 0.2,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "cleaning_rounds",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Number of rounds for graph cleanning",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 5,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "nolocal",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Disable local assembly",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--no-local",
+          "falsevalue": ""
+        },
+        {
+          "name": "kmin1pass",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Use 1pass mode to build SdBG of k_min",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--kmin-1pass",
+          "falsevalue": ""
+        }
+      ]
+    },
+    {
+      "name": "output_section",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "min_contig_len",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Minimum length of contigs to output",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 200,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "show_intermediate_contigs",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Return intermediate contigs?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": null,
+          "falsevalue": null
+        },
+        {
+          "name": "log_file",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Generate a log file",
+          "help": "Generates a log file, which can be used as MultiQC input",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": null,
+          "falsevalue": null
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "intermediate_contigs",
+      "label": "Intermediate contigs from ${tool.name} on ${on_string}",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "fasta",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "megahit_out/intermediate_contigs",
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.*\\d)\\.contigs\\.fa$"
+        }
+      ]
+    },
+    {
+      "name": "output",
+      "label": "Assembly with ${tool.name} on ${on_string}",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": null,
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": null,
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "primary_DATASET_ID_(?P<designation>[^_]+)_(?P<visible>[^_]+)_(?P<ext>[^_]+)(_(?P<dbkey>[^_]+))?"
+        }
+      ],
+      "from_work_dir": "megahit_out/final.contigs.fa",
+      "precreate_directory": false
+    },
+    {
+      "name": "log_output",
+      "label": "${tool.name} on ${on_string} (Log file)",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": null,
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": null,
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "primary_DATASET_ID_(?P<designation>[^_]+)_(?P<visible>[^_]+)_(?P<ext>[^_]+)(_(?P<dbkey>[^_]+))?"
+        }
+      ],
+      "from_work_dir": "megahit_out/log",
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/btv033"
+    }
+  ],
+  "license": null,
+  "profile": "16.01",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "megahit",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\n**What it does**\n\nMEGAHIT is a single node assembler for large and complex metagenomics NGS reads, such as soil. It makes use of succinct de Bruijn graph (SdBG) to achieve low memory assembly. MEGAHIT can optionally utilize a CUDA-enabled GPU to accelerate its SdBG contstruction. The GPU-accelerated version of MEGAHIT has been tested on NVIDIA GTX680 (4G memory) and Tesla K40c (12G memory) with CUDA 5.5, 6.0 and 6.5.\n\n--------\n\n**Project links:**\n\nhttps://github.com/voutcn/megahit\n\n\n    "
+  }
+}

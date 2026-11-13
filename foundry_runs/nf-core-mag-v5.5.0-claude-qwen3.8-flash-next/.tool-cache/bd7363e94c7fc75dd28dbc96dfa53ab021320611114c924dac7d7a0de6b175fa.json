@@ -1,0 +1,427 @@
+{
+  "id": "das_tool",
+  "version": "1.1.7+galaxy1",
+  "name": "DAS Tool",
+  "description": "for genome-resolved metagenomics",
+  "inputs": [
+    {
+      "name": "contigs",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "Contig sequences",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data",
+      "extensions": [
+        "fasta"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "binning",
+      "parameter_type": "gx_repeat",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "repeat",
+      "parameters": [
+        {
+          "name": "bins",
+          "parameter_type": "gx_data",
+          "hidden": false,
+          "label": "Contigs-to-bin table",
+          "help": "Tabular with two columns: contig-IDs and bin-IDs. Fasta_to_Contigs2Bin can be used to  Converts genome bins in fasta format to Contigs-to-bin table",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "data",
+          "extensions": [
+            "tabular"
+          ],
+          "multiple": false,
+          "min": null,
+          "max": null,
+          "url_default": null
+        },
+        {
+          "name": "labels",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Name of binning prediction name",
+          "help": "If left empty the identifier of the contig-to-bin table is used. Only alphanumeric characters, dash, underscore and dor are allowed. Other characters are replaced by underscore.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": []
+        }
+      ],
+      "min": 1,
+      "max": null
+    },
+    {
+      "name": "adv",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "search_engine",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Engine used for single copy gene identification",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "diamond",
+              "value": "diamond",
+              "selected": true
+            },
+            {
+              "label": "blastp",
+              "value": "blastp",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        {
+          "name": "proteins",
+          "parameter_type": "gx_data",
+          "hidden": false,
+          "label": "Predicted proteins",
+          "help": "The file should be prodigal fasta format: >contigID_geneNo",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "data",
+          "extensions": [
+            "fasta"
+          ],
+          "multiple": false,
+          "min": null,
+          "max": null,
+          "url_default": null
+        },
+        {
+          "name": "score_threshold",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Score threshold until selection algorithm will keep selecting bins",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 0.5,
+          "min": 0,
+          "max": 1,
+          "validators": []
+        },
+        {
+          "name": "duplicate_penalty",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Penalty for duplicate single copy genes per bin (weight b)",
+          "help": "Only change if you know what you are doing",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 0.6,
+          "min": 0,
+          "max": 3,
+          "validators": []
+        },
+        {
+          "name": "megabin_penalty",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Penalty for megabins (weight c)",
+          "help": "Only change if you know what you are doing",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 0.5,
+          "min": 0,
+          "max": 3,
+          "validators": []
+        },
+        {
+          "name": "max_iter_post_threshold",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Maximum number of iterations after reaching score threshold",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 10,
+          "min": 1,
+          "max": null,
+          "validators": []
+        }
+      ]
+    },
+    {
+      "name": "output",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "proteins",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Output predicted proteins?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": null,
+          "falsevalue": null
+        },
+        {
+          "name": "write_bin_evals",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Write evaluation of input bin sets?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--write_bin_evals",
+          "falsevalue": ""
+        },
+        {
+          "name": "write_bins",
+          "parameter_type": "gx_conditional",
+          "hidden": false,
+          "label": null,
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "conditional",
+          "test_parameter": {
+            "name": "write_bins",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Export bins as fasta files?",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "Yes",
+                "value": "--write_bins",
+                "selected": true
+              },
+              {
+                "label": "No",
+                "value": "",
+                "selected": false
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          "whens": [
+            {
+              "discriminator": "--write_bins",
+              "parameters": [
+                {
+                  "name": "write_unbinned",
+                  "parameter_type": "gx_boolean",
+                  "hidden": false,
+                  "label": "Export unbinned contigs as fasta file?",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "boolean",
+                  "value": false,
+                  "truevalue": "--write_unbinned",
+                  "falsevalue": ""
+                }
+              ],
+              "is_default_when": true
+            },
+            {
+              "discriminator": "",
+              "parameters": [],
+              "is_default_when": false
+            }
+          ]
+        },
+        {
+          "name": "debug",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Write debug information to log file?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--debug",
+          "falsevalue": ""
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "bins",
+      "label": "${tool.name} on ${on_string}: Bins",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "fasta",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "outputs_DASTool_bins",
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "^(?!unbinned\\.fa)((?P<designation>.*)\\.fa)"
+        }
+      ]
+    },
+    {
+      "name": "summary",
+      "label": "${tool.name} on ${on_string}: Summary of output bins",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputs_DASTool_summary.tsv",
+      "precreate_directory": false
+    },
+    {
+      "name": "contigs2bin",
+      "label": "${tool.name} on ${on_string}: Contigs to bin file for the output bins",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputs_DASTool_contig2bin.tsv",
+      "precreate_directory": false
+    },
+    {
+      "name": "log",
+      "label": "${tool.name} on ${on_string}: Log",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputs_DASTool.log",
+      "precreate_directory": false
+    },
+    {
+      "name": "eval",
+      "label": "${tool.name} on ${on_string}: Quality and completeness estimates of input bin sets",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputs_allBins.eval",
+      "precreate_directory": false
+    },
+    {
+      "name": "unbinned_contigs",
+      "label": "${tool.name} on ${on_string}: Unbinned contigs",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputs_DASTool_bins/unbinned.fa",
+      "precreate_directory": false
+    },
+    {
+      "name": "proteins",
+      "label": "${tool.name} on ${on_string}: Proteins",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputs_proteins.faa",
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1038/s41564-018-0171-1"
+    }
+  ],
+  "license": null,
+  "profile": "22.01",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "dastool",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\nWhat it does\n============\n\nDAS Tool is an automated method that integrates the results of a flexible number of binning algorithms to calculate an optimized, non-redundant set of bins from a single assembly.\n\n\nInputs\n======\n\n- Bins: Tab-separated files of contig-IDs and bin-IDs. Contigs to bin file example: ::\n\n    Contig_1\tbin.01\n    Contig_8\tbin.01\n    Contig_42\tbin.02\n    Contig_49\tbin.03\n\n- Contigs: Assembled contigs in fasta format: ::\n\n    >Contig_1\n    ATCATCGTCCGCATCGACGAATTCGGCGAACGAGTACCCCTGACCATCTCCGATTA...\n    >Contig_2\n    GATCGTCACGCAGGCTATCGGAGCCTCGACCCGCAAGCTCTGCGCCTTGGAGCAGG...\n\n- [Optional] Proteins: Predicted proteins in prodigal fasta format. The header contains contig-ID and gene number: ::\n\n    >Contig_1_1\n    MPRKNKKLPRHLLVIRTSAMGDVAMLPHALRALKEAYPEVKVTVATKSLFHPFFEG...\n    >Contig_1_2\n    MANKIPRVPVREQDPKVRATNFEEVCYGYNVEEATLEASRCLNCKNPRCVAACPVN...\n\nOutputs\n=======\n\n- Summary of output bins including quality and completeness estimates\n- Contigs to bin file of output bins\n- [Optional] Quality and completeness estimates of input bin sets\n- [Optional] Bins in fasta format\n- [Optional] Unbinned contigs\n\n    "
+  }
+}

@@ -1,0 +1,57 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-mag
+  status: running
+  phases:
+    - { n: 1, kind: mold, skill: summarize-nextflow, status: done, feedback_checked: true }
+    - { n: 2, kind: mold, skill: nextflow-summary-to-galaxy-reference-data, status: done, feedback_checked: true }  # no feedback
+    - { n: 3, kind: mold, skill: nextflow-summary-to-galaxy-interface, status: done, feedback_checked: true }  # no feedback
+    - { n: 4, kind: mold, skill: nextflow-summary-to-galaxy-data-flow, status: done, feedback_checked: true }  # no feedback
+    - { n: 5, kind: mold, skill: compare-against-iwc-exemplar, status: done, feedback_checked: true }  # appended: gxwf-convert-exits-1-with-empty-tool-cache
+    - { n: 6, kind: mold, skill: nextflow-summary-to-galaxy-template, status: done, feedback_checked: true }  # appended: draft-schema-omits-nested-draft-vocabulary
+    - { n: 7, kind: mold, skill: advance-galaxy-draft-step, status: running, iterations: 44 }  # no feedback yet this phase
+    - { n: 8, kind: branch, pattern: test-data-resolution, status: pending }
+    - { n: 9, kind: mold, skill: nextflow-test-to-galaxy-test-plan, status: pending }
+    - { n: 10, kind: mold, skill: implement-galaxy-workflow-test, status: pending }
+    - { n: 11, kind: mold, skill: validate-galaxy-workflow, status: pending }
+    - { n: 12, kind: mold, skill: run-workflow-test, status: pending }
+    - { n: 13, kind: mold, skill: debug-galaxy-workflow-output, status: pending }
+entries:
+  - id: gxwf-convert-exits-1-with-empty-tool-cache
+    raised_by: compare-against-iwc-exemplar
+    observed_in:
+      mold: compare-against-iwc-exemplar
+      path: content/molds/compare-against-iwc-exemplar/index.md
+      revision: 12
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: related-project
+      label: "gxwf convert (gxwf CLI)"
+      locator: https://github.com/jmchilton/galaxy-tool-util-ts
+    kind: friction
+    severity: minor
+    what: "gxwf convert --to format2 --compact emits a complete, valid format2 document on stdout yet exits 1 when the local tool cache is empty, printing one 'tool not resolved' line per step (~69 for a 69-step IWC workflow); the packaged convert reference and the Mold procedure do not mention cache warming or this exit behavior."
+    expected: "A successful conversion (complete document written) should exit 0 with a single summary warning, or the convert CLI note / Mold procedure should state that IWC normalization against an empty cache exits non-zero by design and the stdout document is still usable."
+    evidence: "<run>/iwc-exemplar.gxwf.yml was produced from iwc workflows/microbiome/mags-building/MAGs-generation.ga via a conversion that exited 1; the 1954-line stdout document round-trip-parses as valid YAML."
+    status: open
+    issue: null
+  - id: draft-schema-omits-nested-draft-vocabulary
+    raised_by: nextflow-summary-to-galaxy-template
+    observed_in:
+      mold: nextflow-summary-to-galaxy-template
+      path: content/molds/nextflow-summary-to-galaxy-template/index.md
+      revision: 10
+      content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+      foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+    subject:
+      kind: related-project
+      label: "galaxy-workflow-draft JSON Schema (@galaxy-tool-util/schema) vs gxwf draft-validate nested-draft handling"
+      locator: https://github.com/jmchilton/galaxy-tool-util-ts
+    kind: gap
+    severity: major
+    what: "The bundled output-contract schema (references/schemas/galaxy-workflow-draft.schema.json, fd49d477…) admits only `class: GalaxyWorkflow` for a step's nested `run` and its nested steps forbid `_plan_*`, yet gxwf 0.30.1 draft-validate accepts and draft-next-step descends `class: GalaxyWorkflowDraft` nested drafts with recursive `_plan_*` - the only shape that keeps nested steps visible to the per-step loop. An author following the schema alone writes nested `class: GalaxyWorkflow` and silently hides every inner TODO/plan state from draft-next-step; the schema also does not encode the probe-established outer-subworkflow contract (outer step must declare `out:` mirroring nested outputs; no cross-boundary references into nested inner steps; `_plan_*` on the subworkflow step itself makes draft-next-step pick the wrapper instead of descending)."
+    expected: "galaxy-workflow-draft.schema.json allows recursive `class: GalaxyWorkflowDraft` in a step `run` (including `_plan_*` on nested steps), and the galaxy-workflow-draft-format research note documents the nested-draft contract (out-mirroring, no cross-boundary refs, _plan_* placement on tool vs subworkflow steps) - or draft-validate rejects nested GalaxyWorkflow drafts so the two artifacts agree."
+    evidence: "<run>/galaxy-workflow-draft.gxwf.yml (14 nested GalaxyWorkflowDraft stage steps) passes draft-validate exit 0 with survey '423 TODO sentinels across 123 step paths; 109 steps with _plan_*' and draft-next-step returns nested paths (first pick assembly_input_route/asm_list); three throwaway probes were needed to establish each rule the schema is silent or contradicts."
+    status: open
+    issue: null

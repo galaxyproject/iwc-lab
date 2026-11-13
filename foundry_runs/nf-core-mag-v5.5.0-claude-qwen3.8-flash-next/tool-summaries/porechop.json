@@ -1,0 +1,1374 @@
+{
+  "schema_version": 1,
+  "tool_id": "porechop",
+  "tool_version": "0.2.4+galaxy1",
+  "cache_key": "8ae810865749a89d577105abae4768ee0c4d0d034d671058cb81e3a274abf6ce",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~porechop~porechop/versions/0.2.4+galaxy1",
+    "cached_at": "2026-11-12T03:30:29.657Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/8ae810865749a89d577105abae4768ee0c4d0d034d671058cb81e3a274abf6ce.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "porechop",
+    "version": "0.2.4+galaxy1",
+    "name": "Porechop",
+    "description": "adapter trimmer for Oxford Nanopore reads",
+    "inputs": [
+      {
+        "name": "input_file",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Input FASTA/FASTQ",
+        "help": "FASTA/FASTQ of input reads",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "fasta",
+          "fasta.gz",
+          "fastqsanger",
+          "fastqsanger.gz",
+          "fastq",
+          "fastq.gz"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "format",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Output format for the reads",
+        "help": "Output format for the reads",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "fasta",
+            "value": "fasta",
+            "selected": true
+          },
+          {
+            "label": "fastq",
+            "value": "fastq",
+            "selected": false
+          },
+          {
+            "label": "fasta.gz",
+            "value": "fasta.gz",
+            "selected": false
+          },
+          {
+            "label": "fastq.gz",
+            "value": "fastq.gz",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "barcode_binning_settings",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "barcode_threshold",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Percent identity for binning",
+            "help": "A read must have at least this percent identity to a barcode to be binned (default: 75.0)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "float",
+            "value": 75,
+            "min": 0,
+            "max": 100,
+            "validators": []
+          },
+          {
+            "name": "barcode_diff",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Minimum difference in identity",
+            "help": "If the difference between a read's best barcode identity and its second-best barcode identity is less than this value, it will not be put in a barcode bin (to exclude cases which are too close to call) (default: 5.0)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "float",
+            "value": 5,
+            "min": 0,
+            "max": 100,
+            "validators": []
+          },
+          {
+            "name": "require_two_barcodes",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Require two matches for binning",
+            "help": "Reads will only be put in barcode bins if they have a strong match for the barcode on both their start and end (default: a read can be binned with a match at its start or end)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "--require_two_barcodes",
+            "falsevalue": ""
+          },
+          {
+            "name": "discard_unassigned",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Discard unassigned reads",
+            "help": "Discard unassigned reads (instead of creating a 'none' bin) (default: False)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "--discard_unassigned",
+            "falsevalue": ""
+          }
+        ]
+      },
+      {
+        "name": "adapter_search_settings",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "adapter_threshold",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Minimum identity",
+            "help": "An adapter set has to have at least this percent identity to be labelled as present and trimmed off (0 to 100) (default: 90.0)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "float",
+            "value": 90,
+            "min": 0,
+            "max": 100,
+            "validators": []
+          },
+          {
+            "name": "check_reads",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Number of alligned reads",
+            "help": "This many reads will be aligned to all possible adapters to determine which adapter sets are present (default: 10000)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": 10000,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "scoring_scheme",
+            "parameter_type": "gx_text",
+            "hidden": false,
+            "label": "Scoring scheme",
+            "help": "Comma-delimited string of alignment scores: match, mismatch, gap open, gap extend",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "text",
+            "area": false,
+            "value": null,
+            "default_options": [],
+            "validators": [
+              {
+                "type": "regex",
+                "message": "Scoring scheme must be comma-separated string of four positive/negative integers",
+                "implicit": false,
+                "negate": false,
+                "expression": "^((-?\\d+[,]){3})-?\\d+$"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "end_adapter_settings",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "end_size",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Number of bases",
+            "help": "The number of base pairs at each end of the read which will be searched for adapter sequences (default: 150)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": 150,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "min_trim_size",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimum trim length",
+            "help": "Adapter alignments smaller than this will be ignored (default: 4)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": 4,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "extra_end_trim",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Extra bases trimmed",
+            "help": "This many additional bases will be removed next to adapters found at the ends of reads (default: 2)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": 2,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "end_threshold",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Minimum percent identity",
+            "help": "Adapters at the ends of reads must have at least this percent identity to be removed (0 to 100) (default: 75.0)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "float",
+            "value": 75,
+            "min": 0,
+            "max": 100,
+            "validators": []
+          }
+        ]
+      },
+      {
+        "name": "middle_adapter_settings",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "no_split",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Skip splitting",
+            "help": "Skip splitting reads based on middle adapters (default: split reads when an adapter is found in the middle)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "--no_split",
+            "falsevalue": ""
+          },
+          {
+            "name": "discard_middle",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Discard reads with middle adapter",
+            "help": "Reads with middle adapters will be discarded (default: reads with middle adapters are split) (required for reads to be used with Nanopolish, this option is on by default when outputting reads into barcode bins)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "--discard_middle",
+            "falsevalue": ""
+          },
+          {
+            "name": "middle_threshold",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Minimum percent identity",
+            "help": "Adapters in the middle of reads must have at least this percent identity to be found (0 to 100) (default: 85.0)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "float",
+            "value": 85,
+            "min": 0,
+            "max": 100,
+            "validators": []
+          },
+          {
+            "name": "extra_middle_trim_good_side",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Extra trimming good side",
+            "help": "This many additional bases will be removed next to middle adapters on their 'good' side (default: 10)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": 10,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "extra_middle_trim_bad_side",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Extra trimming bad side",
+            "help": "This many additional bases will be removed next to middle adapters on their 'bad' side (default: 100)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": 100,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "min_split_read_size",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimum length reads post-split",
+            "help": "Post-split read pieces smaller than this many base pairs will not be outputted (default: 1000)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": 1000,
+            "min": 0,
+            "max": null,
+            "validators": []
+          }
+        ]
+      },
+      {
+        "name": "log_file",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Generate log file",
+        "help": "Generates a log file out of stdout, which can be used as MultiQC input",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": null,
+        "falsevalue": null
+      }
+    ],
+    "outputs": [
+      {
+        "name": "outfile",
+        "label": "${tool.name} on ${on_string}: Trimmed",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "out.*",
+        "precreate_directory": false
+      },
+      {
+        "name": "log_output",
+        "label": "Porechop log file",
+        "hidden": false,
+        "type": "data",
+        "format": "txt",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "bibtex",
+        "content": "@misc{rrwick2017,\n                author = {Wick, Ryan},\n                year = {2017},\n                title = {Porechop},\n                publisher = {GitHub},\n                journal = {GitHub repository},\n                url = {https://github.com/rrwick/Porechop},\n            }"
+      }
+    ],
+    "license": null,
+    "profile": "20.01",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\nPorechop is a tool for finding and removing adapters from Oxford Nanopore reads.\nAdapters on the ends of reads are trimmed off, and when a read has an adapter in\nits middle, it is treated as chimeric and chopped into separate reads. Porechop\nperforms thorough alignments to effectively find adapters, even at low sequence identity.\n\nPorechop also supports demultiplexing of Nanopore reads that were barcoded with\nthe Native Barcoding Kit, PCR Barcoding Kit or Rapid Barcoding Kit.\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input_file": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "fasta",
+            "fastq",
+            "fasta.gz",
+            "fastq.gz"
+          ]
+        },
+        "barcode_binning_settings": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "barcode_threshold": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "description": "a number less than or equal to 100",
+                  "title": "lessThanOrEqualTo(100)",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "barcode_diff": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "description": "a number less than or equal to 100",
+                  "title": "lessThanOrEqualTo(100)",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "require_two_barcodes": {
+              "type": "boolean"
+            },
+            "discard_unassigned": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "adapter_search_settings": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "adapter_threshold": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "description": "a number less than or equal to 100",
+                  "title": "lessThanOrEqualTo(100)",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "check_reads": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "scoring_scheme": {
+              "type": "string",
+              "pattern": "(^$|^((-?\\d+[,]){3})-?\\d+$)"
+            }
+          },
+          "additionalProperties": false
+        },
+        "end_adapter_settings": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "end_size": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "min_trim_size": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "extra_end_trim": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "end_threshold": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "description": "a number less than or equal to 100",
+                  "title": "lessThanOrEqualTo(100)",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "middle_adapter_settings": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "no_split": {
+              "type": "boolean"
+            },
+            "discard_middle": {
+              "type": "boolean"
+            },
+            "middle_threshold": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "description": "a number less than or equal to 100",
+                  "title": "lessThanOrEqualTo(100)",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "extra_middle_trim_good_side": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "extra_middle_trim_bad_side": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "min_split_read_size": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "log_file": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "input_file"
+      ],
+      "properties": {
+        "input_file": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "format": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "fasta",
+                "fastq",
+                "fasta.gz",
+                "fastq.gz"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "barcode_binning_settings": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "barcode_threshold": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a number less than or equal to 100",
+                          "title": "lessThanOrEqualTo(100)",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "barcode_diff": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a number less than or equal to 100",
+                          "title": "lessThanOrEqualTo(100)",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "require_two_barcodes": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "discard_unassigned": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "adapter_search_settings": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "adapter_threshold": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a number less than or equal to 100",
+                          "title": "lessThanOrEqualTo(100)",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "check_reads": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "scoring_scheme": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "(^$|^((-?\\d+[,]){3})-?\\d+$)"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "end_adapter_settings": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "end_size": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "min_trim_size": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "extra_end_trim": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "end_threshold": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a number less than or equal to 100",
+                          "title": "lessThanOrEqualTo(100)",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "middle_adapter_settings": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "no_split": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "discard_middle": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "middle_threshold": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a number less than or equal to 100",
+                          "title": "lessThanOrEqualTo(100)",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "extra_middle_trim_good_side": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "extra_middle_trim_bad_side": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "min_split_read_size": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "log_file": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

@@ -1,0 +1,394 @@
+{
+  "id": "filtlong",
+  "version": "0.3.1+galaxy0",
+  "name": "filtlong",
+  "description": "Filtering long reads by quality",
+  "inputs": [
+    {
+      "name": "input_file",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "Input FASTQ",
+      "help": "FASTQ of input reads",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data",
+      "extensions": [
+        "fastqsanger",
+        "fastqsanger.gz"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "output_thresholds",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "target_bases",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Total bases",
+          "help": "Keep only the best reads up to this many total bases (unit suffixes: k, kb, m, mb, g, gb).",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": [
+            {
+              "type": "regex",
+              "message": "Invalid characters in field",
+              "implicit": false,
+              "negate": false,
+              "expression": "(?i)^[0-9]+(?:[KMG](?:B)?)?$"
+            }
+          ]
+        },
+        {
+          "name": "keep_percent",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Keep percentage",
+          "help": "Keep only this percentage of the best reads (measured by bases)",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "float",
+          "value": null,
+          "min": 0,
+          "max": 100,
+          "validators": []
+        },
+        {
+          "name": "max_length",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Max. length",
+          "help": "Maximum length threshold (unit suffixes: k, kb, m, mb, g, gb)",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": [
+            {
+              "type": "regex",
+              "message": "Invalid characters in field",
+              "implicit": false,
+              "negate": false,
+              "expression": "(?i)^[0-9]+(?:[KMG](?:B)?)?$"
+            }
+          ]
+        },
+        {
+          "name": "min_length",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Min. length",
+          "help": "Minimum length threshold (unit suffixes: k, kb, m, mb, g, gb)",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": [
+            {
+              "type": "regex",
+              "message": "Invalid characters in field",
+              "implicit": false,
+              "negate": false,
+              "expression": "(?i)^[0-9]+(?:[KMG](?:B)?)?$"
+            }
+          ]
+        },
+        {
+          "name": "min_mean_q",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Min. mean quality",
+          "help": "Minimum mean quality threshold",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "float",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "min_window_q",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Min. window quality",
+          "help": "Minimum window quality threshold",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "float",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        }
+      ]
+    },
+    {
+      "name": "external_references",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "assembly",
+          "parameter_type": "gx_data",
+          "hidden": false,
+          "label": "Reference assembly",
+          "help": "Reference assembly in FASTA format",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "data",
+          "extensions": [
+            "fasta",
+            "fasta.gz"
+          ],
+          "multiple": false,
+          "min": null,
+          "max": null,
+          "url_default": null
+        },
+        {
+          "name": "short_1",
+          "parameter_type": "gx_data",
+          "hidden": false,
+          "label": "Reference Illumina read",
+          "help": "Reference Illumina reads in FASTQ format",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "data",
+          "extensions": [
+            "fastqsanger",
+            "fastqsanger.gz"
+          ],
+          "multiple": false,
+          "min": null,
+          "max": null,
+          "url_default": null
+        },
+        {
+          "name": "short_2",
+          "parameter_type": "gx_data",
+          "hidden": false,
+          "label": "Reference Illumina read",
+          "help": "Reference Illumina reads in FASTQ format",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "data",
+          "extensions": [
+            "fastqsanger",
+            "fastqsanger.gz"
+          ],
+          "multiple": false,
+          "min": null,
+          "max": null,
+          "url_default": null
+        }
+      ]
+    },
+    {
+      "name": "score_weights",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "length_weight",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Weight length score",
+          "help": "Weight given to the length score (default: 1)",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "float",
+          "value": 1,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "mean_q_weight",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Weight mean quality",
+          "help": "Weight given to the mean quality score (default: 1)",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "float",
+          "value": 1,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "window_q_weight",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Weight window quality",
+          "help": "Weight given to the window quality score (default: 1)",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "float",
+          "value": 1,
+          "min": 0,
+          "max": null,
+          "validators": []
+        }
+      ]
+    },
+    {
+      "name": "read_manipulation",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "trim",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Trim non-k-mer-matching",
+          "help": "Trim non-k-mer-matching bases from start/end of reads",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--trim",
+          "falsevalue": ""
+        },
+        {
+          "name": "split",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Split at nr. of bases",
+          "help": "split reads at this many (or more) consecutive non-k-mer-matching bases",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": [
+            {
+              "type": "regex",
+              "message": "Invalid characters in field",
+              "implicit": false,
+              "negate": false,
+              "expression": "(?i)^[0-9]+(?:[KMG](?:B)?)?$"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "other",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "window_size",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Sliding window size",
+          "help": "size of sliding window used when measuring window quality (default: 250)",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": 250,
+          "min": 0,
+          "max": null,
+          "validators": []
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "outfile",
+      "label": "${tool.name} on ${on_string}: Filtered FASTQ",
+      "hidden": false,
+      "type": "data",
+      "format": "fastqsanger",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output.fastq",
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "bibtex",
+      "content": "@misc{rrwick2017,\n                    author = {Wick, Ryan},\n                    year = {2017},\n                    title = {Filtlong},\n                    publisher = {GitHub},\n                    journal = {GitHub repository},\n                    url = {https://github.com/rrwick/Filtlong},\n                }"
+    }
+  ],
+  "license": null,
+  "profile": "20.01",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "filtlong",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\nFiltlong is a tool for filtering long reads by quality. It can take a set of long reads and produce a smaller, better subset. It uses both read length (longer is better) and read identity (higher is better) when choosing which reads pass the filter.\n    "
+  }
+}

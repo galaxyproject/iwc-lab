@@ -1,0 +1,2060 @@
+{
+  "id": "quast",
+  "version": "5.3.0+galaxy3",
+  "name": "Quast",
+  "description": "Genome assembly Quality",
+  "inputs": [
+    {
+      "name": "mode",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "mode",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Assembly mode?",
+        "help": "Useful to know if contigs have been generated all samples together (co-assembly) or on each sample individually (individual assembly)",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Individual assembly (1 contig file per sample)",
+            "value": "individual",
+            "selected": false
+          },
+          {
+            "label": "Co-assembly (1 contig file for several samples)",
+            "value": "co",
+            "selected": true
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "individual",
+          "parameters": [
+            {
+              "name": "in",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "custom",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Use customized names for the input files?",
+                "help": "They will be used in reports, plots and logs",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Yes, specify custom names",
+                    "value": "true",
+                    "selected": false
+                  },
+                  {
+                    "label": "No, use dataset names",
+                    "value": "false",
+                    "selected": true
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "true",
+                  "parameters": [
+                    {
+                      "name": "input",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Contigs/scaffolds file",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fasta"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "labels",
+                      "parameter_type": "gx_text",
+                      "hidden": false,
+                      "label": "Name",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "text",
+                      "area": false,
+                      "value": null,
+                      "default_options": [],
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "false",
+                  "parameters": [
+                    {
+                      "name": "inputs",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Contigs/scaffolds file",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fasta"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "reads",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "reads_option",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Reads options",
+                "help": "Currently, the supported read types are Illumina unpaired, paired-end and mate-pair reads, PacBio SMRT, and Oxford Nanopore long reads.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Disabled",
+                    "value": "disabled",
+                    "selected": false
+                  },
+                  {
+                    "label": "Illumina single-end reads",
+                    "value": "single",
+                    "selected": false
+                  },
+                  {
+                    "label": "Illumina paired-end reads",
+                    "value": "paired",
+                    "selected": false
+                  },
+                  {
+                    "label": "Illumina paired-end reads in paired collection",
+                    "value": "paired_collection",
+                    "selected": false
+                  },
+                  {
+                    "label": "Illumina interlaced paired-end reads",
+                    "value": "paired_interlaced",
+                    "selected": false
+                  },
+                  {
+                    "label": "Illumina mate-pair reads",
+                    "value": "mate_paired",
+                    "selected": false
+                  },
+                  {
+                    "label": "Pacbio SMRT reads",
+                    "value": "pacbio",
+                    "selected": false
+                  },
+                  {
+                    "label": "Nanopore reads",
+                    "value": "nanopore",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "disabled",
+                  "parameters": [],
+                  "is_default_when": true
+                },
+                {
+                  "discriminator": "single",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "paired",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file #1",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "input_2",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file #2",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "paired_collection",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data_collection",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA files",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data_collection",
+                      "collection_type": "paired",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "value": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "paired_interlaced",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "mate_paired",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file #1",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "input_2",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file #2",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "pacbio",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "nanopore",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                }
+              ]
+            }
+          ],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "co",
+          "parameters": [
+            {
+              "name": "in",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "custom",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Use customized names for the input files?",
+                "help": "They will be used in reports, plots and logs",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Yes, specify custom names",
+                    "value": "true",
+                    "selected": false
+                  },
+                  {
+                    "label": "No, use dataset names",
+                    "value": "false",
+                    "selected": true
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "true",
+                  "parameters": [
+                    {
+                      "name": "inputs",
+                      "parameter_type": "gx_repeat",
+                      "hidden": false,
+                      "label": null,
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "repeat",
+                      "parameters": [
+                        {
+                          "name": "input",
+                          "parameter_type": "gx_data",
+                          "hidden": false,
+                          "label": "Contigs/scaffolds file",
+                          "help": null,
+                          "argument": null,
+                          "is_dynamic": false,
+                          "optional": false,
+                          "type": "data",
+                          "extensions": [
+                            "fasta"
+                          ],
+                          "multiple": false,
+                          "min": null,
+                          "max": null,
+                          "url_default": null
+                        },
+                        {
+                          "name": "labels",
+                          "parameter_type": "gx_text",
+                          "hidden": false,
+                          "label": "Name",
+                          "help": null,
+                          "argument": null,
+                          "is_dynamic": false,
+                          "optional": true,
+                          "type": "text",
+                          "area": false,
+                          "value": null,
+                          "default_options": [],
+                          "validators": []
+                        }
+                      ],
+                      "min": 1,
+                      "max": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "false",
+                  "parameters": [
+                    {
+                      "name": "inputs",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Contigs/scaffolds file",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fasta"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "reads",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "reads_option",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Reads options",
+                "help": "Currently, the supported read types are Illumina unpaired, paired-end and mate-pair reads, PacBio SMRT, and Oxford Nanopore long reads.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Disabled",
+                    "value": "disabled",
+                    "selected": false
+                  },
+                  {
+                    "label": "Illumina single-end reads",
+                    "value": "single",
+                    "selected": false
+                  },
+                  {
+                    "label": "Illumina paired-end reads",
+                    "value": "paired",
+                    "selected": false
+                  },
+                  {
+                    "label": "Illumina paired-end reads in paired collection",
+                    "value": "paired_collection",
+                    "selected": false
+                  },
+                  {
+                    "label": "Illumina interlaced paired-end reads",
+                    "value": "paired_interlaced",
+                    "selected": false
+                  },
+                  {
+                    "label": "Illumina mate-pair reads",
+                    "value": "mate_paired",
+                    "selected": false
+                  },
+                  {
+                    "label": "Pacbio SMRT reads",
+                    "value": "pacbio",
+                    "selected": false
+                  },
+                  {
+                    "label": "Nanopore reads",
+                    "value": "nanopore",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "disabled",
+                  "parameters": [],
+                  "is_default_when": true
+                },
+                {
+                  "discriminator": "single",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "paired",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file #1",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "input_2",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file #2",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "paired_collection",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data_collection",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA files",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data_collection",
+                      "collection_type": "list:paired",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "value": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "paired_interlaced",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "mate_paired",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file #1",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "input_2",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file #2",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "pacbio",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "nanopore",
+                  "parameters": [
+                    {
+                      "name": "input_1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ/FASTA file",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastq",
+                        "fastq.gz",
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                }
+              ]
+            }
+          ],
+          "is_default_when": true
+        }
+      ]
+    },
+    {
+      "name": "assembly",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "type",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Type of assembly",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Genome",
+            "value": "genome",
+            "selected": false
+          },
+          {
+            "label": "Metagenome",
+            "value": "metagenome",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "genome",
+          "parameters": [
+            {
+              "name": "ref",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "use_ref",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Use a reference genome?",
+                "help": "Many metrics can't be evaluated without a reference. If this is omitted, QUAST will only report the metrics that can be evaluated without a reference.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Yes",
+                    "value": "true",
+                    "selected": false
+                  },
+                  {
+                    "label": "No",
+                    "value": "false",
+                    "selected": true
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "true",
+                  "parameters": [
+                    {
+                      "name": "r",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Reference genome",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fasta"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "features",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Genomic feature positions in the reference genome",
+                      "help": "Gene coordinates for the reference genome",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "data",
+                      "extensions": [
+                        "gff",
+                        "gff3",
+                        "bed"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "operons",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Operon positions in the reference genome",
+                      "help": "Operon coordinates for the reference genome",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "data",
+                      "extensions": [
+                        "gff",
+                        "gff3",
+                        "bed"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "k_mer",
+                      "parameter_type": "gx_conditional",
+                      "hidden": false,
+                      "label": null,
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "conditional",
+                      "test_parameter": {
+                        "name": "k_mer_stats",
+                        "parameter_type": "gx_select",
+                        "hidden": false,
+                        "label": "Compute k-mer-based quality metrics?",
+                        "help": "It is recommended for large genomes. This may significantly increase memory and time consumption on large genomes",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "select",
+                        "options": [
+                          {
+                            "label": "Yes",
+                            "value": "--k-mer-stats",
+                            "selected": false
+                          },
+                          {
+                            "label": "No",
+                            "value": "",
+                            "selected": true
+                          }
+                        ],
+                        "multiple": false,
+                        "validators": []
+                      },
+                      "whens": [
+                        {
+                          "discriminator": "--k-mer-stats",
+                          "parameters": [
+                            {
+                              "name": "k_mer_size",
+                              "parameter_type": "gx_integer",
+                              "hidden": false,
+                              "label": "Size of k",
+                              "help": null,
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "integer",
+                              "value": 101,
+                              "min": null,
+                              "max": null,
+                              "validators": []
+                            }
+                          ],
+                          "is_default_when": false
+                        },
+                        {
+                          "discriminator": "",
+                          "parameters": [],
+                          "is_default_when": true
+                        }
+                      ]
+                    },
+                    {
+                      "name": "circos",
+                      "parameter_type": "gx_boolean",
+                      "hidden": false,
+                      "label": "Generage Circos plot",
+                      "help": "Plot Circos version of Icarus contig alignment viewer",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "boolean",
+                      "value": false,
+                      "truevalue": "--circos",
+                      "falsevalue": ""
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "false",
+                  "parameters": [
+                    {
+                      "name": "est_ref_size",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Estimated reference genome size (in bp) for computing NGx statistics",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "integer",
+                      "value": null,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "orga_type",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Type of organism",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "Prokaryotes: use of GeneMarkS for gene finding (default)",
+                  "value": "",
+                  "selected": false
+                },
+                {
+                  "label": "Eukaryote: use of GeneMark-ES for gene finding, Barrnap for ribosomal RNA genes prediction, BUSCO for conserved orthologs finding  (--eukaryote)",
+                  "value": "--eukaryote",
+                  "selected": false
+                },
+                {
+                  "label": "Fungus: use of GeneMark-ES for gene finding, Barrnap for ribosomal RNA genes prediction, BUSCO for conserved orthologs finding (--fungus)",
+                  "value": "--fungus",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            {
+              "name": "min_identity",
+              "parameter_type": "gx_float",
+              "hidden": false,
+              "label": "Minimum IDY% considered as proper alignment",
+              "help": "Alignments with IDY% worse than this value will be filtered. Note that all alignments with IDY% less than 80.0% will be filtered regardless of this threshold. ",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "float",
+              "value": 95,
+              "min": 80,
+              "max": 100,
+              "validators": []
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "metagenome",
+          "parameters": [
+            {
+              "name": "ref",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "origin",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Reference genome",
+                "help": "If no reference genomes is provided, the tool will try to identify genome content of the metagenome. By default, it will align contigs to SILVA 16S rRNA database, i.e. FASTA file containing small subunit ribosomal RNA sequences to identify genomes. The reference genomes for the chosen genomes are downloaded from the NCBI database. After that, Quast is run on all of them. Reference genomes with low genome fraction (less than 10%) are removed. The usual MetaQUAST analysis continues with the remaining references.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "From SILVA database",
+                    "value": "silva",
+                    "selected": true
+                  },
+                  {
+                    "label": "From history",
+                    "value": "history",
+                    "selected": false
+                  },
+                  {
+                    "label": "From a list",
+                    "value": "list",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "silva",
+                  "parameters": [
+                    {
+                      "name": "max_ref_num",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Maximum number of reference genomes (per each assembly) to download after searching in the SILVA databa",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": 50,
+                      "min": null,
+                      "max": null,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": true
+                },
+                {
+                  "discriminator": "history",
+                  "parameters": [
+                    {
+                      "name": "r",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Reference genome",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fasta"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "list",
+                  "parameters": [
+                    {
+                      "name": "references_list",
+                      "parameter_type": "gx_text",
+                      "hidden": false,
+                      "label": "Comma-separated list of reference genomes",
+                      "help": "MetaQUAST will search for these references in the NCBI database and will download the found ones",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": true,
+                      "type": "text",
+                      "area": false,
+                      "value": null,
+                      "default_options": [],
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": false
+                }
+              ]
+            },
+            {
+              "name": "reuse_combined_alignments",
+              "parameter_type": "gx_boolean",
+              "hidden": false,
+              "label": "Reuse the alignments on the combined reference",
+              "help": "Reuse the alignments on the combined reference in the subsequent runs per separate references. That is, the alignment procedure is performed only once (for all assemblies against the combined reference) and does NOT executed for each subgroups of contigs against the corresponding separate reference genomes. In each separate reference run, all precomputed assembly alignments for other references are simply ignored",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "boolean",
+              "value": false,
+              "truevalue": "--reuse-combined-alignments",
+              "falsevalue": ""
+            },
+            {
+              "name": "min_identity",
+              "parameter_type": "gx_float",
+              "hidden": false,
+              "label": "Minimum IDY% considered as proper alignment",
+              "help": "Alignments with IDY% worse than this value will be filtered. Note that all alignments with IDY% less than 80.0% will be filtered regardless of this threshold. ",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "float",
+              "value": 90,
+              "min": 80,
+              "max": 100,
+              "validators": []
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "min_contig",
+      "parameter_type": "gx_integer",
+      "hidden": false,
+      "label": "Lower threshold for a contig length (in bp)",
+      "help": "Shorter contigs won't be taken into account",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "integer",
+      "value": 500,
+      "min": null,
+      "max": null,
+      "validators": []
+    },
+    {
+      "name": "split_scaffolds",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Are assemblies scaffolds rather than contigs?",
+      "help": "QUAST will add split versions of assemblies to the comparison. Assemblies are split by continuous fragments of N's of length >= 10. If broken version is equal to the original assembly (i.e. nothing was split) it is not included in the comparison.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": "--split-scaffolds",
+      "falsevalue": ""
+    },
+    {
+      "name": "large",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Is genome large (> 100 Mbp)?",
+      "help": "Use optimal parameters for evaluation of large genomes. Affects speed and accuracy. In particular, imposes --eukaryote --min-contig 3000 --min-alignment 500 --extensive-mis-size 7000 (can be overridden manually with the corresponding options). In addition, this mode tries to identify misassemblies caused by transposable elements and exclude them from the number of misassemblies.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": "--large",
+      "falsevalue": ""
+    },
+    {
+      "name": "genes",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "gene_finding",
+          "parameter_type": "gx_conditional",
+          "hidden": false,
+          "label": null,
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "conditional",
+          "test_parameter": {
+            "name": "tool",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Tool for gene prediction",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "Don't predict genes",
+                "value": "none",
+                "selected": false
+              },
+              {
+                "label": "GeneMarkS if prokaryotes or GeneMark-ES if eukaryotes or fungi",
+                "value": "--gene-finding",
+                "selected": false
+              },
+              {
+                "label": "MetaGeneMark, specially for metagenomic assembly",
+                "value": "--mgm",
+                "selected": false
+              },
+              {
+                "label": "Glimmer",
+                "value": "--glimmer",
+                "selected": false
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          "whens": [
+            {
+              "discriminator": "none",
+              "parameters": [],
+              "is_default_when": true
+            },
+            {
+              "discriminator": "--gene-finding",
+              "parameters": [
+                {
+                  "name": "gene_thresholds",
+                  "parameter_type": "gx_text",
+                  "hidden": false,
+                  "label": "Comma-separated list of thresholds (in bp) for gene lengths to find with a finding tool",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "text",
+                  "area": false,
+                  "value": null,
+                  "default_options": [],
+                  "validators": []
+                }
+              ],
+              "is_default_when": false
+            },
+            {
+              "discriminator": "--mgm",
+              "parameters": [],
+              "is_default_when": false
+            },
+            {
+              "discriminator": "--glimmer",
+              "parameters": [
+                {
+                  "name": "gene_thresholds",
+                  "parameter_type": "gx_text",
+                  "hidden": false,
+                  "label": "Comma-separated list of thresholds (in bp) for gene lengths to find with a finding tool",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "text",
+                  "area": false,
+                  "value": null,
+                  "default_options": [],
+                  "validators": []
+                }
+              ],
+              "is_default_when": false
+            }
+          ]
+        },
+        {
+          "name": "rna_finding",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Enables ribosomal RNA gene finding?",
+          "help": "By default, we assume that the genome is prokaryotic, and Barrnap uses the bacterial database for rRNA prediction. If the genome is eukaryotic (fungal), use --eukaryote (--fungus) option to force Barrnap to work with the eukaryotic (fungal) database. ",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--rna-finding",
+          "falsevalue": ""
+        },
+        {
+          "name": "conserved_genes_finding",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Enables search for Universal Single-Copy Orthologs using BUSCO?",
+          "help": "By default, we assume that the genome is prokaryotic, and BUSCO uses the bacterial database of orthologs. If the genome is eukaryotic (fungal), use --eukaryote (--fungus) option to force BUSCO to work with the eukaryotic (fungal) database. ",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--conserved-genes-finding",
+          "falsevalue": ""
+        }
+      ]
+    },
+    {
+      "name": "alignments",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "use_all_alignments",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Use all alignments as in QUAST v.1.*. to compute genome fraction, # genomic features, # operons metrics?",
+          "help": "By default, QUAST v.2.0 and higher filters out ambiguous and redundant alignments, keeping only one alignment per contig (or one set of non-overlapping or slightly overlapping alignments)",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--use-all-alignments",
+          "falsevalue": ""
+        },
+        {
+          "name": "min_alignment",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Minimum length of alignment",
+          "help": "Alignments shorter than this value will be filtered. Note that all alignments shorter than 65 bp will be filtered regardless of this threshold.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 65,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "ambiguity_usage",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "How processing equally good alignments of a contig (probably repeats)?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Skip all such alignments",
+              "value": "none",
+              "selected": false
+            },
+            {
+              "label": "Take only one (the very best one)",
+              "value": "one",
+              "selected": true
+            },
+            {
+              "label": "Use all alignments. It can cause a significant increase of # mismatches (repeats are almost always inexact due to accumulated SNPs, indels, etc.). It is useful for metagenomic assemblies where ambiguous alignments might represent homologous sequences of different strains",
+              "value": "all",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        {
+          "name": "ambiguity_score",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Score S for defining equally good alignments of a single contig",
+          "help": "All alignments are sorted by decreasing LEN × IDY% value. All alignments with LEN × IDY% less than S × best(LEN × IDY%) are discarded. ",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 0.99,
+          "min": 0.8,
+          "max": 1,
+          "validators": []
+        },
+        {
+          "name": "fragmented",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Fragmented reference genome",
+          "help": "Reference genome is fragmented (e.g. a scaffold reference). QUAST will try to detect misassemblies caused by the fragmentation and mark them fake (will be excluded from misassemblies). Note: QUAST will not detect misassemblies caused by the linear representation of circular genome ",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--fragmented",
+          "falsevalue": ""
+        },
+        {
+          "name": "upper_bound_assembly",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Simulate upper bound assembly",
+          "help": "Simulate upper bound assembly based on the reference genome and a given set reads (mate-pairs or long reads, such as Pacbio SMRT/Oxford Nanopore, are REQUIRED). This assembly is added to the comparison and could be useful for estimating the upper bounds of completeness and contiguity that theoretically can be reached by assembly software from this particular set of reads. The concept is based on the fact that the reference genome cannot be completely reconstructed from raw reads due to long genomic repeats and low covered regions.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--upper-bound-assembly",
+          "falsevalue": ""
+        },
+        {
+          "name": "upper_bound_min_con",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Minimal number of 'connecting reads' needed for joining upper bound contigs into a scaffold",
+          "help": "This is important for a realistic estimation of genome assembly fragmentation due to long repeats. The default values is 2 for mate-pairs and 1 for long reads (PacBio or Nanopore libraries)",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "local_mis_size",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Minimal local misassembly size",
+          "help": "Lower threshold for the local misassembly size. Shorter inconsistencies are considered as (long) indels. The default value is 200 bp. Note that the threshold should be equal to or lower than minimal extensive misassembly size, which is 1000 bp by default",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": 200,
+          "min": null,
+          "max": null,
+          "validators": []
+        }
+      ]
+    },
+    {
+      "name": "advanced",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "contig_thresholds",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Comma-separated list of contig length thresholds (in bp)",
+          "help": "Used in # contigs ≥ x and total length (≥ x) metrics",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": []
+        },
+        {
+          "name": "strict_NA",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Break contigs at every misassembly event (including local ones) to compute NAx and NGAx statistics?",
+          "help": "By default, QUAST breaks contigs only at extensive misassemblies (not local ones).",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--strict-NA",
+          "falsevalue": ""
+        },
+        {
+          "name": "extensive_mis_size",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Lower threshold for the relocation size (gap or overlap size between left and right flanking sequence)",
+          "help": "Shorter relocations are considered as local misassemblies. It does not affect other types of extensive misassemblies (inversions and translocations). The default value is 1000 bp. Note that the threshold should be greater than maximum indel length which is 85 bp.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 1000,
+          "min": 85,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "scaffold_gap_max_size",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Max allowed scaffold gap length difference for detecting corresponding type of misassemblies",
+          "help": "Longer inconsistencies are considered as relocations and thus, counted as extensive misassemblies. The default value is 10000 bp. Note that the threshold make sense only if it is greater than extensive misassembly size",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 10000,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "unaligned_part_size",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Lower threshold for detecting partially unaligned contigs",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 500,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "skip_unaligned_mis_contigs",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Distinguish contigs with more than 50% unaligned bases as a separate group of contigs?",
+          "help": "By default, QUAST breaks contigs only at extensive misassemblies (not local ones).",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": true,
+          "truevalue": "",
+          "falsevalue": "--skip-unaligned-mis-contigs"
+        },
+        {
+          "name": "fragmented_max_indent",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Fragment max indent",
+          "help": "Mark translocation as fake if both alignments are located no further than N bases from the ends of the reference fragments. The value should be less than extensive misassembly size.Default value is 50. Note: requires --fragmented option",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "report_all_metrics",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Report all metrics",
+          "help": "Keep all quality metrics in the main report. Usually, all not-relevant metrics are not included in the report, e.g., reference-based metrics in the no-reference mode. Also, if metric values are undefined for all input assemblies, the metric is removed from the report",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--report-all-metrics",
+          "falsevalue": ""
+        },
+        {
+          "name": "x_for_Nx",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Report Nx, Lx, etc metrics for specific value of 'x'",
+          "help": "Value of 'x' for Nx, Lx, NGx, NGAx, etc metrics reported in addition to N50, L50, NG50, NGA50, etc",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 90,
+          "min": 0,
+          "max": 100,
+          "validators": []
+        }
+      ]
+    },
+    {
+      "name": "output_files",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "Output files",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "select",
+      "options": [
+        {
+          "label": "HTML reports",
+          "value": "html",
+          "selected": true
+        },
+        {
+          "label": "PDF reports",
+          "value": "pdf",
+          "selected": false
+        },
+        {
+          "label": "Tabular reports",
+          "value": "tabular",
+          "selected": false
+        },
+        {
+          "label": "Log file",
+          "value": "log",
+          "selected": false
+        },
+        {
+          "label": "Key metric summary (metagenome mode)",
+          "value": "summary",
+          "selected": false
+        },
+        {
+          "label": "Krona charts (metagenome mode without reference genomes)",
+          "value": "krona",
+          "selected": false
+        }
+      ],
+      "multiple": true,
+      "validators": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "metrics_tabular",
+      "label": "${tool.name} on ${on_string}: Tabular reports for key metrics",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "tabular",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "outputdir/summary/TSV/",
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.+).tsv"
+        }
+      ]
+    },
+    {
+      "name": "metrics_pdf",
+      "label": "${tool.name} on ${on_string}: PDF reports for key metrics",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "pdf",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "outputdir/summary/PDF/",
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.+).pdf"
+        }
+      ]
+    },
+    {
+      "name": "report_tabular",
+      "label": "${tool.name} on ${on_string}: tabular report",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputdir/report.tsv",
+      "precreate_directory": false
+    },
+    {
+      "name": "report_tabular_meta",
+      "label": "${tool.name} on ${on_string}: tabular report for combined reference genome",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputdir/combined_reference/report.tsv",
+      "precreate_directory": false
+    },
+    {
+      "name": "report_html",
+      "label": "${tool.name} on ${on_string}: HTML report",
+      "hidden": false,
+      "type": "data",
+      "format": "html",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputdir/report.html",
+      "precreate_directory": false
+    },
+    {
+      "name": "report_html_meta",
+      "label": "${tool.name} on ${on_string}: HTML report for combined reference genome",
+      "hidden": false,
+      "type": "data",
+      "format": "html",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputdir/combined_reference/report.html",
+      "precreate_directory": false
+    },
+    {
+      "name": "report_pdf",
+      "label": "${tool.name} on ${on_string}:  PDF report",
+      "hidden": false,
+      "type": "data",
+      "format": "pdf",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputdir/report.pdf",
+      "precreate_directory": false
+    },
+    {
+      "name": "log",
+      "label": "${tool.name} on ${on_string}: Log",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputdir/quast.log",
+      "precreate_directory": false
+    },
+    {
+      "name": "log_meta",
+      "label": "${tool.name} on ${on_string}: Log Meta",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputdir/metaquast.log",
+      "precreate_directory": false
+    },
+    {
+      "name": "mis_ass",
+      "label": "${tool.name} on ${on_string}: Misassemblies report",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputdir/contigs_reports/misassemblies_report.txt",
+      "precreate_directory": false
+    },
+    {
+      "name": "unalign",
+      "label": "${tool.name} on ${on_string}: Unaligned contigs report",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputdir/contigs_reports/unaligned_report.tsv",
+      "precreate_directory": false
+    },
+    {
+      "name": "kmers",
+      "label": "${tool.name} on ${on_string}: K-mer-based metrics report",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputdir/k_mer_stats/kmers_report.txt",
+      "precreate_directory": false
+    },
+    {
+      "name": "circos_output",
+      "label": "${tool.name} on ${on_string}: Circos plot",
+      "hidden": false,
+      "type": "data",
+      "format": "png",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputdir/circos/circos.png",
+      "precreate_directory": false
+    },
+    {
+      "name": "krona",
+      "label": "${tool.name} on ${on_string}:  Krona chart",
+      "hidden": false,
+      "type": "data",
+      "format": "html",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outputdir/krona_charts/*.html",
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/bty266"
+    },
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/btw379"
+    },
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/btv697"
+    },
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/btt086"
+    }
+  ],
+  "license": null,
+  "profile": "25.1",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "quast",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\n**What it does**\n\nQUAST = QUality ASsessment Tool. The tool evaluates genome assemblies by computing various metrics.\n\nIf you have one or multiple genome assemblies, you can assess their quality with Quast. It works with or without reference genome. If you are new to Quast, start by reading its `manual page <http://quast.sourceforge.net/docs/manual.html>`_.\n\n**Using Quast without reference**\n\nWithout reference Quast can calculate a number of assembly related-metrics but cannot provide any information about potential misassemblies, inversions, translocations, etc. Suppose you have three assemblies produced by Unicycler corresponding to three different antibiotic treatments *car*, *pit*, and *cef* (these stand for carbenicillin, piperacillin, and cefsulodin, respectively). Evaluating them without reference will produce the following Quast outputs:\n\n * Quast report in HTML format\n * `Contig viewer <http://quast.sourceforge.net/docs/manual.html#sec3.4>`_ (an HTML file)\n * `Quast report <http://quast.sourceforge.net/docs/manual.html#sec3.1.1>`_ in Tab-delimited format\n * Quast log (a file technical information about Quast tool execution)\n\nThe **tab delimited Quast report** will contain the following information::\n\n Assembly                  pit_fna cef_fna car_fna\n # contigs (>= 0 bp)           100      91      94\n # contigs (>= 1000 bp)         62      58      61\n Total length (>= 0 bp)    6480635 6481216 6480271\n Total length (>= 1000 bp) 6466917 6468946 6467103\n # contigs                      71      66      70\n Largest contig             848753  848766  662053\n Total length              6473173 6474698 6473810\n GC (%)                      66.33   66.33   66.33\n N50                        270269  289027  254671\n N75                        136321  136321  146521\n L50                             7       7       8\n L75                            15      15      16\n # N's per 100 kbp            0.00    0.00    0.00\n\nwhere values are defined as specified in `Quast manual <http://quast.sourceforge.net/docs/manual.html#sec3.1.1>`_\n\n**Quast report in HTML format** contains graphs in addition to the above metrics, while **Contig viewer** draws contigs ordered from longest to shortest. This ordering is suitable for comparing only largest contigs or number of contigs longer than a specific threshold. The viewer shows N50 and N75 with color and textual indication. If the reference genome is available or at least approximate genome length is known (see `--est-ref-size`), NG50 and NG75 are also shown. You can also tone down contigs shorter than a specified threshold using Icarus control panel:\n\n.. image:: $PATH_TO_IMAGES/contig_view_noR.png\n   :width: 558\n   :height: 412\n\nAlso see `Plot description <http://quast.sourceforge.net/docs/manual.html#sec2>`_ section of the manual.\n\n**Using Quast with reference**\n\nCar, pit, and cef are in fact assemblies of *Pseudomonas aeruginosa* UCBPP-PA14, so we can use its genome as a reference (by supplying a Fasta file containing *P. aeruginosa* pa14 genome to **Reference genome** input box). The following outputs will be produced (note the alignment viewer):\n\n * Quast report in HTML format\n * `Contig viewer <http://quast.sourceforge.net/docs/manual.html#sec3.4>`_ (an HTML file)\n * `Alignment viewer <http://quast.sourceforge.net/docs/manual.html#sec3.4>`_ (an HTML file)\n * `Quast report <http://quast.sourceforge.net/docs/manual.html#sec3.1.1>`_ in Tab-delimited format\n * Summary of `misassemblies <http://quast.sourceforge.net/docs/manual.html#sec3.1.2>`_\n * Summary of `unaligned contigs <http://quast.sourceforge.net/docs/manual.html#sec3.1.3>`_\n * Quast log (a file technical information about Quast tool execution)\n\nWith the reference Quast produces a much more comprehensive set of results::\n\n Assembly                  pit_fna cef_fna car_fna\n # contigs (>= 0 bp)           100      91      94\n # contigs (>= 1000 bp)         62      58      61\n Total length (>= 0 bp)    6480635 6481216 6480271\n Total length (>= 1000 bp) 6466917 6468946 6467103\n # contigs                      71      66      70\n Largest contig             848753  848766  662053\n Total length              6473173 6474698 6473810\n Reference length          6537648 6537648 6537648\n GC (%)                      66.33   66.33   66.33\n Reference GC (%)            66.29   66.29   66.29\n N50                        270269  289027  254671\n NG50                       270269  289027  254671\n N75                        136321  136321  146521\n NG75                       136321  136321  136321\n L50                             7       7       8\n LG50                            7       7       8\n L75                            15      15      16\n LG75                           15      15      17\n # misassemblies                 0       0       0\n # misassembled contigs          0       0       0\n Misassembled contigs length     0       0       0\n # local misassemblies           1       1       2\n # unaligned mis. contigs        0       0       0\n # unaligned contigs         0 + 0   0 + 0   0 + 0\n                              part    part    part\n Unaligned length                0       0       0\n Genome fraction (%)        99.015  99.038  99.025\n Duplication ratio           1.000   1.000   1.000\n # N's per 100 kbp            0.00    0.00    0.00\n # mismatches per 100 kbp     3.82    3.63    3.49\n # indels per 100 kbp         1.19    1.13    1.13\n Largest alignment          848753  848766  662053\n Total aligned length      6473163 6474660 6473792\n NA50                       270269  289027  254671\n NGA50                      270269  289027  254671\n NA75                       136321  136321  146521\n NGA75                      136321  136321  136321\n LA50                            7       7       8\n LGA50                           7       7       8\n LA75                           15      15      16\n LGA75                          15      15      17\n\nwhere, again, values are defined as specified in `Quast manual <http://quast.sourceforge.net/docs/manual.html#sec3.1.1>`_. You can see that this report includes a variety of data that can only be computer against a reference assembly.\n\nUsing reference also produces an **Alignment viewer**:\n\n.. image:: $PATH_TO_IMAGES/Align_view.png\n   :width: 515\n   :height: 395\n\nAlignment viewer highlights regions of interest as, in this case, missassemblies that can potentially point to genome rearrangements (see more `here <http://quast.sourceforge.net/docs/manual.html#sec3.4>`_).\n\n    \n    "
+  }
+}

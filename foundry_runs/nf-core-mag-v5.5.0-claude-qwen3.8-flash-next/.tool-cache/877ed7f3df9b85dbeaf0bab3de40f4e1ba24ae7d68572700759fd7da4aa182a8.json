@@ -1,0 +1,79 @@
+{
+  "id": "__DUPLICATE_FILE_TO_COLLECTION__",
+  "version": "1.0.0",
+  "name": "Duplicate file to collection",
+  "description": "by duplicating a dataset N times",
+  "inputs": [
+    {
+      "name": "input",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "Input Dataset",
+      "help": "A dataset which will be duplicated.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data",
+      "extensions": [
+        "data"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "number",
+      "parameter_type": "gx_integer",
+      "hidden": false,
+      "label": "Size of output collection",
+      "help": "Number of times to duplicate the input dataset.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "integer",
+      "value": null,
+      "min": null,
+      "max": null,
+      "validators": []
+    },
+    {
+      "name": "element_identifier",
+      "parameter_type": "gx_text",
+      "hidden": false,
+      "label": "Element identifier",
+      "help": "Each element in the output collection will be assigned this identifier, with an integer appended.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "text",
+      "area": false,
+      "value": null,
+      "default_options": [],
+      "validators": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output",
+      "label": "${on_string} (duplicated)",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": []
+    }
+  ],
+  "citations": [],
+  "license": null,
+  "profile": "16.01",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\n========\nSynopsis\n========\n\nCreates a list collection by duplicating a single dataset N times.\n\n===========\nDescription\n===========\n\nThis tool takes one input dataset and produces a list collection containing N identical copies of it. You specify the number of copies and a base name for the element identifiers. The copies are numbered automatically — for example, with a count of 3 and base name ``sample``, the output collection will contain ``sample 1``, ``sample 2``, and ``sample 3``.\n\nThis is useful when a workflow or tool expects a list collection as input but you only have a single dataset. Instead of uploading the same file multiple times, you can duplicate it into a collection in one step.\n\n========\nExamples\n========\n\n**Basic duplication**\n\nGiven a single reference genome file and the settings:\n\n- *Size of output collection*: ``3``\n- *Element identifier*: ``ref``\n\nThe output is a list collection containing three identical copies::\n\n List: \"reference.fa (duplicated)\"\n\n   ref 1  →  reference.fa\n   ref 2  →  reference.fa\n   ref 3  →  reference.fa\n\n-------\n\n**Workflow use case**\n\nIf you have a list of samples and a tool that compares each sample against a reference, you can duplicate the reference to match the number of samples. Galaxy will then pair them element-wise:\n\n- Sample list: ``[sample1.fq, sample2.fq, sample3.fq]``\n- Duplicated reference: ``[ref 1, ref 2, ref 3]`` (all pointing to the same file)\n\nThis avoids having to manually create a matched collection.\n\n-------\n\n.. image:: ${static_path}/images/tools/collection_ops/duplicate_file_to_collection.svg\n  :alt: Duplicate file to collection\n  :width: 500\n\n-------\n\n.. class:: infomark\n\nThis tool will create new history datasets copied from your input collections but your quota usage will not increase.\n\n    "
+  }
+}

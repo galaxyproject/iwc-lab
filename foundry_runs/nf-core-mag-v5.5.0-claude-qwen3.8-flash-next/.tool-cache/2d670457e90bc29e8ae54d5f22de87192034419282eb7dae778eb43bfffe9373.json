@@ -1,0 +1,1583 @@
+{
+  "id": "metaspades",
+  "version": "4.3.0+galaxy3",
+  "name": "metaSPAdes",
+  "description": "metagenome assembler",
+  "inputs": [
+    {
+      "name": "file_processing",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "is_select",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Individual or co-assembly",
+        "help": "Select if the tool should run individual (only one file per run) or in co-assembly (all files in one run)",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Multiple samples (co-assembly)",
+            "value": "co",
+            "selected": true
+          },
+          {
+            "label": "Single sample (individual)",
+            "value": "individual",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "co",
+          "parameters": [
+            {
+              "name": "singlePaired",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "sPaired",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Paired-end reads input format",
+                "help": "It assumes that all samples belong to the same library. If you want to use samples from two different libraries, include the second library as additional set of short-reads.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Paired-end: list of dataset pairs",
+                    "value": "paired_collection",
+                    "selected": true
+                  },
+                  {
+                    "label": "Paired-end: interlaced reads",
+                    "value": "paired_interlaced",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "paired_interlaced",
+                  "parameters": [
+                    {
+                      "name": "input1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ file(s): interlaced",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastqillumina",
+                        "fastqillumina.gz",
+                        "fastqsanger",
+                        "fastqsanger.gz"
+                      ],
+                      "multiple": true,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "type_paired",
+                      "parameter_type": "gx_select",
+                      "hidden": false,
+                      "label": "Type of paired-reads",
+                      "help": "In paired-end sequencing, the library preparation yields a set of fragments, and the machine sequences each fragment from both ends. In mate-pair sequencing,                  the library preparation yields two fragments that are distal to each other in the genome and in the opposite in orientation to that of a mate-paired fragment.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "select",
+                      "options": [
+                        {
+                          "label": "Default (--pe)",
+                          "value": "pe",
+                          "selected": true
+                        },
+                        {
+                          "label": "Mate-pair reads (--mp)",
+                          "value": "mp",
+                          "selected": false
+                        },
+                        {
+                          "label": "High-quality Nextera mate-pair reads (--hqmp)",
+                          "value": "hqmp",
+                          "selected": false
+                        }
+                      ],
+                      "multiple": false,
+                      "validators": []
+                    },
+                    {
+                      "name": "orientation",
+                      "parameter_type": "gx_select",
+                      "hidden": false,
+                      "label": "Select orientation of reads",
+                      "help": "Note: mate-pair fragments are generally in a RF conformation. In general, paired-end reads tend to be in a FR orientation.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "select",
+                      "options": [
+                        {
+                          "label": "FR (-> <-)",
+                          "value": "fr",
+                          "selected": true
+                        },
+                        {
+                          "label": "RF (<- ->)",
+                          "value": "rf",
+                          "selected": false
+                        },
+                        {
+                          "label": "FF (-> ->)",
+                          "value": "ff",
+                          "selected": false
+                        }
+                      ],
+                      "multiple": false,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "paired_collection",
+                  "parameters": [
+                    {
+                      "name": "input",
+                      "parameter_type": "gx_data_collection",
+                      "hidden": false,
+                      "label": "FASTQ file(s): collection",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data_collection",
+                      "collection_type": "list:paired",
+                      "extensions": [
+                        "fastqillumina",
+                        "fastqillumina.gz",
+                        "fastqsanger",
+                        "fastqsanger.gz"
+                      ],
+                      "value": null
+                    },
+                    {
+                      "name": "type_paired",
+                      "parameter_type": "gx_select",
+                      "hidden": false,
+                      "label": "Type of paired-reads",
+                      "help": "In paired-end sequencing, the library preparation yields a set of fragments, and the machine sequences each fragment from both ends. In mate-pair sequencing,                  the library preparation yields two fragments that are distal to each other in the genome and in the opposite in orientation to that of a mate-paired fragment.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "select",
+                      "options": [
+                        {
+                          "label": "Default (--pe)",
+                          "value": "pe",
+                          "selected": true
+                        },
+                        {
+                          "label": "Mate-pair reads (--mp)",
+                          "value": "mp",
+                          "selected": false
+                        },
+                        {
+                          "label": "High-quality Nextera mate-pair reads (--hqmp)",
+                          "value": "hqmp",
+                          "selected": false
+                        }
+                      ],
+                      "multiple": false,
+                      "validators": []
+                    },
+                    {
+                      "name": "orientation",
+                      "parameter_type": "gx_select",
+                      "hidden": false,
+                      "label": "Select orientation of reads",
+                      "help": "Note: mate-pair fragments are generally in a RF conformation. In general, paired-end reads tend to be in a FR orientation.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "select",
+                      "options": [
+                        {
+                          "label": "FR (-> <-)",
+                          "value": "fr",
+                          "selected": true
+                        },
+                        {
+                          "label": "RF (<- ->)",
+                          "value": "rf",
+                          "selected": false
+                        },
+                        {
+                          "label": "FF (-> ->)",
+                          "value": "ff",
+                          "selected": false
+                        }
+                      ],
+                      "multiple": false,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "library_number",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "The samples belong to the same library",
+              "help": "If the reads have been generated from the same sample, it means that they belong to the same library.",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "True",
+                  "value": "true",
+                  "selected": true
+                },
+                {
+                  "label": "False",
+                  "value": "false",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            {
+              "name": "additional_reads",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "selector",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Use an additional set of short-reads",
+                "help": "Enable this option if you want to combine two data sources (e.g. single and paired reads).",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Disabled",
+                    "value": "false",
+                    "selected": true
+                  },
+                  {
+                    "label": "Enabled",
+                    "value": "true",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "true",
+                  "parameters": [
+                    {
+                      "name": "singlePaired",
+                      "parameter_type": "gx_conditional",
+                      "hidden": false,
+                      "label": null,
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "conditional",
+                      "test_parameter": {
+                        "name": "sPaired",
+                        "parameter_type": "gx_select",
+                        "hidden": false,
+                        "label": "Paired-end reads input format",
+                        "help": "It assumes that all samples belong to the same library. If you want to use samples from two different libraries, include the second library as additional set of short-reads.",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "select",
+                        "options": [
+                          {
+                            "label": "Paired-end: list of dataset pairs",
+                            "value": "paired_collection",
+                            "selected": true
+                          },
+                          {
+                            "label": "Paired-end: interlaced reads",
+                            "value": "paired_interlaced",
+                            "selected": false
+                          }
+                        ],
+                        "multiple": false,
+                        "validators": []
+                      },
+                      "whens": [
+                        {
+                          "discriminator": "paired_interlaced",
+                          "parameters": [
+                            {
+                              "name": "input1",
+                              "parameter_type": "gx_data",
+                              "hidden": false,
+                              "label": "FASTQ file(s): interlaced",
+                              "help": null,
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "data",
+                              "extensions": [
+                                "fastqillumina",
+                                "fastqillumina.gz",
+                                "fastqsanger",
+                                "fastqsanger.gz"
+                              ],
+                              "multiple": true,
+                              "min": null,
+                              "max": null,
+                              "url_default": null
+                            },
+                            {
+                              "name": "type_paired",
+                              "parameter_type": "gx_select",
+                              "hidden": false,
+                              "label": "Type of paired-reads",
+                              "help": "In paired-end sequencing, the library preparation yields a set of fragments, and the machine sequences each fragment from both ends. In mate-pair sequencing,                  the library preparation yields two fragments that are distal to each other in the genome and in the opposite in orientation to that of a mate-paired fragment.",
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "select",
+                              "options": [
+                                {
+                                  "label": "Default (--pe)",
+                                  "value": "pe",
+                                  "selected": true
+                                },
+                                {
+                                  "label": "Mate-pair reads (--mp)",
+                                  "value": "mp",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "High-quality Nextera mate-pair reads (--hqmp)",
+                                  "value": "hqmp",
+                                  "selected": false
+                                }
+                              ],
+                              "multiple": false,
+                              "validators": []
+                            },
+                            {
+                              "name": "orientation",
+                              "parameter_type": "gx_select",
+                              "hidden": false,
+                              "label": "Select orientation of reads",
+                              "help": "Note: mate-pair fragments are generally in a RF conformation. In general, paired-end reads tend to be in a FR orientation.",
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "select",
+                              "options": [
+                                {
+                                  "label": "FR (-> <-)",
+                                  "value": "fr",
+                                  "selected": true
+                                },
+                                {
+                                  "label": "RF (<- ->)",
+                                  "value": "rf",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "FF (-> ->)",
+                                  "value": "ff",
+                                  "selected": false
+                                }
+                              ],
+                              "multiple": false,
+                              "validators": []
+                            }
+                          ],
+                          "is_default_when": false
+                        },
+                        {
+                          "discriminator": "paired_collection",
+                          "parameters": [
+                            {
+                              "name": "input",
+                              "parameter_type": "gx_data_collection",
+                              "hidden": false,
+                              "label": "FASTQ file(s): collection",
+                              "help": null,
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "data_collection",
+                              "collection_type": "list:paired",
+                              "extensions": [
+                                "fastqillumina",
+                                "fastqillumina.gz",
+                                "fastqsanger",
+                                "fastqsanger.gz"
+                              ],
+                              "value": null
+                            },
+                            {
+                              "name": "type_paired",
+                              "parameter_type": "gx_select",
+                              "hidden": false,
+                              "label": "Type of paired-reads",
+                              "help": "In paired-end sequencing, the library preparation yields a set of fragments, and the machine sequences each fragment from both ends. In mate-pair sequencing,                  the library preparation yields two fragments that are distal to each other in the genome and in the opposite in orientation to that of a mate-paired fragment.",
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "select",
+                              "options": [
+                                {
+                                  "label": "Default (--pe)",
+                                  "value": "pe",
+                                  "selected": true
+                                },
+                                {
+                                  "label": "Mate-pair reads (--mp)",
+                                  "value": "mp",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "High-quality Nextera mate-pair reads (--hqmp)",
+                                  "value": "hqmp",
+                                  "selected": false
+                                }
+                              ],
+                              "multiple": false,
+                              "validators": []
+                            },
+                            {
+                              "name": "orientation",
+                              "parameter_type": "gx_select",
+                              "hidden": false,
+                              "label": "Select orientation of reads",
+                              "help": "Note: mate-pair fragments are generally in a RF conformation. In general, paired-end reads tend to be in a FR orientation.",
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "select",
+                              "options": [
+                                {
+                                  "label": "FR (-> <-)",
+                                  "value": "fr",
+                                  "selected": true
+                                },
+                                {
+                                  "label": "RF (<- ->)",
+                                  "value": "rf",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "FF (-> ->)",
+                                  "value": "ff",
+                                  "selected": false
+                                }
+                              ],
+                              "multiple": false,
+                              "validators": []
+                            }
+                          ],
+                          "is_default_when": true
+                        }
+                      ]
+                    },
+                    {
+                      "name": "library_number",
+                      "parameter_type": "gx_select",
+                      "hidden": false,
+                      "label": "The samples belong to the same library",
+                      "help": "If the reads have been generated from the same sample, it means that they belong to the same library.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "select",
+                      "options": [
+                        {
+                          "label": "True",
+                          "value": "true",
+                          "selected": true
+                        },
+                        {
+                          "label": "False",
+                          "value": "false",
+                          "selected": false
+                        }
+                      ],
+                      "multiple": false,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "false",
+                  "parameters": [],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "arf",
+              "parameter_type": "gx_section",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "section",
+              "parameters": [
+                {
+                  "name": "nanopore",
+                  "parameter_type": "gx_data",
+                  "hidden": false,
+                  "label": "Nanopore reads",
+                  "help": "SPAdes will use Oxford Nanopore reads for gap closure and repeat resolution",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "data",
+                  "extensions": [
+                    "fastqillumina",
+                    "fastqillumina.gz",
+                    "fastqsanger",
+                    "fastqsanger.gz"
+                  ],
+                  "multiple": true,
+                  "min": null,
+                  "max": null,
+                  "url_default": null
+                },
+                {
+                  "name": "pacbio",
+                  "parameter_type": "gx_data",
+                  "hidden": false,
+                  "label": "PacBio CLR reads",
+                  "help": "It is not recommended to run SPAdes on PacBio reads with low coverage (less than 5). In addition, SPAdes develpers suggest not to run SPAdes on PacBio reads for large genomes. SPAdes will use PacBio CLR reads for gap closure and repeat resolution",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "data",
+                  "extensions": [
+                    "fastqillumina",
+                    "fastqillumina.gz",
+                    "fastqsanger",
+                    "fastqsanger.gz"
+                  ],
+                  "multiple": true,
+                  "min": null,
+                  "max": null,
+                  "url_default": null
+                }
+              ]
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "individual",
+          "parameters": [
+            {
+              "name": "singlePaired",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "sPaired",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Paired-end reads input format",
+                "help": "It assumes that all samples belong to the same library. If you want to use samples from two different libraries, include the second library as additional set of short-reads.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Paired-end: dataset pair",
+                    "value": "paired_collection",
+                    "selected": true
+                  },
+                  {
+                    "label": "Paired-end: interlaced reads",
+                    "value": "paired_interlaced",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "paired_interlaced",
+                  "parameters": [
+                    {
+                      "name": "input1",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "FASTQ file(s): interlaced",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fastqillumina",
+                        "fastqillumina.gz",
+                        "fastqsanger",
+                        "fastqsanger.gz"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    },
+                    {
+                      "name": "type_paired",
+                      "parameter_type": "gx_select",
+                      "hidden": false,
+                      "label": "Type of paired-reads",
+                      "help": "In paired-end sequencing, the library preparation yields a set of fragments, and the machine sequences each fragment from both ends. In mate-pair sequencing,                  the library preparation yields two fragments that are distal to each other in the genome and in the opposite in orientation to that of a mate-paired fragment.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "select",
+                      "options": [
+                        {
+                          "label": "Default (--pe)",
+                          "value": "pe",
+                          "selected": true
+                        },
+                        {
+                          "label": "Mate-pair reads (--mp)",
+                          "value": "mp",
+                          "selected": false
+                        },
+                        {
+                          "label": "High-quality Nextera mate-pair reads (--hqmp)",
+                          "value": "hqmp",
+                          "selected": false
+                        }
+                      ],
+                      "multiple": false,
+                      "validators": []
+                    },
+                    {
+                      "name": "orientation",
+                      "parameter_type": "gx_select",
+                      "hidden": false,
+                      "label": "Select orientation of reads",
+                      "help": "Note: mate-pair fragments are generally in a RF conformation. In general, paired-end reads tend to be in a FR orientation.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "select",
+                      "options": [
+                        {
+                          "label": "FR (-> <-)",
+                          "value": "fr",
+                          "selected": true
+                        },
+                        {
+                          "label": "RF (<- ->)",
+                          "value": "rf",
+                          "selected": false
+                        },
+                        {
+                          "label": "FF (-> ->)",
+                          "value": "ff",
+                          "selected": false
+                        }
+                      ],
+                      "multiple": false,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "paired_collection",
+                  "parameters": [
+                    {
+                      "name": "input",
+                      "parameter_type": "gx_data_collection",
+                      "hidden": false,
+                      "label": "FASTQ file(s): collection",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data_collection",
+                      "collection_type": "paired",
+                      "extensions": [
+                        "fastqillumina",
+                        "fastqillumina.gz",
+                        "fastqsanger",
+                        "fastqsanger.gz"
+                      ],
+                      "value": null
+                    },
+                    {
+                      "name": "type_paired",
+                      "parameter_type": "gx_select",
+                      "hidden": false,
+                      "label": "Type of paired-reads",
+                      "help": "In paired-end sequencing, the library preparation yields a set of fragments, and the machine sequences each fragment from both ends. In mate-pair sequencing,                  the library preparation yields two fragments that are distal to each other in the genome and in the opposite in orientation to that of a mate-paired fragment.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "select",
+                      "options": [
+                        {
+                          "label": "Default (--pe)",
+                          "value": "pe",
+                          "selected": true
+                        },
+                        {
+                          "label": "Mate-pair reads (--mp)",
+                          "value": "mp",
+                          "selected": false
+                        },
+                        {
+                          "label": "High-quality Nextera mate-pair reads (--hqmp)",
+                          "value": "hqmp",
+                          "selected": false
+                        }
+                      ],
+                      "multiple": false,
+                      "validators": []
+                    },
+                    {
+                      "name": "orientation",
+                      "parameter_type": "gx_select",
+                      "hidden": false,
+                      "label": "Select orientation of reads",
+                      "help": "Note: mate-pair fragments are generally in a RF conformation. In general, paired-end reads tend to be in a FR orientation.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "select",
+                      "options": [
+                        {
+                          "label": "FR (-> <-)",
+                          "value": "fr",
+                          "selected": true
+                        },
+                        {
+                          "label": "RF (<- ->)",
+                          "value": "rf",
+                          "selected": false
+                        },
+                        {
+                          "label": "FF (-> ->)",
+                          "value": "ff",
+                          "selected": false
+                        }
+                      ],
+                      "multiple": false,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "library_number",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "The samples belong to the same library",
+              "help": "If the reads have been generated from the same sample, it means that they belong to the same library.",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "True",
+                  "value": "true",
+                  "selected": true
+                },
+                {
+                  "label": "False",
+                  "value": "false",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            {
+              "name": "additional_reads",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "selector",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Use an additional set of short-reads",
+                "help": "Enable this option if you want to combine two data sources (e.g. single and paired reads).",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Disabled",
+                    "value": "false",
+                    "selected": true
+                  },
+                  {
+                    "label": "Enabled",
+                    "value": "true",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "true",
+                  "parameters": [
+                    {
+                      "name": "singlePaired",
+                      "parameter_type": "gx_conditional",
+                      "hidden": false,
+                      "label": null,
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "conditional",
+                      "test_parameter": {
+                        "name": "sPaired",
+                        "parameter_type": "gx_select",
+                        "hidden": false,
+                        "label": "Paired-end reads input format",
+                        "help": "It assumes that all samples belong to the same library. If you want to use samples from two different libraries, include the second library as additional set of short-reads.",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "select",
+                        "options": [
+                          {
+                            "label": "Paired-end: dataset pair",
+                            "value": "paired_collection",
+                            "selected": true
+                          },
+                          {
+                            "label": "Paired-end: interlaced reads",
+                            "value": "paired_interlaced",
+                            "selected": false
+                          }
+                        ],
+                        "multiple": false,
+                        "validators": []
+                      },
+                      "whens": [
+                        {
+                          "discriminator": "paired_interlaced",
+                          "parameters": [
+                            {
+                              "name": "input1",
+                              "parameter_type": "gx_data",
+                              "hidden": false,
+                              "label": "FASTQ file(s): interlaced",
+                              "help": null,
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "data",
+                              "extensions": [
+                                "fastqillumina",
+                                "fastqillumina.gz",
+                                "fastqsanger",
+                                "fastqsanger.gz"
+                              ],
+                              "multiple": false,
+                              "min": null,
+                              "max": null,
+                              "url_default": null
+                            },
+                            {
+                              "name": "type_paired",
+                              "parameter_type": "gx_select",
+                              "hidden": false,
+                              "label": "Type of paired-reads",
+                              "help": "In paired-end sequencing, the library preparation yields a set of fragments, and the machine sequences each fragment from both ends. In mate-pair sequencing,                  the library preparation yields two fragments that are distal to each other in the genome and in the opposite in orientation to that of a mate-paired fragment.",
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "select",
+                              "options": [
+                                {
+                                  "label": "Default (--pe)",
+                                  "value": "pe",
+                                  "selected": true
+                                },
+                                {
+                                  "label": "Mate-pair reads (--mp)",
+                                  "value": "mp",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "High-quality Nextera mate-pair reads (--hqmp)",
+                                  "value": "hqmp",
+                                  "selected": false
+                                }
+                              ],
+                              "multiple": false,
+                              "validators": []
+                            },
+                            {
+                              "name": "orientation",
+                              "parameter_type": "gx_select",
+                              "hidden": false,
+                              "label": "Select orientation of reads",
+                              "help": "Note: mate-pair fragments are generally in a RF conformation. In general, paired-end reads tend to be in a FR orientation.",
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "select",
+                              "options": [
+                                {
+                                  "label": "FR (-> <-)",
+                                  "value": "fr",
+                                  "selected": true
+                                },
+                                {
+                                  "label": "RF (<- ->)",
+                                  "value": "rf",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "FF (-> ->)",
+                                  "value": "ff",
+                                  "selected": false
+                                }
+                              ],
+                              "multiple": false,
+                              "validators": []
+                            }
+                          ],
+                          "is_default_when": false
+                        },
+                        {
+                          "discriminator": "paired_collection",
+                          "parameters": [
+                            {
+                              "name": "input",
+                              "parameter_type": "gx_data_collection",
+                              "hidden": false,
+                              "label": "FASTQ file(s): collection",
+                              "help": null,
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "data_collection",
+                              "collection_type": "paired",
+                              "extensions": [
+                                "fastqillumina",
+                                "fastqillumina.gz",
+                                "fastqsanger",
+                                "fastqsanger.gz"
+                              ],
+                              "value": null
+                            },
+                            {
+                              "name": "type_paired",
+                              "parameter_type": "gx_select",
+                              "hidden": false,
+                              "label": "Type of paired-reads",
+                              "help": "In paired-end sequencing, the library preparation yields a set of fragments, and the machine sequences each fragment from both ends. In mate-pair sequencing,                  the library preparation yields two fragments that are distal to each other in the genome and in the opposite in orientation to that of a mate-paired fragment.",
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "select",
+                              "options": [
+                                {
+                                  "label": "Default (--pe)",
+                                  "value": "pe",
+                                  "selected": true
+                                },
+                                {
+                                  "label": "Mate-pair reads (--mp)",
+                                  "value": "mp",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "High-quality Nextera mate-pair reads (--hqmp)",
+                                  "value": "hqmp",
+                                  "selected": false
+                                }
+                              ],
+                              "multiple": false,
+                              "validators": []
+                            },
+                            {
+                              "name": "orientation",
+                              "parameter_type": "gx_select",
+                              "hidden": false,
+                              "label": "Select orientation of reads",
+                              "help": "Note: mate-pair fragments are generally in a RF conformation. In general, paired-end reads tend to be in a FR orientation.",
+                              "argument": null,
+                              "is_dynamic": false,
+                              "optional": false,
+                              "type": "select",
+                              "options": [
+                                {
+                                  "label": "FR (-> <-)",
+                                  "value": "fr",
+                                  "selected": true
+                                },
+                                {
+                                  "label": "RF (<- ->)",
+                                  "value": "rf",
+                                  "selected": false
+                                },
+                                {
+                                  "label": "FF (-> ->)",
+                                  "value": "ff",
+                                  "selected": false
+                                }
+                              ],
+                              "multiple": false,
+                              "validators": []
+                            }
+                          ],
+                          "is_default_when": true
+                        }
+                      ]
+                    },
+                    {
+                      "name": "library_number",
+                      "parameter_type": "gx_select",
+                      "hidden": false,
+                      "label": "The samples belong to the same library",
+                      "help": "If the reads have been generated from the same sample, it means that they belong to the same library.",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "select",
+                      "options": [
+                        {
+                          "label": "True",
+                          "value": "true",
+                          "selected": true
+                        },
+                        {
+                          "label": "False",
+                          "value": "false",
+                          "selected": false
+                        }
+                      ],
+                      "multiple": false,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "false",
+                  "parameters": [],
+                  "is_default_when": true
+                }
+              ]
+            },
+            {
+              "name": "arf",
+              "parameter_type": "gx_section",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "section",
+              "parameters": [
+                {
+                  "name": "nanopore",
+                  "parameter_type": "gx_data",
+                  "hidden": false,
+                  "label": "Nanopore reads",
+                  "help": "SPAdes will use Oxford Nanopore reads for gap closure and repeat resolution",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "data",
+                  "extensions": [
+                    "fastqillumina",
+                    "fastqillumina.gz",
+                    "fastqsanger",
+                    "fastqsanger.gz"
+                  ],
+                  "multiple": false,
+                  "min": null,
+                  "max": null,
+                  "url_default": null
+                },
+                {
+                  "name": "pacbio",
+                  "parameter_type": "gx_data",
+                  "hidden": false,
+                  "label": "PacBio CLR reads",
+                  "help": "It is not recommended to run SPAdes on PacBio reads with low coverage (less than 5). In addition, SPAdes develpers suggest not to run SPAdes on PacBio reads for large genomes. SPAdes will use PacBio CLR reads for gap closure and repeat resolution",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "data",
+                  "extensions": [
+                    "fastqillumina",
+                    "fastqillumina.gz",
+                    "fastqsanger",
+                    "fastqsanger.gz"
+                  ],
+                  "multiple": false,
+                  "min": null,
+                  "max": null,
+                  "url_default": null
+                }
+              ]
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "kmer_cond",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "kmer_sel",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Select k-mer detection option",
+        "help": " Comma-separated list, all values must be odd, less than 128 and listed in ascending order.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Auto",
+            "value": "auto",
+            "selected": false
+          },
+          {
+            "label": "User specific",
+            "value": "manual",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "auto",
+          "parameters": [],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "manual",
+          "parameters": [
+            {
+              "name": "manual",
+              "parameter_type": "gx_text",
+              "hidden": false,
+              "label": "K-mer size values",
+              "help": "List of k-mer sizes (must be odd and less than 128)",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "text",
+              "area": false,
+              "value": "21,33,55,77",
+              "default_options": [],
+              "validators": [
+                {
+                  "type": "regex",
+                  "message": "Value '%s' does not match regular expression '[0-9,]+'",
+                  "implicit": false,
+                  "negate": false,
+                  "expression": "[0-9,]+"
+                }
+              ]
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "phred_offset",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "Set Phred quality offset",
+      "help": "Phred quality offset in the input reads. Default: auto-detect",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "select",
+      "options": [
+        {
+          "label": "Auto",
+          "value": "auto",
+          "selected": true
+        },
+        {
+          "label": "33 (Sanger)",
+          "value": "33",
+          "selected": false
+        },
+        {
+          "label": "64 (Illumina)",
+          "value": "64",
+          "selected": false
+        }
+      ],
+      "multiple": false,
+      "validators": []
+    },
+    {
+      "name": "mode_sel",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "Pipeline options",
+      "help": "Error correction requires FASTQ input files. ",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "select",
+      "options": [
+        {
+          "label": "Disable repeat resolution (--disable-rr)",
+          "value": "--disable-rr",
+          "selected": false
+        },
+        {
+          "label": "Iontorrent: required when assembling IonTorrent data (--iontorrent)",
+          "value": "--iontorrent",
+          "selected": false
+        },
+        {
+          "label": "Memory frugal mode: reduce memory usage at the expense of possible assembly quality (--frugal)",
+          "value": "--frugal",
+          "selected": false
+        }
+      ],
+      "multiple": true,
+      "validators": []
+    },
+    {
+      "name": "optional_output",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "Select optional output file(s)",
+      "help": "Only shown in history if selected here and generated by the specific run.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "select",
+      "options": [
+        {
+          "label": "Assembly graph",
+          "value": "ag",
+          "selected": true
+        },
+        {
+          "label": "Assembly graph with scaffolds",
+          "value": "ags",
+          "selected": true
+        },
+        {
+          "label": "Contigs",
+          "value": "cn",
+          "selected": true
+        },
+        {
+          "label": "Contigs paths",
+          "value": "cp",
+          "selected": false
+        },
+        {
+          "label": "Corrected reads",
+          "value": "cr",
+          "selected": false
+        },
+        {
+          "label": "Contigs stats",
+          "value": "cs",
+          "selected": false
+        },
+        {
+          "label": "Log",
+          "value": "l",
+          "selected": false
+        },
+        {
+          "label": "Scaffolds",
+          "value": "sc",
+          "selected": true
+        },
+        {
+          "label": "Scaffolds paths",
+          "value": "sp",
+          "selected": false
+        },
+        {
+          "label": "Scaffolds stats",
+          "value": "ss",
+          "selected": false
+        }
+      ],
+      "multiple": true,
+      "validators": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "out_cr",
+      "label": "${tool.name} on ${on_string}: Corrected reads",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "fastq",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output/corrected",
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.+)\\.cor\\.fastq\\.gz"
+        },
+        {
+          "discover_via": "pattern",
+          "format": "fasta",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output/corrected",
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.+)\\.cor\\.fasta\\.gz"
+        }
+      ]
+    },
+    {
+      "name": "out_ag",
+      "label": "${tool.name} on ${on_string}: Assembly graph",
+      "hidden": false,
+      "type": "data",
+      "format": "fastg",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/assembly_graph.fastg",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_ags",
+      "label": "${tool.name} on ${on_string}: Assembly graph with scaffolds",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/assembly_graph_with_scaffolds.gfa",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_cn",
+      "label": "${tool.name} on ${on_string}: Contigs",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/contigs.fasta",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_cp",
+      "label": "${tool.name} on ${on_string}: Contigs paths",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/contigs.paths",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_cs",
+      "label": "${tool.name} on ${on_string}: Contigs stats",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    },
+    {
+      "name": "out_l",
+      "label": "${tool.name} on ${on_string}: Log",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/spades.log",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_sc",
+      "label": "${tool.name} on ${on_string}: Scaffolds",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/scaffolds.fasta",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_sp",
+      "label": "${tool.name} on ${on_string}: Scaffolds paths",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/scaffolds.paths",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_ss",
+      "label": "${tool.name} on ${on_string}: Scaffolds stats",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/btv688"
+    },
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/btu266"
+    },
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/btv337"
+    },
+    {
+      "type": "doi",
+      "content": "10.1101/gr.213959.116"
+    }
+  ],
+  "license": null,
+  "profile": "25.0",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "metaspades",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\n\n.. class:: infomark\n\n**Individual vs. co-assembly**\n\nBy default, all input samples are assembled together in a single co-assembly run.\nSelect *Single sample (individual)* to run the tool once per input sample instead:\neach dataset (or dataset pair) is assembled in its own run and the outputs are\ncollected in a list. Additional read files are handled the same way in both modes,\nso library numbering (``--pe1-*``, ``--pe2-*``, ...), ``--only-assembler`` and all\nother options keep their usual meaning.\n\n    \n.. class:: infomark\n\n**What it does**\n\n\nSPAdes - St. Petersburg genome assembler - is an assembly toolkit containing various assembly pipelines.\n    \n\nmetaSPAdes is a subtool for assembling metagenomic data sets.\n\n**Input**\n\n\n\nSPAdes takes as input paired-end reads, mate-pairs and single (unpaired) reads in FASTA and FASTQ. For IonTorrent data SPAdes also supports unpaired reads in unmapped BAM format (like the one produced by Torrent Server). However, in order to run read error correction, reads should be in FASTQ or BAM format. Sanger, Oxford Nanopore and PacBio CLR reads can be provided in both formats since SPAdes does not run error correction for these types of data.\n\nTo run SPAdes 3.15.3 you need at least one library of the following types:\n\n- Illumina paired-end/high-quality mate-pairs/unpaired reads\n- IonTorrent paired-end/high-quality mate-pairs/unpaired reads\n- PacBio CCS reads\n- Illumina and IonTorrent libraries should not be assembled together. All other types of input data are compatible. SPAdes should not be used if only PacBio CLR, Oxford Nanopore, Sanger reads or additional contigs are available.\n\nSPAdes supports mate-pair only assembly. However, we recommend to use only high-quality mate-pair libraries in this case (e.g. that do not have a paired-end part). We tested mate-pair only pipeline using Illumina Nextera mate-pairs. \n\nNotes:\n\n- It is strongly suggested to provide multiple paired-end and mate-pair libraries according to their insert size (from smallest to longest).\n- It is not recommended to run SPAdes on PacBio reads with low coverage (less than 5).\n- We suggest not to run SPAdes on PacBio reads for large genomes.\n- SPAdes accepts gzip-compressed files.\n\nA detailed description can be found in the `input section <https://github.com/ablab/spades/#sec3.1>`_ of the manual.\n    \n\n**Output**\n\n\n- Assembly graph\n    \n\n- Assembly graph with scaffolds\n    \n\n- Contigs\n    \n\n- Contigs paths in the assembly graph\n    \n   \n- Corrected reads by BayesHammer\n    \n\n- Contigs stats\n    \n\n- Log file\n    \n\n- Scaffolds (recommended for use as resulting sequences)\n    \n\n- Scaffolds paths in the assembly graph\n    \n\n- Scaffolds stats\n    \n\n**References**\n\nMore information can be found on `github <https://github.com/ablab/spades>`_.\n    "
+  }
+}

@@ -1,0 +1,989 @@
+{
+  "id": "bbtools_bbnorm",
+  "version": "39.08+galaxy4",
+  "name": "BBTools: BBNorm",
+  "description": "Normalise sequencing coverage",
+  "inputs": [
+    {
+      "name": "input_type_cond",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "input_type",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Choose the category of inputs to be analyzed",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Single-end reads",
+            "value": "single_end",
+            "selected": false
+          },
+          {
+            "label": "Paired-end reads as a single, interleaved dataset",
+            "value": "PE_1file",
+            "selected": false
+          },
+          {
+            "label": "Paired-end reads as two separate datasets",
+            "value": "PE_2files",
+            "selected": true
+          },
+          {
+            "label": "Paired-end reads as a collection",
+            "value": "paired",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "single_end",
+          "parameters": [
+            {
+              "name": "read1",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Single-end data",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fastqsanger",
+                "fastqsanger.gz"
+              ],
+              "multiple": false,
+              "min": null,
+              "max": null,
+              "url_default": null
+            }
+          ],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "PE_1file",
+          "parameters": [
+            {
+              "name": "read1",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Interleaved paired-end data",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fastqsanger",
+                "fastqsanger.gz"
+              ],
+              "multiple": false,
+              "min": null,
+              "max": null,
+              "url_default": null
+            }
+          ],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "PE_2files",
+          "parameters": [
+            {
+              "name": "read1",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Forward reads",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fastqsanger",
+                "fastqsanger.gz"
+              ],
+              "multiple": false,
+              "min": null,
+              "max": null,
+              "url_default": null
+            },
+            {
+              "name": "read2",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Reverse reads",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fastqsanger",
+                "fastqsanger.gz"
+              ],
+              "multiple": false,
+              "min": null,
+              "max": null,
+              "url_default": null
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "paired",
+          "parameters": [
+            {
+              "name": "reads_collection",
+              "parameter_type": "gx_data_collection",
+              "hidden": false,
+              "label": "Collection of forward and reverse reads",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data_collection",
+              "collection_type": "paired",
+              "extensions": [
+                "fastqsanger",
+                "fastqsanger.gz"
+              ],
+              "value": null
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "target",
+      "parameter_type": "gx_integer",
+      "hidden": false,
+      "label": "Target normalization depth",
+      "help": "All depth parameters control kmer depth, not read depth. For kmer depth Dk, read depth Dr, read length R, and kmer size K: Dr=Dk*(R/(R-K+1))",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "integer",
+      "value": 100,
+      "min": 1,
+      "max": null,
+      "validators": []
+    },
+    {
+      "name": "norm_params",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "maxdepth",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Reads will not be downsampled when below this depth, even if they are above the target depth.",
+          "help": "All depth parameters control kmer depth, not read depth. For kmer depth Dk, read depth Dr, read length R, and kmer size K: Dr=Dk*(R/(R-K+1))",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": -1,
+          "min": -1,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "mindepth",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "kmers with depth below this number will not be included when calculating the depth of a read.",
+          "help": "All depth parameters control kmer depth, not read depth. For kmer depth Dk, read depth Dr, read length R, and kmer size K: Dr=Dk*(R/(R-K+1))",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 5,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "minkmers",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Reads must have at least this many kmers over min depth to be retained.",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 15,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "percentile",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Percentile to infer read depth",
+          "help": "Read depth is by default inferred from the 54th percentile of kmer depth, but this may be changed to any number 1-100.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 54,
+          "min": 1,
+          "max": 100,
+          "validators": []
+        },
+        {
+          "name": "uselowerdepth",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "For pairs, use the depth of the lower read as the depth proxy.",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": true,
+          "truevalue": null,
+          "falsevalue": null
+        },
+        {
+          "name": "deterministic",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Generate random numbers deterministically",
+          "help": "This would ensure identical output between multiple runs. May decrease speed with a huge number of threads.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": true,
+          "truevalue": null,
+          "falsevalue": null
+        },
+        {
+          "name": "fixspikes",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Do a slower, high-precision bloom filter lookup of kmers that appear to have an abnormally high depth due to collisions.",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": null,
+          "falsevalue": null
+        },
+        {
+          "name": "passes",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Number of passes to perform",
+          "help": " pass is the basic mode. 2 passes allows greater accuracy, error detection, better contol of output depth.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 2,
+          "min": null,
+          "max": null,
+          "validators": []
+        }
+      ]
+    },
+    {
+      "name": "hashing_params",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "k",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "kmer length",
+          "help": "Values under 32 are most efficient, but arbitrarily high values are supported.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 31,
+          "min": 1,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "bits",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Bits per cell in bloom filter",
+          "help": "Maximum kmer depth recorded is 2^c bits. Large values decrease accuracy for a fixed amount of memory, so use the lowest number you can that will still capture highest-depth kmers.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "2",
+              "value": "2",
+              "selected": false
+            },
+            {
+              "label": "4",
+              "value": "4",
+              "selected": false
+            },
+            {
+              "label": "8",
+              "value": "8",
+              "selected": false
+            },
+            {
+              "label": "16",
+              "value": "16",
+              "selected": true
+            },
+            {
+              "label": "32",
+              "value": "32",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        {
+          "name": "hashes",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Number of times each kmer is hashed and stored.",
+          "help": "Higher is slower. Higher is more accurate if there is enough memory, but less accurate if there is not enough memory.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 3,
+          "min": 1,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "prefilter",
+          "parameter_type": "gx_conditional",
+          "hidden": false,
+          "label": null,
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "conditional",
+          "test_parameter": {
+            "name": "prefilter",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Use a prefilter to eliminate low-depth kmers",
+            "help": "True is slower, but generally more accurate; filters out low-depth kmers from the main hashtable. The prefilter is more memory-efficient because it uses 2-bit cells.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "Yes",
+                "value": "true",
+                "selected": false
+              },
+              {
+                "label": "No",
+                "value": "false",
+                "selected": true
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          "whens": [
+            {
+              "discriminator": "false",
+              "parameters": [],
+              "is_default_when": true
+            },
+            {
+              "discriminator": "true",
+              "parameters": [
+                {
+                  "name": "prehashes",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "Number of hashes for the prefilter",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "integer",
+                  "value": 2,
+                  "min": 1,
+                  "max": null,
+                  "validators": []
+                },
+                {
+                  "name": "prefilterbits",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "Bits per cell in prefilter",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "integer",
+                  "value": 2,
+                  "min": 1,
+                  "max": null,
+                  "validators": []
+                },
+                {
+                  "name": "prefiltersize",
+                  "parameter_type": "gx_float",
+                  "hidden": false,
+                  "label": "Fraction of memory to allocate for the prefilter.",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "float",
+                  "value": 0.35,
+                  "min": 0,
+                  "max": 1,
+                  "validators": []
+                }
+              ],
+              "is_default_when": false
+            }
+          ]
+        },
+        {
+          "name": "buildpasses",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Number of passes",
+          "help": "More passes can sometimes increase accuracy by iteratively removing low-depth kmers",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 1,
+          "min": 1,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "minq",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Ignore kmers containing bases with quality below this threshold",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 6,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "minprob",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Ignore kmers with overall probability of correctness below this threshold",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 0.5,
+          "min": 0,
+          "max": 1,
+          "validators": []
+        },
+        {
+          "name": "rdk",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Remove duplicate kmers",
+          "help": "When true, a kmer's count will only be incremented once per read pair, even if that kmer occurs more than once.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": true,
+          "truevalue": null,
+          "falsevalue": null
+        }
+      ]
+    },
+    {
+      "name": "error_det_params",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "hdp",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "highdepthpercentile",
+          "help": "Position in sorted kmer depth array used as proxy of a read's high kmer depth.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 90,
+          "min": 0,
+          "max": 100,
+          "validators": []
+        },
+        {
+          "name": "ldp",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "lowdepthpercentile",
+          "help": "Position in sorted kmer depth array used as proxy of a read's low kmer depth.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 25,
+          "min": 0,
+          "max": 100,
+          "validators": []
+        },
+        {
+          "name": "tossbadreads",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Throw away reads detected as containing errors.",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": null,
+          "falsevalue": null
+        },
+        {
+          "name": "requirebothbad",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Only toss bad pairs if both reads are bad.",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": null,
+          "falsevalue": null
+        },
+        {
+          "name": "errordetectratio",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Error detection ratio",
+          "help": "Reads with a ratio of at least this much between their high and low depth kmers will be classified as error reads.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 125,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "highthresh",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Threshold for high kmer",
+          "help": "A high kmer at this or above are considered non-error.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 12,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "lowthresh",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Threshold for low kmer",
+          "help": "Kmers at this and below are always considered errors.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 3,
+          "min": 0,
+          "max": null,
+          "validators": []
+        }
+      ]
+    },
+    {
+      "name": "error_corr_params",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "ecc",
+          "parameter_type": "gx_conditional",
+          "hidden": false,
+          "label": null,
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "conditional",
+          "test_parameter": {
+            "name": "ecc",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "What should be done with detected errors?",
+            "help": "Tadpole is now preferred for error correction, as it does a better job.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "Correct errors when possible",
+                "value": "true",
+                "selected": false
+              },
+              {
+                "label": "Do not attempt to correct errors",
+                "value": "false",
+                "selected": true
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          "whens": [
+            {
+              "discriminator": "false",
+              "parameters": [],
+              "is_default_when": true
+            },
+            {
+              "discriminator": "true",
+              "parameters": [
+                {
+                  "name": "ecclimit",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "Correct up to this many errors per read.",
+                  "help": "If more are detected, the read will remain unchanged.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "integer",
+                  "value": 3,
+                  "min": 1,
+                  "max": null,
+                  "validators": []
+                },
+                {
+                  "name": "errorcorrectratio",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "Depth ratio",
+                  "help": "Adjacent kmers with a depth ratio of at least this much between will be classified as an error.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "integer",
+                  "value": 140,
+                  "min": 0,
+                  "max": null,
+                  "validators": []
+                },
+                {
+                  "name": "echighthresh",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "Threshold for high kmer",
+                  "help": "A kmer at this or above may be considered non-error.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "integer",
+                  "value": 22,
+                  "min": 0,
+                  "max": null,
+                  "validators": []
+                },
+                {
+                  "name": "eclowthresh",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "Threshold for low kmer.",
+                  "help": "kmers at this depth or below will be considered as errors.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "integer",
+                  "value": 2,
+                  "min": 0,
+                  "max": null,
+                  "validators": []
+                },
+                {
+                  "name": "eccmaxqual",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "Do not correct bases with quality above this value.",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "integer",
+                  "value": 127,
+                  "min": 0,
+                  "max": null,
+                  "validators": []
+                },
+                {
+                  "name": "meo",
+                  "parameter_type": "gx_boolean",
+                  "hidden": false,
+                  "label": "Marks errors by reducing quality value of suspected errors; does not correct anything.",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "boolean",
+                  "value": false,
+                  "truevalue": null,
+                  "falsevalue": null
+                },
+                {
+                  "name": "mue",
+                  "parameter_type": "gx_boolean",
+                  "hidden": false,
+                  "label": "Mark errors only on uncorrectable reads.",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "boolean",
+                  "value": true,
+                  "truevalue": null,
+                  "falsevalue": null
+                },
+                {
+                  "name": "overlap",
+                  "parameter_type": "gx_boolean",
+                  "hidden": false,
+                  "label": "Correct errors by read overlap.",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "boolean",
+                  "value": false,
+                  "truevalue": null,
+                  "falsevalue": null
+                }
+              ],
+              "is_default_when": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "output_options",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "save_discarded_reads",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Save the reads that were eliminated from the input datasets to the history",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": null,
+          "falsevalue": null
+        },
+        {
+          "name": "save_kmer_hists",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Save the kmer histograms (in tabular format) for the input and output datasets to the history",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": null,
+          "falsevalue": null
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output_pair",
+      "label": "${tool.name} on ${on_string} (normalised reads)",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "paired",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": []
+    },
+    {
+      "name": "output_normalised_R1",
+      "label": "${tool.name} on ${on_string} (normalised R1 reads)",
+      "hidden": false,
+      "type": "data",
+      "format": "data",
+      "format_source": "input_type_cond|read1",
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "normalised_R1.fastq",
+      "precreate_directory": false
+    },
+    {
+      "name": "output_normalised_R2",
+      "label": "${tool.name} on ${on_string} (normalised R2 reads)",
+      "hidden": false,
+      "type": "data",
+      "format": "data",
+      "format_source": "input_type_cond|read2",
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "normalised_R2.fastq",
+      "precreate_directory": false
+    },
+    {
+      "name": "output_discarded",
+      "label": "${tool.name} on ${on_string} (discarded reads)",
+      "hidden": false,
+      "type": "data",
+      "format": "fastqsanger",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "discarded.fastq",
+      "precreate_directory": false
+    },
+    {
+      "name": "kmer_hist_input",
+      "label": "${tool.name} on ${on_string} (kmer histogram input)",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "kmer_hist_input.tabular",
+      "precreate_directory": false
+    },
+    {
+      "name": "kmer_hist_output",
+      "label": "${tool.name} on ${on_string} (kmer histogram output)",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "kmer_hist_output.tabular",
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1371/journal.pone.0185056"
+    }
+  ],
+  "license": null,
+  "profile": "25.1",
+  "edam_operations": [
+    "operation_0496",
+    "operation_0491"
+  ],
+  "edam_topics": [
+    "topic_0622",
+    "topic_0091"
+  ],
+  "xrefs": [
+    {
+      "value": "bbtools",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n**What it does**\n\nBBNorm downsamples a provided sequencing output, while paying attention to potential heteregeneities in sequencing depth obtained from the wet-lab workflow. The reads corresponding to regions with low coverage will be kept as is, whereas some of the reads contributing to an above-threshold coverage depth will be subsampled. The resulting data set is expected to be smaller in size, whereas the genome regions with low coverage levels will still be represented in the subsampled dataset. This provides a more uniform coverage depth against all genomic coordinates while the computational resources needed for subsequent steps such as assembly can be substantially reduced without losing coverage anywhere.\n\n-----\n\n**If the target sequencing depth is 2X, a Martian genome sequencing result is expected to be down-sampled as follows:**\n\ninput.fastq::\n\n    @read_header_1\n    AAAAATTTTTCCCCCGGGGGAAATTT\n    +\n    FFFFFFFFFFFFFFFEFFFFFF,FFE\n    @read_header_2\n    TTTTTCCCCCGGGGGAAATTTCCCGGG\n    +\n    FFFFFFFFFFFFFFFEFFFFFFEFFDD\n    @read_header_3\n    TTTTTCCCCCGGGGGAAATTTCCCGGG\n    +\n    FFFFFFFFFFFCEFFEFFFFFFEFFEE\n    @read_header_4\n    TTTTTCCCCCGGGGGAAATTTCCCGGG\n    +\n    FFFFFDDFFFFFFFFEFFFFFFEFFEF    \n    @read_header_5\n    TTTTTCCCCCGGGGGAAATTTCCCGGG\n    +\n    FFFFFEFFFFEEFFFEFFFFFFDFFFF\n    @read_header_6\n    AAAAATTTTTCCCCCGGGGGAAATTT\n    +\n    FFFFFFFFFFFFFFFEFFFFFFEFFD\n\n\noutput.fastq::\n\n    @read_header_1\n    AAAAATTTTTCCCCCGGGGGAAATTT\n    +\n    FFFFFFFFFFFFFFFEFFFFFF,FFE\n    @read_header_2\n    TTTTTCCCCCGGGGGAAATTTCCCGGG\n    +\n    FFFFFFFFFFFFFFFEFFFFFFEFFDD\n    @read_header_3\n    TTTTTCCCCCGGGGGAAATTTCCCGGG\n    +\n    FFFFFFFFFFFCEFFEFFFFFFEFFEE\n    @read_header_6\n    AAAAATTTTTCCCCCGGGGGAAATTT\n    +\n    FFFFFFFFFFFFFFFEFFFFFFEFFD\n\n\n**Indications**\n\nBBNorm is mainly intended for use in assembly pipelines out of short reads. It might be useful when there is too much data that increases computation time or a highly skewed coverage distribution by subsampling from the existing data. As opposed to keeping a randomly selected subset of reads, such as retaining the first n-many elements, this is a weighted resampling that tries to reduce coverage around coordinates of very high sequencing depth.\n\n\n**Contraindications**\n\n* The data already has a roughly uniform coverage that does not need to be normalised further.\n* You do not have any excess data to discard: BBnorm does not increase data quantity by imputation or by repeatedly sampling with replacement.\n* Your pipeline reports results that rely on quantification of abundance (ex: differential expression profiling or ChIP-Seq)\n* You want to do variant discovery. Reduction of sequencing depth might bias significance levels, or even obscure the existence of rare variants altogether.\n* The sequencing platform has a very high error rate (ex: ONT) that might mislead this algorithm.\n\n    "
+  }
+}

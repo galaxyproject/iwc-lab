@@ -1,0 +1,1666 @@
+{
+  "id": "minimap2",
+  "version": "2.31+galaxy1",
+  "name": "Map with minimap2",
+  "description": "A fast pairwise aligner for genomic and spliced nucleotide sequences",
+  "inputs": [
+    {
+      "name": "reference_source",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "reference_source_selector",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Will you select a reference genome from your history or use a built-in index?",
+        "help": "Built-ins were indexed using default options. See `Indexes` section of help below. If you would like to perform self-mapping select `history` here, then choose your input file as reference.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Use a built-in genome index",
+            "value": "cached",
+            "selected": false
+          },
+          {
+            "label": "Use a genome from history and build index",
+            "value": "history",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "cached",
+          "parameters": [
+            {
+              "name": "ref_file",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Using reference genome",
+              "help": "Select genome from the list",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": null,
+              "multiple": false,
+              "validators": [
+                {
+                  "type": "no_options",
+                  "message": "A built-in reference genome is not available for the build associated with the selected input file",
+                  "implicit": false,
+                  "negate": false
+                }
+              ]
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "history",
+          "parameters": [
+            {
+              "name": "ref_file",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Use the following dataset as the reference sequence",
+              "help": "You can upload a FASTA or FASTQ sequence to the history and use it as reference",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fasta",
+                "fastq"
+              ],
+              "multiple": false,
+              "min": null,
+              "max": null,
+              "url_default": null
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "fastq_input",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "fastq_input_selector",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Single or Paired-end reads",
+        "help": "Select between paired and single end data",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Single",
+            "value": "single",
+            "selected": false
+          },
+          {
+            "label": "Paired Collection",
+            "value": "paired_collection",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "single",
+          "parameters": [
+            {
+              "name": "fastq_input1",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Select fastq dataset",
+              "help": "Specify dataset with single reads",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fastqsanger",
+                "fastqsanger.gz",
+                "fasta"
+              ],
+              "multiple": false,
+              "min": null,
+              "max": null,
+              "url_default": null
+            },
+            {
+              "name": "analysis_type_selector",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Select a profile of preset options for single-end data",
+              "help": "Each profile comes with the preconfigured settings mentioned in parentheses. You can customize each profile further in the indexing, mapping and alignment options sections below. If you do not select a profile here (not recommended unless you know exactly what you are doing), the tool will use the per-parameter defaults listed in the below sections unless you customize them.",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": true,
+              "type": "select",
+              "options": [
+                {
+                  "label": "Legacy PacBio CLR/Oxford Nanopore read to reference mapping (-Hk19) (map-pb)",
+                  "value": "map-pb",
+                  "selected": false
+                },
+                {
+                  "label": "Oxford Nanopore read to reference mapping using standard minimizers (-k15) (map-ont)",
+                  "value": "map-ont",
+                  "selected": false
+                },
+                {
+                  "label": "Accurate long reads (~99% Nanopore or PacBio HiFi) vs reference (-xlr:hq -A1 -B4 -O6,26 -E2,1) (lr:hq)",
+                  "value": "lr:hq",
+                  "selected": false
+                },
+                {
+                  "label": "PacBio HiFi reads vs reference mapping (-xlr:hq -A1 -B4 -O6,26 -E2,1 -s200) (map-hifi)",
+                  "value": "map-hifi",
+                  "selected": false
+                },
+                {
+                  "label": "Illumina Complete Long Read (ICLR) vs reference (-k19 -B6 -b4 -O10,50) (map-iclr)",
+                  "value": "map-iclr",
+                  "selected": false
+                },
+                {
+                  "label": "PacBio all-vs-all overlap mapping (-Hk19 -Xw5 -m100 -g10000 --max-chain-skip 25) (ava-pb)",
+                  "value": "ava-pb",
+                  "selected": false
+                },
+                {
+                  "label": "Oxford Nanopore all-vs-all overlap mapping (-k15 -Xw5 -m100 -g10000 -r2000 --max-chain-skip 25). Similarly, the major difference from ava-pb is that this preset is not using HPC minimizers. (ava-ont)",
+                  "value": "ava-ont",
+                  "selected": false
+                },
+                {
+                  "label": "Long assembly to reference mapping for ~0.1% divergence (-k19 -w19 -U50,500 --rmq -r1k,100k -g10k -A1 -B19 -O39,81 -E3,1 -s200 -z200 -N50) (asm5)",
+                  "value": "asm5",
+                  "selected": false
+                },
+                {
+                  "label": "Long assembly to reference mapping for ~1% divergence (-k19 -w19 -U50,500 --rmq -r1k,100k -g10k -A1 -B9 -O16,41 -E2,1 -s200 -z200 -N50) (asm10)",
+                  "value": "asm10",
+                  "selected": false
+                },
+                {
+                  "label": "Long assembly to reference mapping for several percent divergence (-k19 -w10 -U50,500 --rmq -r1k,100k -g10k -A1 -B4 -O6,26 -E2,1 -s200 -z200 -N50) (asm20)",
+                  "value": "asm20",
+                  "selected": false
+                },
+                {
+                  "label": "Long-read spliced alignment (-k15 -w5 --splice -g2000 -G200k -A1 -B2 -O2,32 -E1,0 -C9 -z200 -ub --splice-flank=yes) (splice)",
+                  "value": "splice",
+                  "selected": false
+                },
+                {
+                  "label": "Spliced alignment for accurate long RNA reads (PacBio iso-seq) (-xsplice -C5 -O6,24 -B4) (splice:hq)",
+                  "value": "splice:hq",
+                  "selected": false
+                },
+                {
+                  "label": "Spliced alignment for short RNA-seq reads (-xsplice:hq -m25 -s40 -2K100m --heap-sort=yes --pairing=weak --sr=rna --min-dp-len=20 --secondary=no) (splice:sr)",
+                  "value": "splice:sr",
+                  "selected": false
+                },
+                {
+                  "label": "Short-read alignment without splicing (-k21 -w11 --sr -A2 -B8 -O12,32 -E2,1 -r100 -p.5 -N20 -f1000,5000 -n2 -m25 -s40 -g100 -2K50m --heap-sort=yes --secondary=no) (sr)",
+                  "value": "sr",
+                  "selected": false
+                },
+                {
+                  "label": "Construct a self-homology map - use same genome as query and reference (-DP -k19 -w19 -m200) (self-homology)",
+                  "value": "self-homology",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "paired_collection",
+          "parameters": [
+            {
+              "name": "fastq_input1",
+              "parameter_type": "gx_data_collection",
+              "hidden": false,
+              "label": "Select a paired collection",
+              "help": "See help section for an explanation of dataset collections",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data_collection",
+              "collection_type": "paired",
+              "extensions": [
+                "fastqsanger",
+                "fastqsanger.gz",
+                "fasta"
+              ],
+              "value": null
+            },
+            {
+              "name": "analysis_type_selector",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Presets for PE reads alignment",
+              "help": "These are the minimap2 preset options for PE alignment of short reads. You can customize these and other settings in the indexing, mapping and alignment options sections below.",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "Spliced alignment for short RNA-seq reads (-xsplice:hq --frag=yes -m25 -s40 -2K100m --heap-sort=yes --pairing=weak --sr=rna --min-dp-len=20 --secondary=no) (splice:sr)",
+                  "value": "splice:sr",
+                  "selected": false
+                },
+                {
+                  "label": "Short reads without splicing (-k21 -w11 --sr --frag=yes -F800 -A2 -B8 -O12,32 -E2,1 -r100 -p.5 -N20 -f1000,5000 -n2 -m25 -s40 -g100 -2K50m --heap-sort=yes --secondary=no) (sr)",
+                  "value": "sr",
+                  "selected": true
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            {
+              "name": "pe_only_mapping_options",
+              "parameter_type": "gx_section",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "section",
+              "parameters": [
+                {
+                  "name": "pairing",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Paired-end alignment strategy",
+                  "help": "Controls how paired-end reads are paired when using presets that support short reads.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "strong",
+                      "value": "strong",
+                      "selected": false
+                    },
+                    {
+                      "label": "weak",
+                      "value": "weak",
+                      "selected": false
+                    },
+                    {
+                      "label": "no",
+                      "value": "no",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                {
+                  "name": "F",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "Max fragment length for PE alignment",
+                  "help": "The maximum apparent fragment length up to which paired-end reads are aligned together instead of independently. Note that this option may not take effect when splice mode or related settings are enabled; default=800",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "integer",
+                  "value": null,
+                  "min": 0,
+                  "max": null,
+                  "validators": []
+                }
+              ]
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "indexing_options",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "H",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Use homopolymer-compressed k-mer ?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "boolean",
+          "value": null,
+          "truevalue": "-H",
+          "falsevalue": ""
+        },
+        {
+          "name": "k",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "K-mer size",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 4,
+          "max": 28,
+          "validators": []
+        },
+        {
+          "name": "w",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Minimizer window size",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 1,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "I",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Split index for every N input gigabases",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 1,
+          "max": null,
+          "validators": []
+        }
+      ]
+    },
+    {
+      "name": "mapping_options",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": "Sets -f, -g, -F, -r, -n, -m, -X, -p, -N, --min-occ-floor, --q-occ-frac, --rmq-inner, --pairing and related options.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "N",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Retain at most INT secondary alignments",
+          "help": "default=5",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "f",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Filter out top FLOAT fraction of repetitive minimizers",
+          "help": "default=0.0002",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "float",
+          "value": null,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "kmer_ocurrence_interval",
+          "parameter_type": "gx_conditional",
+          "hidden": false,
+          "label": null,
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "conditional",
+          "test_parameter": {
+            "name": "interval",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Specify an interval of k-mer occurrences",
+            "help": "Allows to specify an interval of k-mer occurrences with -U. For repeat-rich genomes, the automatic k-mer occurrence threshold determined by -f may be too large and makes alignment impractically slow. The new option protects against such cases. Enabled for asm* and map-hifi.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "Enabled",
+                "value": "enabled",
+                "selected": false
+              },
+              {
+                "label": "Disabled",
+                "value": "",
+                "selected": true
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          "whens": [
+            {
+              "discriminator": "enabled",
+              "parameters": [
+                {
+                  "name": "lower_limit",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "K-mer occurrence lower limit",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "integer",
+                  "value": null,
+                  "min": 0,
+                  "max": 10000,
+                  "validators": []
+                },
+                {
+                  "name": "upper_limit",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "K-mer occurrence upper limit",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "integer",
+                  "value": null,
+                  "min": 0,
+                  "max": 10000,
+                  "validators": []
+                }
+              ],
+              "is_default_when": false
+            },
+            {
+              "discriminator": "",
+              "parameters": [],
+              "is_default_when": true
+            }
+          ]
+        },
+        {
+          "name": "min_occ_floor",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Force minimap2 to always use k-mers occurring this many times or fewer",
+          "help": "Maximum occurrence is the number of repetitive minimizers determined by '-f' or this value, whichever is higher.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "q_occ_frac",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Discard a query minimizer",
+          "help": "Discard a query minimizer if its occurrence is higher than this fraction of query minimizers and than the reference occurrence threshold. It allows to avoid extremely long mapping time for pathologic reads with highly repeated k-mers not in the reference. Set to 0 to disable the heuristic (default=0.01).",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "float",
+          "value": null,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "g",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Stop chain elongation if there are no minimizers in INT-bp",
+          "help": "default=5000",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "r",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Bandwidth used in chaining and DP-based alignment",
+          "help": "Allows INT or INT,INT for chaining/alignment bandwidth and long-join bandwidth. default=500,20000",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": [
+            {
+              "type": "regex",
+              "message": "Enter INT or INT,INT values.",
+              "implicit": false,
+              "negate": false,
+              "expression": "^\\s*(\\d+(,\\d+)?\\s*)?$"
+            }
+          ]
+        },
+        {
+          "name": "n",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Minimal number of minimizers on a chain",
+          "help": "default=3",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "m",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Minimal chaining score (matching bases minus log gap penalty)",
+          "help": "default=40",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "max_chain_skip",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Maximum seed skips during chaining",
+          "help": "Heuristic that stops chaining early. Minimap2 uses dynamic programming for chaining. The time complexity is quadratic in the number of seeds. This option makes minimap2 exit the inner loop if it repeatedly sees seeds already on chains. Set to a large number to switch off this heurstics effectively. default=25",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "max_chain_iter",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Maximum number of partial chains checked during chaining",
+          "help": "Heuristic to avoid quadratic time complexity in the worst case. default=5000",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "X",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Skip self and dual mappings (for the all-vs-all mode)",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "boolean",
+          "value": null,
+          "truevalue": "-X",
+          "falsevalue": ""
+        },
+        {
+          "name": "p",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Min secondary-to-primary score ratio",
+          "help": "default=0.8",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "float",
+          "value": null,
+          "min": null,
+          "max": 1,
+          "validators": []
+        },
+        {
+          "name": "mask_len",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Fine control the removal of redundant hits",
+          "help": "Keep an alignment if dropping it leaves an unaligned region on query longer than INT",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": 10000,
+          "validators": []
+        },
+        {
+          "name": "rmq_inner",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Run full DP for anchors within this distance",
+          "help": "Applies the minigraph RMQ algorithm to anchors within NUM bases (default=100).",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "no_hash_name",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Ignore sequence names when randomising equally best hits?",
+          "help": "Ensures identical sequences get identical alignments regardless of their names.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "boolean",
+          "value": null,
+          "truevalue": "--no-hash-name",
+          "falsevalue": ""
+        }
+      ]
+    },
+    {
+      "name": "alignment_options",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": "Sets scoring parameters (-A, -B, -b, -O, -E, -z, -s) and spliced alignment options.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "splicing",
+          "parameter_type": "gx_conditional",
+          "hidden": false,
+          "label": null,
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "conditional",
+          "test_parameter": {
+            "name": "splice_mode",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Customize spliced alignment mode?",
+            "help": "Warning: Minimap2 cannot currently perform spliced alignments of read pairs. If you enable spliced alignment for paired-end data it will be treated as single-end!",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "No, use profile setting or leave turned off",
+                "value": "preset",
+                "selected": false
+              },
+              {
+                "label": "Disable spliced alignments (overwrite profile setting if necessary)",
+                "value": "",
+                "selected": false
+              },
+              {
+                "label": "Yes, enable spliced alignments (--splice)",
+                "value": "--splice",
+                "selected": false
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          "whens": [
+            {
+              "discriminator": "preset",
+              "parameters": [],
+              "is_default_when": true
+            },
+            {
+              "discriminator": "",
+              "parameters": [],
+              "is_default_when": false
+            },
+            {
+              "discriminator": "--splice",
+              "parameters": [
+                {
+                  "name": "G",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "Maximum allowed gap on the reference",
+                  "help": "Higher values cause slower spliced alignment. When in use, this option causes -r (in mapping options) to be set to the same value. default=200k",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "integer",
+                  "value": null,
+                  "min": null,
+                  "max": null,
+                  "validators": []
+                },
+                {
+                  "name": "C",
+                  "parameter_type": "gx_integer",
+                  "hidden": false,
+                  "label": "Cost of non-canonical (non-GT-AG) splicing",
+                  "help": "default=0",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "integer",
+                  "value": null,
+                  "min": 0,
+                  "max": null,
+                  "validators": []
+                },
+                {
+                  "name": "splice_model",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Splice scoring model",
+                  "help": "default=1",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "0 - original minimap2 splice model (penalise non-GT-AG)",
+                      "value": "0",
+                      "selected": false
+                    },
+                    {
+                      "label": "1 - miniprot splice model (consider non-GT-AG)",
+                      "value": "1",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                {
+                  "name": "u",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "How to find GT-AG",
+                  "help": "default=n (don't match GT-AG)",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "Don't match GT-AG (-un)",
+                      "value": "n",
+                      "selected": false
+                    },
+                    {
+                      "label": "Transcript strand (-uf)",
+                      "value": "f",
+                      "selected": false
+                    },
+                    {
+                      "label": "Both strands (-ub)",
+                      "value": "b",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                {
+                  "name": "splice_flank",
+                  "parameter_type": "gx_boolean",
+                  "hidden": false,
+                  "label": "Assume conserved flanking region of splice sites?",
+                  "help": "Assume the next base to a GT donor site tends to be A/G (91% in human and 92% in mouse) and the preceding base to a AG acceptor tends to be C/T. This trend is evolutionarily conserved, all the way to S. cerevisiae (PMID:18688272). Specifying this option generally leads to higher junction accuracy by several percents, so it is applied by default with --splice. However, the SIRV control does not honor this trend (only ~60%) so this option reduces accuracy. If you are benchmarking minimap2 on SIRV data, please disable this option.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "boolean",
+                  "value": true,
+                  "truevalue": "--splice-flank=yes",
+                  "falsevalue": "--splice-flank=no"
+                },
+                {
+                  "name": "splice_site_annotations",
+                  "parameter_type": "gx_conditional",
+                  "hidden": false,
+                  "label": null,
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "conditional",
+                  "test_parameter": {
+                    "name": "use_annotations",
+                    "parameter_type": "gx_select",
+                    "hidden": false,
+                    "label": "Use previously annotated splice sites to guide the alignment?",
+                    "help": null,
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "select",
+                    "options": [
+                      {
+                        "label": "No, perform unbiased alignment",
+                        "value": "no",
+                        "selected": false
+                      },
+                      {
+                        "label": "Yes, favor annotated splice sites",
+                        "value": "yes",
+                        "selected": false
+                      }
+                    ],
+                    "multiple": false,
+                    "validators": []
+                  },
+                  "whens": [
+                    {
+                      "discriminator": "no",
+                      "parameters": [],
+                      "is_default_when": true
+                    },
+                    {
+                      "discriminator": "yes",
+                      "parameters": [
+                        {
+                          "name": "junc_bed",
+                          "parameter_type": "gx_data",
+                          "hidden": false,
+                          "label": "Dataset with annotated genes or introns",
+                          "help": "Gene annotations should be provided in BED12 (aka 12-column BED), intron positions in 5-column BED format.",
+                          "argument": null,
+                          "is_dynamic": false,
+                          "optional": false,
+                          "type": "data",
+                          "extensions": [
+                            "bed"
+                          ],
+                          "multiple": false,
+                          "min": null,
+                          "max": null,
+                          "url_default": null
+                        },
+                        {
+                          "name": "junc_bonus",
+                          "parameter_type": "gx_integer",
+                          "hidden": false,
+                          "label": "Annotated splice site bonus",
+                          "help": "Score bonus for a splice donor or acceptor found in annotation.",
+                          "argument": null,
+                          "is_dynamic": false,
+                          "optional": false,
+                          "type": "integer",
+                          "value": 1,
+                          "min": 1,
+                          "max": null,
+                          "validators": []
+                        }
+                      ],
+                      "is_default_when": false
+                    }
+                  ]
+                },
+                {
+                  "name": "junction_file",
+                  "parameter_type": "gx_data",
+                  "hidden": false,
+                  "label": "Junctions to extend short RNA alignments",
+                  "help": "BED12 or 5-column BED describing introns used to extend alignments towards read ends.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "data",
+                  "extensions": [
+                    "bed"
+                  ],
+                  "multiple": false,
+                  "min": null,
+                  "max": null,
+                  "url_default": null
+                },
+                {
+                  "name": "pass1_junctions",
+                  "parameter_type": "gx_data",
+                  "hidden": false,
+                  "label": "Junctions discovered in a first pass alignment",
+                  "help": "Typically produced by minimap2 --write-junc; entries with scores <5 are ignored automatically.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": true,
+                  "type": "data",
+                  "extensions": [
+                    "bed"
+                  ],
+                  "multiple": false,
+                  "min": null,
+                  "max": null,
+                  "url_default": null
+                },
+                {
+                  "name": "splice_scores",
+                  "parameter_type": "gx_conditional",
+                  "hidden": false,
+                  "label": null,
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "conditional",
+                  "test_parameter": {
+                    "name": "use_scores",
+                    "parameter_type": "gx_select",
+                    "hidden": false,
+                    "label": "Use splice site scores to prioritize splice junctions",
+                    "help": null,
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "select",
+                    "options": [
+                      {
+                        "label": "No, don't use scores",
+                        "value": "no",
+                        "selected": false
+                      },
+                      {
+                        "label": "Yes, use scores",
+                        "value": "yes",
+                        "selected": false
+                      }
+                    ],
+                    "multiple": false,
+                    "validators": []
+                  },
+                  "whens": [
+                    {
+                      "discriminator": "no",
+                      "parameters": [],
+                      "is_default_when": true
+                    },
+                    {
+                      "discriminator": "yes",
+                      "parameters": [
+                        {
+                          "name": "spsc_table",
+                          "parameter_type": "gx_data",
+                          "hidden": false,
+                          "label": "Splice score table",
+                          "help": "Tabular file with contig, offset, strand (+/-), D/A and score columns. Offset is the number of bases before a splice junction, 'D'/'A' indicates the line corresponds to a donor/acceptor site. A positive score suggests the junction is preferred and a negative score suggests the junction is not preferred.",
+                          "argument": null,
+                          "is_dynamic": false,
+                          "optional": false,
+                          "type": "data",
+                          "extensions": [
+                            "tabular",
+                            "bed"
+                          ],
+                          "multiple": false,
+                          "min": null,
+                          "max": null,
+                          "url_default": null
+                        },
+                        {
+                          "name": "junc_pen",
+                          "parameter_type": "gx_integer",
+                          "hidden": false,
+                          "label": "Penalty for junctions not listed in the splice score table",
+                          "help": "default=5",
+                          "argument": null,
+                          "is_dynamic": false,
+                          "optional": true,
+                          "type": "integer",
+                          "value": null,
+                          "min": 0,
+                          "max": null,
+                          "validators": []
+                        },
+                        {
+                          "name": "spsc_scale",
+                          "parameter_type": "gx_float",
+                          "hidden": false,
+                          "label": "Scale factor for splice scores",
+                          "help": "Multiply scores from --spsc by this value (default=0.7).",
+                          "argument": null,
+                          "is_dynamic": false,
+                          "optional": true,
+                          "type": "float",
+                          "value": null,
+                          "min": null,
+                          "max": null,
+                          "validators": []
+                        }
+                      ],
+                      "is_default_when": false
+                    }
+                  ]
+                }
+              ],
+              "is_default_when": false
+            }
+          ]
+        },
+        {
+          "name": "A",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Score for a sequence match",
+          "help": "default=2",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "B",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Penalty for a mismatch",
+          "help": "-B; default=4",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "b",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Penalty for a transition mismatch",
+          "help": "If unset, transitions use the mismatch penalty set by -B.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "O",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Gap open penalties for deletions",
+          "help": "-O; default=4",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 1,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "O2",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Gap open penalties for insertions",
+          "help": "-O; default=24",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "E",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Gap extension penalties; a gap of size k cost '-O + -E*k'. If two numbers are specified, the first is the penalty of extending a deletion and the second for extending an insertion",
+          "help": "-E; default=2",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 1,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "E2",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Gap extension penalty for extending an insertion; if left empty uses the value specified for Gap extension penalties above",
+          "help": "-E; default=1",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "z",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Z-drop threshold for truncating an alignment",
+          "help": "Increase to improve the contiguity of alignments at the cost of poorer alignments in the middle. default=400",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "z2",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Z-drop threshold for reverse-complementing the query",
+          "help": "Decrease to find small inversions at the cost of performance and false positives. default=200",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "s",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Minimal peak DP alignment score",
+          "help": "default=40",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "end_bonus",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Score bonus when alignment extends to the end of the read",
+          "help": "default=0",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "score_N",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Penalty for mismatches involving ambiguous bases (N)",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "no_end_flt",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Filter seeds towards the ends of chains before performing base-level alignment?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": true,
+          "truevalue": "",
+          "falsevalue": "--no-end-flt"
+        },
+        {
+          "name": "jump_min_match",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Minimum matching length to create a splice jump",
+          "help": "default=3",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "end_seed_pen",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Penalty threshold for dropping terminal anchors",
+          "help": "default=6",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "cap_sw_mem",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Skip alignment if the DP matrix exceeds this size",
+          "help": "Provide NUM optionally suffixed by k/m/g (default=100m).",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": []
+        },
+        {
+          "name": "cap_kalloc",
+          "parameter_type": "gx_text",
+          "hidden": false,
+          "label": "Free thread-local kalloc reservoir above this size",
+          "help": "Provide NUM optionally suffixed by k/m/g (default=500m).",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "text",
+          "area": false,
+          "value": null,
+          "default_options": [],
+          "validators": []
+        }
+      ]
+    },
+    {
+      "name": "io_options",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": "Sets -Q, -L, -R, -c, --cs, -K and other reporting toggles.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "output_format",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Select an output format",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "BAM",
+              "value": "BAM",
+              "selected": false
+            },
+            {
+              "label": "CRAM",
+              "value": "CRAM",
+              "selected": false
+            },
+            {
+              "label": "PAF",
+              "value": "paf",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        {
+          "name": "Q",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Don't output base quality",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "-Q",
+          "falsevalue": ""
+        },
+        {
+          "name": "L",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Write CIGAR with >65535 ops to the CG tag",
+          "help": "Useful for very long reads in SAM/BAM format",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "-L",
+          "falsevalue": ""
+        },
+        {
+          "name": "K",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Minibatch size for mapping (in megabyte)",
+          "help": "default=500M",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": null,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "cs",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Output cs tag?",
+          "help": "The cs tag is a more compact standalone representation of the MD tag, see help below.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "select",
+          "options": [
+            {
+              "label": "no",
+              "value": "none",
+              "selected": false
+            },
+            {
+              "label": "short",
+              "value": "short",
+              "selected": false
+            },
+            {
+              "label": "long",
+              "value": "long",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        {
+          "name": "c",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Generate CIGAR",
+          "help": "In PAF, the CIGAR is written to the ‘cg’ custom tag.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "-c",
+          "falsevalue": ""
+        },
+        {
+          "name": "eqx",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Write =/X CIGAR operators",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--eqx",
+          "falsevalue": ""
+        },
+        {
+          "name": "Y",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Use soft clipping for supplementary alignments ?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "-Y",
+          "falsevalue": ""
+        },
+        {
+          "name": "copy_comments",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Copy FASTA/Q comments to SAM records?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "-y",
+          "falsevalue": ""
+        },
+        {
+          "name": "ds_tag",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Output the ds tag (extension of cs)?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--ds",
+          "falsevalue": ""
+        },
+        {
+          "name": "secondary_seq",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Include query sequences for secondary alignments?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--secondary-seq",
+          "falsevalue": ""
+        },
+        {
+          "name": "two_io_threads",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Use two I/O threads during mapping?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "-2",
+          "falsevalue": ""
+        },
+        {
+          "name": "seed",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Seed for randomising equally best hits",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": true,
+          "type": "integer",
+          "value": null,
+          "min": null,
+          "max": null,
+          "validators": []
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "alignment_output",
+      "label": "${tool.name} on ${on_string} (mapped reads in ${io_options.output_format} format)",
+      "hidden": false,
+      "type": "data",
+      "format": "bam",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/bty191"
+    },
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/btp352"
+    }
+  ],
+  "license": null,
+  "profile": "24.1",
+  "edam_operations": [
+    "operation_0292"
+  ],
+  "edam_topics": [
+    "topic_0102"
+  ],
+  "xrefs": [
+    {
+      "value": "minimap2",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\nHow to use this tool\n--------------------\n\nMinimap2 comes with several preset parameter combinations optimized for different types of input data.\n\nUnless you know exactly what you are doing, our recommendation is to select the preset that most closely matches your data.\nFor the majority of use cases this should be all that's needed to get good performance of the tool.\n\nConsider all options below the preset selection to be advanced settings.\nAny parameter you configure in these sections will potentially override that parameter's preset value and you should have a clear reason to do so.\n\nBelow is the much more detailed users' guide of the tool.\nAll options are also documented on the minimap2 `manual pages <https://lh3.github.io/minimap2/minimap2.html>`__.\n\nUsers' Guide\n------------\n\nMinimap2 is a versatile sequence alignment program that aligns DNA or\nmRNA sequences against a large reference database. Typical use cases\ninclude: (1) mapping PacBio or Oxford Nanopore genomic reads to the\nhuman genome; (2) finding overlaps between long reads with error rate up\nto ~15%; (3) splice-aware alignment of PacBio Iso-Seq or Nanopore cDNA\nor Direct RNA reads against a reference genome; (4) aligning Illumina\nsingle- or paired-end reads; (5) assembly-to-assembly alignment; (6)\nfull-genome alignment between two closely related species with\ndivergence below ~15%.\n\nFor ~10kb noisy reads sequences, minimap2 is tens of times faster than\nmainstream long-read mappers such as BLASR, BWA-MEM, NGMLR and GMAP. It\nis more accurate on simulated long reads and produces biologically\nmeaningful alignment ready for downstream analyses. For >100bp Illumina\nshort reads, minimap2 is three times as fast as BWA-MEM and Bowtie2, and\nas accurate on simulated data. Detailed evaluations are available from\nthe minimap2 publication (see references below).\n\nGeneral usage\n~~~~~~~~~~~~~\n\nMinimap2 seamlessly works with gzip’d FASTA and FASTQ formats as input.\nYou don’t need to convert between FASTA and FASTQ or decompress gzip’d\nfiles first.\n\nFor the human reference genome, minimap2 takes a few minutes to generate\na minimizer index for the reference before mapping. To reduce indexing\ntime, you can optionally save the index with option **-d** and replace\nthe reference sequence file with the index file on the minimap2 command\nline:\n\n***Importantly***, it should be noted that once you build the index,\nindexing parameters such as **-k**, **-w**, **-H** and **-I** can’t be\nchanged during mapping. If you are running minimap2 for different data\ntypes, you will probably need to keep multiple indexes generated with\ndifferent parameters. This makes minimap2 different from BWA which\nalways uses the same index regardless of query data types.\n\nUse cases\n~~~~~~~~~\n\nMinimap2 uses the same base algorithm for all applications. However, due\nto the different data types it supports (e.g. short vs long reads; DNA\nvs mRNA reads), minimap2 needs to be tuned for optimal performance and\naccuracy. It is usually recommended to choose a preset with option\n**-x**, which sets multiple parameters at the same time. The default\nsetting is the same as ``map-ont``.\n\nMap long noisy genomic reads\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nThe difference between ``map-pb`` and ``map-ont`` is that ``map-pb``\nuses homopolymer-compressed (HPC) minimizers as seeds, while ``map-ont``\nuses ordinary minimizers as seeds. Empirical evaluation suggests HPC\nminimizers improve performance and sensitivity when aligning PacBio\nreads, but hurt when aligning Nanopore reads.\n\nMap long mRNA/cDNA reads\n^^^^^^^^^^^^^^^^^^^^^^^^\n\nThere are different long-read RNA-seq technologies, including\ntraditional full-length cDNA, EST, PacBio Iso-seq, Nanopore 2D cDNA-seq\nand Direct RNA-seq. They produce data of varying quality and properties.\nBy default, ``-x splice`` assumes the read orientation relative to the\ntranscript strand is unknown. It tries two rounds of alignment to infer\nthe orientation and write the strand to the ``ts`` SAM/PAF tag if\npossible. For Iso-seq, Direct RNA-seq and tranditional full-length\ncDNAs, it would be desired to apply ``-u f`` to force minimap2 to\nconsider the forward transcript strand only. This speeds up alignment\nwith slight improvement to accuracy. For noisy Nanopore Direct RNA-seq\nreads, it is recommended to use a smaller k-mer size for increased\nsensitivity to the first or the last exons.\n\nIt is worth noting that by default ``-x splice`` prefers\nGT[A/G]..[C/T]AG over GT[C/T]..[A/G]AG, and then over other splicing\nsignals. Considering one additional base improves the junction accuracy\nfor noisy reads, but reduces the accuracy when aligning against the\nwidely used SIRV control data. This is because SIRV does not honor the\nevolutionarily conservative splicing signal. If you are studying SIRV,\nyou may apply ``--splice-flank=no`` to let minimap2 only model GT..AG,\nignoring the additional base.\n\nFind overlaps between long reads\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nSimilarly, ``ava-pb`` uses HPC minimizers while ``ava-ont`` uses\nordinary minimizers. It is usually not recommended to perform base-level\nalignment in the overlapping mode because it is slow and may produce\nfalse positive overlaps. However, if performance is not a concern, you\nmay try to add ``-a`` or ``-c`` anyway.\n\nMap short accurate genomic reads\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nWhen two read files are specified, minimap2 reads from each file in turn\nand merge them into an interleaved stream internally. Two reads are\nconsidered to be paired if they are adjacent in the input stream and\nhave the same name (with the ``/[0-9]`` suffix trimmed if present).\nSingle- and paired-end reads can be mixed.\n\nMinimap2 does not work well with short spliced reads. There are many\ncapable RNA-seq mappers for short reads.\n\nFull genome/assembly alignment\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nFor cross-species full-genome alignment, the scoring system needs to be\ntuned according to the sequence divergence.\n\nSelf-homology map creation\n^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nA self-homology map is created by mapping a genome (e.g. that of E. coli)\nagainst itself. When this option is used the same FASTA file should\nbe used for reference and for the (single ended mode) query.\n\nAdvanced features\n~~~~~~~~~~~~~~~~~\n\nWorking with >65535 CIGAR operations\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nDue to a design flaw, BAM does not work with CIGAR strings with >65535\noperations (SAM and CRAM work). However, for ultra-long nanopore reads\nminimap2 may align ~1% of read bases with long CIGARs beyond the\ncapability of BAM. If you convert such SAM/CRAM to BAM, Picard and\nrecent samtools will throw an error and abort. Older samtools and other\ntools may create corrupted BAM.\n\nTo avoid this issue, you can add option ``-L`` at the minimap2 command line.\nThis option moves a long CIGAR to the ``CG`` tag and leaves a fully clipped\nCIGAR at the SAM CIGAR column. Current tools that don’t read CIGAR\n(e.g. merging and sorting) still work with such BAM records; tools that read\nCIGAR will effectively ignore these records. It has been decided that future\ntools will seamlessly recognize long-cigar records generated by option `-L`.\n\n**TL;DR**: if you work with ultra-long reads and use tools that only\nprocess BAM files, please add option ``-L``.\n\nThe cs optional tag\n^^^^^^^^^^^^^^^^^^^\n\nThe ``cs`` SAM/PAF tag encodes bases at mismatches and INDELs. It\nmatches regular expression\n``/(:[0-9]+|\\*[a-z][a-z]|[=\\+\\-][A-Za-z]+)+/``. Like CIGAR, ``cs``\nconsists of series of operations. Each leading character specifies the\noperation; the following sequence is the one involved in the operation.\n\nThe ``cs`` tag is enabled by command line option ``--cs``. The following\nalignment, for example:\n\n.. code::\n\n    CGATCGATAAATAGAGTAG---GAATAGCA\n    ||||||   ||||||||||   |||| |||\n    CGATCG---AATAGAGTAGGTCGAATtGCA\n\nis represented as ``:6-ata:10+gtc:4*at:3``, where ``:[0-9]+`` represents\nan identical block, ``-ata`` represents a deletion, ``+gtc`` an insertion\nand ``*at`` indicates reference base ``a`` is substituted with a query\nbase ``t``. It is similar to the ``MD`` SAM tag but is standalone and\neasier to parse.\n\nIf ``--cs=long`` is used, the ``cs`` string also contains identical\nsequences in the alignment. The above example will become\n``=CGATCG-ata=AATAGAGTAG+gtc=GAAT*at=GCA``. The long form of ``cs``\nencodes both reference and query sequences in one string.\n\nAlgorithm overview\n~~~~~~~~~~~~~~~~~~\n\nIn the following, minimap2 command line options have a dash ahead and\nare highlighted in bold. The description may help to tune minimap2\nparameters.\n\n1. Read **-I** [=*4G*] reference bases, extract\n   (**-k**,\\ **-w**)-minimizers and index them in a hash table.\n\n2. Read **-K** [=*200M*] query bases. For each query sequence, do step 3\n   through 7:\n\n3. For each (**-k**,\\ **-w**)-minimizer on the query, check against the\n   reference index. If a reference minimizer is not among the top **-f**\n   [=*2e-4*] most frequent, collect its the occurrences in the\n   reference, which are called *seeds*.\n\n4. Sort seeds by position in the reference. Chain them with dynamic\n   programming. Each chain represents a potential mapping. For read\n   overlapping, report all chains and then go to step 8. For reference\n   mapping, do step 5 through 7:\n\n5. Let *P* be the set of primary mappings, which is an empty set\n   initially. For each chain from the best to the worst according to\n   their chaining scores: if on the query, the chain overlaps with a\n   chain in *P* by **–mask-level** [=*0.5*] or higher fraction of the\n   shorter chain, mark the chain as *secondary* to the chain in *P*;\n   otherwise, add the chain to *P*.\n\n6. Retain all primary mappings. Also retain up to **-N** [=*5*] top\n   secondary mappings if their chaining scores are higher than **-p**\n   [=*0.8*] of their corresponding primary mappings.\n\n7. If alignment is requested, filter out an internal seed if it\n   potentially leads to both a long insertion and a long deletion.\n   Extend from the left-most seed. Perform global alignments between\n   internal seeds. Split the chain if the accumulative score along the\n   global alignment drops by **-z** [=*400*], disregarding long gaps.\n   Extend from the right-most seed. Output chains and their alignments.\n\n8. If there are more query sequences in the input, go to step 2 until no\n   more queries are left.\n\n9. If there are more reference sequences, reopen the query file from the\n   start and go to step 1; otherwise stop.\n\nLimitations\n-----------\n\n-  Minimap2 may produce suboptimal alignments through long\n   low-complexity regions where seed positions may be suboptimal. This\n   should not be a big concern because even the optimal alignment may be\n   wrong in such regions.\n    "
+  }
+}

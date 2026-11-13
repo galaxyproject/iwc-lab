@@ -1,0 +1,194 @@
+{
+  "id": "fastq_groupmerge",
+  "version": "1.0.2+galaxy0",
+  "name": "Fastq groupmerge",
+  "description": "Group FASTQ files together based on a set grouping in a metadata file",
+  "inputs": [
+    {
+      "name": "input",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "is_select",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Check type of fastq read library",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Single reads",
+            "value": "single",
+            "selected": false
+          },
+          {
+            "label": "Paired reads",
+            "value": "pair",
+            "selected": true
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "single",
+          "parameters": [
+            {
+              "name": "samples",
+              "parameter_type": "gx_data_collection",
+              "hidden": false,
+              "label": "Input single sample(s) read(s)",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data_collection",
+              "collection_type": "list",
+              "extensions": [
+                "fastqsanger",
+                "fastqsanger.gz"
+              ],
+              "value": null
+            }
+          ],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "pair",
+          "parameters": [
+            {
+              "name": "samples",
+              "parameter_type": "gx_data_collection",
+              "hidden": false,
+              "label": "Input paired sample(s) read(s) collection",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data_collection",
+              "collection_type": "list:paired",
+              "extensions": [
+                "fastqsanger",
+                "fastqsanger.gz"
+              ],
+              "value": null
+            }
+          ],
+          "is_default_when": true
+        }
+      ]
+    },
+    {
+      "name": "metadata",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "Metadata table file",
+      "help": "Metadata file with first column sample name and another column with group ID. Multiple grouping is allowed, see the help section. If no metadata table is provided, this tool will merge all samples!",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "data",
+      "extensions": [
+        "tabular",
+        "csv",
+        "tsv"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "group_col",
+      "parameter_type": "gx_text",
+      "hidden": false,
+      "label": "Input the column name of the `group` column",
+      "help": "The metadata file should contain two columns, one with the sample names and one with sample group ID. Use the same ID for samples that should be grouped. Look at the help section for more information!",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "text",
+      "area": false,
+      "value": null,
+      "default_options": [],
+      "validators": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "merged_samples_pairs",
+      "label": "${tool.name} on ${on_string}: Merged samples (pairs)",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list:paired",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "fastq.gz",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output",
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<identifier_0>[^_]+)_(?P<identifier_1>[^_]+)\\.fastq.gz"
+        }
+      ]
+    },
+    {
+      "name": "merged_samples_single",
+      "label": "${tool.name} on ${on_string}: Merged samples (single)",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "fastq.gz",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output",
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<identifier_0>[^_]+)\\.fastq.gz"
+        }
+      ]
+    }
+  ],
+  "citations": [
+    {
+      "type": "bibtex",
+      "content": "@misc{BibEntry2025Oct,\n            title = {{fastq-groupmerge}},\n            author = {Santino Faack (SantaMcCloud)},\n            journal = {GitHub},\n            year = {2025},\n            month = oct,\n            url = {https://github.com/SantaMcCloud/fastq-groupmerge}\n        }"
+    }
+  ],
+  "license": null,
+  "profile": "25.0",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n        \n\n            **What does this tool**\n\n            This tool is designed to group sample fastq reads together based on a grouping defined in a metadata file.\n            This tool can be used to support grouped-assembly. In some cases you want to group them in multiple ways. E.g. merge technical replicas but also merge samples from similar samples (e.g. all from the gut). To this end you can provide multiple groupings. \n\n            **Input**\n\n            - A collection of pair reads which can be in fastq or fastq format\n            - OPTIONAL BUT RECOMMENDED: a metadata file either tab separated in format: tabular/tsv or comma-separated in format: csv\n\n            The metadata file can look look like this for example:\n\n            .. metadata table::\n\n                sample_id,group\n                A1,control\n                B1,control\n                A1,A1\n                Test,\n                ,Test\n            \n            Important to this:\n\n            - The metadata file required to have a column sample_id with sample names (this are the pair name for example 'A1' is the pair collection name so 'A1' has to be written in the sample_id column) when using the pair collection option. \n            - The column 'group' can be called anything. All samples with the same ID will be merged together in the output file. In the example file the output 'control_forward.fastq.gz' will contain the forward reads from 'A1' and 'B1'\n            - When there is a empty entry in any column this line will be ignored!\n            - When using the single read option note that in the 'sample_id' column the file name has to be stated completely therefore as example for input 'test_read.fastq' a line in the metadata table has to be 'test_read' \n            - If metadata file is given only the sample reads stated in this file will be taken into account so you can also add the collection where other sample reads in this collection, they will be ignored if there are not stated in the metadata file!\n\n            **Output**\n\n            - For each group stated in the 'group' column a forward file [{group_name}_{forward_suffix}.fastq.gz] and a reverse file [{group_name}_{reverse_suffix}.fastq.gz] will be created\n            - When no metadata is given all inputs which match to the 'forward_suffix' and 'reverse_suffix' will be merged together into one file each for forward and reverse!\n\n        \n    "
+  }
+}

@@ -1,0 +1,948 @@
+{
+  "schema_version": 1,
+  "tool_id": "metamdbg_asm",
+  "tool_version": "1.4+galaxy0",
+  "cache_key": "81b322c86ee4877c1c891cba4fa6b280bd5966650c063dcbac2471f5fdd68b29",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~metamdbg_asm~metamdbg_asm/versions/1.4+galaxy0",
+    "cached_at": "2026-11-12T04:23:31.577Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/81b322c86ee4877c1c891cba4fa6b280bd5966650c063dcbac2471f5fdd68b29.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "metamdbg_asm",
+    "version": "1.4+galaxy0",
+    "name": "metaMDBG assemble (ASM)",
+    "description": "Assemble long-read metagenomes (HiFi / ONT)",
+    "inputs": [
+      {
+        "name": "inputs",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "read_type",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Read type",
+            "help": "maps to --in-*",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "PacBio HiFi (uses --in-hifi)",
+                "value": "hifi",
+                "selected": false
+              },
+              {
+                "label": "Nanopore R10.4+ (uses --in-ont)",
+                "value": "ont",
+                "selected": false
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          {
+            "name": "reads",
+            "parameter_type": "gx_data",
+            "hidden": false,
+            "label": "FASTQ file(s)",
+            "help": "Select one or more FASTQ files. Multiple files will be assembled together (co-assembly). For individual assemblies of each file in a collection, see https://gxy.io/GTN:F00462",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "data",
+            "extensions": [
+              "fastqsanger",
+              "fastqsanger.gz"
+            ],
+            "multiple": true,
+            "min": null,
+            "max": null,
+            "url_default": null
+          }
+        ]
+      },
+      {
+        "name": "filter_options",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "min_read_quality",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimum read average quality",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 0,
+            "min": 0,
+            "max": 40,
+            "validators": []
+          },
+          {
+            "name": "min_contig_length",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimum contig length",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 50,
+            "min": 1,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "min_contig_coverage",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimum contig coverage",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 1,
+            "min": 0,
+            "max": null,
+            "validators": []
+          }
+        ]
+      },
+      {
+        "name": "assembly",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "kmer_size",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "k-mer size",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 15,
+            "min": 1,
+            "max": 51,
+            "validators": []
+          },
+          {
+            "name": "density_assembly",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Fraction of k-mers used for assembly",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "float",
+            "value": 0.005,
+            "min": 0.001,
+            "max": 1,
+            "validators": []
+          },
+          {
+            "name": "max_k",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Stop assembly after k iterations",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 0,
+            "min": 0,
+            "max": 100,
+            "validators": []
+          },
+          {
+            "name": "min_abundance",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimum k-min-mer abundance",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 0,
+            "min": 0,
+            "max": 1000,
+            "validators": []
+          },
+          {
+            "name": "all_assembly_graph",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Emit assembly graph at each multi-k iteration",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "--all-assembly-graph",
+            "falsevalue": ""
+          }
+        ]
+      },
+      {
+        "name": "correction",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "density_correction",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Fraction of k-mers used for correction",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "float",
+            "value": 0.025,
+            "min": 0.0001,
+            "max": 1,
+            "validators": []
+          },
+          {
+            "name": "min_read_identity",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Minimum read identity",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "float",
+            "value": 0.96,
+            "min": 0,
+            "max": 1,
+            "validators": []
+          },
+          {
+            "name": "min_read_overlap",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimum read overlap length",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 1000,
+            "min": 1,
+            "max": 100000,
+            "validators": []
+          },
+          {
+            "name": "skip_correction",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Skip read correction",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "--skip-correction",
+            "falsevalue": ""
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "contigs",
+        "label": "${tool.name} on ${on_string}: contigs",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta.gz",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "assemblyDir/contigs.fasta.gz",
+        "precreate_directory": false
+      },
+      {
+        "name": "assembly_bundle",
+        "label": "${tool.name} on ${on_string}: metaMDBG assembly bundle (tar)",
+        "hidden": false,
+        "type": "data",
+        "format": "tar.gz",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "assemblyDir.tgz",
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1038/s41587-023-01983-6"
+      }
+    ],
+    "license": "MIT",
+    "profile": "25.0",
+    "edam_operations": [
+      "operation_0292"
+    ],
+    "edam_topics": [
+      "topic_3170",
+      "topic_0624",
+      "topic_3168"
+    ],
+    "xrefs": [
+      {
+        "value": "metamdbg",
+        "type": "bio.tools"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n**What this tool does and why**\n\nThis tool runs `metaMDBG asm` to assemble long-read metagenomes (PacBio HiFi or ONT R10.4+) using a minimizer-space de Bruijn graph with a multi-k strategy. It produces polished contigs and a tarred snapshot of the assembly directory for downstream graphing and reproducibility.\n\n**How to use this tool effectively**\n\n1. **Provide input reads.** Select one or more FASTQ files. If multiple files are selected, they will be assembled together (co-assembly).\n\n2. **Choose the read type.** Select PacBio HiFi (sets `--in-hifi`) or Nanopore R10.4+ (sets `--in-ont`).\n\n3. **(Optional) Tune assembly options.** Adjust k-mer size, assembly density, max k iterations, minimum abundance, or enable `--all-assembly-graph`.\n\n4. **(Optional) Tune correction options.** Set minimum read quality/identity/overlap or `--skip-correction`.\n\n**Individual vs. Co-assembly**\n\n- **Co-assembly (default):** Select multiple files and they will be assembled together into a single metagenome. Use this when you have multiple samples from the same environment or want to increase coverage.\n\n- **Individual assemblies:** To assemble each file separately, use Galaxy's collection mapping feature. See the `Galaxy training FAQ on mapping over collections <https://training.galaxyproject.org/training-material/faqs/galaxy/collections_force_mapping_over.html>`_ for instructions.\n\n**Outputs**\n\n- **`contigs.fasta.gz`** — compressed FASTA of assembled contigs.  \n- **`assemblyDir.tgz`** — compressed snapshot of the assembly directory (including logs and `tmp/`).\n\n**Options (Galaxy ↔ CLI mapping)**\n\n- **Read type:** `--in-hifi` or `--in-ont`.  \n- **Assembly options:** `--kmer-size`, `--density-assembly`, `--max-k`, `--min-abundance`, `--all-assembly-graph`.  \n- **Correction options:** `--min-read-quality`, `--density-correction`, `--min-read-identity`, `--min-read-overlap`, `--skip-correction`.\n\n**Why we generate a tar bundle**\n\nPackaging `assemblyDir/` as `assemblyDir.tgz` preserves all artifacts and makes it easy to pass the exact assembly into the **metaMDBG graph (GFA)** tool.\n\n**More information**\n\nFor more details about metaMDBG, see the `GitHub repository <https://github.com/GaetanBenoitDev/metaMDBG>`_.\n\n  "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "inputs": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "read_type": {
+              "type": "string",
+              "enum": [
+                "hifi",
+                "ont"
+              ]
+            },
+            "reads": {
+              "$id": "/schemas/never",
+              "not": {},
+              "title": "never"
+            }
+          },
+          "additionalProperties": false
+        },
+        "filter_options": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "min_read_quality": {
+              "$ref": "#/$defs/Int",
+              "description": "a number less than or equal to 40",
+              "title": "lessThanOrEqualTo(40)",
+              "minimum": 0,
+              "maximum": 40
+            },
+            "min_contig_length": {
+              "$ref": "#/$defs/Int",
+              "description": "a number greater than or equal to 1",
+              "title": "greaterThanOrEqualTo(1)",
+              "minimum": 1
+            },
+            "min_contig_coverage": {
+              "$ref": "#/$defs/Int",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "assembly": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "kmer_size": {
+              "$ref": "#/$defs/Int",
+              "description": "a number less than or equal to 51",
+              "title": "lessThanOrEqualTo(51)",
+              "minimum": 1,
+              "maximum": 51
+            },
+            "density_assembly": {
+              "type": "number",
+              "description": "a number less than or equal to 1",
+              "title": "lessThanOrEqualTo(1)",
+              "minimum": 0.001,
+              "maximum": 1
+            },
+            "max_k": {
+              "$ref": "#/$defs/Int",
+              "description": "a number less than or equal to 100",
+              "title": "lessThanOrEqualTo(100)",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "min_abundance": {
+              "$ref": "#/$defs/Int",
+              "description": "a number less than or equal to 1000",
+              "title": "lessThanOrEqualTo(1000)",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "all_assembly_graph": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "correction": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "density_correction": {
+              "type": "number",
+              "description": "a number less than or equal to 1",
+              "title": "lessThanOrEqualTo(1)",
+              "minimum": 0.0001,
+              "maximum": 1
+            },
+            "min_read_identity": {
+              "type": "number",
+              "description": "a number less than or equal to 1",
+              "title": "lessThanOrEqualTo(1)",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "min_read_overlap": {
+              "$ref": "#/$defs/Int",
+              "description": "a number less than or equal to 100000",
+              "title": "lessThanOrEqualTo(100000)",
+              "minimum": 1,
+              "maximum": 100000
+            },
+            "skip_correction": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "inputs"
+      ],
+      "properties": {
+        "inputs": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "reads"
+              ],
+              "properties": {
+                "read_type": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "hifi",
+                        "ont"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "reads": {
+                  "type": "object",
+                  "required": [
+                    "__class__"
+                  ],
+                  "properties": {
+                    "__class__": {
+                      "type": "string",
+                      "enum": [
+                        "ConnectedValue"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "filter_options": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "min_read_quality": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number less than or equal to 40",
+                      "title": "lessThanOrEqualTo(40)",
+                      "minimum": 0,
+                      "maximum": 40
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "min_contig_length": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number greater than or equal to 1",
+                      "title": "greaterThanOrEqualTo(1)",
+                      "minimum": 1
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "min_contig_coverage": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "assembly": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "kmer_size": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number less than or equal to 51",
+                      "title": "lessThanOrEqualTo(51)",
+                      "minimum": 1,
+                      "maximum": 51
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "density_assembly": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0.001,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "max_k": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number less than or equal to 100",
+                      "title": "lessThanOrEqualTo(100)",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "min_abundance": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number less than or equal to 1000",
+                      "title": "lessThanOrEqualTo(1000)",
+                      "minimum": 0,
+                      "maximum": 1000
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "all_assembly_graph": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "correction": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "density_correction": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0.0001,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "min_read_identity": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "min_read_overlap": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number less than or equal to 100000",
+                      "title": "lessThanOrEqualTo(100000)",
+                      "minimum": 1,
+                      "maximum": 100000
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "skip_correction": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

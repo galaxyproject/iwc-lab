@@ -1,0 +1,775 @@
+{
+  "id": "checkm_lineage_wf",
+  "version": "1.2.5+galaxy0",
+  "name": "CheckM lineage_wf",
+  "description": "Assessing the completeness and contamination of genome bins using lineage-specific marker sets",
+  "inputs": [
+    {
+      "name": "bins",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "select",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Data structure for bins",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "In collection",
+            "value": "collection",
+            "selected": false
+          },
+          {
+            "label": "In individual datasets",
+            "value": "individual",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "collection",
+          "parameters": [
+            {
+              "name": "bins_coll",
+              "parameter_type": "gx_data_collection",
+              "hidden": false,
+              "label": "Bins",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data_collection",
+              "collection_type": "list",
+              "extensions": [
+                "fasta"
+              ],
+              "value": null
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "individual",
+          "parameters": [
+            {
+              "name": "bins_ind",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Bins",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fasta"
+              ],
+              "multiple": true,
+              "min": null,
+              "max": null,
+              "url_default": null
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "tree_analyze",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "reduced_tree",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Use reduced tree for determining lineage of each bin?",
+          "help": "This option requires less than 16GB of memory",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--reduced_tree",
+          "falsevalue": ""
+        },
+        {
+          "name": "ali",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Generate HMMER alignment file for each bin?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--ali",
+          "falsevalue": ""
+        },
+        {
+          "name": "nt",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Generate nucleotide gene sequences for each bin?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--nt",
+          "falsevalue": ""
+        },
+        {
+          "name": "genes",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Bins contain genes as amino acids instead of nucleotide contigs?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--genes",
+          "falsevalue": ""
+        }
+      ]
+    },
+    {
+      "name": "lineage_set",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "unique",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Minimum number of unique phylogenetic markers required to use lineage-specific marker set",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 10,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "multi",
+          "parameter_type": "gx_integer",
+          "hidden": false,
+          "label": "Maximum number of multi-copy phylogenetic markers before defaulting to domain-level marker set ",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "integer",
+          "value": 10,
+          "min": 0,
+          "max": null,
+          "validators": []
+        },
+        {
+          "name": "force_domain",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Use domain-level sets for all bins?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--force_domain",
+          "falsevalue": ""
+        },
+        {
+          "name": "no_refinement",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Do not perform lineage-specific marker set refinement?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--no_refinement",
+          "falsevalue": ""
+        }
+      ]
+    },
+    {
+      "name": "qa",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "individual_markers",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Treat marker as independent?",
+          "help": "It will ignore co-located set structure",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--individual_markers",
+          "falsevalue": ""
+        },
+        {
+          "name": "skip_adj_correction",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Do not exclude adjacent marker genes when estimating contamination?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--skip_adj_correction",
+          "falsevalue": ""
+        },
+        {
+          "name": "skip_pseudogene_correction",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Skip identification and filtering of pseudogenes?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--skip_pseudogene_correction",
+          "falsevalue": ""
+        },
+        {
+          "name": "aai_strain",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "AAI threshold used to identify strain heterogeneity",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 0.9,
+          "min": 0,
+          "max": 1,
+          "validators": []
+        },
+        {
+          "name": "ignore_thresholds",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "Ignore model-specific score thresholds?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "--ignore_thresholds",
+          "falsevalue": ""
+        },
+        {
+          "name": "e_value",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "E-value cut off",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 1e-10,
+          "min": 0,
+          "max": 1,
+          "validators": []
+        },
+        {
+          "name": "length",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "Percent overlap between target and query",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 0.7,
+          "min": 0,
+          "max": 1,
+          "validators": []
+        }
+      ]
+    },
+    {
+      "name": "extra_outputs",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "Extra outputs",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "select",
+      "options": [
+        {
+          "label": "Phylogenetic HMM model info for each bin",
+          "value": "phylo_hmm_info",
+          "selected": false
+        },
+        {
+          "label": "Phylogenetic bin stats",
+          "value": "bin_stats_tree",
+          "selected": false
+        },
+        {
+          "label": "Phylogenetic HMM hits to each bin",
+          "value": "hmmer_tree",
+          "selected": false
+        },
+        {
+          "label": "Concatenated tree",
+          "value": "concatenated_tre",
+          "selected": false
+        },
+        {
+          "label": "Concatenated masked sequences",
+          "value": "concatenated_fasta",
+          "selected": false
+        },
+        {
+          "label": "Phylogenetic HMMER alignment file for each bin",
+          "value": "hmmer_tree_ali",
+          "selected": false
+        },
+        {
+          "label": "Concatenated pplacer JSON",
+          "value": "concatenate_pplacer_json",
+          "selected": false
+        },
+        {
+          "label": "Nucleotide gene sequences for each bin (if generate nucleotide gene sequences)",
+          "value": "genes_fna",
+          "selected": false
+        },
+        {
+          "label": "Protein gene sequences for each bin",
+          "value": "genes_faa",
+          "selected": false
+        },
+        {
+          "label": "Gene feature files for each bin (if bins do not contain genes as amino acids instead of nucleotide contigs)",
+          "value": "genes_gff",
+          "selected": false
+        },
+        {
+          "label": "Marker genes",
+          "value": "marker_file",
+          "selected": false
+        },
+        {
+          "label": "Marker gene HMM hits to each bin",
+          "value": "hmmer_analyze",
+          "selected": false
+        },
+        {
+          "label": "Marker gene bin stats",
+          "value": "bin_stats_analyze",
+          "selected": false
+        },
+        {
+          "label": "Marker gene HMM info for each bin",
+          "value": "checkm_hmm_info",
+          "selected": false
+        },
+        {
+          "label": "Marker HMMER alignment file for each bin",
+          "value": "hmmer_analyze_ali",
+          "selected": false
+        },
+        {
+          "label": "Marker gene bin extensive stats",
+          "value": "bin_stats_ext",
+          "selected": false
+        },
+        {
+          "label": "Marker gene stats",
+          "value": "marker_gene_stats",
+          "selected": false
+        }
+      ],
+      "multiple": true,
+      "validators": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "hmmer_tree",
+      "label": "${tool.name} on ${on_string}: Phylogenetic HMM hits to each bin",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "txt",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output/bins/",
+          "recurse": true,
+          "match_relative_path": true,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.*)/hmmer\\.tree\\.txt"
+        }
+      ]
+    },
+    {
+      "name": "hmmer_tree_ali",
+      "label": "${tool.name} on ${on_string}: Phylogenetic HMMER alignment file for each bin",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "txt",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output/bins/",
+          "recurse": true,
+          "match_relative_path": true,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.*)/hmmer\\.tree\\.ali\\.txt"
+        }
+      ]
+    },
+    {
+      "name": "genes_fna",
+      "label": "${tool.name} on ${on_string}: Protein gene sequences for each bin",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "fasta",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output/bins/",
+          "recurse": true,
+          "match_relative_path": true,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.*)/genes\\.fna"
+        }
+      ]
+    },
+    {
+      "name": "genes_faa",
+      "label": "${tool.name} on ${on_string}: Nucleotide gene sequences for each bin",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "fasta",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output/bins/",
+          "recurse": true,
+          "match_relative_path": true,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.*)/genes\\.faa"
+        }
+      ]
+    },
+    {
+      "name": "genes_gff",
+      "label": "${tool.name} on ${on_string}: Gene feature files for each bin",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "gff",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output/bins/",
+          "recurse": true,
+          "match_relative_path": true,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.*)/genes\\.gff"
+        }
+      ]
+    },
+    {
+      "name": "hmmer_analyze",
+      "label": "${tool.name} on ${on_string}: Marker gene HMM hits to each bin",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "txt",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output/bins/",
+          "recurse": true,
+          "match_relative_path": true,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.*)/hmmer\\.analyze\\.txt"
+        }
+      ]
+    },
+    {
+      "name": "hmmer_analyze_ali",
+      "label": "${tool.name} on ${on_string}: HMMER alignment file for each bin",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "list",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": "txt",
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": "output/bins/",
+          "recurse": true,
+          "match_relative_path": true,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "(?P<designation>.*)/hmmer\\.analyze\\.ali\\.txt"
+        }
+      ]
+    },
+    {
+      "name": "results",
+      "label": "${tool.name} on ${on_string}: Bin statistics",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    },
+    {
+      "name": "phylo_hmm_info",
+      "label": "${tool.name} on ${on_string}: Phylogenetic HMM model info for each bin",
+      "hidden": false,
+      "type": "data",
+      "format": "zip",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/storage/phylo_hmm_info.pkl.gz",
+      "precreate_directory": false
+    },
+    {
+      "name": "bin_stats_tree",
+      "label": "${tool.name} on ${on_string}: Phylogenetic bin stats",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/storage/bin_stats.tree.tsv",
+      "precreate_directory": false
+    },
+    {
+      "name": "concatenated_fasta",
+      "label": "${tool.name} on ${on_string}: Concatenated masked sequences",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/storage/tree/concatenated.fasta",
+      "precreate_directory": false
+    },
+    {
+      "name": "concatenated_tre",
+      "label": "${tool.name} on ${on_string}: Concatenated tree",
+      "hidden": false,
+      "type": "data",
+      "format": "phyloxml",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/storage/tree/concatenated.tre",
+      "precreate_directory": false
+    },
+    {
+      "name": "concatenated_pplacer_json",
+      "label": "${tool.name} on ${on_string}: Concatenated pplacer JSON",
+      "hidden": false,
+      "type": "data",
+      "format": "json",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/storage/tree/concatenated.pplacer.json",
+      "precreate_directory": false
+    },
+    {
+      "name": "marker_file",
+      "label": "${tool.name} on ${on_string}: Marker genes",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/lineage.ms",
+      "precreate_directory": false
+    },
+    {
+      "name": "bin_stats_analyze",
+      "label": "${tool.name} on ${on_string}: Marker gene bin stats",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/storage/bin_stats.analyze.tsv",
+      "precreate_directory": false
+    },
+    {
+      "name": "checkm_hmm_info",
+      "label": "${tool.name} on ${on_string}: Marker gene HMM info for each bin",
+      "hidden": false,
+      "type": "data",
+      "format": "zip",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/storage/checkm_hmm_info.pkl.gz",
+      "precreate_directory": false
+    },
+    {
+      "name": "bin_stats_ext",
+      "label": "${tool.name} on ${on_string}: Marker gene bin extensive stats",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/storage/bin_stats_ext.tsv",
+      "precreate_directory": false
+    },
+    {
+      "name": "marker_gene_stats",
+      "label": "${tool.name} on ${on_string}: Marker gene statistics",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "output/storage/marker_gene_stats.tsv",
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1101/gr.186072.114"
+    }
+  ],
+  "license": null,
+  "profile": "24.0",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "checkm",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\nWhat it does\n============\n\nCheckM provides a set of tools for assessing the quality of genomes recovered from isolates, single cells, or metagenomes. It provides robust estimates of genome completeness and contamination by using collocated sets of genes that are ubiquitous and single-copy within a phylogenetic lineage. Assessment of genome quality can also be examined using plots depicting key genomic characteristics (e.g., GC, coding density) which highlight sequences outside the expected distributions of a typical genome. CheckM also provides tools for identifying genome bins that are likely candidates for merging based on marker set compatibility, similarity in genomic characteristics, and proximity within a reference genome tree.\n\n\nThis command runs the recommended workflow for assessing the completeness and contamination of genome bins is to use lineage-specific marker sets. \nThis workflow consists of 4 mandatory (M) steps and 1 recommended (R) step:\n\n- (M) The tree command places genome bins into a reference genome tree\n- (R) The tree_qa command indicates the number of phylogenetically informative marker genes found in each genome bin along with a taxonomic string indicating its approximate placement in the tree. \n\n    If desired, genome bins with few phylogenetically marker genes may be removed in order to reduce the computational requirements of the following commands. \n    Alternatively, if only genomes from a particular taxonomic group are of interest these can be moved to a new directory and analyzed separately. \n\n- (M) The lineage_set command creates a marker file indicating lineage-specific marker sets suitable for evaluating each genome. \n- (M) The analyze command identifies marker genes and estimates the completeness and contamination of each genome bin. \n- (M) The qa command can be used to produce different tables summarizing the quality of each genome bin.\n\n    "
+  }
+}

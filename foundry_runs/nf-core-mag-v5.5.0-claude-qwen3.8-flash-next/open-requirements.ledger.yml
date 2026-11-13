@@ -1,0 +1,253 @@
+# open-requirements ledger — run nf-core-mag (nextflow-to-galaxy)
+# started empty by nextflow-summary-to-galaxy-reference-data (first carrying Mold)
+topology_repair:
+  escalations: 5
+  cap: 5
+  open_history: [0, 0, 0, 0, 0]
+entries:
+  - id: host-genome-key-not-carried
+    status: open
+    kind: dropped
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    units: "params.host_genome + params.genomes (iGenomes map) resolution of the host FASTA in workflows/mag.nf ch_host_fasta"
+    because: "v1 Galaxy posture starts at resolved per-asset paths, not keys — nextflow-to-galaxy-reference-data-mapping, Key-expanded bundle section ('The Galaxy workflow surface starts at the resolved per-asset paths, not the key')."
+    unmet: "user can pick a host by name (host_genome) instead of uploading a FASTA"
+    missing: "no Galaxy-side genome-key registry; host_fasta is the carried surface"
+    resolved_by: null
+    supersedes: null
+    note: ""
+  - id: cat-db-generate-chain-not-carried
+    status: open
+    kind: dropped
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    units: "cat_db_generate param; CATPACK_DOWNLOAD + CATPACK_PREPARE + CATPACK_DB_UNTAR build chain"
+    because: "source itself log-warns the Nr-derived build as very large (subworkflows/local/catpack/main.nf); v1 posture is user-supplied DB inputs — 'Workflows cannot bundle reference data — but inputs can' (nextflow-to-galaxy-reference-data-mapping Recommendations). An in-run from-Nr pack build is impractical on a stock Galaxy."
+    unmet: "users without a CAT pack cannot enable CAT taxonomy via a generate switch"
+    missing: "a supplied cat_db tarball becomes the only path; cat_db_generate has no target equivalent"
+    resolved_by: null
+    supersedes: null
+    note: ""
+  - id: db-download-fallbacks-not-carried
+    status: open
+    kind: dropped
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    units: "CHECKM_UNTAR download branch (checkm_download_url), CHECKM2_DATABASEDOWNLOAD (checkm2_db_version 14897628), GUNC_DOWNLOADDB (gunc_database_type), GENOMAD_DOWNLOAD"
+    because: "Galaxy v1 carries no admin-curated fetch and no pre-loaded DBs (nextflow-to-galaxy-reference-data-mapping Recommendations: data tables discouraged, portability-first). Each branch degrades to 'off when its DB input is absent', identical to the source run_*: false case."
+    unmet: "source fetches these DBs automatically on absence"
+    missing: "user must upload the DB dataset to enable each branch"
+    resolved_by: null
+    supersedes: null
+    note: ""
+  - id: metaeuk-remote-db-name-gap
+    status: open
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    unmet: "metaeuk_mmseqs_db accepts a URL or bare mmseqs DB name (test uses 'Kalamari') that MMSEQS_DATABASES downloads and converts"
+    missing: "a concrete uploadable Galaxy artifact — merged into an explicit optional 'MetaEuk mmseqs database' input (directory); no translation of name-resolution"
+    resolved_by: null
+    supersedes: null
+    note: ""
+  - id: wrapper-rebuild-capability-unverified
+    status: resolved
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    unmet: "in-tool bowtie2 index rebuild from the host FASTA when no index is supplied (mirrors BOWTIE2_HOST_REMOVAL_BUILD guard !params.host_fasta_bowtie2index)"
+    missing: "verification that the chosen bowtie2 wrapper has a no-index-supplied→build branch; discover-shed-tool does not surface wrapper rebuild capability yet (mapping note, gap 'In-tool rebuild capability discovery')"
+    resolved_by: advance-galaxy-draft-step
+    supersedes: null
+    note: "VERIFIED at the host_map iteration: devteam/bowtie2/bowtie2 2.5.5+galaxy0 has reference_genome conditional source=history → own_file (fasta) = in-tool index build from the host FASTA input; wired as 'reference_genome|own_file': host_genome (decision host-index-in-tool-rebuild now backed by a confirmed pin). discover-shed-tool still never surfaced this - capability discovery gap stands as a tooling note, not a run obligation; checkm2 wrapper-side provisioning noted in discoveries exemplar-wrapper-db-provisioning"
+  - id: db-tarball-vs-directory-shape-open
+    status: resolved
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    unmet: "per-DB inputs arrive as tarballs (gtdb_db, busco_db, checkm_db, checkm2_db, cat_db, genomad_db) and the source unpacks them (GTDBTK_DB_PREPARATION, BUSCO_UNTAR, CHECKM_UNTAR, CATPACK_DB_UNTAR)"
+    missing: "a settled choice of tarball input + in-tool unpack vs directory input + workflow-tier extract step; proposed posture: tarball `data` inputs, in-tool unpack"
+    resolved_by: nextflow-summary-to-galaxy-interface
+    supersedes: null
+    note: "interface brief declares every DB input as an optional `data` input (tar.gz sniffed where the source ships one); unpack stays in-tool per the reference brief"
+  - id: mixed-modality-samplesheet-record-slots
+    status: resolved
+    raised_by: nextflow-summary-to-galaxy-interface
+    unmet: "one samplesheet row may carry an optional short-read pair AND an optional long-read file (nf-schema anyOf); interface proposes sample_sheet:record with slots short_reads (paired_or_unpaired) + long_reads (dataset)"
+    missing: "verification that a Galaxy sample_sheet:record row may leave a slot empty for SR-only / LR-only rows; fallback if not: split reads_samplesheet into short_reads_samplesheet (sample_sheet:paired_or_unpaired) + long_reads_samplesheet (sample_sheet), losing per-row hybrid coupling"
+    resolved_by: repair-galaxy-draft-topology
+    supersedes: null
+    note: "blocked at build_pairs (entry build-pairs-record-slot-projection-impossible): not only is slot nullability unverified, no tool can project record slots into typed collections at all; fallback executed as repair 2 (escalations 2/5). residual cost = the documented one: per-row SR+LR hybrid coupling is lost, and meta_table covers short-read rows only"
+  - id: phix-unmapped-redundant-after-bowtie2-pin
+    status: resolved
+    blocking: true
+    kind: computability
+    raised_by: advance-galaxy-draft-step
+    step: shortread_preprocess/phix_unmapped
+    unmet: "phix_unmapped (TODO tool, plan: unmapped-as-fastq) wired to phix_map/TODO_bam; phix_map realizes as the same devteam bowtie2 pin whose native output_unaligned_read_pairs already yields unmapped FASTQ pairs - no BAM round-trip needed and the TODO_bam reference dangles"
+    missing: "nothing - the step's function is the wrapper's native output port (same pattern as host-unmapped-redundant-after-bowtie2-pin)"
+    resolved_by: repair-galaxy-draft-topology (escalated from advance-galaxy-draft-step iteration on shortread_preprocess/phix_map)
+    supersedes: null
+    note: "repair 5 (escalations 5/5 - budget exhausted): dropped phix_unmapped; clean_pick pick_from_0 now sources phix_map/output_unaligned_read_pairs. NOT applied to the long-read chain: lr_host_map is minimap2 (BAM-only outputs), so lr_host_unmapped stays - it needs a real unmapped-from-BAM tool at its pick. Any further open blocking entry must be surrendered per the cap, not repaired"
+  - id: host-unmapped-redundant-after-bowtie2-pin
+    status: resolved
+    blocking: true
+    kind: computability
+    raised_by: advance-galaxy-draft-step
+    step: shortread_preprocess/host_unmapped
+    unmet: "host_unmapped (TODO tool, plan: samtools view -f 4 + fastq conversion off a BAM) was wired to host_map/TODO_bam; the realized devteam bowtie2 pin emits unmapped reads natively as output_unaligned_read_pairs (paired collection of FASTQ) - no BAM round-trip step is computable or needed, and the TODO_bam reference dangles against the realized ports"
+    missing: "nothing - the step's function is the wrapper's native output port"
+    resolved_by: repair-galaxy-draft-topology (escalated from advance-galaxy-draft-step iteration on shortread_preprocess/host_map)
+    supersedes: null
+    note: "repair 4 (escalations 4/5): dropped step host_unmapped; pre_phix pick_from_0 now sources host_map/output_unaligned_read_pairs; the plan's iuc/samtools candidate stays unspent"
+  - id: trim-adapterremoval-single-output-uncomputable
+    status: resolved
+    blocking: true
+    kind: computability
+    raised_by: advance-galaxy-draft-step
+    step: shortread_preprocess/trim_adapterremoval
+    unmet: "trim_adapterremoval declared one TODO_trimmed paired-collection port to feed the clip_picked pick_value repeat; the iuc adapter_removal wrapper (3.0.2+galaxy0) cannot emit one: paired input (reads_collection, consumed per element via reads_collection['forward']) yields the Cheetah-filtered pair output_forward_truncated + output_reverse_truncated - two separate datasets"
+    missing: "no single-port option on the wrapper: interleaved_output=yes collapses to one port (output_interleaved_truncated) but changes the collection shape from list:paired to list-of-interleaved, inconsistent with the sibling branches (trimmomatic fastq_out_paired, fastp output_paired_coll), the skip_clipping fallback pick_from sr_paired, and the paired consumers downstream - ruled out; author branch inapplicable (wrapping an existing shed tool is not authoring)"
+    resolved_by: repair-galaxy-draft-topology (escalated from advance-galaxy-draft-step iteration on shortread_preprocess/trim_adapterremoval)
+    supersedes: null
+    note: "repair 3 (escalations 3/5): inserted zip_ar (built-in __ZIP_COLLECTION__ 1.0.0, output paired collection inner names forward/reverse) after trim_adapterremoval; clip_picked pick_from_1 now sources zip_ar/output; trim_adapterremoval corrected to the discovered id toolshed.g2.bx.psu.edu/repos/iuc/adapter_removal/adapter_removal 3.0.2+galaxy0 with input_type_cond state (input_type: paired, interleaved_output: no)"
+  - id: build-pairs-record-slot-projection-impossible
+    status: resolved
+    blocking: true
+    kind: computability
+    raised_by: advance-galaxy-draft-step
+    step: materialize_reads/build_pairs
+    unmet: "build_pairs + extract_lr must project sample_sheet:record slots (short_reads paired_or_unpaired, long_reads) into typed list:paired_or_unpaired / list collections keyed sample_run"
+    missing: "no implementing tool exists: __CONVERT_SAMPLE_SHEET__ input types exclude sample_sheet:record (bundled convert_sample_sheet.xml); __BUILD_LIST__ 1.2.0 accepts only a datasets repeat, no collection structure input (bundled build_list_1.2.0.xml); Tool Shed searches (q=record / 'sample sheet' / 'build collection' / 'collection structure') return no record-projection or collection-structure builder; author branch ruled out - GalaxyUserTool outputs are work-dir files, never collections (galaxy-user-tool-workflow-binding)"
+    resolved_by: repair-galaxy-draft-topology (escalated from advance-galaxy-draft-step iteration on materialize_reads/build_pairs)
+    supersedes: null
+    note: "repair 2 (escalations 2/5): executed mixed-modality-samplesheet-record-slots fallback - reads_samplesheet split into short_reads_samplesheet (sample_sheet:paired_or_unpaired) + long_reads_samplesheet (sample_sheet); materialize_reads outer output names (meta_table, sr_paired, lr_list) unchanged so consumers are untouched; build_pairs/extract_lr re-planned as __CONVERT_SAMPLE_SHEET__ conversions (pins already cached), left TODO for the loop to realize"
+  - id: either-input-required-unexpressible
+    status: open
+    raised_by: nextflow-summary-to-galaxy-interface
+    unmet: "source requires exactly one of --input / --assembly_input (nf-schema anyOf; mag.nf assembly_input branch)"
+    missing: "Galaxy required-when-conditional input affordance; design uses scalar input_mode [reads, assemblies] + both sheets optional + help-text convention (params note 'Conditional requiredness has no clean pure-gxformat2 expression')"
+    resolved_by: null
+    supersedes: null
+    note: ""
+  - id: run-flags-merged-into-db-presence
+    status: open
+    kind: dropped
+    raised_by: nextflow-summary-to-galaxy-interface
+    units: "params.run_busco, run_checkm, run_checkm2, run_gunc"
+    because: "interface decision dbs-as-explicit-optional-inputs (open-requirements.ledger decisions) gates each QC branch on its DB input's presence; a separate on/off flag would contradict the pick-list posture of the reference brief"
+    unmet: "user can supply a QC database but keep that scanner switched off"
+    missing: "an equivalent switch on the Galaxy surface (skip_binqc still kills all QC branches)"
+    resolved_by: null
+    supersedes: null
+    note: ""
+  - id: picklist-no-galaxy-exemplar
+    status: open
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    unmet: "7+ optional analysis-DB inputs each gating their own branch (bin-QC join into bin_summary.tsv, CAT taxonomy, geNomad, MetaEuk), any subset coherent"
+    missing: "worked Galaxy exemplar for funcscan-style multi-DB pick-lists (mapping note gap 'Multi-DB pick-list translation pattern'); interface/data-flow Molds design optional-input + when: routing unanchored"
+    resolved_by: null
+    supersedes: null
+    note: "template authored the pick-list gates as compound when: expressions ($(inputs.X) != null && !skip_*) over optional inputs - unanchored by any corpus workflow; validate/run phases are the first empirical test"
+  - id: versions-yml-aggregation-gap
+    status: open
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: "every NF module emits versions.yml collected into nf_core_mag_software_mqc_versions.yml (a promoted checkpoint output and nf-test snapshot target)"
+    missing: "a Galaxy idiom for collecting tool versions metadata across all steps into one YAML; no corpus recipe — template leaves a TODO, test plan must not assume this output exists until wired"
+    resolved_by: null
+    supersedes: null
+    note: "template formalized the computability gap as blocking entry versions-checkpoint-blocked (step collect_versions); test plan must not assert the software_versions output"
+  - id: versions-checkpoint-blocked
+    status: resolved
+    blocking: true
+    kind: computability
+    raised_by: nextflow-summary-to-galaxy-template
+    step: collect_versions
+    unmet: "workflow output software_versions (promoted per checkpoints-promoted) requires a YAML aggregating every step's tool version; the source gets it free from per-process versions.yml channel collection"
+    missing: "no wired input carries version evidence to collect_versions - Galaxy step outputs expose tool_version only through the workflow editor, not as consumable ports; repair = per-step version-param extraction, a report-side alternative, or dropping the promoted output"
+    resolved_by: repair-galaxy-draft-topology (escalated from advance-galaxy-draft-step iteration on collect_versions)
+    supersedes: null
+    note: "repair 1 (escalations 1/5): dropped step collect_versions and promoted output software_versions; interface brief's promoted checkpoint list now stands at 7 outputs (multiqc_report, bin_summary, bins, unbinned_contigs, assemblies, quast_assembly_summary, taxonomy_tables). versions-yml-aggregation-gap remains open as the underlying capability gap."
+  - id: bin-summary-tolerant-join
+    status: open
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: "bin_summary.tsv merges up to 8 per-bin tables (depths, QUAST, GTDB-Tk, CAT, BUSCO, CheckM, CheckM2, pydamage), each .ifEmpty'd when its branch is off (QSV_CAT rowskey)"
+    missing: "a join mechanism tolerant of whole skipped branches — how a skipped producer yields an empty-but-typed table on the Galaxy side (engine sentinel vs empty-table emission) is unverified"
+    resolved_by: null
+    supersedes: null
+    note: "mechanism confirmed by corpus (iwc mags-building merges QC tables with collection_column_join x2) but its branches are never skipped — tolerance of skipped producers remains the open half; template narrowed the join to never see a skipped input (decision tolerant-fillers-for-bin-summary: header-only filler under the negated guard + pick_value first_or_skip per input); open half now just the pick_value/sentinel runtime check (does pick_value first_or_skip accept the expression.json skipped-sentinel dataset?)"
+  - id: bins-x-bams-cross-product
+    status: resolved
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: "DEPTHS combines every bin FASTA with every same-group sample BAM (source combine lacks by: — review trigger in the operators note)"
+    missing: "a concrete cross-product-then-filter recipe (build collection + filter to matching group) verified against Galaxy's collection-build tools"
+    resolved_by: compare-against-iwc-exemplar
+    supersedes: null
+    note: "corpus-attested recipe: IWC microbiome/multi-sample-binning uses __CROSS_PRODUCT_NESTED__ + Apply Rules for exactly this bins×BAMs pairing"
+discoveries:
+  - id: mag-reference-shape
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    evidence: "summary-nextflow reference_assets[] (15) + reference_rebuilds[] (8); host_genome is the only key-expanded attribute; seven analysis DBs each pair with a run_*/skip_* guard"
+    impact: "Galaxy surface = samplesheet + 0..N optional DB inputs; no genome bundle; bin-QC branches join independently"
+  - id: exemplar-when-pickvalue-idiom
+    raised_by: compare-against-iwc-exemplar
+    evidence: "iwc microbiome/mags-building: map_param_value over a selector string input -> boolean; consumer steps carry a named `when` step input and `when: $(inputs.when)`; rejoin via pick_value 0.2.0 pick_style:first; optional modalities are optional:true collection inputs with null job values"
+    impact: "template authors the clip_tool/assembler/longread swaps and pick-list gates with this exact idiom (see iwc-comparison-notes.md excerpt); no new conditional machinery needed"
+  - id: exemplar-wrapper-db-provisioning
+    raised_by: compare-against-iwc-exemplar
+    evidence: "mags-building test job sets 'CheckM2 Database: 1.0.2' — the IWC checkm2 wrapper provisions its own database from a version string; mags-taxonomy-annotation likewise resolves GTDB-Tk wrapper-side"
+    impact: "per-step loop may accept wrapper-managed DB provisioning where a corpus wrapper offers it; the upload-input interface surface is unchanged (optional inputs still win when supplied)"
+decisions:
+  - id: dbs-as-explicit-optional-inputs
+    decided_by: nextflow-summary-to-galaxy-reference-data
+    decision: "Every analysis DB becomes an explicit optional data input; input presence gates its branch (replaces run_*/skip_* + download fallbacks)."
+    rationale: "v1 posture (explicit optional inputs; data tables discouraged); preserves the pick-list semantics the source guards encode."
+    evidence: [mag-reference-shape, db-download-fallbacks-not-carried]
+  - id: host-index-in-tool-rebuild
+    decided_by: nextflow-summary-to-galaxy-reference-data
+    decision: "Do not surface a bowtie2 index input; the alignment wrapper builds it from the host FASTA input."
+    rationale: "single consumer chain (below the ~3-rebuild threshold); matches existing IWC wrapper convention; no vendored directory datatype for bowtie2 indexes."
+    evidence: [wrapper-rebuild-capability-unverified]
+  - id: multiqc-configs-not-inputs
+    decided_by: nextflow-summary-to-galaxy-reference-data
+    decision: "multiqc_config / multiqc_methods_description are baked into the MultiQC step as tool configuration, not workflow inputs."
+    rationale: "repo-bundled presentation assets, not reference data; keeps the input surface scientific."
+    evidence: [mag-reference-shape]
+  - id: input-mode-switch
+    decided_by: nextflow-summary-to-galaxy-interface
+    decision: "Scalar input_mode [reads, assemblies] selects the modality; reads_samplesheet and assembly_samplesheet are both optional data-sheet inputs."
+    rationale: "branch-required pattern from nextflow-params-to-galaxy-inputs; Galaxy has no required-unless-the-other-is-set affordance (either-input-required-unexpressible)."
+    evidence: [either-input-required-unexpressible]
+  - id: samplesheet-variants
+    decided_by: nextflow-summary-to-galaxy-interface
+    decision: "reads → sample_sheet:record (slots short_reads:paired_or_unpaired, long_reads) with meta columns sample/run/group/platforms; assembly_input → sample_sheet (fasta element, meta id/group/assembler)."
+    rationale: "heterogeneous per-row path columns → record variant (galaxy-sample-sheet-collections); single path column → sample_sheet; nf-schema enum→restrictions, pattern→regex, richer rules downgraded to prose."
+    evidence: [mixed-modality-samplesheet-record-slots]
+  - id: checkpoints-promoted
+    decided_by: nextflow-summary-to-galaxy-interface
+    decision: "Promote bin_summary.tsv and the software-versions yml as stable tabular/metadata checkpoints alongside multiqc_report, bins (list:list fasta.gz), unbinned_contigs, assemblies."
+    rationale: "galaxy-workflow-testability-design: a report alone proves existence; these mirror the nf-test content-check/tsv-rows and versions snapshots of tests/default.nf.test."
+    evidence: [mag-reference-shape]
+  - id: phase-subworkflows-tool-inline-when
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    decision: "14 source subworkflow boundaries become Galaxy subworkflow steps with when: gates (preprocessing, assembly, assembly-input branch, binning-prep, binning, refinement, domain-classification, bin-QC, gtdbtk, catpack, ancient-dna, virus-ID, metaeuk); tool swaps stay inline when: + pick_value (clip_tool the_only_non_null; longread filter / aDNA-consensus first_or_skip); additive branches (5 assemblers, 6 binners, QC scanners) fan in by merge-collections."
+    rationale: "nextflow-conditional-to-galaxy-subworkflow-when heuristics: source already scoped each gated unit in a named subworkflow with wide cohesive cascades; swaps are 1-step pure tool choices with short cascades."
+    evidence: [mag-reference-shape]
+  - id: identifier-scheme
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    decision: "Reads elements keyed sample_run (source test samplesheet is multirun: sample alone repeats); bins keyed group_binN and every per-bin tabular keys on it; assemblies keyed sample_assembler."
+    rationale: "data-flow procedure: a per-row column can repeat — key each element on what is unique per dataset; bin_summary join and addressable bin outputs depend on one shared bin key."
+    evidence: [mag-reference-shape]
+  - id: exemplar-idioms-adopted
+    decided_by: compare-against-iwc-exemplar
+    decision: "Keep input_mode + sample_sheet inputs (interface decisions stand); adopt the exemplar's map_param_value→when:+pick_value wiring, __CROSS_PRODUCT_NESTED__ for bins×BAMs, das_tool (not dRep) for refinement per source, split_file_to_collection shape for the unbinned split."
+    rationale: "exemplar confirms the designed shapes where the science matches and divergences stay where MAG's source structure differs (taxonomy/annotation stages, samplesheet modality)."
+    evidence: [exemplar-when-pickvalue-idiom, exemplar-wrapper-db-provisioning]
+  - id: subworkflow-stage-gates-nested-drafts
+    decided_by: nextflow-summary-to-galaxy-template
+    decision: "The 14 stage-gate subworkflow steps are authored as `run: class: GalaxyWorkflowDraft` nested drafts (not GalaxyWorkflow), each declaring `out:` ports mirroring the nested outputs and a `runtime_inputs` note; branch swaps and their pick_values live inside the same nested draft; stage notes ride on the step's `doc`, never `_plan_*`."
+    rationale: "probe-confirmed against gxwf 0.30.1: draft-validate and draft-next-step descend nested GalaxyWorkflowDraft recursively and count nested `_plan_*` (a nested class: GalaxyWorkflow would hide draft state from the loop); outer steps cannot reference nested inner ports, so pick pairs stay at one nesting level; `_plan_*` on a subworkflow step makes draft-next-step pick the subworkflow itself instead of descending."
+    evidence: [exemplar-when-pickvalue-idiom]
+  - id: when-guards-direct-input-expressions
+    decided_by: nextflow-summary-to-galaxy-template
+    decision: "Stage and swap guards are direct ES5.1 when: expressions over workflow inputs ('!$(inputs.skip_x)', '$(inputs.db) != null', && / || compounds), not the exemplar's map_param_value→named-when knot; pick_value merge idiom still adopted verbatim."
+    rationale: "refines exemplar-idioms-adopted: the exemplar's knot gates a *derived* selector value; every guard here is input-derived (booleans/enums/null-presence), so the intermediate step would add nodes without adding expression power. Engine notes confirm tool- and subworkflow-step when: over inputs incl. compounds."
+    evidence: [exemplar-when-pickvalue-idiom, picklist-no-galaxy-exemplar]
+  - id: tolerant-fillers-for-bin-summary
+    decided_by: nextflow-summary-to-galaxy-template
+    decision: "Each of the 10 optional per-bin QC/annotation table branches gets a twin filler step (header-only TSV, tool_id TODO, guard = negated branch guard) rejoined by a pick_value(0.2.0, first_or_skip) t_* step; bin_summary_join and the MultiQC custom-content fan-in consume only t_* picks, never a raw branch port."
+    rationale: "downstream `in:` to a skipped step is NO_REPLACEMENT (required-input error); making the join's inputs always-fed reduces the tolerance problem to pick_value's documented first_or_skip semantics + the sentinel-vs-empty-table runtime check (bin-summary-tolerant-join open half)."
+    evidence: [bin-summary-tolerant-join]
+    note: "resolved in the per-step loop: no Tool Shed tool emits a zero-input tabular, so the fillers use one authored GalaxyUserTool `header_table` 0.1.0 (text `columns` param -> tr ',' '\\t' > tabular `output`), embedded under run: in all 10 f_* steps per galaxy-user-tool-workflow-binding; header value is the join key placeholder `bin_id` - the load-bearing property is the zero-data-row table (a header row keyed 'bin_id' never matches a real group_binN key, so it is join-inert); exact per-branch column sets are not needed since the key join drops non-key headers"

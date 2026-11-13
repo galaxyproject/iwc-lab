@@ -1,0 +1,702 @@
+{
+  "id": "prokka",
+  "version": "1.15.6+galaxy0",
+  "name": "Prokka",
+  "description": "Prokaryotic genome annotation",
+  "inputs": [
+    {
+      "name": "input",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "Contigs to annotate",
+      "help": "FASTA format",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data",
+      "extensions": [
+        "fasta"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "locustag",
+      "parameter_type": "gx_text",
+      "hidden": false,
+      "label": "Locus tag prefix",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "text",
+      "area": false,
+      "value": null,
+      "default_options": [],
+      "validators": []
+    },
+    {
+      "name": "increment",
+      "parameter_type": "gx_integer",
+      "hidden": false,
+      "label": "Locus tag counter increment",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "integer",
+      "value": 1,
+      "min": 1,
+      "max": null,
+      "validators": []
+    },
+    {
+      "name": "gffver",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "GFF version",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "select",
+      "options": [
+        {
+          "label": "3",
+          "value": "3",
+          "selected": false
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "selected": false
+        },
+        {
+          "label": "1",
+          "value": "1",
+          "selected": false
+        }
+      ],
+      "multiple": false,
+      "validators": []
+    },
+    {
+      "name": "compliant",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "compliant_select",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Force GenBank/ENA/DDJB compliance",
+        "help": "Equivalent to --addgenes --mincontiglen 200 --centre Prokka (or other centre specified below) (--compliant)",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "No",
+            "value": "no",
+            "selected": false
+          },
+          {
+            "label": "Yes",
+            "value": "yes",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "no",
+          "parameters": [
+            {
+              "name": "addgenes",
+              "parameter_type": "gx_boolean",
+              "hidden": false,
+              "label": "Add 'gene' features for each 'CDS' feature (--addgenes)",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "boolean",
+              "value": false,
+              "truevalue": null,
+              "falsevalue": null
+            },
+            {
+              "name": "mincontig",
+              "parameter_type": "gx_integer",
+              "hidden": false,
+              "label": "Minimum contig size (--mincontiglen)",
+              "help": "NCBI needs 200",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": true,
+              "type": "integer",
+              "value": 200,
+              "min": null,
+              "max": null,
+              "validators": []
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "yes",
+          "parameters": [],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "centre",
+      "parameter_type": "gx_text",
+      "hidden": false,
+      "label": "Sequencing centre ID",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "text",
+      "area": false,
+      "value": null,
+      "default_options": [],
+      "validators": []
+    },
+    {
+      "name": "genus",
+      "parameter_type": "gx_text",
+      "hidden": false,
+      "label": "Genus name",
+      "help": "May be used to aid annotation, see --usegenus below",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "text",
+      "area": false,
+      "value": null,
+      "default_options": [],
+      "validators": []
+    },
+    {
+      "name": "species",
+      "parameter_type": "gx_text",
+      "hidden": false,
+      "label": "Species name",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "text",
+      "area": false,
+      "value": null,
+      "default_options": [],
+      "validators": []
+    },
+    {
+      "name": "strain",
+      "parameter_type": "gx_text",
+      "hidden": false,
+      "label": "Strain name",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "text",
+      "area": false,
+      "value": null,
+      "default_options": [],
+      "validators": []
+    },
+    {
+      "name": "plasmid",
+      "parameter_type": "gx_text",
+      "hidden": false,
+      "label": "Plasmid name or identifier",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "text",
+      "area": false,
+      "value": null,
+      "default_options": [],
+      "validators": []
+    },
+    {
+      "name": "kingdom",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "kingdom_select",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Kingdom",
+        "help": "(--kingdom)",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Archaea",
+            "value": "Archaea",
+            "selected": false
+          },
+          {
+            "label": "Bacteria",
+            "value": "Bacteria",
+            "selected": true
+          },
+          {
+            "label": "Viruses",
+            "value": "Viruses",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "Archaea",
+          "parameters": [
+            {
+              "name": "gcode",
+              "parameter_type": "gx_integer",
+              "hidden": false,
+              "label": "Genetic code (transl_table)",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": true,
+              "type": "integer",
+              "value": 11,
+              "min": 1,
+              "max": 23,
+              "validators": []
+            }
+          ],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "Bacteria",
+          "parameters": [
+            {
+              "name": "gcode",
+              "parameter_type": "gx_integer",
+              "hidden": false,
+              "label": "Genetic code (transl_table)",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": true,
+              "type": "integer",
+              "value": 11,
+              "min": 1,
+              "max": 23,
+              "validators": []
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "Viruses",
+          "parameters": [
+            {
+              "name": "gcode",
+              "parameter_type": "gx_integer",
+              "hidden": false,
+              "label": "Genetic code (transl_table)",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": true,
+              "type": "integer",
+              "value": 1,
+              "min": 1,
+              "max": 23,
+              "validators": []
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "usegenus",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Use genus-specific BLAST database",
+      "help": "Will use the BLAST database for the genus specified above, if installed",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": null,
+      "falsevalue": null
+    },
+    {
+      "name": "proteins",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "Optional FASTA file of trusted proteins to first annotate from",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "data",
+      "extensions": [
+        "fasta"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "metagenome",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Improve gene predictions for highly fragmented genomes",
+      "help": "Will set --meta option for Prodigal",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": null,
+      "falsevalue": null
+    },
+    {
+      "name": "fast",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Fast mode",
+      "help": "Skip CDS /product searching",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": null,
+      "falsevalue": null
+    },
+    {
+      "name": "evalue",
+      "parameter_type": "gx_float",
+      "hidden": false,
+      "label": "Similarity e-value cut-off",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "float",
+      "value": 0.000001,
+      "min": 0,
+      "max": null,
+      "validators": []
+    },
+    {
+      "name": "rfam",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Enable searching for ncRNAs with Infernal+Rfam (SLOW!)",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": null,
+      "falsevalue": null
+    },
+    {
+      "name": "norrna",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Don't run rRNA search with Barrnap",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": null,
+      "falsevalue": null
+    },
+    {
+      "name": "notrna",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Don't run tRNA search with Aragorn",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": null,
+      "falsevalue": null
+    },
+    {
+      "name": "outputs",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "Additional outputs",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "select",
+      "options": [
+        {
+          "label": "Annotation in GFF3 format, containing both sequences and annotations (.gff)",
+          "value": "gff",
+          "selected": true
+        },
+        {
+          "label": "Standard GenBank file. If the input was a multi-FASTA, then this will be a multi-GenBank, with one record for each sequence (.gbk)",
+          "value": "gbk",
+          "selected": true
+        },
+        {
+          "label": "Nucleotide FASTA file of the input contig sequences (.fna)",
+          "value": "fna",
+          "selected": true
+        },
+        {
+          "label": "Protein FASTA file of the translated CDS sequences (.faa)",
+          "value": "faa",
+          "selected": true
+        },
+        {
+          "label": "Nucleotide FASTA file of all the annotated sequences, not just CDS (.ffn)",
+          "value": "ffn",
+          "selected": true
+        },
+        {
+          "label": "An ASN1 format \"Sequin\" file for submission to GenBank. It needs to be edited to set the correct taxonomy, authors, related publication, etc. (.sqn)",
+          "value": "sqn",
+          "selected": true
+        },
+        {
+          "label": "Nucleotide FASTA file of the input contig sequences, with extra Sequin tags in the sequence description lines (.fsa)",
+          "value": "fsa",
+          "selected": true
+        },
+        {
+          "label": "Feature Table file (.tbl)",
+          "value": "tbl",
+          "selected": true
+        },
+        {
+          "label": "Annotations in tabular format including COGs etc.",
+          "value": "tsv",
+          "selected": true
+        },
+        {
+          "label": "Unacceptable annotations - the NCBI discrepancy report (.err)",
+          "value": "err",
+          "selected": true
+        },
+        {
+          "label": "Statistics relating to the annotated features found (.txt)",
+          "value": "txt",
+          "selected": true
+        }
+      ],
+      "multiple": true,
+      "validators": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "out_gff",
+      "label": "${tool.name} on ${on_string}: gff",
+      "hidden": false,
+      "type": "data",
+      "format": "gff3",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outdir/prokka.gff",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_gbk",
+      "label": "${tool.name} on ${on_string}: gbk",
+      "hidden": false,
+      "type": "data",
+      "format": "genbank",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outdir/prokka.gbk",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_fna",
+      "label": "${tool.name} on ${on_string}: fna",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outdir/prokka.fna",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_faa",
+      "label": "${tool.name} on ${on_string}: faa",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outdir/prokka.faa",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_ffn",
+      "label": "${tool.name} on ${on_string}: ffn",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outdir/prokka.ffn",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_sqn",
+      "label": "${tool.name} on ${on_string}: sqn",
+      "hidden": false,
+      "type": "data",
+      "format": "asn1",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outdir/prokka.sqn",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_fsa",
+      "label": "${tool.name} on ${on_string}: fsa",
+      "hidden": false,
+      "type": "data",
+      "format": "fasta",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outdir/prokka.fsa",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_tbl",
+      "label": "${tool.name} on ${on_string}: tbl",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outdir/prokka.tbl",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_tsv",
+      "label": "${tool.name} on ${on_string}: tsv",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outdir/prokka.tsv",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_err",
+      "label": "${tool.name} on ${on_string}: err",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outdir/prokka.err",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_txt",
+      "label": "${tool.name} on ${on_string}: txt",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outdir/prokka.txt",
+      "precreate_directory": false
+    },
+    {
+      "name": "out_log",
+      "label": "${tool.name} on ${on_string}: log",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "outdir/prokka.log",
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/btu135"
+    },
+    {
+      "type": "doi",
+      "content": "10.1093/bioinformatics/btu153"
+    }
+  ],
+  "license": null,
+  "profile": "25.0",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "prokka",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n**What it does**\n\nProkka_ is a software tool to rapidly annotate bacterial, archaeal and viral genomes, and produce output files that require only minor tweaking to submit to GenBank/ENA/DDBJ.\n\n.. _Prokka: http://github.com/tseemann/prokka\n\n**Output files**\n\nProkka creates several output files, which are described in the **Additional outputs** section above.\n\n**License and citation**\n\nThis Galaxy tool is Copyright © 2013 Lionel Guy, © 2013-2014 `CRS4 Srl.`_, © 2015-2016 `Earlham Institute`_, 2018 `Galaxy IUC` and is released under the `MIT license`_.\n\n.. _CRS4 Srl.: http://www.crs4.it/\n.. _Earlham Institute: http://earlham.ac.uk/\n.. _MIT license: https://opensource.org/licenses/MIT\n\nYou can use this tool only if you agree to the license terms of: `Prokka`_.\n\n.. _Prokka: http://github.com/tseemann/prokka\n    "
+  }
+}

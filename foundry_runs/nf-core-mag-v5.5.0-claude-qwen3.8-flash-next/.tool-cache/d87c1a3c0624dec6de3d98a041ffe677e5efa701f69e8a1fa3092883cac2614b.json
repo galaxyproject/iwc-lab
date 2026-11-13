@@ -1,0 +1,138 @@
+{
+  "id": "__SAMPLE_SHEET_TO_TABULAR__",
+  "version": "1.0.0",
+  "name": "Sample sheet to tabular",
+  "description": "to extract sample sheet metadata as a table",
+  "inputs": [
+    {
+      "name": "input",
+      "parameter_type": "gx_data_collection",
+      "hidden": false,
+      "label": "Sample sheet to convert",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data_collection",
+      "collection_type": "sample_sheet,sample_sheet:paired,sample_sheet:paired_or_unpaired,sample_sheet:record",
+      "extensions": [
+        "data"
+      ],
+      "value": null
+    },
+    {
+      "name": "include_headers",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Include column headers",
+      "help": "If enabled, the first line of output will contain the column names from the sample sheet definition.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": null,
+      "falsevalue": null
+    },
+    {
+      "name": "none_replace",
+      "parameter_type": "gx_text",
+      "hidden": false,
+      "label": "Replace 'null' values with",
+      "help": "Default is just an empty string '', but in some cases '-' might read better.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "text",
+      "area": false,
+      "value": null,
+      "default_options": [],
+      "validators": []
+    },
+    {
+      "name": "empty_replace",
+      "parameter_type": "gx_text",
+      "hidden": false,
+      "label": "Replace empty string values with",
+      "help": "Default is just to keep the empty string '', but in some cases '-' might read better.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "text",
+      "area": false,
+      "value": null,
+      "default_options": [],
+      "validators": []
+    },
+    {
+      "name": "bool_true_replace",
+      "parameter_type": "gx_text",
+      "hidden": false,
+      "label": "Replace boolean 'true' values with",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "text",
+      "area": false,
+      "value": null,
+      "default_options": [],
+      "validators": []
+    },
+    {
+      "name": "bool_false_replace",
+      "parameter_type": "gx_text",
+      "hidden": false,
+      "label": "Replace boolean 'false' values with",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "text",
+      "area": false,
+      "value": null,
+      "default_options": [],
+      "validators": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output",
+      "label": "${on_string} (as tabular)",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [
+        {
+          "discover_via": "pattern",
+          "format": null,
+          "visible": false,
+          "assign_primary_output": false,
+          "directory": null,
+          "recurse": false,
+          "match_relative_path": false,
+          "sort_key": "filename",
+          "sort_comp": "lexical",
+          "sort_reverse": false,
+          "pattern": "primary_DATASET_ID_(?P<designation>[^_]+)_(?P<visible>[^_]+)_(?P<ext>[^_]+)(_(?P<dbkey>[^_]+))?"
+        }
+      ],
+      "from_work_dir": null,
+      "precreate_directory": false
+    }
+  ],
+  "citations": [],
+  "license": null,
+  "profile": "16.01",
+  "edam_operations": [
+    "operation_3359"
+  ],
+  "edam_topics": [],
+  "xrefs": [],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\n========\nSynopsis\n========\n\nExports the metadata from a sample sheet collection as a tab-separated table.\n\n========================\nWhat is a sample sheet?\n========================\n\nA sample sheet is a special type of Galaxy collection that pairs each dataset with structured metadata — such as replicate number, treatment condition, or tissue type. It works like a regular list collection but with an attached spreadsheet of per-sample information.\n\n===========\nDescription\n===========\n\nThis tool reads the column definitions and row values from a sample sheet collection and writes them to a tabular dataset. The first column is always the element identifier (sample name). The remaining columns match the metadata fields defined in the sample sheet. The datasets in the collection are not affected — only the metadata is extracted.\n\nWhen **Include column headers** is enabled, the first row will contain the column names, with ``element_identifier`` as the first column followed by the names from the sample sheet column definitions.\n\nYou can customize how special values are represented in the output using the replacement parameters for null values, empty strings, and boolean values.\n\n========\nExamples\n========\n\n**Basic extraction (without headers)**\n\nGiven a sample sheet with three samples and two metadata columns (``replicate`` of type int, ``treatment`` of type string)::\n\n Sample Sheet: \"RNA-seq experiment\"\n\n   sample1.fastq  |  replicate=1, treatment=\"control\"\n   sample2.fastq  |  replicate=2, treatment=\"treated\"\n   sample3.fastq  |  replicate=3, treatment=\"control\"\n\nThe output tabular file contains::\n\n sample1    1    control\n sample2    2    treated\n sample3    3    control\n\n-------\n\n**With headers enabled**\n\nEnabling **Include column headers** adds a header row::\n\n element_identifier    replicate    treatment\n sample1               1            control\n sample2               2            treated\n sample3               3            control\n\n-------\n\n**Replacement parameters**\n\nIf some metadata values are null or boolean, you can control their text representation:\n\n- *Replace 'null' values with*: converts missing values (default: empty string, or use ``-`` or ``NA``)\n- *Replace boolean 'true'/'false' values with*: controls how booleans are written (default: ``TRUE`` / ``FALSE``)\n\nFor example, with null replacement set to ``NA``::\n\n element_identifier    replicate    is_paired\n sample1               1            TRUE\n sample2               NA           FALSE\n\n-------\n\n.. image:: ${static_path}/images/tools/collection_ops/sample_sheet_to_tabular.svg\n  :alt: Sample sheet to tabular dataset\n  :width: 500\n\n-------\n\n.. class:: infomark\n\nThis tool creates a new tabular dataset (not a collection operation), so normal quota usage applies.\n\n  "
+  }
+}

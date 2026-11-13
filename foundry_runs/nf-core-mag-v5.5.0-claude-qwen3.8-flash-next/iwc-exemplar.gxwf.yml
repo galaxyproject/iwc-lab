@@ -1,0 +1,415 @@
+class: GalaxyWorkflow
+label: MAGs generation - assembler-swap + QC-join subgraph (IWC microbiome/mags-building)
+doc: Relevant subgraph extracted for nf-core-mag translation idiom reference; full compact conversion derived from iwc workflows/microbiome/mags-building/MAGs-generation.ga
+inputs:
+- id: Trimmed nanopore reads from grouped samples
+  type: collection
+  collection_type: list
+  optional: true
+  fields: null
+  column_definitions: null
+- id: Trimmed PacBio reads from grouped samples
+  type: collection
+  collection_type: list
+  optional: true
+  fields: null
+  column_definitions: null
+- id: Trimmed paired reads from grouped samples
+  type: collection
+  collection_type: list:paired
+  optional: false
+  fields: null
+  column_definitions: null
+  doc: Samples grouped for co-assembly. For individual assembly use same reads as `Trimmed reads input`. The tool fastq_groupmerge
+    can be used to perform the grouping.
+- id: Choose Assembler
+  type: string
+  optional: false
+  restrictions:
+  - MEGAHIT
+  - metaSPAdes
+  - Custom Assembly
+  doc: The workflow can use MEGAHIT and metaSPAdes as assembler
+steps:
+- id: _unlabeled_step_24
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/megahit/megahit/1.2.9+galaxy2
+  tool_version: 1.2.9+galaxy2
+  tool_shed_repository:
+    changeset_revision: ab208c87d973
+    name: megahit
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_option|batchmode|pair_input
+    source: Trimmed paired reads from grouped samples
+  - id: output_section|min_contig_len
+    source: Minimum length of contigs to output
+  - id: when
+    source: _unlabeled_step_21/output_param_boolean
+  out: []
+  tool_state:
+    advanced_section:
+      nomercy: false
+      bubble_level: '2'
+      merge_level: 20,0.95
+      prune_level: '2'
+      prune_depth: '2'
+      disconnect_ratio: '0.1'
+      low_local_ratio: '0.2'
+      cleaning_rounds: '5'
+      nolocal: false
+      kmin1pass: false
+    basic_section:
+      min_count: '2'
+      k_mer:
+        k_mer_method: klist_method
+        __current_case__: 0
+        k_list: 21,29,39,59,79,99,119,141
+    input_option:
+      choice: paired_collection
+      __current_case__: 3
+      batchmode:
+        processmode: individual
+        __current_case__: 0
+        pair_input:
+          __class__: ConnectedValue
+    output_section:
+      min_contig_len:
+        __class__: ConnectedValue
+      show_intermediate_contigs: false
+      log_file: false
+  when: $(inputs.when)
+  uuid: 5d701b6a-aa66-4765-acae-f45e4d1a37de
+- id: _unlabeled_step_25
+  tool_id: param_value_from_file
+  tool_version: 0.1.0
+  in:
+  - id: input1
+    source: _unlabeled_step_23/out_file1
+  out: []
+  tool_state:
+    input1:
+      __class__: ConnectedValue
+    param_type: integer
+    remove_newlines: true
+  uuid: 9d44fb56-c36a-436e-9d9a-b23f4f4b9201
+- id: _unlabeled_step_26
+  tool_id: __DUPLICATE_FILE_TO_COLLECTION__
+  tool_version: 1.0.0
+  in:
+  - id: input
+    source: _unlabeled_step_17/out_file1
+  - id: number
+    source: _unlabeled_step_25/integer_param
+  out: []
+  tool_state:
+    element_identifier: null
+    input:
+      __class__: ConnectedValue
+    number:
+      __class__: ConnectedValue
+  uuid: a046475d-fd0d-4e07-b3c0-b227500d60fd
+- id: _unlabeled_step_27
+  tool_id: __RELABEL_FROM_FILE__
+  tool_version: 1.1.0
+  in:
+  - id: how|labels
+    source: _unlabeled_step_18
+  - id: input
+    source: _unlabeled_step_26
+  out: []
+  tool_state:
+    how:
+      how_select: txt
+      __current_case__: 0
+      labels:
+        __class__: ConnectedValue
+      strict: false
+    input:
+      __class__: ConnectedValue
+  uuid: 3eb4cae2-7ba2-43a4-bcdb-4bf8251c3322
+- id: _unlabeled_step_28
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: b19e21af9c52
+    name: pick_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: style_cond|type_cond|pick_from_0|value
+    source: Trimmed nanopore reads from grouped samples
+  - id: style_cond|type_cond|pick_from_1|value
+    source: _unlabeled_step_27
+  out: []
+  tool_state:
+    style_cond:
+      pick_style: first
+      __current_case__: 0
+      type_cond:
+        param_type: data
+        __current_case__: 4
+        pick_from:
+        - __index__: 0
+          value:
+            __class__: ConnectedValue
+        - __index__: 1
+          value:
+            __class__: ConnectedValue
+  uuid: 73112e61-bf9d-4982-a5a1-1d418b0cb0bc
+- id: _unlabeled_step_29
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: b19e21af9c52
+    name: pick_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: style_cond|type_cond|pick_from_0|value
+    source: Trimmed PacBio reads from grouped samples
+  - id: style_cond|type_cond|pick_from_1|value
+    source: _unlabeled_step_27
+  out: []
+  tool_state:
+    style_cond:
+      pick_style: first
+      __current_case__: 0
+      type_cond:
+        param_type: data
+        __current_case__: 4
+        pick_from:
+        - __index__: 0
+          value:
+            __class__: ConnectedValue
+        - __index__: 1
+          value:
+            __class__: ConnectedValue
+  uuid: 09221b89-442c-48d7-b0f5-31d7a1cdc09f
+- id: _unlabeled_step_34
+  tool_id: toolshed.g2.bx.psu.edu/repos/nml/metaspades/metaspades/4.3.0+galaxy1
+  tool_version: 4.3.0+galaxy1
+  tool_shed_repository:
+    changeset_revision: 04d81e5f25e9
+    name: metaspades
+    owner: nml
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: arf|nanopore
+    source: _unlabeled_step_32
+  - id: arf|pacbio
+    source: _unlabeled_step_33
+  - id: singlePaired|input
+    source: _unlabeled_step_19
+  - id: when
+    source: _unlabeled_step_22/output_param_boolean
+  out: []
+  tool_state:
+    additional_reads:
+      selector: 'false'
+      __current_case__: 1
+    arf:
+      nanopore:
+        __class__: ConnectedValue
+      pacbio:
+        __class__: ConnectedValue
+    kmer_cond:
+      kmer_sel: auto
+      __current_case__: 0
+    library_number: 'true'
+    mode_sel: null
+    optional_output:
+    - ag
+    - ags
+    - cn
+    - sc
+    phred_offset: auto
+    singlePaired:
+      sPaired: paired_collection
+      __current_case__: 1
+      input:
+        __class__: ConnectedValue
+      type_paired: pe
+      orientation: fr
+  when: $(inputs.when)
+  uuid: d33fa5fb-26ef-431a-b9fe-9b6f0b76d707
+- id: _unlabeled_step_35
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: b19e21af9c52
+    name: pick_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: style_cond|type_cond|pick_from_0|value
+    source: _unlabeled_step_34/out_cn
+  - id: style_cond|type_cond|pick_from_1|value
+    source: _unlabeled_step_24
+  - id: style_cond|type_cond|pick_from_2|value
+    source: Custom Assemblies
+  out: []
+  tool_state:
+    style_cond:
+      pick_style: first
+      __current_case__: 0
+      type_cond:
+        param_type: data
+        __current_case__: 4
+        pick_from:
+        - __index__: 0
+          value:
+            __class__: ConnectedValue
+        - __index__: 1
+          value:
+            __class__: ConnectedValue
+        - __index__: 2
+          value:
+            __class__: ConnectedValue
+  uuid: 9ac1add7-a273-4110-a90a-424139348358
+- id: _unlabeled_step_51
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: b19e21af9c52
+    name: pick_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: style_cond|type_cond|pick_from_0|value
+    source: _unlabeled_step_47/bins
+  out: []
+  tool_state:
+    style_cond:
+      pick_style: first
+      __current_case__: 0
+      type_cond:
+        param_type: data
+        __current_case__: 4
+        pick_from:
+        - __index__: 0
+          value:
+            __class__: ConnectedValue
+  uuid: 6236000c-e045-4ba3-a298-cba73bf45eea
+- id: _unlabeled_step_66
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_column_join/collection_column_join/0.0.3
+  tool_version: 0.0.3
+  tool_shed_repository:
+    changeset_revision: 3ddd99c7efee
+    name: collection_column_join
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_tabular
+    source: _unlabeled_step_62
+  out:
+  - id: tabular_output
+    add_tags:
+    - bin-coverM-sample-coverage
+  tool_state:
+    fill_char: .
+    has_header: '1'
+    identifier_column: '1'
+    include_outputs: null
+    input_tabular:
+      __class__: ConnectedValue
+    old_col_in_header: false
+  uuid: a6dda306-8aa4-450a-9017-cec4b5a5c87f
+- id: _unlabeled_step_67
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_column_join/collection_column_join/0.0.3
+  tool_version: 0.0.3
+  tool_shed_repository:
+    changeset_revision: 3ddd99c7efee
+    name: collection_column_join
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_tabular
+    source: _unlabeled_step_64/report_tabular_meta
+  out:
+  - id: tabular_output
+    add_tags:
+    - bin-assembly-quality
+  tool_state:
+    fill_char: .
+    has_header: '1'
+    identifier_column: '1'
+    include_outputs: null
+    input_tabular:
+      __class__: ConnectedValue
+    old_col_in_header: false
+  uuid: 79887223-e44f-4ca7-81fc-0c54c3eb6693
+- id: _unlabeled_step_68
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy2
+  tool_version: 1.35+galaxy2
+  tool_shed_repository:
+    changeset_revision: 0559e0711094
+    name: multiqc
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: results_0|software_cond|input
+    source: _unlabeled_step_64/report_tabular_meta
+  - id: results_1|software_cond|input
+    source: _unlabeled_step_65/quality
+  - id: results_2|software_cond|input
+    source: _unlabeled_step_63/results
+  - id: results_3|software_cond|input
+    source: _unlabeled_step_66/tabular_output
+  out:
+  - id: html_report
+    add_tags:
+    - bin-report
+  tool_state:
+    comment: ''
+    export: false
+    flat: false
+    image_content_input:
+      __class__: RuntimeValue
+    png_plots: false
+    results:
+    - __index__: 0
+      software_cond:
+        software: quast
+        __current_case__: 22
+        input:
+          __class__: ConnectedValue
+    - __index__: 1
+      software_cond:
+        software: custom_content
+        __current_case__: 55
+        plot_type: table
+        section_name: CheckM Bin quality
+        title: null
+        description: null
+        xlab: null
+        ylab: null
+        input:
+          __class__: ConnectedValue
+    - __index__: 2
+      software_cond:
+        software: custom_content
+        __current_case__: 55
+        plot_type: table
+        section_name: CheckM2 Bin quality
+        title: null
+        description: null
+        xlab: null
+        ylab: null
+        input:
+          __class__: ConnectedValue
+    - __index__: 3
+      software_cond:
+        software: custom_content
+        __current_case__: 55
+        plot_type: table
+        section_name: ' CoverM Bin coverage'
+        title: null
+        description: null
+        xlab: null
+        ylab: null
+        input:
+          __class__: ConnectedValue
+    title: ''
+  uuid: 1ee3626f-8b00-4d4c-a574-e1e310788110
+steps_truncated: 12 of 53 steps; unrelated binning/QC interior omitted

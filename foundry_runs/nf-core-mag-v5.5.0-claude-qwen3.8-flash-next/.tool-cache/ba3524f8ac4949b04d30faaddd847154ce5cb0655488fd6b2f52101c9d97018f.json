@@ -1,0 +1,97 @@
+{
+  "id": "__TAG_FROM_FILE__",
+  "version": "1.0.0",
+  "name": "Tag elements",
+  "description": "from a tabular file of tags",
+  "inputs": [
+    {
+      "name": "input",
+      "hidden": false,
+      "label": "Input Collection",
+      "help": "The collection whose elements will be tagged.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "parameter_type": "gx_data_collection",
+      "type": "data_collection",
+      "collection_type": null,
+      "extensions": [
+        "data"
+      ],
+      "value": null
+    },
+    {
+      "name": "tags",
+      "hidden": false,
+      "label": "Tag collection elements according to this file",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "parameter_type": "gx_data",
+      "type": "data",
+      "multiple": false,
+      "extensions": [
+        "tabular"
+      ],
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "how",
+      "hidden": false,
+      "label": "How should the tags be updated",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "parameter_type": "gx_select",
+      "type": "select",
+      "multiple": false,
+      "options": [
+        {
+          "label": "New tags will be added, existing tags will be kept",
+          "value": "add",
+          "selected": false
+        },
+        {
+          "label": "New tags will be added, existing tags will be removed",
+          "value": "set",
+          "selected": false
+        },
+        {
+          "label": "The tags listed will be removed",
+          "value": "remove",
+          "selected": false
+        }
+      ],
+      "validators": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output",
+      "label": "${on_string} (Tagged)",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": null,
+      "collection_type_source": "input",
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": []
+    }
+  ],
+  "citations": [],
+  "license": null,
+  "profile": "16.01",
+  "edam_operations": [
+    "operation_3096"
+  ],
+  "edam_topics": [],
+  "xrefs": [],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n\n========\nSynopsis\n========\n\nAssigns tags to collection elements based on a tabular mapping file.\n\n===========\nDescription\n===========\n\nThis tool reads a two-column tab-delimited file and applies tags to the matching elements of a collection. The first column contains the element identifier, the second column contains one or more comma-separated tags.\n\nThe file does not need to list every element — only elements with a matching identifier will be tagged. Elements not listed keep their existing tags unchanged.\n\nThree tag update modes are available:\n\n- **Add** — new tags are added alongside any existing tags.\n- **Set** — existing tags are removed and replaced with the new tags.\n- **Remove** — the listed tags are removed from matching elements.\n\n========\nExamples\n========\n\n**Add group tags for differential expression**\n\nGiven a collection with three samples, and a tag file::\n\n sample1    group:treatment\n sample2    group:control\n sample3    group:treatment\n\nAfter running with mode **Add**, each element will carry the specified group tag while keeping any tags it already had.\n\n-------\n\n.. image:: ${static_path}/images/tools/collection_ops/tag_from_file.svg\n  :alt: Tag collection elements from a tabular file\n  :width: 500\n\n=========\nTag types\n=========\n\nGalaxy supports three types of tags:\n\n**Simple tags**\n\nA plain keyword such as ``mytag`` or ``important``. Simple tags act as labels that help you find and organize datasets in your history. They do not have any special behavior — they are just searchable labels. In the tag file, write the tag name directly::\n\n sample1    important\n sample2    batch2,rerun\n\n-------\n\n**Name tags**\n\nA tag prefixed with ``#`` or ``name:`` (e.g. ``#patient42`` or ``name:patient42``). Name tags are *hereditary* — when a dataset with a name tag is used as input to a tool, the output dataset automatically inherits the same name tag. This lets you trace the origin of a dataset through a long analysis. In the tag file::\n\n sample1    #patient42\n sample2    name:patient99\n\n-------\n\n**Group tags**\n\nA tag prefixed with ``group:`` (e.g. ``group:treatment`` or ``group:control``). Group tags are used by tools that compare conditions — for example, **DESeq2** reads group tags to determine which samples belong to which experimental condition. In the tag file::\n\n sample1    group:treatment\n sample2    group:control\n sample3    group:treatment\n\n-------\n\nYou can combine multiple tags of any type by separating them with commas::\n\n sample1    #patient42,group:treatment,batch1\n\n-------\n\nTo learn more about tags, visit `the Galaxy Training Network`_.\n\n.. _the Galaxy Training Network: https://training.galaxyproject.org/training-material/search?query=tags\n\n-------\n\n.. class:: infomark\n\nThis tool will create new history datasets copied from your input collections but your quota usage will not increase.\n\n    "
+  }
+}

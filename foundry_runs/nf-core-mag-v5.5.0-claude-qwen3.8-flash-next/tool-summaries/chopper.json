@@ -1,0 +1,1503 @@
+{
+  "schema_version": 1,
+  "tool_id": "chopper",
+  "tool_version": "0.15.0+galaxy0",
+  "cache_key": "e0bc0ca719a6b6bbd848cf87078f2c60e7750c9f548b36de589a7130b5fd7c63",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~chopper~chopper/versions/0.15.0+galaxy0",
+    "cached_at": "2026-11-12T03:30:32.414Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/e0bc0ca719a6b6bbd848cf87078f2c60e7750c9f548b36de589a7130b5fd7c63.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "chopper",
+    "version": "0.15.0+galaxy0",
+    "name": "Chopper",
+    "description": "Filtering and trimming of long reads (FASTQ or unaligned BAM).",
+    "inputs": [
+      {
+        "name": "input",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Reads to filter",
+        "help": "FASTQ or unaligned BAM (e.g. as produced by dorado).",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "fastqsanger.gz",
+          "fastqsanger",
+          "unsorted.bam"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "contam",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Reference FASTA",
+        "help": "FASTA file with reference to check potential contaminants against.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "data",
+        "extensions": [
+          "fasta"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "option_params",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "quality",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimal quality score",
+            "help": "Sets a minimum Phred average quality score.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 0,
+            "min": 0,
+            "max": 60,
+            "validators": []
+          },
+          {
+            "name": "maxqual",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Maximal quality score",
+            "help": "Sets a maximum Phred average quality score.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 60,
+            "min": 0,
+            "max": 60,
+            "validators": []
+          },
+          {
+            "name": "minlength",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Sets a minimum read length",
+            "help": "Minimal length of read to keep.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": 1,
+            "min": 1,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "maxlength",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Sets a maximum read length",
+            "help": "Maximal length of read to keep",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": null,
+            "min": null,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "mingc",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Minimum GC content",
+            "help": "Sets a minimum GC content for reads to keep.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "float",
+            "value": 0,
+            "min": 0,
+            "max": 1,
+            "validators": []
+          },
+          {
+            "name": "maxgc",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Maximum GC content",
+            "help": "Sets a maximum GC content for reads to keep.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "float",
+            "value": 1,
+            "min": 0,
+            "max": 1,
+            "validators": []
+          }
+        ]
+      },
+      {
+        "name": "trim_approach",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "trim_approach",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Trimming approach",
+          "help": "Trimming is applied after quality/length filtering. Leave as 'No trimming' to disable.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "No trimming",
+              "value": "",
+              "selected": true
+            },
+            {
+              "label": "Fixed crop (remove a fixed number of bases from read ends)",
+              "value": "fixed-crop",
+              "selected": false
+            },
+            {
+              "label": "Trim by quality (trim low-quality bases from both ends)",
+              "value": "trim-by-quality",
+              "selected": false
+            },
+            {
+              "label": "Best read segment (keep the highest-quality segment of each read)",
+              "value": "best-read-segment",
+              "selected": false
+            },
+            {
+              "label": "Split by low quality (split reads at low-quality stretches)",
+              "value": "split-by-low-quality",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "fixed-crop",
+            "parameters": [
+              {
+                "name": "headcrop",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Head crop",
+                "help": "Trim this many nucleotides from the start of each read.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 0,
+                "min": 0,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "tailcrop",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Tail crop",
+                "help": "Trim this many nucleotides from the end of each read.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 0,
+                "min": 0,
+                "max": null,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "trim-by-quality",
+            "parameters": [
+              {
+                "name": "cutoff",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Quality cutoff (Q-score)",
+                "help": "Bases below this Phred quality at the read ends are trimmed until a base meets the cutoff.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 10,
+                "min": 0,
+                "max": 60,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "best-read-segment",
+            "parameters": [
+              {
+                "name": "cutoff",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Quality cutoff (Q-score)",
+                "help": "Minimum per-base Phred quality used to extract the highest-quality segment of each read.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 10,
+                "min": 0,
+                "max": 60,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "split-by-low-quality",
+            "parameters": [
+              {
+                "name": "cutoff",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Quality cutoff (Q-score)",
+                "help": "Stretches of bases below this Phred quality are treated as low-quality split points.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 10,
+                "min": 0,
+                "max": 60,
+                "validators": []
+              },
+              {
+                "name": "split_window",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Split window",
+                "help": "Minimum number of consecutive sub-cutoff bases required to split a read.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 1,
+                "min": 1,
+                "max": null,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "extra_trim",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "poly_tails",
+            "parameter_type": "gx_conditional",
+            "hidden": false,
+            "label": null,
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "conditional",
+            "test_parameter": {
+              "name": "trim_poly_tails_select",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Trim poly(A) tails and poly(T) heads",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "No",
+                  "value": "no",
+                  "selected": true
+                },
+                {
+                  "label": "Yes",
+                  "value": "yes",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            "whens": [
+              {
+                "discriminator": "no",
+                "parameters": [],
+                "is_default_when": true
+              },
+              {
+                "discriminator": "yes",
+                "parameters": [
+                  {
+                    "name": "trim_poly_tails",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Minimum poly(A)/poly(T) length",
+                    "help": "Removes a poly(T) head and a poly(A) tail of at least this length (up to 20% other bases allowed) that reach the read end. Remove adapters and primers first. Applied after the trimming approach above.",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 10,
+                    "min": 1,
+                    "max": null,
+                    "validators": []
+                  }
+                ],
+                "is_default_when": false
+              }
+            ]
+          },
+          {
+            "name": "update_mods",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Update base modification tags",
+            "help": "Recompute MM/ML/MN tags so they match the trimmed read. Requires unaligned BAM input, or FASTQ written with 'samtools fastq -T MM,ML,MN'.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "--update-mods",
+            "falsevalue": ""
+          }
+        ]
+      },
+      {
+        "name": "output_params",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "inverse",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Output the opposite of the normal results",
+            "help": "Reverse the output results (aka, the 'failed reads')",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "--inverse",
+            "falsevalue": ""
+          },
+          {
+            "name": "output_format",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Output format",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "Same as input",
+                "value": "",
+                "selected": true
+              },
+              {
+                "label": "FASTQ",
+                "value": "fastqsanger",
+                "selected": false
+              },
+              {
+                "label": "FASTQ (gzip compressed)",
+                "value": "fastqsanger.gz",
+                "selected": false
+              },
+              {
+                "label": "Unaligned BAM",
+                "value": "unsorted.bam",
+                "selected": false
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "fq_filt",
+        "label": "${tool.name} on ${on_string}",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "input",
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1093/bioinformatics/btad311"
+      }
+    ],
+    "license": null,
+    "profile": "25.1",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n**Chopper**\n\nRust implementation of NanoFilt+NanoLyse, both originally written in Python. This tool, intended for long read sequencing such as PacBio or ONT, filters and trims a FASTQ or unaligned BAM file (such as the default output of dorado).\nFiltering is done on average read quality, minimal or maximal read length, and GC content, while printing the reads passing the filter.\n\n**Input and output formats**\n\nBy default the output has the same format as the input. Use *Output format* to convert between them:\n\n- BAM to FASTQ writes every BAM tag as a tab-separated SAM field after the read name (like ``samtools fastq -T '*'``).\n- FASTQ to BAM turns such fields back into typed tags.\n- BAM to BAM keeps the input header and all tags, adding a ``@PG`` line.\n\nAligned, secondary, supplementary or paired BAM records are rejected.\n\n**Trimming**\n\nTrimming is opt-in via the *Trimming approach* selector and is applied after the filtering steps. Choose one of:\n\n- **Fixed crop** (``--trim-approach fixed-crop``): remove a fixed number of bases from the start (``--headcrop``) and/or end (``--tailcrop``) of each read.\n- **Trim by quality** (``--trim-approach trim-by-quality``): trim low-quality bases from both ends until a base with quality ≥ the ``--cutoff`` Q-score is reached.\n- **Best read segment** (``--trim-approach best-read-segment``): keep only the highest-quality segment of each read, based on ``--cutoff``.\n- **Split by low quality** (``--trim-approach split-by-low-quality``): split reads at low-quality stretches and output the high-quality parts. A read is only split once a run of consecutive sub-``--cutoff`` bases reaches the ``--split-window`` length (default 1); shorter dips are tolerated and kept inside the segment, while leading and trailing low-quality bases are still trimmed.\n\n**Additional trimming**\n\n- **Poly(A)/poly(T) trimming** (``--trim-poly-tails``): removes a poly(T) head and a poly(A) tail of at least the given length, allowing up to 20% other bases. Tails must reach the read end, so remove adapters and primers first. It is applied after the trimming approach above.\n- **Update base modification tags** (``--update-mods``): recomputes MM/ML/MN tags so the modification calls still match the trimmed read.\n\nCompared to the Python implementation the scope is to deliver the same results, almost the same functionality, at much faster execution times. At the moment this tool does not support filtering using a sequencing_summary file.\n\n**More Information** \n\n- **Official Repository**: `Chopper on GitHub`_\n\n.. _Chopper on GitHub: https://github.com/wdecoster/chopper\n\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "contam": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "option_params": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "quality": {
+              "$ref": "#/$defs/Int",
+              "description": "a number less than or equal to 60",
+              "title": "lessThanOrEqualTo(60)",
+              "minimum": 0,
+              "maximum": 60
+            },
+            "maxqual": {
+              "$ref": "#/$defs/Int",
+              "description": "a number less than or equal to 60",
+              "title": "lessThanOrEqualTo(60)",
+              "minimum": 0,
+              "maximum": 60
+            },
+            "minlength": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a number greater than or equal to 1",
+                  "title": "greaterThanOrEqualTo(1)",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxlength": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mingc": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "description": "a number less than or equal to 1",
+                  "title": "lessThanOrEqualTo(1)",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxgc": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "description": "a number less than or equal to 1",
+                  "title": "lessThanOrEqualTo(1)",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "trim_approach": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "trim_approach": {
+                  "type": "string",
+                  "enum": [
+                    ""
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "trim_approach"
+              ],
+              "properties": {
+                "trim_approach": {
+                  "type": "string",
+                  "enum": [
+                    "fixed-crop"
+                  ]
+                },
+                "headcrop": {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                "tailcrop": {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "trim_approach"
+              ],
+              "properties": {
+                "trim_approach": {
+                  "type": "string",
+                  "enum": [
+                    "trim-by-quality"
+                  ]
+                },
+                "cutoff": {
+                  "$ref": "#/$defs/Int",
+                  "description": "a number less than or equal to 60",
+                  "title": "lessThanOrEqualTo(60)",
+                  "minimum": 0,
+                  "maximum": 60
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "trim_approach"
+              ],
+              "properties": {
+                "trim_approach": {
+                  "type": "string",
+                  "enum": [
+                    "best-read-segment"
+                  ]
+                },
+                "cutoff": {
+                  "$ref": "#/$defs/Int",
+                  "description": "a number less than or equal to 60",
+                  "title": "lessThanOrEqualTo(60)",
+                  "minimum": 0,
+                  "maximum": 60
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "trim_approach"
+              ],
+              "properties": {
+                "trim_approach": {
+                  "type": "string",
+                  "enum": [
+                    "split-by-low-quality"
+                  ]
+                },
+                "cutoff": {
+                  "$ref": "#/$defs/Int",
+                  "description": "a number less than or equal to 60",
+                  "title": "lessThanOrEqualTo(60)",
+                  "minimum": 0,
+                  "maximum": 60
+                },
+                "split_window": {
+                  "$ref": "#/$defs/Int",
+                  "description": "a number greater than or equal to 1",
+                  "title": "greaterThanOrEqualTo(1)",
+                  "minimum": 1
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "extra_trim": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "poly_tails": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "trim_poly_tails_select": {
+                      "type": "string",
+                      "enum": [
+                        "no"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "trim_poly_tails_select"
+                  ],
+                  "properties": {
+                    "trim_poly_tails_select": {
+                      "type": "string",
+                      "enum": [
+                        "yes"
+                      ]
+                    },
+                    "trim_poly_tails": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number greater than or equal to 1",
+                      "title": "greaterThanOrEqualTo(1)",
+                      "minimum": 1
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "update_mods": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "output_params": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "inverse": {
+              "type": "boolean"
+            },
+            "output_format": {
+              "type": "string",
+              "enum": [
+                "",
+                "fastqsanger",
+                "fastqsanger.gz",
+                "unsorted.bam"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "contam": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "option_params": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "quality": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number less than or equal to 60",
+                      "title": "lessThanOrEqualTo(60)",
+                      "minimum": 0,
+                      "maximum": 60
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "maxqual": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number less than or equal to 60",
+                      "title": "lessThanOrEqualTo(60)",
+                      "minimum": 0,
+                      "maximum": 60
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "minlength": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a number greater than or equal to 1",
+                          "title": "greaterThanOrEqualTo(1)",
+                          "minimum": 1
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "maxlength": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "mingc": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a number less than or equal to 1",
+                          "title": "lessThanOrEqualTo(1)",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "maxgc": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a number less than or equal to 1",
+                          "title": "lessThanOrEqualTo(1)",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "trim_approach": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "trim_approach": {
+                      "type": "string",
+                      "enum": [
+                        ""
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "trim_approach"
+                  ],
+                  "properties": {
+                    "trim_approach": {
+                      "type": "string",
+                      "enum": [
+                        "fixed-crop"
+                      ]
+                    },
+                    "headcrop": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "tailcrop": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "trim_approach"
+                  ],
+                  "properties": {
+                    "trim_approach": {
+                      "type": "string",
+                      "enum": [
+                        "trim-by-quality"
+                      ]
+                    },
+                    "cutoff": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a number less than or equal to 60",
+                          "title": "lessThanOrEqualTo(60)",
+                          "minimum": 0,
+                          "maximum": 60
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "trim_approach"
+                  ],
+                  "properties": {
+                    "trim_approach": {
+                      "type": "string",
+                      "enum": [
+                        "best-read-segment"
+                      ]
+                    },
+                    "cutoff": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a number less than or equal to 60",
+                          "title": "lessThanOrEqualTo(60)",
+                          "minimum": 0,
+                          "maximum": 60
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "trim_approach"
+                  ],
+                  "properties": {
+                    "trim_approach": {
+                      "type": "string",
+                      "enum": [
+                        "split-by-low-quality"
+                      ]
+                    },
+                    "cutoff": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a number less than or equal to 60",
+                          "title": "lessThanOrEqualTo(60)",
+                          "minimum": 0,
+                          "maximum": 60
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "split_window": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a number greater than or equal to 1",
+                          "title": "greaterThanOrEqualTo(1)",
+                          "minimum": 1
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "extra_trim": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "poly_tails": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "trim_poly_tails_select": {
+                              "type": "string",
+                              "enum": [
+                                "no"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "trim_poly_tails_select"
+                          ],
+                          "properties": {
+                            "trim_poly_tails_select": {
+                              "type": "string",
+                              "enum": [
+                                "yes"
+                              ]
+                            },
+                            "trim_poly_tails": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a number greater than or equal to 1",
+                                  "title": "greaterThanOrEqualTo(1)",
+                                  "minimum": 1
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "update_mods": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "output_params": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "inverse": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "output_format": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "",
+                        "fastqsanger",
+                        "fastqsanger.gz",
+                        "unsorted.bam"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}
