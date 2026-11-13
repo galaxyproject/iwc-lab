@@ -24,7 +24,9 @@ The alignment and summary steps are the same embedded tools as in `csp2-screen` 
 - **Query assemblies**: a list collection with one FASTA assembly per isolate. This is the
   whole isolate pool, references included.
 - **Reference isolate IDs** (optional): comma-separated element identifiers from the
-  collection to use as references.
+  collection to use as references. Spaces around each ID are ignored and repeated IDs count
+  once. CSP2's `--ref_id` keeps the spaces, so there `Sample_A, Sample_B` would silently drop
+  ` Sample_B`; here both are references.
 
 Which pairs are aligned follows CSP2's `align` mode:
 
