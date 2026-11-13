@@ -92,6 +92,7 @@ steps:
               }).join("\n") + "\n";
             }
       shell_command: |
+        if [ -z "`tr -d '\n' < isolates.txt`" ]; then echo "The assembly collection is empty, so there is nothing to align" >&2; exit 1; fi &&
         while IFS= read -r id; do
           case "$id" in
             ""|-*|*__vs__*|*[![:alnum:]._-]*) echo "Isolate ID '$id' is empty, starts with '-', contains '__vs__' or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
