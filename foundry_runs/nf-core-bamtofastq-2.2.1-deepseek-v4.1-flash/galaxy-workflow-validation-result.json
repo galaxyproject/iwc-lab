@@ -1,0 +1,41 @@
+{
+  "command": "gxwf validate galaxy-workflow.gxwf.yml --connections --strict --json",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "not_run_reason": null,
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "message": "connection_report marks every consumer of the pick_value steps (select_bam, select_alignments) and of the collection merges with source_step 'NaN' and status 'skip' (Cannot resolve output/input on step NaN), so cross-step collection compatibility is not actually checked for most of the workflow while connection_report.valid stays true.",
+      "step": ["select_bam", "select_alignments", "stats", "flagstat", "idxstats", "pre_fastqc", "merge_converted", "post_fastqc", "fastqutils", "collate_inputs"],
+      "field": "connection_report",
+      "routes_to": "none (gxwf validator limitation; recorded as foundry feedback)"
+    }
+  ],
+  "residual_runtime_risks": [
+    {
+      "risk": "pick_value over two whole collections where one branch is skipped (chr unset, or fasta unset).",
+      "evidence_that_would_settle_it": "planemo invocation with the chr test (chr set, fasta set exercises both pick_value steps with source 0 present)."
+    },
+    {
+      "risk": "__MERGE_COLLECTION__ receiving three inputs where two come from skipped steps (single layout: only fastx_single runs).",
+      "evidence_that_would_settle_it": "planemo invocation succeeding through merge_converted and post_fastqc."
+    },
+    {
+      "risk": "devteam samtools_stats 2.0.9 / flagstat 2.0.8 / idxstats 2.0.8 wrap older samtools than the source's 1.23.1; report content and MultiQC parsing may differ.",
+      "evidence_that_would_settle_it": "planemo job logs and the MultiQC report containing samtools sections."
+    },
+    {
+      "risk": "devteam FastQC 0.74 consuming BAM input for the pre-conversion QC step.",
+      "evidence_that_would_settle_it": "planemo job success for pre_fastqc plus a non-empty pre_fastqc_html."
+    },
+    {
+      "risk": "samtools_collate + samtools_fastx in iuc 1.22 wrappers must accept the collated BAM and emit fastqsanger.gz from a mapped-over collection.",
+      "evidence_that_would_settle_it": "planemo invocation of collate_inputs/fastx_single and a non-empty converted_reads_single."
+    },
+    {
+      "risk": "The paired branch (input_layout=paired) is statically valid but unexercised by the chr test.",
+      "evidence_that_would_settle_it": "a second test case with a paired BAM."
+    }
+  ]
+}

@@ -1,0 +1,215 @@
+entries:
+- id: prebuilt-index-input-dropped
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: samplesheet `index` column (optional .bai/.crai per sample)
+  because: PREPARE_INDICES already runs SAMTOOLS_INDEX when meta.index is false (prepare_indices/main.nf:24-38), so the workflow rebuilds any missing index;
+    exposing a parallel optional index collection would add interface complexity without new capability.
+  unmet: users can supply pre-built indexes to skip re-indexing
+  missing: indexes are always (re)built inside the workflow when absent
+  note: Performance shortcut only; conversion output is unchanged.
+- id: checkpairedend-dropped
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  units: CHECKPAIREDEND detector module and its paired/single routing
+  because: CheckPairedEnd reads BAM flags (samtools view -c -f 1 over the first 1000 records) and routes per sample; Galaxy workflows cannot branch on dataset
+    content, so the decision becomes the `input_layout` workflow input.
+  unmet: per-sample automatic single/paired detection
+  missing: the user must declare input_layout for the run
+  note: A mixed-layout invocation is not representable; the source would handle it.
+- id: merge-unmapped-null-tolerant-join
+  status: resolved
+  blocking: false
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: merge_unmapped
+  unmet: per-sample merge of the three unmapped BAM subsets (uu, um, mu) when one or more lists are empty
+  missing: 'Galaxy has no null-tolerant keyed join equivalent to Nextflow join(remainder: true)'
+  resolved_by: advance-galaxy-draft-step
+  note: 'Superseded: the paired branch was simplified to collate+fastx over the full alignment (see paired-recombination-dropped); the null-tolerant join
+    no longer exists.'
+- id: samtools-wrapper-fai-rebuild-unverified
+  status: open
+  blocking: false
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: CRAM reads converted with the reference FASTA when no .fai is supplied
+  missing: whether the chosen Galaxy samtools wrappers index the FASTA themselves (or expose an optional index input) is unverified
+  resolved_by: null
+  note: Verify at tool discovery; if unsupported, add a workflow-tier samtools faidx step.
+- id: paired-recombination-dropped
+  status: open
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: SAMTOOLS_VIEW map/map, unmap/unmap, unmap/map, map/unmap + SAMTOOLS_MERGE unmapped + 2 collatefastq + CAT_FASTQ (8 processes)
+  because: Every read in those four subsets is converted exactly once, so one `samtools collate` + `samtools fastx` over the full alignment yields the same
+    R1/R2 set; Galaxy has no null-tolerant keyed join for the three unmapped subsets, and the source itself comments that the multiqc half of this branch
+    was disabled. Simplified 2026-11-09.
+  unmet: byte-identical reproduction of nf-core's paired-end recombination order
+  missing: paired FASTQ is produced by collate+fastx on the input; adjacent reads are interleaved rather than mapped-then-unmapped concatenated
+  note: The chr test profile is single-end, so the paired branch is statically validated but runtime-unverified.
+- id: optional-chr-and-fasta-dropped
+  status: open
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: optional `--chr` (no-contig mode) and optional `--fasta` (BAM-only runs without a reference)
+  because: 'Routing the chr-filtered vs unfiltered list needed pick_value over whole collections, which does not work: both branches are collections, pick_value''s
+    data_param returned something collate could not read (planemo job 6 exit 1, 2026-11-09 23:53). Both inputs are now required and the chain runs normalize
+    -> chr-extract unconditionally.'
+  unmet: runs without a contig list or without a reference
+  missing: chr and fasta must always be supplied
+  note: A future fix could use mutually exclusive when-guarded passthrough steps plus __MERGE_COLLECTION__, or a boolean filter switch.
+- id: pre-conversion-fastqc-dropped
+  status: open
+  kind: dropped
+  raised_by: run-workflow-test
+  units: FASTQC_PRE_CONVERSION (pre-conversion QC on the input BAM)
+  because: The Galaxy devteam FastQC 0.74 wrapper runs `fastqc -f bam` (job 9, 2026-11-10 00:00), which fails inside quay.io/biocontainers/fastqc:0.12.1
+    because the image has no samtools for BAM decoding. No Galaxy FastQC wrapper with BAM support was found on the shed.
+  unmet: pre-conversion FastQC report for BAM/CRAM inputs
+  missing: only post-conversion FastQC reports are produced
+  note: The `pre_fastqc_html` workflow output was removed; post-conversion QC and MultiQC remain.
+- id: converted-reads-uncompressed
+  status: open
+  kind: dropped
+  raised_by: run-workflow-test
+  units: gzip-compressed converted FASTQ (*.fq.gz naming)
+  because: 'Galaxy names mapped collection elements by identifier (test3), so the FastQC wrapper''s `-f fastq` cannot see a .gz extension and fails on compressed
+    input (reproduced locally: fastqc exit 1 on a gzip file named test3; exit 0 on uncompressed). samtools_fastx now emits fastqsanger.'
+  unmet: compressed FASTQ outputs matching the source's *.fq.gz
+  missing: converted reads are plain FASTQ
+  note: Could be restored by relabeling elements with a .gz suffix via Apply Rules before FastQC.
+- id: cross-layout-qc-merge-dropped
+  status: open
+  kind: dropped
+  raised_by: run-workflow-test
+  units: __MERGE_COLLECTION__ feeding QC from both layout branches
+  because: Under planemo the merged collection fed FastQC an input the wrapper rejected (exit 1) while the same bytes processed correctly outside Galaxy;
+    the merge of when-gated branches is the only difference. QC now reads fastx_single directly and is gated by input_layout == single.
+  unmet: post-conversion QC for the paired layout
+  missing: QC runs only for single-end runs; paired runs get no FastQC/fastqutils
+  note: A paired QC branch can be added as separate when-guarded steps later.
+- id: multiqc-samtools-sections-dropped
+  status: open
+  kind: dropped
+  raised_by: run-workflow-test
+  units: samtools stats/flagstat/idxstats inputs to MultiQC
+  because: MultiQC failed with a stderr 'Error:' when fed the devteam samtools stats/flagstat/idxstats outputs (planemo run 2026-11-10 00:15); those wrappers
+    are old (2.0.x) and their output shapes are not what this MultiQC wrapper expects.
+  unmet: samtools sections in the MultiQC report
+  missing: report aggregates FastQC data only (plus title)
+  note: Stats files remain available as workflow outputs.
+- id: paired-layout-unsupported
+  status: open
+  kind: dropped
+  raised_by: run-workflow-test
+  units: paired-end conversion branch (fastx r1/r2 + __ZIP_COLLECTION__) and the input_layout selector
+  because: Galaxy repeatedly failed to execute the when-gated branches under planemo (validation_failed on the gated fastx steps, failed dataset feeding
+    QC/MultiQC). The linear single-end path executes reliably; the tested chr profile is single-end.
+  unmet: paired-end BAM/CRAM conversion
+  missing: workflow is single-end only; no input_layout input
+  note: A separate paired workflow or a repaired when-guarded branch can be added later.
+- id: collate-step-dropped
+  status: open
+  kind: dropped
+  raised_by: run-workflow-test
+  units: samtools_collate before samtools_fastx
+  because: Galaxy's samtools_collate output triggered a bam_to_coordinate_sorted_bam datatype converter whose output was not usable by samtools_fastx (validation_failed),
+    and collate is only needed to interleave paired reads; the single-end path needs none.
+  unmet: collated/interleaved ordering for paired data
+  missing: fastx reads the chr-filtered BAM directly
+  note: Pairs with paired-layout-unsupported.
+- id: reference-fasta-input-dropped
+  status: open
+  kind: dropped
+  raised_by: run-workflow-test
+  units: '`fasta` workflow input and CRAM (reference-dependent) input'
+  because: 'A single reference dataset cannot be mapped over the input collection: every samtools_view request that received `fasta` reported validation_failed
+    under planemo (step 8, 2026-11-10 00:34), so fastx and all downstream steps saw empty data.'
+  unmet: CRAM input and any reference-dependent samtools call
+  missing: workflow handles BAM only; the fasta input was removed
+  note: A reference could be broadcast with a builder/zip step or applied inside a wrapper that accepts it per-element.
+- id: normalize-step-dropped
+  status: open
+  kind: dropped
+  raised_by: run-workflow-test
+  units: samtools_view normalization step (BAM/CRAM -> BAM re-encode)
+  because: The iuc samtools_view request reported validation_failed even with no reference, in all_reads mode (step 7, 2026-11-10 00:37), so its output
+    never existed and every downstream step failed; the step was only needed to re-encode CRAM, which is already out of scope.
+  unmet: explicit BAM normalization / CRAM decode
+  missing: the input collection feeds stats/fastx directly
+  note: Removing it also removes the only reference-dependent step.
+- id: samtools-stats-steps-dropped
+  status: open
+  kind: dropped
+  raised_by: run-workflow-test
+  units: samtools_stats, samtools_flagstat, samtools_idxstats reports
+  because: The devteam wrappers (2.0.9/2.0.8) reported validation_failed for every mapped-over request under planemo (2026-11-10 00:40), so their outputs
+    never materialized.
+  unmet: per-sample stats/flagstat/idxstats outputs
+  missing: workflow no longer computes them
+  note: Could be restored with fully-encoded conditional state or newer wrappers.
+discoveries:
+- id: fasta-needed-only-for-cram
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: 'workflows/bamtofastq.nf:61-65: fasta_fai is built only when params.fasta is set; subworkflows/local/prepare_indices builds the .fai when meta.index
+    is false. samtools view/merge receive fasta_fai as the CRAM reference.'
+  impact: Expose fasta as an optional data input; do not require it for BAM inputs.
+- id: positive-form-rebuild-not-detected
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: summary-nextflow.json reference_rebuilds[] is empty for bamtofastq although prepare_indices/main.nf:40-47 runs SAMTOOLS_FAIDX on the meta.index
+    == false branch.
+  impact: The compute-if-missing classification comes from source inspection, not the structured field.
+- id: fastqc-pre-conversion-bam-only
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: pre_conversion_qc/main.nf branches on meta.filetype and calls FASTQC_PRE_CONVERSION only on bam inputs.
+  impact: Pre-conversion QC covers BAM inputs only; CRAM inputs get stats but no pre-conversion FastQC.
+- id: no-iwc-bam-to-fastq-exemplar
+  raised_by: compare-against-iwc-exemplar
+  evidence: "IWC @9f111cb has no workflow whose purpose is BAM/CRAM\u2192FASTQ conversion with collate + map/unmap recombination; the nearest is microbiome/host-contamination-removal-long-reads,\
+    \ which uses iuc/samtools_fastx on a BAM list."
+  impact: The conversion chain is novel relative to the corpus; only the samtools_fastx mapping idiom is precedent-backed.
+- id: no-collatefastq-wrapper
+  raised_by: advance-galaxy-draft-step
+  evidence: Tool Shed has iuc/samtools_collate (1.22+galaxy1) and iuc/samtools_fastx (1.22+galaxy2) but no combined collatefastq wrapper; nf-core's module
+    is reproduced by two Galaxy steps.
+  impact: Conversion is two mapped steps per layout instead of one.
+- id: pick-value-not-for-collections
+  raised_by: advance-galaxy-draft-step
+  evidence: iuc/pick_value exposes data_param as a single dataset; feeding two collections produced an input the downstream samtools collate job failed
+    to read (exit 1).
+  impact: Do not use pick_value to route whole collections; use mutually exclusive when-guarded producers plus a collection merge.
+decisions:
+- id: fasta-optional-input-no-fai-input
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: Expose a single optional `fasta` data input; do not expose `fasta_fai` and do not add a workflow-tier index step.
+  rationale: v1 posture prefers explicit optional inputs plus in-tool rebuild; Galaxy samtools wrappers are expected to handle the index.
+  evidence:
+  - fasta-needed-only-for-cram
+  - samtools-wrapper-fai-rebuild-unverified
+- id: input-as-flat-alignment-list
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Expose `input_alignments` as a flat `list` of bam/cram datasets; drop the samplesheet index column and file_type column.
+  rationale: sample_id is the element identifier, file_type is the datatype, and the index is rebuilt when missing.
+  evidence:
+  - fastqc-pre-conversion-bam-only
+- id: layout-as-workflow-input
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Add `input_layout` (single|paired) as a required workflow input and gate the two conversion branches with inline `when:`.
+  rationale: The source branch is content-dependent; Galaxy has no content-based branching.
+  evidence:
+  - checkpairedend-dropped
+- id: no-workflow-index-step
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: Do not add standalone samtools index / faidx steps; wire alignments directly and let each wrapper index internally.
+  rationale: 'PREPARE_INDICES exists only to build missing bai/crai/fai; Galaxy samtools wrappers accept an un-indexed input and index as needed (IWC samtools_fastx
+    takes a bare BAM collection). Axes: fewer steps, same behaviour.'
+  evidence:
+  - samtools-wrapper-fai-rebuild-unverified
+- id: paired-branch-collate-fastx
+  decided_by: advance-galaxy-draft-step
+  decision: Paired layout = samtools_collate + samtools_fastx (outputs r1/r2) + __ZIP_COLLECTION__; QC sees the flat r1 and r2 lists via __MERGE_COLLECTION__.
+  rationale: See paired-recombination-dropped.
+  evidence:
+  - paired-recombination-dropped
+  - no-collatefastq-wrapper
