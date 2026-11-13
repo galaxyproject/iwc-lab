@@ -100,6 +100,7 @@ steps:
         awk '
           function pair(q, r,   name) {
             name = q "__vs__" r
+            if (length(name ".snpdiffs") > 255) { print "Pair " q ":" r " would be saved as " name ".snpdiffs, longer than the 255 characters a file name may have; shorten these isolate IDs" > "/dev/stderr"; exit 1 }
             if (name in staged) { print "Pairs " staged[name] " and " q ":" r " would both be saved as " name ".snpdiffs; rename one of these isolates" > "/dev/stderr"; exit 1 }
             staged[name] = q ":" r
             print q ":" r > "pairs.txt"

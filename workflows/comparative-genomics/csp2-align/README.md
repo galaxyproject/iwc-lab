@@ -47,7 +47,8 @@ Isolate IDs may use only letters, digits, `.`, `_` and `-`, and may not start wi
 contain `__vs__` (the separator in CSP2's file names). CSP2 builds file names and command
 arguments from these IDs, so anything else is rejected before
 alignment. So is a set of IDs where two pairs would get the same CSP2 file name, such as
-`a__vs` with `b` and `a` with `vs__b` (both `a__vs__vs__b.snpdiffs`).
+`a__vs` with `b` and `a` with `vs__b` (both `a__vs__vs__b.snpdiffs`), or where the two IDs of a
+pair add up to more than 240 characters, which would make that file name too long.
 
 CSP2's `align` mode takes no thresholds, so there are no other parameters.
 
