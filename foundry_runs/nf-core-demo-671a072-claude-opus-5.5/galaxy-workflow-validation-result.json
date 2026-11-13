@@ -1,0 +1,18 @@
+{
+  "command": "gxwf validate galaxy-workflow.gxwf.yml --json --cache-dir .tool-cache",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "not_run_reason": null,
+  "diagnostics": [
+    {"severity": "info", "message": "Best-practice lint: steps fastqc, seqtk_trim, cowpy, multiqc have no annotation (gxwf lint).", "addresses": "steps.*.doc", "routes_to": "nextflow-summary-to-galaxy-template"}
+  ],
+  "residual_runtime_risks": [
+    {"risk": "Embedded GalaxyUserTool (cowpy) requires enable_beta_tool_formats and the Custom Tool Execution role on the test Galaxy.", "proven_by": "planemo test invocation importing the workflow"},
+    {"risk": "Map-over of single-dataset FastQC/seqtk inputs across list:paired_or_unpaired and MultiQC reduction of the nested collection are not exercised in IWC.", "proven_by": "invocation step states and output collection structure"},
+    {"risk": "seqtk_trimfq when: $(!inputs.when) with optional boolean skip_trim defaulting false.", "proven_by": "seqtk_trim job runs (not skipped) in the test invocation"},
+    {"risk": "Connecting workflow text input multiqc_title to MultiQC title when left unset.", "proven_by": "multiqc job completes with null title"},
+    {"risk": "checksum with decompress: true on fastqsanger.gz elements may hash compressed bytes.", "proven_by": "trimmed_reads element test results"}
+  ],
+  "connection_report": null,
+  "tool_state_summary": {"ok": 4, "fail": 0, "skip": 0}
+}

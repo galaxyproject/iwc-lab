@@ -1,0 +1,431 @@
+{
+  "schema_version": 1,
+  "tool_id": "seqtk_trimfq",
+  "tool_version": "1.4+galaxy0",
+  "cache_key": "61733fb41b48a21554bd4c3b7725a0675842b5eab98e2bf816ae5c19d4cb41cd",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~seqtk~seqtk_trimfq/versions/1.4+galaxy0",
+    "cached_at": "2026-11-06T11:53:11.999Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/61733fb41b48a21554bd4c3b7725a0675842b5eab98e2bf816ae5c19d4cb41cd.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "seqtk_trimfq",
+    "version": "1.4+galaxy0",
+    "name": "seqtk_trimfq",
+    "description": "trim FASTQ using the Phred algorithm",
+    "inputs": [
+      {
+        "name": "in_file",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Input FASTA/Q file",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "fasta",
+          "fastq",
+          "fasta.gz",
+          "fastq.gz"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "mode",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "mode_select",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Mode for trimming FASTQ File",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Quality",
+              "value": "quality",
+              "selected": false
+            },
+            {
+              "label": "Length/Position",
+              "value": "position",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "quality",
+            "parameters": [
+              {
+                "name": "q",
+                "parameter_type": "gx_float",
+                "hidden": false,
+                "label": "Error rate threshold",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "float",
+                "value": 0.05,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "l",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Maximally trim down to INT bp",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 30,
+                "min": null,
+                "max": null,
+                "validators": []
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "position",
+            "parameters": [
+              {
+                "name": "b",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Trim INT bp from left",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 0,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "e",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Trim INT bp from right",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 0,
+                "min": null,
+                "max": null,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "default",
+        "label": "${tool.name} on ${on_string}: trimmed",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "in_file",
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "bibtex",
+        "content": "@misc{seqtk,\n                  author = {Heng Li},\n                  year = {2023},\n                  title = {seqtk},\n                  publisher = {GitHub},\n                  journal = {GitHub repository},\n                  howpublished{\\url{https://github.com/lh3/seqtk}},\n                }"
+      }
+    ],
+    "license": null,
+    "profile": "22.05",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "seqtk",
+        "type": "bio.tools"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n**What it does**\n\nTrim a fastq file based on Phred scores, or by length\n\n\n**Attribution**\n\nThis Galaxy tool relies on the seqtk toolkit from  `lh3/seqtk\n<https://github.com/lh3/seqtk/>`_, developed by Heng Li at the Broad Institute\n    \n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "in_file": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "mode_select": {
+                  "type": "string",
+                  "enum": [
+                    "quality"
+                  ]
+                },
+                "q": {
+                  "type": "number",
+                  "description": "a finite number",
+                  "title": "finite"
+                },
+                "l": {
+                  "$ref": "#/$defs/Int"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "mode_select"
+              ],
+              "properties": {
+                "mode_select": {
+                  "type": "string",
+                  "enum": [
+                    "position"
+                  ]
+                },
+                "b": {
+                  "$ref": "#/$defs/Int"
+                },
+                "e": {
+                  "$ref": "#/$defs/Int"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "in_file"
+      ],
+      "properties": {
+        "in_file": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "mode_select": {
+                      "type": "string",
+                      "enum": [
+                        "quality"
+                      ]
+                    },
+                    "q": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a finite number",
+                          "title": "finite"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "l": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "mode_select"
+                  ],
+                  "properties": {
+                    "mode_select": {
+                      "type": "string",
+                      "enum": [
+                        "position"
+                      ]
+                    },
+                    "b": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "e": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

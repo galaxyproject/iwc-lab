@@ -1,0 +1,147 @@
+class: GalaxyWorkflowDraft
+label: nf-core/demo (Galaxy translation)
+doc: |
+  Galaxy translation of nf-core/demo 1.2.0+5 (671a0726): per-file FastQC and
+  optional seqtk quality trimming over a mixed single/paired read collection,
+  a cowpy ASCII-art demo step, and a MultiQC report aggregating FastQC results.
+license: MIT
+creator:
+- class: Organization
+  name: nf-core
+  url: https://github.com/nf-core/demo
+inputs:
+  reads:
+    type: collection
+    collection_type: list:paired_or_unpaired
+    format: fastqsanger.gz
+    doc: |
+      One element per sample run (identifier = samplesheet `sample`; repeated
+      samples keyed <sample>_run<k>). Paired elements carry forward/reverse,
+      single-end elements carry `unpaired`.
+  skip_trim:
+    type: boolean
+    default: false
+    optional: true
+    doc: Skip seqtk quality trimming (nf-core/demo --skip_trim).
+  multiqc_title:
+    type: text
+    optional: true
+    doc: MultiQC report title (nf-core/demo --multiqc_title).
+outputs:
+  fastqc_html:
+    outputSource: fastqc/html_file
+  trimmed_reads:
+    outputSource: seqtk_trim/default
+  cowpy_output:
+    outputSource: cowpy/cowpy_txt
+  multiqc_report:
+    outputSource: multiqc/html_report
+  multiqc_stats:
+    outputSource: multiqc/stats
+steps:
+  flatten_reads:
+    label: flatten_reads
+    doc: Flatten list:paired_or_unpaired to list so FastQC/MultiQC sample names are unique (<sample>_forward|reverse|unpaired).
+    tool_id: __FLATTEN__
+    tool_version: 1.0.0
+    in:
+      input: reads
+    out:
+    - id: output
+    state:
+      join_identifier: _
+  fastqc:
+    label: fastqc
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_file: flatten_reads/output
+    out:
+    - id: html_file
+    - id: text_file
+    state:
+      nogroup: false
+      min_length: null
+      kmers: 7
+    doc: FastQC per read file (nf-core FASTQC).
+  seqtk_trim:
+    label: seqtk_trim
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/seqtk/seqtk_trimfq/1.4+galaxy0
+    tool_version: 1.4+galaxy0
+    tool_shed_repository:
+      changeset_revision: a019807f4e67
+      name: seqtk
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    when: $(!inputs.when)
+    in:
+      in_file: reads
+      when: skip_trim
+    out:
+    - id: default
+    state:
+      mode:
+        mode_select: quality
+        q: 0.05
+        l: 30
+    doc: seqtk trimfq quality trimming, skipped when skip_trim (nf-core SEQTK_TRIM).
+  cowpy:
+    label: cowpy
+    run:
+      class: GalaxyUserTool
+      id: nf_core_demo_cowpy
+      version: 1.1.5
+      name: cowpy ASCII-art message
+      description: Render the nf-core/demo message "nf-core rules!" as cowsay-style ASCII art
+      license: MIT
+      container: community.wave.seqera.io/library/cowpy:1.1.5--3db457ae1977a273
+      shell_command: |
+        echo "nf-core rules!" | cowpy > cowpy.txt
+      inputs: []
+      outputs:
+      - name: cowpy_txt
+        type: data
+        format: txt
+        from_work_dir: cowpy.txt
+        label: cowpy ASCII art
+      help:
+        format: markdown
+        content: |
+          Port of the nf-core/demo `COWPY` local module (cowpy 1.1.5, conda-forge::cowpy=1.1.5).
+          Pipes the fixed text `nf-core rules!` through `cowpy` with default options and writes
+          the result to a text file. Takes no inputs.
+    in: {}
+    out:
+    - id: cowpy_txt
+    doc: cowpy ASCII-art demo step (nf-core local COWPY).
+  multiqc:
+    label: multiqc
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+    tool_version: 1.35+galaxy5
+    tool_shed_repository:
+      changeset_revision: 94b6bea727ae
+      name: multiqc
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      results_0|software_cond|output_0|input: fastqc/text_file
+      title: multiqc_title
+    out:
+    - id: html_report
+    - id: stats
+    state:
+      results:
+      - software_cond:
+          software: fastqc
+          output:
+          - type: data
+      comment: ''
+      flat: false
+      export: false
+      png_plots: false
+    doc: MultiQC report over FastQC raw data (nf-core MULTIQC).

@@ -1,0 +1,102 @@
+entries:
+- id: igenomes-fasta-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  units: params fasta, genome, igenomes_base, igenomes_ignore
+  because: summary-nextflow.json reference_assets[fasta].used_by is [] and reference_rebuilds is []; workflows/demo.nf never reads params.fasta
+  unmet: iGenomes genome-key / fasta reference surface of the nf-core template
+  missing: no consuming process, so no Galaxy input is carried
+  note: ''
+- id: sample-run-grouping-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: groupTuple by sample in PIPELINE_INITIALISATION (multi-run samples, e.g. SAMPLE3_SE)
+  because: 'summary-nextflow.json: FASTQC and SEQTK_TRIM script_excerpt loop per read file; no process aggregates by sample'
+  unmet: per-sample grouping of multiple runs into one task
+  missing: reads input is one element per sample run
+  note: ''
+- id: multiqc-custom-files-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: params multiqc_config, multiqc_logo, multiqc_methods_description
+  because: 'uncited: Galaxy MultiQC wrapper customization surface not yet inspected'
+  unmet: MultiQC config/logo/methods customization
+  missing: no workflow input
+  note: ''
+- id: cowpy-galaxy-tool-unknown
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: cowpy
+  unmet: cowpy_output producer
+  missing: no Galaxy tool for cowpy identified yet
+  note: No Tool Shed wrapper (tool-search cowpy/cowsay miss); authored GalaxyUserTool nf_core_demo_cowpy 1.1.5 on the source Wave container, embedded under run:. Output checked byte-identical to the NF
+    run.
+  resolved_by: advance-galaxy-draft-step
+- id: nf-runtime-provenance-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  units: ch_collated_versions, ch_workflow_summary, ch_methods_description (MultiQC side inputs)
+  because: "summary-nextflow.json workflow.edges notes: sources are channel.topic(versions)/softwareVersionsToYAML, paramsSummaryMultiqc(paramsSummaryMap(workflow)), methodsDescriptionText \u2014 Nextflow\
+    \ run-introspection free functions"
+  unmet: software-versions and workflow-summary sections in the MultiQC report
+  missing: no Galaxy producer for Nextflow runtime introspection
+  note: ''
+discoveries:
+- id: iwc-multiqc-fastqc-text-input
+  raised_by: compare-against-iwc-exemplar
+  evidence: IWC rnaseq-pe feeds Falco text_file into MultiQC results software_cond fastqc output type data (iuc/multiqc 1.35+galaxy5).
+  impact: multiqc step should consume the FastQC text/raw-data output, not the zip.
+- id: no-iwc-paired-or-unpaired-qc
+  raised_by: compare-against-iwc-exemplar
+  evidence: No IWC workflow maps a FastQC-family tool over list:paired_or_unpaired (only giraffe-deep-variant and influenza use the type).
+  impact: map-over behavior over list:paired_or_unpaired must be checked at implementation/test time.
+- id: embedded-udt-needs-beta-formats
+  raised_by: advance-galaxy-draft-step
+  evidence: 'galaxy-user-tool-workflow-binding: importing an embedded GalaxyUserTool requires enable_beta_tool_formats and the Custom Tool Execution role; untested under planemo.'
+  impact: run-workflow-test must configure the planemo Galaxy for user-defined tools or the cowpy step will fail to import.
+- id: galaxy-checksum-is-byte-level
+  raised_by: debug-galaxy-workflow-output
+  evidence: Galaxy verify hashes stored bytes; decompress only affects asserts/compare.
+  impact: 'gz content checks use compare: diff + decompress: true.'
+decisions:
+- id: no-reference-inputs
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: The Galaxy workflow exposes no reference-data inputs.
+  rationale: Classification None; the only declared reference asset is unconsumed template residue.
+  basis: agent
+- id: reads-list-paired-or-unpaired
+  decided_by: nextflow-summary-to-galaxy-interface
+  basis: agent
+  decision: Expose reads as list:paired_or_unpaired fastqsanger.gz keyed by sample (run) id.
+  rationale: optional fastq_2 column = mixed SE/PE; only meta column is sample, so sample_sheet adds nothing.
+- id: repeated-sample-identifier-run-suffix
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  basis: agent
+  decision: Key repeated sample rows as <sample>_run<k>; unique samples keep <sample>.
+  rationale: sample repeats in the test sheet (SAMPLE3_SE x2, both unpaired); _1/_2 would read as mates.
+- id: skip-trim-inline-when
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  basis: agent
+  decision: 'Gate seqtk_trim with an inline step when: on skip_trim; no pick_value.'
+  rationale: single gated step with no downstream consumer.
+- id: template-tiers
+  decided_by: nextflow-summary-to-galaxy-template
+  basis: agent
+  decision: multiqc identity-pinned to iuc/multiqc 1.35+galaxy5 (IWC exemplar); fastqc, seqtk_trim, cowpy deferred to discovery.
+  rationale: only MultiQC has an in-domain exemplar pin; template does not guess wrapper versions.
+- id: seqtk-1.4-matches-source
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: Pin iuc seqtk_trimfq 1.4+galaxy0 rather than newest 1.5+galaxy0.
+  rationale: nf-core SEQTK_TRIM uses seqtk 1.4.
+- id: flatten-before-fastqc
+  decided_by: debug-galaxy-workflow-output
+  basis: agent
+  decision: Insert __FLATTEN__ (join_identifier _) between reads and fastqc; fastqc_html becomes a flat list.
+  rationale: FastQC wrapper names reports by leaf element identifier (forward/reverse/unpaired), collapsing 6 MultiQC rows to 3; IWC rnaseq-pe uses the same flatten idiom.
+  supersedes: null
+brief_change_recommendations: []
