@@ -1,0 +1,2014 @@
+class: GalaxyWorkflow
+label: ATAC-seq library-level peaks and consensus (nf-core/atacseq 2.1.2 core spine)
+doc: "Galaxy translation of nf-core/atacseq 2.1.2, core library spine: FastQC + Trim Galore -> BWA-MEM -> merge runs per library -> Picard MarkDuplicates -> samtools/bamtools filtering -> CPM bigWig -> MACS2 broad peaks + FRiP + HOMER annotation -> consensus peaks + featureCounts + DESeq2 QC -> MultiQC. Single-end and paired-end runs travel in separate lanes (pe_*/se_*) because the source changes behaviour on meta.single_end; lanes merge before consensus. Not carried: other aligners, merged-replicate level, ataqv, IGV, deepTools, Picard metrics, Preseq, control pairing (see open-requirements ledger)."
+license: MIT
+creator:
+  - class: Organization
+    name: nf-core
+    url: https://github.com/nf-core/atacseq
+inputs:
+  reads:
+    type: collection
+    collection_type: list:paired_or_unpaired
+    format:
+      - fastqsanger.gz
+      - fastqsanger
+    optional: false
+    doc: One element per sequencing run, paired or single-end. Element identifier <sample>_REP<replicate>_T<run> (nf-core check_samplesheet.py convention); runs sharing <sample>_REP<replicate> are merged into one library. A library must not mix single- and paired-end runs.
+  genome_fasta:
+    type: data
+    format: fasta
+    optional: false
+    doc: Reference genome FASTA (gz accepted). BWA index is built from it.
+  genome_gtf:
+    type: data
+    format: gtf
+    optional: false
+    doc: Gene annotation GTF, used by HOMER annotatePeaks.
+  blacklist_bed:
+    type: data
+    format: bed
+    optional: true
+    doc: Optional blacklist regions BED; excluded from the include-regions BED used to filter alignments.
+  macs_gsize:
+    type: int
+    optional: false
+    doc: MACS2 effective genome size (-g). nf-core computes it with khmer unique-kmers from the FASTA and read length when not supplied.
+  mito_name:
+    type: string
+    optional: true
+    doc: Mitochondrial contig name (e.g. MT, chrM); reads on it are removed unless keep_mito.
+  keep_mito:
+    type: boolean
+    optional: false
+    default: false
+    doc: Keep mitochondrial reads.
+  broad_cutoff:
+    type: float
+    optional: false
+    default: 0.1
+    doc: MACS2 --broad-cutoff.
+  min_reps_consensus:
+    type: int
+    optional: false
+    default: 1
+    doc: Minimum number of libraries a consensus interval must be called in.
+  fragment_size:
+    type: int
+    optional: false
+    default: 200
+    doc: Fragment length used to extend single-end reads for coverage (bedtools genomecov -fs).
+  deseq2_vst:
+    type: boolean
+    optional: false
+    default: true
+    doc: Use VST (true) instead of rlog in DESeq2 QC.
+outputs:
+  multiqc_report:
+    outputSource: multiqc/html_report
+  fastqc_raw_html:
+    outputSource: merge_fastqc_raw/output
+  trimming_reports:
+    outputSource: merge_trimming_reports/output
+  library_bam:
+    outputSource: merge_library_bam/output
+  markduplicates_metrics:
+    outputSource: merge_markdup_metrics/output
+  library_flagstat:
+    outputSource: merge_library_flagstat/output
+  library_bigwig:
+    outputSource: merge_bigwig/output
+  library_peaks:
+    outputSource: merge_peaks/output
+  library_frip:
+    outputSource: merge_frip/output
+  library_peaks_annotated:
+    outputSource: merge_peaks_annotated/output
+  consensus_peaks_bed:
+    outputSource: consensus_bed/outfile
+  consensus_peaks_annotated:
+    outputSource: homer_annotate_consensus/output
+  consensus_counts:
+    outputSource: counts_matrix/tabular_output
+  deseq2_qc_plots:
+    outputSource: deseq2_qc/pdf
+steps:
+  ref_faidx:
+    label: ref_faidx
+    doc: Chromosome lengths from the reference FASTA (header trimmed to first word, as BAM @SQ names).
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fasta_compute_length/fasta_compute_length/1.0.4
+    tool_version: 1.0.4
+    state:
+      ref:
+        ref_source: history
+        keep_first: 0
+        keep_first_word: true
+    in:
+      ref|input: genome_fasta
+    out:
+      - id: output
+  chrom_sizes:
+    label: chrom_sizes
+    doc: Chromosome sizes (fai columns 1-2).
+    tool_id: Cut1
+    tool_version: 1.0.2
+    state:
+      columnList: c1,c2
+      delimiter: T
+    in:
+      input: ref_faidx/output
+    out:
+      - id: out_file1
+  include_regions_bed:
+    label: include_regions_bed
+    doc: "Genome regions to keep: complement of the (sorted) blacklist against the chromosome sizes, minus the mitochondrial contig unless keep_mito."
+    run:
+      class: GalaxyUserTool
+      id: atacseq_include_regions_bed
+      version: 2.30.0
+      name: Genome include-regions BED
+      description: Complement of a blacklist against chromosome sizes, minus the mitochondrial contig (nf-core/atacseq GENOME_BLACKLIST_REGIONS)
+      license: MIT
+      container: quay.io/biocontainers/bedtools:2.30.0--hc088bd4_0
+      requirements: []
+      inputs:
+        - name: sizes
+          type: data
+          format:
+            - tabular
+          label: Chromosome sizes (name, length)
+        - name: blacklist
+          type: data
+          format:
+            - bed
+          optional: true
+          label: Blacklist regions (optional)
+        - name: mito_name
+          type: text
+          optional: true
+          label: Mitochondrial contig name
+        - name: keep_mito
+          type: boolean
+          value: false
+          label: Keep mitochondrial contig
+      shell_command: |
+        SIZES='$(inputs.sizes.path)'
+        BL='$(inputs.blacklist ? inputs.blacklist.path : "")'
+        MITO='$(inputs.mito_name ? inputs.mito_name : "")'
+        KEEP='$(inputs.keep_mito)'
+        if [ -n "$BL" ]; then
+          sortBed -i "$BL" -g "$SIZES" | complementBed -i stdin -g "$SIZES" > regions.bed
+        else
+          awk -v OFS='\t' '{print $1, 0, $2}' "$SIZES" > regions.bed
+        fi
+        if [ -n "$MITO" ] && [ "$KEEP" != "true" ]; then
+          awk -v m="$MITO" '$1 != m' regions.bed > include_regions.bed
+        else
+          cp regions.bed include_regions.bed
+        fi
+      outputs:
+        - name: bed
+          type: data
+          format: bed
+          from_work_dir: include_regions.bed
+          label: Include regions BED
+      help:
+        format: markdown
+        content: |
+          Port of nf-core/atacseq `GENOME_BLACKLIST_REGIONS`: `sortBed -i blacklist -g sizes | complementBed -i stdin -g sizes`,
+          or the whole genome from the sizes file when no blacklist is given; then drops the `mito_name` contig unless
+          `keep_mito`. nf-core matches the mito name as a regex (`$1 !~ /MT/`); this port matches it exactly.
+    in:
+      sizes: chrom_sizes/out_file1
+      blacklist: blacklist_bed
+      mito_name: mito_name
+      keep_mito: keep_mito
+    out:
+      - id: bed
+  split_pe_se:
+    label: split_pe_se
+    doc: Split runs into paired-end and single-end sub-collections.
+    tool_id: __SPLIT_PAIRED_AND_UNPAIRED__
+    tool_version: 1.0.0
+    state: {}
+    in:
+      input: reads
+    out:
+      - id: output_paired
+      - id: output_unpaired
+  pe_fastqc_raw:
+    label: pe_fastqc_raw
+    doc: FastQC on raw reads.
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    state:
+      nogroup: false
+      min_length: null
+      kmers: 7
+    in:
+      input_file: split_pe_se/output_paired
+    out:
+      - id: html_file
+      - id: text_file
+  pe_trim_galore:
+    label: pe_trim_galore
+    doc: Adapter trimming with Trim Galore, FastQC on trimmed reads.
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/trim_galore/trim_galore/0.6.10+galaxy1
+    tool_version: 0.6.10+galaxy1
+    state:
+      singlePaired:
+        sPaired: paired_collection
+        trimming:
+          trimming_select: ""
+        three_prime_clip_R1: null
+        three_prime_clip_R2: null
+      params:
+        settingsType: custom
+        quality: 20
+        stringency: 1
+        error_rate: 0.1
+        min_length: 20
+        clip_R1: null
+        clip_R2: null
+        report: true
+        retain_unpaired:
+          retain_unpaired_select: no_output
+      rrbs:
+        settingsType: default
+      trimming:
+        settingsType: default
+    in:
+      singlePaired|input_mate_pairs: split_pe_se/output_paired
+    out:
+      - id: trimmed_reads_paired_collection
+      - id: report_file
+  pe_bwa_mem:
+    label: pe_bwa_mem
+    doc: Align runs with BWA-MEM against an index built from genome_fasta.
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/bwa/bwa_mem/0.7.19+galaxy2
+    tool_version: 0.7.19+galaxy2
+    state:
+      reference_source:
+        reference_source_selector: history
+        index_a: auto
+      fastq_input:
+        fastq_input_selector: paired_collection
+        iset_stats: null
+      rg:
+        rg_selector: set_id_auto
+      analysis_type:
+        analysis_type_selector: full
+        algorithmic_options:
+          algorithmic_options_selector: do_not_set
+        scoring_options:
+          scoring_options_selector: do_not_set
+        io_options:
+          io_options_selector: set
+          five: false
+          q: false
+          T: 30
+          h: 5
+          a: false
+          C: false
+          V: false
+          "Y": false
+          M: true
+      output_sort: coordinate
+    in:
+      reference_source|ref_file: genome_fasta
+      fastq_input|fastq_input1: pe_trim_galore/trimmed_reads_paired_collection
+    out:
+      - id: bam_output
+  pe_drop_secondary:
+    label: pe_drop_secondary
+    doc: Remove secondary alignments (-F 0x0100), BAM output.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: "no"
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: null
+          library: null
+          cigarcons: null
+          inclusive_filter: null
+          exclusive_filter:
+            - "256"
+          exclusive_filter_all: null
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: "no"
+    in:
+      input: pe_bwa_mem/bam_output
+    out:
+      - id: outputsam
+        change_datatype: bam
+  pe_group_runs:
+    label: pe_group_runs
+    doc: "Regroup runs into libraries: <sample>_REP<r>_T<n> -> outer <sample>_REP<r>, inner <n>."
+    tool_id: __APPLY_RULES__
+    tool_version: 1.1.0
+    state:
+      rules:
+        rules:
+          - type: add_column_metadata
+            value: identifier0
+          - type: add_column_regex
+            target_column: 0
+            expression: ^(.+_REP\d+)_T(\d+)$
+            group_count: 2
+        mapping:
+          - type: list_identifiers
+            columns:
+              - 1
+              - 2
+            editing: false
+    in:
+      input: pe_drop_secondary/outputsam
+    out:
+      - id: output
+  pe_merge_runs:
+    label: pe_merge_runs
+    doc: Merge runs of one library (reduce inner list), coordinate sorted.
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/picard/picard_MergeSamFiles/3.1.1.0
+    tool_version: 3.1.1.0
+    state:
+      merge_sequence_dictionaries: false
+      assume_sorted: false
+      comments: []
+      validation_stringency: LENIENT
+    in:
+      inputFile: pe_group_runs/output
+    out:
+      - id: outFile
+  pe_markduplicates:
+    label: pe_markduplicates
+    doc: Mark (not remove) duplicates.
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/picard/picard_MarkDuplicates/3.1.1.0
+    tool_version: 3.1.1.0
+    state:
+      comments: []
+      remove_duplicates: false
+      assume_sorted: true
+      duplicate_scoring_strategy: SUM_OF_BASE_QUALITIES
+      read_name_regex: null
+      optical_duplicate_pixel_distance: 100
+      barcode_tag: null
+      validation_stringency: LENIENT
+    in:
+      inputFile: pe_merge_runs/outFile
+    out:
+      - id: outFile
+      - id: metrics_file
+  pe_filter_flags:
+    label: pe_filter_flags
+    doc: Keep mapped, properly paired-flagged, non-duplicate, MAPQ>=1 reads inside include regions.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: bed
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: 1
+          library: null
+          cigarcons: null
+          inclusive_filter:
+            - "1"
+          exclusive_filter:
+            - "4"
+            - "8"
+            - "1024"
+          exclusive_filter_all: null
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: "no"
+    in:
+      input: pe_markduplicates/outFile
+      mode|filter_config|cond_region|bedfile: include_regions_bed/bed
+    out:
+      - id: outputsam
+        change_datatype: bam
+  pe_filter_rules:
+    label: pe_filter_rules
+    doc: bamtools filter rules from assets/bamtools_filter_pe.json.
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/bamtools_filter/bamFilter/2.5.3+galaxy0
+    tool_version: 2.5.3+galaxy0
+    state:
+      conditions:
+        - filters:
+            - bam_property:
+                bam_property_selector: insertSize
+                bam_property_value: ">=-2000"
+        - filters:
+            - bam_property:
+                bam_property_selector: insertSize
+                bam_property_value: <=2000
+        - filters:
+            - bam_property:
+                bam_property_selector: tag
+                bam_property_value: NM:<=4
+        - filters:
+            - bam_property:
+                bam_property_selector: cigar
+                bam_property_value: "*S*"
+      rule_configuration:
+        rules_selector: "true"
+        rules: 1 & 2 & 3 & !4
+    in:
+      input_bam: pe_filter_flags/outputsam
+    out:
+      - id: out_file1
+  pe_name_sort:
+    label: pe_name_sort
+    doc: Name-sort filtered PE BAM.
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_sort/samtools_sort/2.0.8
+    tool_version: 2.0.8
+    state:
+      prim_key_cond:
+        prim_key_select: -n
+      minhash: false
+    in:
+      input1: pe_filter_rules/out_file1
+    out:
+      - id: output1
+  pe_remove_orphans:
+    label: pe_remove_orphans
+    doc: Drop reads whose mate was filtered out; keep only FR-oriented pairs.
+    run:
+      class: GalaxyUserTool
+      id: atacseq_bampe_rm_orphan
+      version: 0.19.0
+      name: Remove orphan and non-FR read pairs
+      description: Drop singleton reads and pairs not in FR orientation on one chromosome from a name-sorted BAM (nf-core/atacseq bampe_rm_orphan.py --only_fr_pairs)
+      license: MIT
+      container: quay.io/biocontainers/mulled-v2-57736af1eb98c01010848572c9fec9fff6ffaafd:402e865b8f6af2f3e58c6fc8d57127ff0144b2c7-0
+      requirements: []
+      inputs:
+        - name: bam
+          type: data
+          format:
+            - qname_sorted.bam
+            - bam
+            - unsorted.bam
+          label: Name-sorted paired-end BAM
+      shell_command: |
+        cat > rm_orphan.py <<'PYEOF'
+        import sys
+        import pysam
+        fin = pysam.AlignmentFile(sys.argv[1], "rb")
+        fout = pysam.AlignmentFile(sys.argv[2], "wb", header=fin.header)
+        it = fin.fetch(until_eof=True)
+        prev = next(it, None)
+        for read in it:
+            if prev is not None and prev.query_name == read.query_name:
+                a, b = prev, read
+                keep = False
+                if a.reference_id == b.reference_id:
+                    if not a.is_reverse and b.is_reverse:
+                        keep = a.reference_start <= b.reference_start
+                    elif a.is_reverse and not b.is_reverse:
+                        keep = b.reference_start <= a.reference_start
+                if keep:
+                    fout.write(a)
+                    fout.write(b)
+                prev = next(it, None)
+            else:
+                prev = read
+        fin.close()
+        fout.close()
+        PYEOF
+        python rm_orphan.py '$(inputs.bam.path)' clean.bam
+      outputs:
+        - name: bam
+          type: data
+          format: qname_sorted.bam
+          from_work_dir: clean.bam
+          label: Cleaned name-sorted BAM
+      help:
+        format: markdown
+        content: |
+          Compact port of nf-core/atacseq `bin/bampe_rm_orphan.py` with `--only_fr_pairs` (pysam 0.19.0 + samtools 1.15.1
+          biocontainer from the source module). Consecutive records sharing a read name are a pair; a pair is kept only
+          when both mates are on the same chromosome in forward-reverse orientation. Singletons are dropped. The run log is
+          not produced.
+    in:
+      bam: pe_name_sort/output1
+    out:
+      - id: bam
+  pe_coord_sort:
+    label: pe_coord_sort
+    doc: Coordinate-sort cleaned PE BAM.
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_sort/samtools_sort/2.0.8
+    tool_version: 2.0.8
+    state:
+      prim_key_cond:
+        prim_key_select: ""
+      minhash: false
+    in:
+      input1: pe_remove_orphans/bam
+    out:
+      - id: output1
+  pe_filtered_flagstat:
+    label: pe_filtered_flagstat
+    doc: flagstat on final library BAM (scaling, FRiP, MultiQC).
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8
+    tool_version: 2.0.8
+    state:
+      output_fmt: txt
+    in:
+      input1: pe_coord_sort/output1
+    out:
+      - id: output1
+  pe_filtered_stats:
+    label: pe_filtered_stats
+    doc: samtools stats on final library BAM (MultiQC).
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.9
+    tool_version: 2.0.9
+    state:
+      coverage_cond:
+        coverage_select: "no"
+      remove_dups: false
+      split_output_cond:
+        split_output_selector: "no"
+      filter_by_flags:
+        filter_flags: nofilter
+      gc_depth: null
+      insert_size: null
+      read_group: null
+      read_length: null
+      most_inserts: null
+      trim_quality: null
+      addref_cond:
+        addref_select: "no"
+      cond_region:
+        select_region: "no"
+      sparse: false
+      remove_overlaps: false
+      cov_threshold: null
+    in:
+      input: pe_coord_sort/output1
+    out:
+      - id: output
+  pe_scale_factor:
+    label: pe_scale_factor
+    doc: CPM scale factor = 1e6 / mapped reads.
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0
+    tool_version: 9.11+galaxy0
+    state:
+      code: / mapped \(/ && !/primary/ && !done {print 1000000/$1; done=1}
+      variables: []
+    in:
+      infile: pe_filtered_flagstat/output1
+    out:
+      - id: outfile
+  pe_scale_param:
+    label: pe_scale_param
+    doc: Scale factor as a float parameter (mapped per element).
+    tool_id: param_value_from_file
+    tool_version: 0.1.0
+    state:
+      param_type: float
+      remove_newlines: true
+    in:
+      input1: pe_scale_factor/outfile
+    out:
+      - id: float_param
+  pe_genomecov:
+    label: pe_genomecov
+    doc: Scaled coverage bedGraph (1e6 / mapped reads); fragments from read pairs. deepTools bamCoverage stands in for bedtools genomecov -pc/-fs, which the Galaxy genomecov wrapper does not expose.
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/deeptools_bam_coverage/deeptools_bam_coverage/4.0.0+galaxy1
+    tool_version: 4.0.0+galaxy1
+    state:
+      binSize: 10
+      scaling:
+        type: "no"
+      outFileFormat: bedgraph
+      region: null
+      advancedOpt:
+        showAdvancedOpt: "yes"
+        smoothLength: null
+        ignoreForNormalization: null
+        skipNAs: false
+        doExtendCustom:
+          doExtend: "yes"
+        centerReads: false
+        minMappingQuality: null
+        samFlagInclude: null
+        samFlagExclude: null
+        minFragmentLength: 0
+        maxFragmentLength: 0
+        MNase: false
+        Offset: null
+        filterRNAstrand: "no"
+    in:
+      bamInput: pe_coord_sort/output1
+      advancedOpt|scaleFactor: pe_scale_param/float_param
+    out:
+      - id: outFileName
+  pe_sort_bedgraph:
+    label: pe_sort_bedgraph
+    doc: Sort bedGraph.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_sortbed/2.31.1+galaxy1
+    tool_version: 2.31.1+galaxy1
+    state:
+      option: ""
+      genome_file_opts:
+        genome_file_opts_selector: hist
+    in:
+      input: pe_genomecov/outFileName
+    out:
+      - id: output
+  pe_bigwig:
+    label: pe_bigwig
+    doc: bedGraph -> bigWig.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/ucsc_wigtobigwig/ucsc_wigtobigwig/502+galaxy0
+    tool_version: 502+galaxy0
+    state:
+      hist_or_builtin:
+        genome_type_select: history
+      settings:
+        settingsType: preset
+    in:
+      hist_or_builtin|input1: pe_sort_bedgraph/output
+      hist_or_builtin|chromfile: chrom_sizes/out_file1
+    out:
+      - id: out_file1
+  pe_macs2:
+    label: pe_macs2
+    doc: MACS2 broad peak calling, no control.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/macs2/macs2_callpeak/2.2.9.1+galaxy0
+    tool_version: 2.2.9.1+galaxy0
+    state:
+      treatment:
+        t_multi_select: "No"
+      control:
+        c_select: "No"
+      format: BAMPE
+      effective_genome_size_options:
+        effective_genome_size_options_selector: user_defined
+      nomodel_type:
+        nomodel_type_selector: nomodel
+        extsize: 200
+        shift: 0
+      cutoff_options:
+        cutoff_options_selector: qvalue
+        qvalue: 0.05
+      outputs:
+        - peaks_tabular
+      advanced_options:
+        to_large: false
+        nolambda: false
+        spmr: false
+        ratio: null
+        slocal: null
+        llocal: null
+        broad_options:
+          broad_options_selector: broad
+        keep_dup_options:
+          keep_dup_options_selector: all
+        d_min: 20
+        buffer_size: 100000
+    in:
+      treatment|input_treatment_file: pe_coord_sort/output1
+      effective_genome_size_options|gsize: macs_gsize
+      advanced_options|broad_options|broad_cutoff: broad_cutoff
+    out:
+      - id: output_broadpeaks
+      - id: output_tabular
+  pe_drop_empty_peaks:
+    label: pe_drop_empty_peaks
+    doc: Drop libraries with no peaks.
+    tool_id: __FILTER_EMPTY_DATASETS__
+    tool_version: 1.1.0
+    state: {}
+    in:
+      input: pe_macs2/output_broadpeaks
+    out:
+      - id: output
+  pe_peak_ids:
+    label: pe_peak_ids
+    doc: Identifiers of libraries with peaks.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_element_identifiers/collection_element_identifiers/0.0.3
+    tool_version: 0.0.3
+    state: {}
+    in:
+      input_collection: pe_drop_empty_peaks/output
+    out:
+      - id: output
+  pe_bam_sync:
+    label: pe_bam_sync
+    doc: Keep library BAMs that have peaks.
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.0.0
+    state:
+      how:
+        how_filter: remove_if_absent
+    in:
+      input: pe_coord_sort/output1
+      how|filter_source: pe_peak_ids/output
+    out:
+      - id: output_filtered
+  pe_flagstat_sync:
+    label: pe_flagstat_sync
+    doc: Keep flagstats of libraries that have peaks.
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.0.0
+    state:
+      how:
+        how_filter: remove_if_absent
+    in:
+      input: pe_filtered_flagstat/output1
+      how|filter_source: pe_peak_ids/output
+    out:
+      - id: output_filtered
+  pe_frip_count:
+    label: pe_frip_count
+    doc: Per-read count of peaks overlapping >=20% of the read (intersectBed -a bam -b peaks -bed -c -f 0.20).
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_intersectbed/2.31.1+galaxy1
+    tool_version: 2.31.1+galaxy1
+    state:
+      reduce_or_iterate:
+        reduce_or_iterate_selector: iterate
+      strand: ""
+      overlap_mode: null
+      split: false
+      fraction_cond:
+        fraction_select: specify
+        overlap: 0.2
+        reciprocal_cond:
+          reciprocal: ""
+        disjoint: false
+      invert: false
+      once: false
+      count: true
+      bed: true
+      sorted: false
+      genome_file_opts:
+        genome_file_opts_selector: hist
+      header: false
+    in:
+      inputA: pe_bam_sync/output_filtered
+      reduce_or_iterate|inputB: pe_drop_empty_peaks/output
+    out:
+      - id: output
+  pe_frip_concat:
+    label: pe_frip_concat
+    doc: Combine reads-in-peaks count with flagstat.
+    tool_id: cat1
+    tool_version: 1.0.0
+    state:
+      queries:
+        - {}
+    in:
+      input1: pe_frip_count/output
+      queries_0|input2: pe_flagstat_sync/output_filtered
+    out:
+      - id: out_file1
+  pe_frip_score:
+    label: pe_frip_score
+    doc: FRiP = reads in peaks / mapped reads.
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0
+    tool_version: 9.11+galaxy0
+    state:
+      code: BEGIN {FS="\t"} NF >= 12 {s += $NF; next} / mapped \(/ && !/primary/ && !m {split($0, a, " "); m = a[1]} END {if (m > 0) printf "%.6f\n", s / m; else print 0}
+      variables: []
+    in:
+      infile: pe_frip_concat/out_file1
+    out:
+      - id: outfile
+        change_datatype: tabular
+  pe_homer_annotate:
+    label: pe_homer_annotate
+    doc: HOMER annotatePeaks with custom genome FASTA + GTF.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/homer_annotatepeaks/homer_annotatePeaks/4.11+galaxy3
+    tool_version: 4.11+galaxy3
+    state:
+      CpG:
+        bool: "true"
+        genome:
+          source: history
+    in:
+      input: pe_drop_empty_peaks/output
+      CpG|genome|fasta: genome_fasta
+      gtf_file: genome_gtf
+    out:
+      - id: output
+  se_fastqc_raw:
+    label: se_fastqc_raw
+    doc: FastQC on raw reads.
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    state:
+      nogroup: false
+      min_length: null
+      kmers: 7
+    in:
+      input_file: split_pe_se/output_unpaired
+    out:
+      - id: html_file
+      - id: text_file
+  se_trim_galore:
+    label: se_trim_galore
+    doc: Adapter trimming with Trim Galore, FastQC on trimmed reads.
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/trim_galore/trim_galore/0.6.10+galaxy1
+    tool_version: 0.6.10+galaxy1
+    state:
+      singlePaired:
+        sPaired: single
+        trimming:
+          trimming_select: ""
+        three_prime_clip_R1: null
+      params:
+        settingsType: custom
+        quality: 20
+        stringency: 1
+        error_rate: 0.1
+        min_length: 20
+        clip_R1: null
+        clip_R2: null
+        report: true
+        retain_unpaired:
+          retain_unpaired_select: no_output
+      rrbs:
+        settingsType: default
+      trimming:
+        settingsType: default
+    in:
+      singlePaired|input_singles: split_pe_se/output_unpaired
+    out:
+      - id: trimmed_reads_single
+      - id: report_file
+  se_bwa_mem:
+    label: se_bwa_mem
+    doc: Align runs with BWA-MEM against an index built from genome_fasta.
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/bwa/bwa_mem/0.7.19+galaxy2
+    tool_version: 0.7.19+galaxy2
+    state:
+      reference_source:
+        reference_source_selector: history
+        index_a: auto
+      fastq_input:
+        fastq_input_selector: single
+      rg:
+        rg_selector: set_id_auto
+      analysis_type:
+        analysis_type_selector: full
+        algorithmic_options:
+          algorithmic_options_selector: do_not_set
+        scoring_options:
+          scoring_options_selector: do_not_set
+        io_options:
+          io_options_selector: set
+          five: false
+          q: false
+          T: 30
+          h: 5
+          a: false
+          C: false
+          V: false
+          "Y": false
+          M: true
+      output_sort: coordinate
+    in:
+      reference_source|ref_file: genome_fasta
+      fastq_input|fastq_input1: se_trim_galore/trimmed_reads_single
+    out:
+      - id: bam_output
+  se_drop_secondary:
+    label: se_drop_secondary
+    doc: Remove secondary alignments (-F 0x0100), BAM output.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: "no"
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: null
+          library: null
+          cigarcons: null
+          inclusive_filter: null
+          exclusive_filter:
+            - "256"
+          exclusive_filter_all: null
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: "no"
+    in:
+      input: se_bwa_mem/bam_output
+    out:
+      - id: outputsam
+        change_datatype: bam
+  se_group_runs:
+    label: se_group_runs
+    doc: "Regroup runs into libraries: <sample>_REP<r>_T<n> -> outer <sample>_REP<r>, inner <n>."
+    tool_id: __APPLY_RULES__
+    tool_version: 1.1.0
+    state:
+      rules:
+        rules:
+          - type: add_column_metadata
+            value: identifier0
+          - type: add_column_regex
+            target_column: 0
+            expression: ^(.+_REP\d+)_T(\d+)$
+            group_count: 2
+        mapping:
+          - type: list_identifiers
+            columns:
+              - 1
+              - 2
+            editing: false
+    in:
+      input: se_drop_secondary/outputsam
+    out:
+      - id: output
+  se_merge_runs:
+    label: se_merge_runs
+    doc: Merge runs of one library (reduce inner list), coordinate sorted.
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/picard/picard_MergeSamFiles/3.1.1.0
+    tool_version: 3.1.1.0
+    state:
+      merge_sequence_dictionaries: false
+      assume_sorted: false
+      comments: []
+      validation_stringency: LENIENT
+    in:
+      inputFile: se_group_runs/output
+    out:
+      - id: outFile
+  se_markduplicates:
+    label: se_markduplicates
+    doc: Mark (not remove) duplicates.
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/picard/picard_MarkDuplicates/3.1.1.0
+    tool_version: 3.1.1.0
+    state:
+      comments: []
+      remove_duplicates: false
+      assume_sorted: true
+      duplicate_scoring_strategy: SUM_OF_BASE_QUALITIES
+      read_name_regex: null
+      optical_duplicate_pixel_distance: 100
+      barcode_tag: null
+      validation_stringency: LENIENT
+    in:
+      inputFile: se_merge_runs/outFile
+    out:
+      - id: outFile
+      - id: metrics_file
+  se_filter_flags:
+    label: se_filter_flags
+    doc: Keep mapped, non-duplicate, MAPQ>=1 reads inside include regions.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: bed
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: 1
+          library: null
+          cigarcons: null
+          inclusive_filter: null
+          exclusive_filter:
+            - "4"
+            - "1024"
+          exclusive_filter_all: null
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: "no"
+    in:
+      input: se_markduplicates/outFile
+      mode|filter_config|cond_region|bedfile: include_regions_bed/bed
+    out:
+      - id: outputsam
+        change_datatype: bam
+  se_filter_rules:
+    label: se_filter_rules
+    doc: bamtools filter rules from assets/bamtools_filter_se.json.
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/bamtools_filter/bamFilter/2.5.3+galaxy0
+    tool_version: 2.5.3+galaxy0
+    state:
+      conditions:
+        - filters:
+            - bam_property:
+                bam_property_selector: tag
+                bam_property_value: NM:<=4
+        - filters:
+            - bam_property:
+                bam_property_selector: cigar
+                bam_property_value: "*S*"
+      rule_configuration:
+        rules_selector: "true"
+        rules: 1 & !2
+    in:
+      input_bam: se_filter_flags/outputsam
+    out:
+      - id: out_file1
+  se_filtered_flagstat:
+    label: se_filtered_flagstat
+    doc: flagstat on final library BAM (scaling, FRiP, MultiQC).
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8
+    tool_version: 2.0.8
+    state:
+      output_fmt: txt
+    in:
+      input1: se_filter_rules/out_file1
+    out:
+      - id: output1
+  se_filtered_stats:
+    label: se_filtered_stats
+    doc: samtools stats on final library BAM (MultiQC).
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.9
+    tool_version: 2.0.9
+    state:
+      coverage_cond:
+        coverage_select: "no"
+      remove_dups: false
+      split_output_cond:
+        split_output_selector: "no"
+      filter_by_flags:
+        filter_flags: nofilter
+      gc_depth: null
+      insert_size: null
+      read_group: null
+      read_length: null
+      most_inserts: null
+      trim_quality: null
+      addref_cond:
+        addref_select: "no"
+      cond_region:
+        select_region: "no"
+      sparse: false
+      remove_overlaps: false
+      cov_threshold: null
+    in:
+      input: se_filter_rules/out_file1
+    out:
+      - id: output
+  se_scale_factor:
+    label: se_scale_factor
+    doc: CPM scale factor = 1e6 / mapped reads.
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0
+    tool_version: 9.11+galaxy0
+    state:
+      code: / mapped \(/ && !/primary/ && !done {print 1000000/$1; done=1}
+      variables: []
+    in:
+      infile: se_filtered_flagstat/output1
+    out:
+      - id: outfile
+  se_scale_param:
+    label: se_scale_param
+    doc: Scale factor as a float parameter (mapped per element).
+    tool_id: param_value_from_file
+    tool_version: 0.1.0
+    state:
+      param_type: float
+      remove_newlines: true
+    in:
+      input1: se_scale_factor/outfile
+    out:
+      - id: float_param
+  se_genomecov:
+    label: se_genomecov
+    doc: Scaled coverage bedGraph (1e6 / mapped reads); reads extended to fragment_size. deepTools bamCoverage stands in for bedtools genomecov -pc/-fs, which the Galaxy genomecov wrapper does not expose.
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/deeptools_bam_coverage/deeptools_bam_coverage/4.0.0+galaxy1
+    tool_version: 4.0.0+galaxy1
+    state:
+      binSize: 10
+      scaling:
+        type: "no"
+      outFileFormat: bedgraph
+      region: null
+      advancedOpt:
+        showAdvancedOpt: "yes"
+        smoothLength: null
+        ignoreForNormalization: null
+        skipNAs: false
+        doExtendCustom:
+          doExtend: custom
+        centerReads: false
+        minMappingQuality: null
+        samFlagInclude: null
+        samFlagExclude: null
+        minFragmentLength: 0
+        maxFragmentLength: 0
+        MNase: false
+        Offset: null
+        filterRNAstrand: "no"
+    in:
+      bamInput: se_filter_rules/out_file1
+      advancedOpt|scaleFactor: se_scale_param/float_param
+      advancedOpt|doExtendCustom|extendReadsValue: fragment_size
+    out:
+      - id: outFileName
+  se_sort_bedgraph:
+    label: se_sort_bedgraph
+    doc: Sort bedGraph.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_sortbed/2.31.1+galaxy1
+    tool_version: 2.31.1+galaxy1
+    state:
+      option: ""
+      genome_file_opts:
+        genome_file_opts_selector: hist
+    in:
+      input: se_genomecov/outFileName
+    out:
+      - id: output
+  se_bigwig:
+    label: se_bigwig
+    doc: bedGraph -> bigWig.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/ucsc_wigtobigwig/ucsc_wigtobigwig/502+galaxy0
+    tool_version: 502+galaxy0
+    state:
+      hist_or_builtin:
+        genome_type_select: history
+      settings:
+        settingsType: preset
+    in:
+      hist_or_builtin|input1: se_sort_bedgraph/output
+      hist_or_builtin|chromfile: chrom_sizes/out_file1
+    out:
+      - id: out_file1
+  se_macs2:
+    label: se_macs2
+    doc: MACS2 broad peak calling, no control.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/macs2/macs2_callpeak/2.2.9.1+galaxy0
+    tool_version: 2.2.9.1+galaxy0
+    state:
+      treatment:
+        t_multi_select: "No"
+      control:
+        c_select: "No"
+      format: BAM
+      effective_genome_size_options:
+        effective_genome_size_options_selector: user_defined
+      nomodel_type:
+        nomodel_type_selector: nomodel
+        extsize: 200
+        shift: 0
+      cutoff_options:
+        cutoff_options_selector: qvalue
+        qvalue: 0.05
+      outputs:
+        - peaks_tabular
+      advanced_options:
+        to_large: false
+        nolambda: false
+        spmr: false
+        ratio: null
+        slocal: null
+        llocal: null
+        broad_options:
+          broad_options_selector: broad
+        keep_dup_options:
+          keep_dup_options_selector: all
+        d_min: 20
+        buffer_size: 100000
+    in:
+      treatment|input_treatment_file: se_filter_rules/out_file1
+      effective_genome_size_options|gsize: macs_gsize
+      advanced_options|broad_options|broad_cutoff: broad_cutoff
+    out:
+      - id: output_broadpeaks
+      - id: output_tabular
+  se_drop_empty_peaks:
+    label: se_drop_empty_peaks
+    doc: Drop libraries with no peaks.
+    tool_id: __FILTER_EMPTY_DATASETS__
+    tool_version: 1.1.0
+    state: {}
+    in:
+      input: se_macs2/output_broadpeaks
+    out:
+      - id: output
+  se_peak_ids:
+    label: se_peak_ids
+    doc: Identifiers of libraries with peaks.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_element_identifiers/collection_element_identifiers/0.0.3
+    tool_version: 0.0.3
+    state: {}
+    in:
+      input_collection: se_drop_empty_peaks/output
+    out:
+      - id: output
+  se_bam_sync:
+    label: se_bam_sync
+    doc: Keep library BAMs that have peaks.
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.0.0
+    state:
+      how:
+        how_filter: remove_if_absent
+    in:
+      input: se_filter_rules/out_file1
+      how|filter_source: se_peak_ids/output
+    out:
+      - id: output_filtered
+  se_flagstat_sync:
+    label: se_flagstat_sync
+    doc: Keep flagstats of libraries that have peaks.
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.0.0
+    state:
+      how:
+        how_filter: remove_if_absent
+    in:
+      input: se_filtered_flagstat/output1
+      how|filter_source: se_peak_ids/output
+    out:
+      - id: output_filtered
+  se_frip_count:
+    label: se_frip_count
+    doc: Per-read count of peaks overlapping >=20% of the read (intersectBed -a bam -b peaks -bed -c -f 0.20).
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_intersectbed/2.31.1+galaxy1
+    tool_version: 2.31.1+galaxy1
+    state:
+      reduce_or_iterate:
+        reduce_or_iterate_selector: iterate
+      strand: ""
+      overlap_mode: null
+      split: false
+      fraction_cond:
+        fraction_select: specify
+        overlap: 0.2
+        reciprocal_cond:
+          reciprocal: ""
+        disjoint: false
+      invert: false
+      once: false
+      count: true
+      bed: true
+      sorted: false
+      genome_file_opts:
+        genome_file_opts_selector: hist
+      header: false
+    in:
+      inputA: se_bam_sync/output_filtered
+      reduce_or_iterate|inputB: se_drop_empty_peaks/output
+    out:
+      - id: output
+  se_frip_concat:
+    label: se_frip_concat
+    doc: Combine reads-in-peaks count with flagstat.
+    tool_id: cat1
+    tool_version: 1.0.0
+    state:
+      queries:
+        - {}
+    in:
+      input1: se_frip_count/output
+      queries_0|input2: se_flagstat_sync/output_filtered
+    out:
+      - id: out_file1
+  se_frip_score:
+    label: se_frip_score
+    doc: FRiP = reads in peaks / mapped reads.
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0
+    tool_version: 9.11+galaxy0
+    state:
+      code: BEGIN {FS="\t"} NF >= 12 {s += $NF; next} / mapped \(/ && !/primary/ && !m {split($0, a, " "); m = a[1]} END {if (m > 0) printf "%.6f\n", s / m; else print 0}
+      variables: []
+    in:
+      infile: se_frip_concat/out_file1
+    out:
+      - id: outfile
+        change_datatype: tabular
+  se_homer_annotate:
+    label: se_homer_annotate
+    doc: HOMER annotatePeaks with custom genome FASTA + GTF.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/homer_annotatepeaks/homer_annotatePeaks/4.11+galaxy3
+    tool_version: 4.11+galaxy3
+    state:
+      CpG:
+        bool: "true"
+        genome:
+          source: history
+    in:
+      input: se_drop_empty_peaks/output
+      CpG|genome|fasta: genome_fasta
+      gtf_file: genome_gtf
+    out:
+      - id: output
+  merge_fastqc_raw:
+    label: merge_fastqc_raw
+    doc: Merge PE and SE lane collections.
+    tool_id: __MERGE_COLLECTION__
+    tool_version: 1.0.0
+    state:
+      inputs:
+        - {}
+        - {}
+      advanced:
+        conflict:
+          duplicate_options: keep_first
+    in:
+      inputs_0|input: pe_fastqc_flatten/output
+      inputs_1|input: se_fastqc_raw/html_file
+    out:
+      - id: output
+  merge_trimming_reports:
+    label: merge_trimming_reports
+    doc: Merge PE and SE lane collections.
+    tool_id: __MERGE_COLLECTION__
+    tool_version: 1.0.0
+    state:
+      inputs:
+        - {}
+        - {}
+      advanced:
+        conflict:
+          duplicate_options: keep_first
+    in:
+      inputs_0|input: pe_trim_galore/report_file
+      inputs_1|input: se_trim_galore/report_file
+    out:
+      - id: output
+  merge_library_bam:
+    label: merge_library_bam
+    doc: Merge PE and SE lane collections.
+    tool_id: __MERGE_COLLECTION__
+    tool_version: 1.0.0
+    state:
+      inputs:
+        - {}
+        - {}
+      advanced:
+        conflict:
+          duplicate_options: keep_first
+    in:
+      inputs_0|input: pe_coord_sort/output1
+      inputs_1|input: se_filter_rules/out_file1
+    out:
+      - id: output
+  merge_markdup_metrics:
+    label: merge_markdup_metrics
+    doc: Merge PE and SE lane collections.
+    tool_id: __MERGE_COLLECTION__
+    tool_version: 1.0.0
+    state:
+      inputs:
+        - {}
+        - {}
+      advanced:
+        conflict:
+          duplicate_options: keep_first
+    in:
+      inputs_0|input: pe_markduplicates/metrics_file
+      inputs_1|input: se_markduplicates/metrics_file
+    out:
+      - id: output
+  merge_library_flagstat:
+    label: merge_library_flagstat
+    doc: Merge PE and SE lane collections.
+    tool_id: __MERGE_COLLECTION__
+    tool_version: 1.0.0
+    state:
+      inputs:
+        - {}
+        - {}
+      advanced:
+        conflict:
+          duplicate_options: keep_first
+    in:
+      inputs_0|input: pe_filtered_flagstat/output1
+      inputs_1|input: se_filtered_flagstat/output1
+    out:
+      - id: output
+  merge_bigwig:
+    label: merge_bigwig
+    doc: Merge PE and SE lane collections.
+    tool_id: __MERGE_COLLECTION__
+    tool_version: 1.0.0
+    state:
+      inputs:
+        - {}
+        - {}
+      advanced:
+        conflict:
+          duplicate_options: keep_first
+    in:
+      inputs_0|input: pe_bigwig/out_file1
+      inputs_1|input: se_bigwig/out_file1
+    out:
+      - id: output
+  merge_peaks:
+    label: merge_peaks
+    doc: Merge PE and SE lane collections.
+    tool_id: __MERGE_COLLECTION__
+    tool_version: 1.0.0
+    state:
+      inputs:
+        - {}
+        - {}
+      advanced:
+        conflict:
+          duplicate_options: keep_first
+    in:
+      inputs_0|input: pe_drop_empty_peaks/output
+      inputs_1|input: se_drop_empty_peaks/output
+    out:
+      - id: output
+  merge_frip:
+    label: merge_frip
+    doc: Merge PE and SE lane collections.
+    tool_id: __MERGE_COLLECTION__
+    tool_version: 1.0.0
+    state:
+      inputs:
+        - {}
+        - {}
+      advanced:
+        conflict:
+          duplicate_options: keep_first
+    in:
+      inputs_0|input: pe_frip_score/outfile
+      inputs_1|input: se_frip_score/outfile
+    out:
+      - id: output
+  merge_peaks_annotated:
+    label: merge_peaks_annotated
+    doc: Merge PE and SE lane collections.
+    tool_id: __MERGE_COLLECTION__
+    tool_version: 1.0.0
+    state:
+      inputs:
+        - {}
+        - {}
+      advanced:
+        conflict:
+          duplicate_options: keep_first
+    in:
+      inputs_0|input: pe_homer_annotate/output
+      inputs_1|input: se_homer_annotate/output
+    out:
+      - id: output
+  consensus_multiintersect:
+    label: consensus_multiintersect
+    doc: Per-interval count of libraries with a peak.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_multiintersectbed/2.31.1+galaxy0
+    tool_version: 2.31.1+galaxy0
+    state:
+      tag:
+        tag_select: tag
+      cluster: false
+      empty:
+        empty_selector: ""
+      filler: null
+      header: false
+    in:
+      tag|inputs: merge_peaks/output
+    out:
+      - id: output
+  consensus_rule:
+    label: consensus_rule
+    doc: Build Filter condition 'c4 >= N'.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/compose_text_param/compose_text_param/0.1.1
+    tool_version: 0.1.1
+    state:
+      components:
+        - param_type:
+            select_param_type: text
+            component_value: "c4 >= "
+        - param_type:
+            select_param_type: integer
+    in:
+      components_1|param_type|component_value: min_reps_consensus
+    out:
+      - id: out1
+  consensus_filter:
+    label: consensus_filter
+    doc: Keep intervals supported by >= min_reps_consensus libraries.
+    tool_id: Filter1
+    tool_version: 1.1.1
+    state:
+      header_lines: 0
+    in:
+      input: consensus_multiintersect/output
+      cond: consensus_rule/out1
+    out:
+      - id: out_file1
+  consensus_merge:
+    label: consensus_merge
+    doc: Merge adjacent retained intervals into consensus regions.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_mergebed/2.31.1+galaxy2
+    tool_version: 2.31.1+galaxy2
+    state:
+      strand: ""
+      distance: 0
+      header: false
+      c_and_o_argument_repeat: []
+    in:
+      input: consensus_filter/out_file1
+    out:
+      - id: output
+  consensus_bed:
+    label: consensus_bed
+    doc: "Consensus BED: chr, start, end, Interval_<n>, 0, +."
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0
+    tool_version: 9.11+galaxy0
+    state:
+      code: BEGIN {OFS="\t"} {print $1, $2, $3, "Interval_" NR, "0", "+"}
+      variables: []
+    in:
+      infile: consensus_merge/output
+    out:
+      - id: outfile
+        change_datatype: bed
+  consensus_saf:
+    label: consensus_saf
+    doc: Consensus regions as a GTF annotation (feature "peak", gene_id Interval_<n>); stands in for the nf-core SAF because the Galaxy featureCounts wrapper takes GTF/GFF only.
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0
+    tool_version: 9.11+galaxy0
+    state:
+      code: BEGIN {OFS="\t"} {print $1, "consensus", "peak", $2 + 1, $3, ".", "+", ".", "gene_id \"" $4 "\";"}
+      variables: []
+    in:
+      infile: consensus_bed/outfile
+    out:
+      - id: outfile
+        change_datatype: gtf
+  homer_annotate_consensus:
+    label: homer_annotate_consensus
+    doc: HOMER annotatePeaks on consensus regions.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/homer_annotatepeaks/homer_annotatePeaks/4.11+galaxy3
+    tool_version: 4.11+galaxy3
+    state:
+      CpG:
+        bool: "true"
+        genome:
+          source: history
+    in:
+      input: consensus_bed/outfile
+      CpG|genome|fasta: genome_fasta
+      gtf_file: genome_gtf
+    out:
+      - id: output
+  counts_matrix:
+    label: counts_matrix
+    doc: Join per-library counts into one matrix (Geneid x library).
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_column_join/collection_column_join/0.0.3
+    tool_version: 0.0.3
+    state:
+      identifier_column: 1
+      has_header: 1
+      old_col_in_header: false
+      fill_char: "0"
+      include_outputs: null
+    in:
+      input_tabular: merge_counts/output
+    out:
+      - id: tabular_output
+  deseq2_qc:
+    label: deseq2_qc
+    doc: DESeq2 VST/rlog PCA + sample-distance clustering.
+    run:
+      class: GalaxyUserTool
+      id: atacseq_deseq2_qc
+      version: 1.28.0
+      name: DESeq2 QC on consensus peak counts
+      description: VST/rlog PCA and sample-distance clustering from a peak count matrix (nf-core/atacseq DESEQ2_QC)
+      license: MIT
+      container: quay.io/biocontainers/mulled-v2-8849acf39a43cdd6c839a369a74c0adc823e2f91:ab110436faf952a33575c64dd74615a84011450b-0
+      requirements: []
+      inputs:
+        - name: counts
+          type: data
+          format:
+            - tabular
+          label: Count matrix (first column feature id, one column per library, header row)
+        - name: vst
+          type: boolean
+          value: true
+          label: Use VST (else rlog)
+      shell_command: |
+        cat > qc.R <<'REOF'
+        suppressPackageStartupMessages({ library(DESeq2); library(ggplot2); library(pheatmap); library(RColorBrewer) })
+        args <- commandArgs(trailingOnly = TRUE)
+        counts <- read.delim(args[1], header = TRUE, row.names = 1, check.names = FALSE)
+        counts <- round(as.matrix(counts))
+        samples <- colnames(counts)
+        groups <- sub("_R(EP)?[0-9]+$", "", samples)
+        coldata <- data.frame(row.names = samples, condition = factor(groups))
+        design <- if (length(unique(groups)) > 1) ~ condition else ~ 1
+        dds <- DESeqDataSetFromMatrix(countData = counts, colData = coldata, design = design)
+        dds <- estimateSizeFactors(dds)
+        tr <- if (args[2] == "true") vst(dds, blind = TRUE, nsub = min(1000, nrow(dds))) else rlog(dds, blind = TRUE)
+        mat <- assay(tr)
+        top <- head(order(apply(mat, 1, var), decreasing = TRUE), 500)
+        pca <- prcomp(t(mat[top, , drop = FALSE]))
+        pv <- round(100 * pca$sdev^2 / sum(pca$sdev^2), 1)
+        df <- data.frame(sample = samples, condition = groups, PC1 = pca$x[, 1], PC2 = pca$x[, 2])
+        write.table(df, "pca.vals.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+        d <- as.matrix(dist(t(mat)))
+        write.table(cbind(sample = rownames(d), d), "sample.dists.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+        pdf("deseq2_qc.pdf", width = 7, height = 7)
+        print(ggplot(df, aes(PC1, PC2, colour = condition, label = sample)) + geom_point(size = 3) +
+              xlab(paste0("PC1: ", pv[1], "% variance")) + ylab(paste0("PC2: ", pv[2], "% variance")) + theme_bw())
+        pheatmap(d, clustering_distance_rows = dist(t(mat)), clustering_distance_cols = dist(t(mat)),
+                 col = colorRampPalette(rev(brewer.pal(9, "Blues")))(255), main = "Sample distances")
+        invisible(dev.off())
+        REOF
+        Rscript qc.R '$(inputs.counts.path)' '$(inputs.vst)'
+      outputs:
+        - name: pdf
+          type: data
+          format: pdf
+          from_work_dir: deseq2_qc.pdf
+          label: DESeq2 QC plots
+        - name: pca
+          type: data
+          format: tabular
+          from_work_dir: pca.vals.txt
+          label: PCA values
+        - name: dists
+          type: data
+          format: tabular
+          from_work_dir: sample.dists.txt
+          label: Sample distances
+      help:
+        format: markdown
+        content: |
+          Condensed port of nf-core/atacseq `bin/deseq2_qc.r` (`--id_col 1`, `--vst TRUE` default) in the source module's
+          DESeq2 mulled biocontainer: size factors, VST (or rlog), PCA on the 500 most variable regions, Euclidean
+          sample-distance heatmap. Condition = library id with the trailing `_REP<n>` removed, as nf-core does. Not
+          ported: per-condition scatter plots, RData/RDS dumps, size-factor tables, MultiQC header files.
+    in:
+      counts: counts_matrix/tabular_output
+      vst: deseq2_vst
+    out:
+      - id: pdf
+      - id: pca
+      - id: dists
+  multiqc:
+    label: multiqc
+    doc: MultiQC report.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+    tool_version: 1.35+galaxy5
+    state:
+      results:
+        - software_cond:
+            software: fastqc
+            output:
+              - type: data
+        - software_cond:
+            software: cutadapt
+        - software_cond:
+            software: samtools
+            output:
+              - type:
+                  type: flagstat
+              - type:
+                  type: stats
+        - software_cond:
+            software: picard
+            output:
+              - type: markdups
+        - software_cond:
+            software: featureCounts
+      title: nf-core/atacseq (Galaxy translation)
+      comment: null
+      flat: false
+      export: false
+      png_plots: false
+    in:
+      results_0|software_cond|output_0|input:
+        - pe_fastqc_raw/text_file
+        - se_fastqc_raw/text_file
+      results_1|software_cond|input:
+        - pe_trim_galore/report_file
+        - se_trim_galore/report_file
+      results_2|software_cond|output_0|type|input: merge_library_flagstat/output
+      results_2|software_cond|output_1|type|input:
+        - pe_filtered_stats/output
+        - se_filtered_stats/output
+      results_3|software_cond|output_0|input: merge_markdup_metrics/output
+      results_4|software_cond|input:
+        - pe_featurecounts/output_summary
+        - se_featurecounts/output_summary
+    out:
+      - id: html_report
+      - id: stats
+  pe_fastqc_flatten:
+    label: pe_fastqc_flatten
+    doc: Flatten list:paired FastQC reports to list so they merge with the SE lane.
+    tool_id: __FLATTEN__
+    tool_version: 1.0.0
+    state:
+      join_identifier: _
+    in:
+      input: pe_fastqc_raw/html_file
+    out:
+      - id: output
+  pe_featurecounts:
+    doc: Count PE library reads per consensus region (fragments, -p --countReadPairs).
+    in:
+      alignment: pe_bam_sync/output_filtered
+      anno|reference_gene_sets: consensus_saf/outfile
+    label: pe_featurecounts
+    out:
+      - id: output_short
+      - id: output_summary
+    state:
+      anno:
+        anno_select: history
+        gff_feature_attribute: gene_id
+        gff_feature_type: peak
+        summarization_level: false
+      extended_parameters:
+        R: false
+        by_read_group: false
+        exon_exon_junction_read_counting_enabled:
+          count_exon_exon_junction_reads: ""
+        frac_overlap: 0.2
+        frac_overlap_feature: 0
+        largest_overlap: false
+        long_reads: false
+        min_overlap: 1
+        multifeatures:
+          fraction: false
+          multifeat: -O
+        read_extension_3p: 0
+        read_extension_5p: 0
+        read_reduction: ""
+      format: tabdel_short
+      include_feature_length_file: false
+      pe_parameters:
+        paired_end_status: PE_fragments
+        check_distance_enabled:
+          P: "false"
+        only_both_ends: false
+        exclude_chimerics: true
+      read_filtering_parameters:
+        ignore_dup: false
+        mapping_quality: 0
+        primary: false
+        splitonly: ""
+      strand_specificity: "0"
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/featurecounts/featurecounts/2.1.1+galaxy3
+    tool_version: 2.1.1+galaxy3
+  se_featurecounts:
+    doc: Count SE library reads per consensus region (single-end reads).
+    in:
+      alignment: se_bam_sync/output_filtered
+      anno|reference_gene_sets: consensus_saf/outfile
+    label: se_featurecounts
+    out:
+      - id: output_short
+      - id: output_summary
+    state:
+      anno:
+        anno_select: history
+        gff_feature_attribute: gene_id
+        gff_feature_type: peak
+        summarization_level: false
+      extended_parameters:
+        R: false
+        by_read_group: false
+        exon_exon_junction_read_counting_enabled:
+          count_exon_exon_junction_reads: ""
+        frac_overlap: 0.2
+        frac_overlap_feature: 0
+        largest_overlap: false
+        long_reads: false
+        min_overlap: 1
+        multifeatures:
+          fraction: false
+          multifeat: -O
+        read_extension_3p: 0
+        read_extension_5p: 0
+        read_reduction: ""
+      format: tabdel_short
+      include_feature_length_file: false
+      pe_parameters:
+        paired_end_status: single_end
+      read_filtering_parameters:
+        ignore_dup: false
+        mapping_quality: 0
+        primary: false
+        splitonly: ""
+      strand_specificity: "0"
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/featurecounts/featurecounts/2.1.1+galaxy3
+    tool_version: 2.1.1+galaxy3
+  merge_counts:
+    label: merge_counts
+    doc: Merge PE and SE per-library count tables.
+    tool_id: __MERGE_COLLECTION__
+    tool_version: 1.0.0
+    state:
+      inputs:
+        - {}
+        - {}
+      advanced:
+        conflict:
+          duplicate_options: keep_first
+    in:
+      inputs_0|input: pe_featurecounts/output_short
+      inputs_1|input: se_featurecounts/output_short
+    out:
+      - id: output
+comments:
+  - type: frame
+    title: Reference preparation
+    color: blue
+    position:
+      - 0
+      - 0
+    size:
+      - 1800
+      - 480
+    contains_steps:
+      - ref_faidx
+      - chrom_sizes
+      - include_regions_bed
+  - type: frame
+    title: Paired-end lane
+    color: green
+    position:
+      - 0
+      - 520
+    size:
+      - 1800
+      - 480
+    contains_steps:
+      - pe_fastqc_raw
+      - pe_trim_galore
+      - pe_bwa_mem
+      - pe_drop_secondary
+      - pe_group_runs
+      - pe_merge_runs
+      - pe_markduplicates
+      - pe_filter_flags
+      - pe_filter_rules
+      - pe_name_sort
+      - pe_remove_orphans
+      - pe_coord_sort
+      - pe_filtered_flagstat
+      - pe_filtered_stats
+      - pe_scale_factor
+      - pe_scale_param
+      - pe_genomecov
+      - pe_sort_bedgraph
+      - pe_bigwig
+      - pe_macs2
+      - pe_drop_empty_peaks
+      - pe_peak_ids
+      - pe_bam_sync
+      - pe_flagstat_sync
+      - pe_frip_count
+      - pe_frip_concat
+      - pe_frip_score
+      - pe_homer_annotate
+      - pe_fastqc_flatten
+  - type: frame
+    title: Single-end lane
+    color: turquoise
+    position:
+      - 0
+      - 1040
+    size:
+      - 1800
+      - 480
+    contains_steps:
+      - se_fastqc_raw
+      - se_trim_galore
+      - se_bwa_mem
+      - se_drop_secondary
+      - se_group_runs
+      - se_merge_runs
+      - se_markduplicates
+      - se_filter_flags
+      - se_filter_rules
+      - se_filtered_flagstat
+      - se_filtered_stats
+      - se_scale_factor
+      - se_scale_param
+      - se_genomecov
+      - se_sort_bedgraph
+      - se_bigwig
+      - se_macs2
+      - se_drop_empty_peaks
+      - se_peak_ids
+      - se_bam_sync
+      - se_flagstat_sync
+      - se_frip_count
+      - se_frip_concat
+      - se_frip_score
+      - se_homer_annotate
+  - type: frame
+    title: Merge lanes
+    color: yellow
+    position:
+      - 0
+      - 1560
+    size:
+      - 1800
+      - 480
+    contains_steps:
+      - merge_fastqc_raw
+      - merge_trimming_reports
+      - merge_library_bam
+      - merge_markdup_metrics
+      - merge_library_flagstat
+      - merge_bigwig
+      - merge_peaks
+      - merge_frip
+      - merge_peaks_annotated
+  - type: frame
+    title: Consensus peaks and counts
+    color: orange
+    position:
+      - 0
+      - 2080
+    size:
+      - 1800
+      - 480
+    contains_steps:
+      - consensus_multiintersect
+      - consensus_rule
+      - consensus_filter
+      - consensus_merge
+      - consensus_bed
+      - consensus_saf
+      - homer_annotate_consensus
+      - counts_matrix
+      - deseq2_qc
+      - multiqc
+      - pe_featurecounts
+      - se_featurecounts
+      - merge_counts

@@ -1,0 +1,3141 @@
+{
+  "schema_version": 1,
+  "tool_id": "trim_galore",
+  "tool_version": "0.6.10+galaxy1",
+  "cache_key": "0de276db1cba94b897244d3b9a60eaeee56633d5e850fa3a22f70a68441cd055",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/bgruening~trim_galore~trim_galore/versions/0.6.10+galaxy1",
+    "cached_at": "2026-11-10T02:22:21.918Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\0de276db1cba94b897244d3b9a60eaeee56633d5e850fa3a22f70a68441cd055.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "trim_galore",
+    "version": "0.6.10+galaxy1",
+    "name": "Trim Galore!",
+    "description": "Quality and adapter trimmer of reads",
+    "inputs": [
+      {
+        "name": "singlePaired",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "sPaired",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Is this library paired- or single-end?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Single-end",
+              "value": "single",
+              "selected": false
+            },
+            {
+              "label": "Paired-end",
+              "value": "paired",
+              "selected": false
+            },
+            {
+              "label": "Paired Collection",
+              "value": "paired_collection",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "single",
+            "parameters": [
+              {
+                "name": "input_singles",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Reads in FASTQ format",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fastqsanger",
+                  "fastqsanger.gz"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "trimming",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "trimming_select",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Adapter sequence to be trimmed",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "Automatic detection",
+                      "value": "",
+                      "selected": false
+                    },
+                    {
+                      "label": "Illumina universal",
+                      "value": "--illumina",
+                      "selected": false
+                    },
+                    {
+                      "label": "Nextera transposase",
+                      "value": "--nextera",
+                      "selected": false
+                    },
+                    {
+                      "label": "Illumina small RNA adapters",
+                      "value": "--small_rna",
+                      "selected": false
+                    },
+                    {
+                      "label": "User defined adapter sequence",
+                      "value": "user",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "",
+                    "parameters": [],
+                    "is_default_when": true
+                  },
+                  {
+                    "discriminator": "--illumina",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "--nextera",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "--small_rna",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "user",
+                    "parameters": [
+                      {
+                        "name": "adapter",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Adapter sequence to be trimmed off",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": true,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": [
+                          {
+                            "type": "regex",
+                            "message": "Adapter sequence must contain DNA characters only (A,C,T,G or N)",
+                            "implicit": false,
+                            "negate": false,
+                            "expression": "^[ACTGNactgn]*$"
+                          }
+                        ]
+                      }
+                    ],
+                    "is_default_when": false
+                  }
+                ]
+              },
+              {
+                "name": "three_prime_clip_R1",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Remove N bp from the 3' end",
+                "help": "Instructs Trim Galore! to remove N bp from the 3' end of read 1 after adapter/quality trimming has been performed.                        This may remove some unwanted bias from the 3' end that is not directly related to adapter sequence or basecall quality.                        (--three_prime_clip_R1)",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": null,
+                "max": null,
+                "validators": []
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "paired",
+            "parameters": [
+              {
+                "name": "input_mate1",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Reads in FASTQ format",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fastqsanger",
+                  "fastqsanger.gz"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "input_mate2",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Reads in FASTQ format",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fastqsanger",
+                  "fastqsanger.gz"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "trimming",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "trimming_select",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Adapter sequence to be trimmed",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "Automatic detection",
+                      "value": "",
+                      "selected": false
+                    },
+                    {
+                      "label": "Illumina universal",
+                      "value": "--illumina",
+                      "selected": false
+                    },
+                    {
+                      "label": "Nextera transposase",
+                      "value": "--nextera",
+                      "selected": false
+                    },
+                    {
+                      "label": "Illumina small RNA adapters",
+                      "value": "--small_rna",
+                      "selected": false
+                    },
+                    {
+                      "label": "User defined adapter sequence",
+                      "value": "user",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "",
+                    "parameters": [],
+                    "is_default_when": true
+                  },
+                  {
+                    "discriminator": "--illumina",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "--nextera",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "--small_rna",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "user",
+                    "parameters": [
+                      {
+                        "name": "adapter",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Adapter sequence to be trimmed off",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": true,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": [
+                          {
+                            "type": "regex",
+                            "message": "Adapter sequence must contain DNA characters only (A,C,T,G or N)",
+                            "implicit": false,
+                            "negate": false,
+                            "expression": "^[ACTGNactgn]*$"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "adapter2",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Adapter sequence to be trimmed off read 2",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": true,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": [
+                          {
+                            "type": "regex",
+                            "message": "Adapter sequence must contain DNA characters only (A,C,T,G or N)",
+                            "implicit": false,
+                            "negate": false,
+                            "expression": "^[ACTGNactgn]*$"
+                          }
+                        ]
+                      }
+                    ],
+                    "is_default_when": false
+                  }
+                ]
+              },
+              {
+                "name": "three_prime_clip_R1",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Remove N bp from the 3' end of read 1",
+                "help": "Instructs Trim Galore! to remove N bp from the 3' end of read 1 after adapter/quality trimming has been performed.                This may remove some unwanted bias from the 3' end that is not directly related to adapter sequence or basecall quality.                (--three_prime_clip_R1)",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "three_prime_clip_R2",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Remove N bp from the 3' end of read 2",
+                "help": "Instructs Trim Galore! to remove N bp from the 3' end of read 2 after                adapter/quality trimming has been performed. This may remove some unwanted bias from                the 3' end that is not directly related to adapter sequence or basecall quality.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": null,
+                "max": null,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "paired_collection",
+            "parameters": [
+              {
+                "name": "input_mate_pairs",
+                "parameter_type": "gx_data_collection",
+                "hidden": false,
+                "label": "Select a paired collection",
+                "help": "See help section for an explanation of dataset collections",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data_collection",
+                "collection_type": "paired",
+                "extensions": [
+                  "fastqsanger",
+                  "fastqsanger.gz"
+                ],
+                "value": null
+              },
+              {
+                "name": "trimming",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "trimming_select",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Adapter sequence to be trimmed",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "Automatic detection",
+                      "value": "",
+                      "selected": false
+                    },
+                    {
+                      "label": "Illumina universal",
+                      "value": "--illumina",
+                      "selected": false
+                    },
+                    {
+                      "label": "Nextera transposase",
+                      "value": "--nextera",
+                      "selected": false
+                    },
+                    {
+                      "label": "Illumina small RNA adapters",
+                      "value": "--small_rna",
+                      "selected": false
+                    },
+                    {
+                      "label": "User defined adapter sequence",
+                      "value": "user",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "",
+                    "parameters": [],
+                    "is_default_when": true
+                  },
+                  {
+                    "discriminator": "--illumina",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "--nextera",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "--small_rna",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "user",
+                    "parameters": [
+                      {
+                        "name": "adapter",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Adapter sequence to be trimmed off",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": true,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": [
+                          {
+                            "type": "regex",
+                            "message": "Adapter sequence must contain DNA characters only (A,C,T,G or N)",
+                            "implicit": false,
+                            "negate": false,
+                            "expression": "^[ACTGNactgn]*$"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "adapter2",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Adapter sequence to be trimmed off read 2",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": true,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": [
+                          {
+                            "type": "regex",
+                            "message": "Adapter sequence must contain DNA characters only (A,C,T,G or N)",
+                            "implicit": false,
+                            "negate": false,
+                            "expression": "^[ACTGNactgn]*$"
+                          }
+                        ]
+                      }
+                    ],
+                    "is_default_when": false
+                  }
+                ]
+              },
+              {
+                "name": "three_prime_clip_R1",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Remove N bp from the 3' end of read 1",
+                "help": "Instructs Trim Galore! to remove N bp from the 3' end of read 1 after adapter/quality trimming has been performed.                This may remove some unwanted bias from the 3' end that is not directly related to adapter sequence or basecall quality.                (--three_prime_clip_R1)",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "three_prime_clip_R2",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Remove N bp from the 3' end of read 2",
+                "help": "Instructs Trim Galore! to remove N bp from the 3' end of read 2 after                adapter/quality trimming has been performed. This may remove some unwanted bias from                the 3' end that is not directly related to adapter sequence or basecall quality.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": null,
+                "max": null,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "params",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "settingsType",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Advanced settings",
+          "help": "You can use the default settings or set custom values for any of Trim Galore!'s parameters.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Use defaults",
+              "value": "default",
+              "selected": false
+            },
+            {
+              "label": "Full parameter list",
+              "value": "custom",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "default",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "custom",
+            "parameters": [
+              {
+                "name": "quality",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Trim low-quality ends from reads in addition to adapter removal (Enter phred quality score threshold)",
+                "help": "For more information please see below.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 20,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "stringency",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Overlap with adapter sequence required to trim a sequence",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 1,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "error_rate",
+                "parameter_type": "gx_float",
+                "hidden": false,
+                "label": "Maximum allowed error rate",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "float",
+                "value": 0.1,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "min_length",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Discard reads that became shorter than length N",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 20,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "clip_R1",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Instructs Trim Galore! to remove N bp from the 5' end of read 1",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": 0,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "clip_R2",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Instructs Trim Galore! to remove N bp from the 5' end of read 2 (Only for paired-end reads)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": 0,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "report",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Generate a report file",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": null,
+                "falsevalue": null
+              },
+              {
+                "name": "retain_unpaired",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "retain_unpaired_select",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "specify if you would like to retain unpaired reads",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "Do not output unpaired reads",
+                      "value": "no_output",
+                      "selected": false
+                    },
+                    {
+                      "label": "Output unpaired reads",
+                      "value": "retain_unpaired_output",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "no_output",
+                    "parameters": [],
+                    "is_default_when": true
+                  },
+                  {
+                    "discriminator": "retain_unpaired_output",
+                    "parameters": [
+                      {
+                        "name": "length_1",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Unpaired single-end read length cutoff needed for read 1 to be written",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 35,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "length_2",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Unpaired single-end read length cutoff needed for read 2 to be written",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 35,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      }
+                    ],
+                    "is_default_when": false
+                  }
+                ]
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "rrbs",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "settingsType",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "RRBS specific settings",
+          "help": "You can use the default settings or set custom values for any of Trim Galore!'s parameters.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Use defaults (no RRBS)",
+              "value": "default",
+              "selected": false
+            },
+            {
+              "label": "Full parameter list",
+              "value": "custom",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "default",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "custom",
+            "parameters": [
+              {
+                "name": "rrbs",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Specifies that the input file was an MspI digested RRBS sample",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": true,
+                "truevalue": "--rrbs",
+                "falsevalue": ""
+              },
+              {
+                "name": "non_directional",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Screen quality-trimmed sequences for 'CAA' or 'CGA' at the start of the read and, if found, removes the first two basepairs",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "--non_directional",
+                "falsevalue": ""
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "trimming",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "settingsType",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Trimming settings",
+          "help": "You can use the default settings or set custom values for any of Trim Galore!'s parameters.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Use defaults",
+              "value": "default",
+              "selected": false
+            },
+            {
+              "label": "Full parameter list",
+              "value": "custom",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "default",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "custom",
+            "parameters": [
+              {
+                "name": "hardtrim5",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Hard-trimm 5' ends",
+                "help": "Instead of performing adapter-/quality trimming, this option will simply hard-trim sequences to N bp at the 5'-end. Once hard-trimming of files is complete, it will exit",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": 1,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "hardtrim3",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Hard-trimm 3' ends",
+                "help": "Instead of performing adapter-/quality trimming, this option will simply hard-trim sequences to N bp at the 3'-end. Once hard-trimming of files is complete, it will exit",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": 1,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "clock",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Mouse epigenetic clock mode",
+                "help": "In this mode, reads are trimmed in a specific way that is currently used for the Mouse Epigenetic Clock",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "--clock",
+                "falsevalue": ""
+              },
+              {
+                "name": "polyA",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Remove polyA tails",
+                "help": "This is a new, still experimental, trimming mode to identify and remove poly-A tails from sequences",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "--polyA",
+                "falsevalue": ""
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "trimmed_reads_paired_collection",
+        "label": "${tool.name} on ${on_string}: paired reads",
+        "hidden": false,
+        "type": "collection",
+        "collection_type": "paired",
+        "collection_type_source": null,
+        "collection_type_from_rules": null,
+        "structured_like": null,
+        "discover_datasets": []
+      },
+      {
+        "name": "trimmed_reads_unpaired_collection",
+        "label": "${tool.name} on ${on_string}: unpaired reads",
+        "hidden": false,
+        "type": "collection",
+        "collection_type": "paired",
+        "collection_type_source": null,
+        "collection_type_from_rules": null,
+        "structured_like": null,
+        "discover_datasets": []
+      },
+      {
+        "name": "hardtrimmed_reads_paired_collection",
+        "label": "${tool.name} on ${on_string}: hard-trimmed paired reads",
+        "hidden": false,
+        "type": "collection",
+        "collection_type": "paired",
+        "collection_type_source": null,
+        "collection_type_from_rules": null,
+        "structured_like": null,
+        "discover_datasets": []
+      },
+      {
+        "name": "mouse_reads_paired_collection",
+        "label": "${tool.name} on ${on_string}: MEC paired reads",
+        "hidden": false,
+        "type": "collection",
+        "collection_type": "paired",
+        "collection_type_source": null,
+        "collection_type_from_rules": null,
+        "structured_like": null,
+        "discover_datasets": []
+      },
+      {
+        "name": "trimmed_reads_single",
+        "label": "${tool.name} on ${on_string}: trimmed reads",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "singlePaired|input_singles",
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "input_1_trimmed.fq",
+        "precreate_directory": false
+      },
+      {
+        "name": "hardtrim_reads_single",
+        "label": "${tool.name} on ${on_string}: hard-trimmed reads",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "singlePaired|input_singles",
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "input_1_hardtrim.fq",
+        "precreate_directory": false
+      },
+      {
+        "name": "trimmed_reads_pair1",
+        "label": "${tool.name} on ${on_string}: trimmed reads pair 1",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "singlePaired|input_mate1",
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "input_1_val_1.fq",
+        "precreate_directory": false
+      },
+      {
+        "name": "trimmed_reads_pair2",
+        "label": "${tool.name} on ${on_string}: trimmed reads pair 2",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "singlePaired|input_mate2",
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "input_2_val_2.fq",
+        "precreate_directory": false
+      },
+      {
+        "name": "unpaired_reads_1",
+        "label": "${tool.name} on ${on_string}: unpaired reads (1)",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "singlePaired|input_mate1",
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "input_1_unpaired_1.fq",
+        "precreate_directory": false
+      },
+      {
+        "name": "unpaired_reads_2",
+        "label": "${tool.name} on ${on_string}: unpaired reads (2)",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "singlePaired|input_mate2",
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "input_2_unpaired_2.fq",
+        "precreate_directory": false
+      },
+      {
+        "name": "hardtrimmed_reads_pair1",
+        "label": "${tool.name} on ${on_string}: hard-trimmed reads pair 1",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "singlePaired|input_mate1",
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "input_1_hardtrim.fq",
+        "precreate_directory": false
+      },
+      {
+        "name": "hardtrimmed_reads_pair2",
+        "label": "${tool.name} on ${on_string}: hard-trimmed reads pair 2",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "singlePaired|input_mate2",
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "input_2_hardtrim.fq",
+        "precreate_directory": false
+      },
+      {
+        "name": "mec_reads_pair1",
+        "label": "${tool.name} on ${on_string}: MEC reads pair 1",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "singlePaired|input_mate1",
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "input_1.clock_UMI.R1.fq",
+        "precreate_directory": false
+      },
+      {
+        "name": "mec_reads_pair2",
+        "label": "${tool.name} on ${on_string}: MEC reads pair 2",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "singlePaired|input_mate2",
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "input_2.clock_UMI.R2.fq",
+        "precreate_directory": false
+      },
+      {
+        "name": "report_file",
+        "label": "${tool.name} on ${on_string}: report file",
+        "hidden": false,
+        "type": "data",
+        "format": "txt",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "bibtex",
+        "content": "@misc{githubTrim_Galore,\n                author = {Krueger, Felix},\n                year = {2021},\n                title = {Trim Galore},\n                publisher = {GitHub},\n                journal = {GitHub repository},\n                url = {https://https://github.com/FelixKrueger/TrimGalore.com/fenderglass/Flye}}"
+      }
+    ],
+    "license": null,
+    "profile": "20.01",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "trim_galore",
+        "type": "bio.tools"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n**What it does**\n\n`Trim Galore!`_ is a wrapper script to automate quality and adapter trimming as well as quality control, with some added functionality to remove biased methylation positions for RRBS sequence files (for directional, non-directional (or paired-end) sequencing). It's main features are:\n\n * For adapter trimming, Trim Galore! uses the first 13 bp of Illumina standard adapters ('AGATCGGAAGAGC') by default (suitable for both ends of paired-end libraries), but accepts other adapter sequence, too\n * For MspI-digested RRBS libraries, Trim Galore! performs quality and adapter trimming in two subsequent steps. This allows it to remove 2 additional bases that contain a cytosine which was artificially introduced in the end-repair step during the library preparation\n * For any kind of FASTQ file other than MspI-digested RRBS, Trim Galore! can perform single-pass adapter and quality trimming\n * The Phred quality of basecalls and the stringency for adapter removal can be specified individually\n * Trim Galore! can remove sequences if they become too short during the trimming process. For paired-end files Trim Galore! removes entire sequence pairs if one (or both) of the two reads became shorter than the set length cutoff. Reads of a read-pair that are longer than a given threshold but for which the partner read has become too short can optionally be written out to single-end files. This ensures that the information of a read pair is not lost entirely if only one read is of good quality\n\nIt is developed by Felix Krueger at the Babraham Institute.\n\n-----\n\n**Main Settings**\n\n* **Adapter sequence to be trimmed**\n\n  * **Automatic detection**\n\n      | Adapter sequence to be trimmed. Trim Galore will try to auto-detect whether the Illumina universal, Nextera transposase or Illumina small RNA adapter sequence was used.\n\n  * **Illumina universal**\n\n      | Adapter sequence to be trimmed is the first 13bp of the Illumina universal adapter 'AGATCGGAAGAGC' instead of the default auto-detection of adapter sequence.\n      |\n      | *option --illumina*\n\n  * **Nextera transposase**\n\n      | Adapter sequence to be trimmed is the first 12bp of the Nextera adapter 'CTGTCTCTTATA' instead of the default auto-detection of adapter sequence.\n      |\n      | *option --nextera*\n\n  * **Illumina small RNA adapters**\n\n      | Adapter sequence to be trimmed is the first 12bp of the Illumina Small RNA 3' Adapter 'TGGAATTCTCGG' instead of the default auto-detection of adapter sequence. Selecting to trim smallRNA adapters will also lower the --length value to 18bp. If the smallRNA libraries are paired-end then -a2 will be set to the Illumina small RNA 5' adapter automatically ('GATCGTCGGACT') unless -a 2 had been defined explicitly.\n      |\n      | *option --small_rna*\n\n  * **User defined adapter trimming**\n\n      | Adapter sequence to be trimmed is the sequence entered by the user instead of the default auto-detection of adapter sequence.\n      |\n      | *option -a*\n\n* **If Single-End Reads**\n\n  * **Remove <int> bp from the 3' end**\n\n      | <int> Instructs Trim Galore to remove <int> bp from the 3' end of read 1 (or single-end reads) AFTER adapter/quality trimming has been performed. This may remove some unwanted bias from the 3' end that is not directly related to adapter sequence or basecall quality. Default: OFF.\n      |\n      | *option --three_prime_clip_R1*\n\n* **If Paired-End Reads**\n\n  * **Remove <int> bp from the 3' end of read 1**\n\n      | <int> Instructs Trim Galore to remove <int> bp from the 3' end of read 1 (or single-end reads) AFTER adapter/quality trimming has been performed. This may remove some unwanted bias from the 3' end that is not directly related to adapter sequence or basecall quality. Default: OFF.\n      |\n      | The option \"Trims 1 bp off every read from its 3' end\" (the trim1 flag) was removed from Trim Galore in v0.6.8. Setting this option and the equivalent option for read 2 to 1 achieves the same result.\n\n  * **Remove <int> bp from the 3' end of read 2**\n\n      | <int> Instructs Trim Galore to remove <int> bp from the 3' end of read 2 AFTER adapter/quality trimming has been performed. This may remove some unwanted bias from the 3' end that is not directly related to adapter sequence or basecall quality. Default: OFF.\n      |\n      | *option --three_prime_clip_R2*\n\n-----\n\n**Advanced Settings**\n\n* **Trim low-quality ends from reads in addition to adapter removal**\n\n    | For RRBS samples, quality trimming will be performed first, and adapter trimming is carried in a second round. Other files are quality and adapter trimmed in a single pass. The algorithm is the same as the one used by BWA (Subtract <INT> from all qualities; compute partial sums from all indices to the end of the sequence; cut sequence at the index at which the sum is minimal). Default Phred score: 20.\n    |\n    | *option -q*\n\n* **Overlap with adapter sequence required to trim a sequence**\n\n    | Defaults to a very stringent setting of '1', i.e. even a single bp of overlapping sequence will be trimmed of the 3' end of any read.\n    |\n    | *option -s*\n\n* **Maximum allowed error rate**\n\n    | (no. of errors divided by the length of the matching region) (default: 0.1).\n    |\n    | *option -e*\n\n* **Discard reads that became shorter than length <INT>**\n\n    | because of either quality or adapter trimming. A value of '0' effectively disables this behaviour. Default: 20 bp.\n    |\n    | For paired-end files, both reads of a read-pair need to be longer than <INT> bp to be printed out to validated paired-end files (see option --paired). If only one read became too short there is the possibility of keeping such unpaired single-end reads (see --retain_unpaired). Default pair-cutoff: 20 bp.\n    |\n    | *option --length*\n\n* **Instructs Trim Galore! to remove INT bp from the 5' end of read 1**\n\n    | Instructs Trim Galore to remove <INT> bp from the 5' end of read 1 (or single-end reads). This may be useful if the qualities were very poor, or if there is some sort of unwanted bias at the 5' end. Default: OFF.\n    |\n    | *option --clip_R1*\n\n* **Instructs Trim Galore! to remove INT bp from the 5' end of read 2**\n\n    | Instructs Trim Galore to remove <int> bp from the 5' end of read 2 (paired-end reads only). This may be useful if the qualities were very poor, or if there is some sort of unwanted bias at the 5' end. For paired-end BS-Seq, it is recommended to remove the first few bp because the end-repair reaction may introduce a bias towards low methylation. Please refer to the M-bias plot section in the Bismark User Guide for some examples. Default: OFF.\n    |\n    | *option --clip_R2*\n\n* **Specify if you would like to retain unpaired reads**\n\n    | If only one of the two paired-end reads became too short, the longer read will be written to either '.unpaired_1.fq' or '.unpaired_2.fq' output files. The length cutoff for unpaired single-end reads is governed by the parameters -r1/--length_1 and -r2/--length_2. Default: OFF.\n    |\n    | *option --retained_unpaired*\n\n-----\n\n**RRBS specific settings**\n\n* **Specifies that the input file was an MspI digested RRBS sample (recognition site: CCGG)**\n\n    | Sequences which were adapter-trimmed will have a further 2 bp removed from their 3' end. This is to avoid that the filled-in C close to the second MspI site in a sequence is used for methylation calls. Sequences which were merely trimmed because of poor quality will not be shortened further.\n    |\n    | *option -rrbs*\n\n* **Screen quality-trimmed sequences for 'CAA' or 'CGA' at the start of the read and, if found, removes the first two basepairs**\n\n    | Selecting this option for non-directional RRBS libraries will screen quality-trimmed sequences for 'CAA' or 'CGA' at the start of the read and, if found, removes the first two basepairs. Like with the option '--rrbs' this avoids using cytosine positions that were filled-in during the end-repair step. '--non_directional' requires '--rrbs' to be specified as well.\n    |\n    | *option --non_directional*\n\n----\n\n**Trim specific seetings**\n\n* **Hard-trimming mode**\n\n    | Instead of performing adapter-/quality trimming, this option will simply hard-trim sequences to N bp at the 5' or 3' -end.\n    |\n    | *options -hardtrim5 and -hardtrim3*\n\n* **Mouse Epigenetic Clock mode**\n\n    | In this mode, reads are trimmed in a specific way that is currently used for the Mouse Epigenetic Clock (see here: `Multi-tissue DNA methylation age predictor in mouse`_). Following this, Trim Galore will exit.\n    |\n    | In it's current implementation, the dual-UMI RRBS reads come in the following format:\n    |\n    | Read 1  5' UUUUUUUU CAGTA FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF TACTG UUUUUUUU 3'\n    | Read 2  3' UUUUUUUU GTCAT FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ATGAC UUUUUUUU 5'\n    |\n    | Where UUUUUUUU is a random 8-mer unique molecular identifier (UMI), CAGTA is a constant region, and FFFFFFF... is the actual RRBS-Fragment to be sequenced. The UMIs for Read 1 (R1) and Read 2 (R2), as well as the fixed sequences (F1 or F2), are written into the read ID and removed from the actual sequence.\n    |\n    | *option --clock*\n\n* **PolyA mode**\n\n    | This is a new, still experimental, trimming mode to identify and remove poly-A tails from sequences. When selected, Trim Galore attempts to identify from the first supplied sample whether sequences contain more often a stretch of either 'AAAAAAAAAA' or 'TTTTTTTTTT'. This determines if Read 1 of a paired-end end file, or single-end files, are trimmed for PolyA or PolyT. In case of paired-end sequencing, Read2 is trimmed for the complementary base from the start of the reads.\n    |\n    | PLEASE NOTE: The poly-A trimming mode expects that sequences were both adapter and quality trimmed before looking for Poly-A tails, and it is the user's responsibility to carry out an initial round of trimming.\n    |\n    | *option --polyA*\n\n* **Amplicon mode**\n\n    | This is a special mode of operation for paired-end data, such as required for the IMPLICON method, where a UMI sequence is getting transferred from the start of Read 2 to the readID of both reads. Following this, Trim Galore will exit.\n    |\n    | In it's current implementation, the UMI carrying reads come in the following format:\n    |\n    | Read 1  5' FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF 3'\n    | Read 2  3' UUUUUUUUFFFFFFFFFFFFFFFFFFFFFFFFFFFF 5'\n    |\n    | Where UUUUUUUU is a random 8-mer unique molecular identifier (UMI) and FFFFFFF... is the actual fragment to be sequenced.\n    |\n    | *option --amplicon*\n\n.. _Trim Galore!: https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/\n.. _Multi-tissue DNA methylation age predictor in mouse: https://genomebiology.biomedcentral.com/articles/10.1186/s13059-017-1203-5\n\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "singlePaired": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "sPaired": {
+                  "type": "string",
+                  "enum": [
+                    "single"
+                  ]
+                },
+                "input_singles": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "trimming": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            ""
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "trimming_select"
+                      ],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            "--illumina"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "trimming_select"
+                      ],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            "--nextera"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "trimming_select"
+                      ],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            "--small_rna"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "trimming_select"
+                      ],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            "user"
+                          ]
+                        },
+                        "adapter": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "(^$|^[ACTGNactgn]*$)"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "three_prime_clip_R1": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "sPaired"
+              ],
+              "properties": {
+                "sPaired": {
+                  "type": "string",
+                  "enum": [
+                    "paired"
+                  ]
+                },
+                "input_mate1": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "input_mate2": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "trimming": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            ""
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "trimming_select"
+                      ],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            "--illumina"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "trimming_select"
+                      ],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            "--nextera"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "trimming_select"
+                      ],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            "--small_rna"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "trimming_select"
+                      ],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            "user"
+                          ]
+                        },
+                        "adapter": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "(^$|^[ACTGNactgn]*$)"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "adapter2": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "(^$|^[ACTGNactgn]*$)"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "three_prime_clip_R1": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "three_prime_clip_R2": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "sPaired"
+              ],
+              "properties": {
+                "sPaired": {
+                  "type": "string",
+                  "enum": [
+                    "paired_collection"
+                  ]
+                },
+                "input_mate_pairs": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "trimming": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            ""
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "trimming_select"
+                      ],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            "--illumina"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "trimming_select"
+                      ],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            "--nextera"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "trimming_select"
+                      ],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            "--small_rna"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "trimming_select"
+                      ],
+                      "properties": {
+                        "trimming_select": {
+                          "type": "string",
+                          "enum": [
+                            "user"
+                          ]
+                        },
+                        "adapter": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "(^$|^[ACTGNactgn]*$)"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "adapter2": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "(^$|^[ACTGNactgn]*$)"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "three_prime_clip_R1": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "three_prime_clip_R2": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "params": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "settingsType": {
+                  "type": "string",
+                  "enum": [
+                    "default"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "settingsType"
+              ],
+              "properties": {
+                "settingsType": {
+                  "type": "string",
+                  "enum": [
+                    "custom"
+                  ]
+                },
+                "quality": {
+                  "$ref": "#/$defs/Int"
+                },
+                "stringency": {
+                  "$ref": "#/$defs/Int"
+                },
+                "error_rate": {
+                  "type": "number",
+                  "description": "a finite number",
+                  "title": "finite"
+                },
+                "min_length": {
+                  "$ref": "#/$defs/Int"
+                },
+                "clip_R1": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "clip_R2": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "report": {
+                  "type": "boolean"
+                },
+                "retain_unpaired": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "retain_unpaired_select": {
+                          "type": "string",
+                          "enum": [
+                            "no_output"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "retain_unpaired_select"
+                      ],
+                      "properties": {
+                        "retain_unpaired_select": {
+                          "type": "string",
+                          "enum": [
+                            "retain_unpaired_output"
+                          ]
+                        },
+                        "length_1": {
+                          "$ref": "#/$defs/Int"
+                        },
+                        "length_2": {
+                          "$ref": "#/$defs/Int"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "rrbs": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "settingsType": {
+                  "type": "string",
+                  "enum": [
+                    "default"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "settingsType"
+              ],
+              "properties": {
+                "settingsType": {
+                  "type": "string",
+                  "enum": [
+                    "custom"
+                  ]
+                },
+                "rrbs": {
+                  "type": "boolean"
+                },
+                "non_directional": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "trimming": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "settingsType": {
+                  "type": "string",
+                  "enum": [
+                    "default"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "settingsType"
+              ],
+              "properties": {
+                "settingsType": {
+                  "type": "string",
+                  "enum": [
+                    "custom"
+                  ]
+                },
+                "hardtrim5": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number greater than or equal to 1",
+                      "title": "greaterThanOrEqualTo(1)",
+                      "minimum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "hardtrim3": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number greater than or equal to 1",
+                      "title": "greaterThanOrEqualTo(1)",
+                      "minimum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "clock": {
+                  "type": "boolean"
+                },
+                "polyA": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "singlePaired": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "input_singles"
+                  ],
+                  "properties": {
+                    "sPaired": {
+                      "type": "string",
+                      "enum": [
+                        "single"
+                      ]
+                    },
+                    "input_singles": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "trimming": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    ""
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "trimming_select"
+                              ],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "--illumina"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "trimming_select"
+                              ],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "--nextera"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "trimming_select"
+                              ],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "--small_rna"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "trimming_select"
+                              ],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "user"
+                                  ]
+                                },
+                                "adapter": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "(^$|^[ACTGNactgn]*$)"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "three_prime_clip_R1": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "sPaired",
+                    "input_mate1",
+                    "input_mate2"
+                  ],
+                  "properties": {
+                    "sPaired": {
+                      "type": "string",
+                      "enum": [
+                        "paired"
+                      ]
+                    },
+                    "input_mate1": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "input_mate2": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "trimming": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    ""
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "trimming_select"
+                              ],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "--illumina"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "trimming_select"
+                              ],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "--nextera"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "trimming_select"
+                              ],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "--small_rna"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "trimming_select"
+                              ],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "user"
+                                  ]
+                                },
+                                "adapter": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "(^$|^[ACTGNactgn]*$)"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "adapter2": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "(^$|^[ACTGNactgn]*$)"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "three_prime_clip_R1": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "three_prime_clip_R2": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "sPaired",
+                    "input_mate_pairs"
+                  ],
+                  "properties": {
+                    "sPaired": {
+                      "type": "string",
+                      "enum": [
+                        "paired_collection"
+                      ]
+                    },
+                    "input_mate_pairs": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "trimming": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    ""
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "trimming_select"
+                              ],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "--illumina"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "trimming_select"
+                              ],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "--nextera"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "trimming_select"
+                              ],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "--small_rna"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "trimming_select"
+                              ],
+                              "properties": {
+                                "trimming_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "user"
+                                  ]
+                                },
+                                "adapter": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "(^$|^[ACTGNactgn]*$)"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "adapter2": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "(^$|^[ACTGNactgn]*$)"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "three_prime_clip_R1": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "three_prime_clip_R2": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "params": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "settingsType": {
+                      "type": "string",
+                      "enum": [
+                        "default"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "settingsType"
+                  ],
+                  "properties": {
+                    "settingsType": {
+                      "type": "string",
+                      "enum": [
+                        "custom"
+                      ]
+                    },
+                    "quality": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "stringency": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "error_rate": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a finite number",
+                          "title": "finite"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "min_length": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "clip_R1": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int",
+                              "description": "a non-negative number",
+                              "title": "greaterThanOrEqualTo(0)",
+                              "minimum": 0
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "clip_R2": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int",
+                              "description": "a non-negative number",
+                              "title": "greaterThanOrEqualTo(0)",
+                              "minimum": 0
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "report": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "retain_unpaired": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "retain_unpaired_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "no_output"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "retain_unpaired_select"
+                              ],
+                              "properties": {
+                                "retain_unpaired_select": {
+                                  "type": "string",
+                                  "enum": [
+                                    "retain_unpaired_output"
+                                  ]
+                                },
+                                "length_1": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "length_2": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "rrbs": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "settingsType": {
+                      "type": "string",
+                      "enum": [
+                        "default"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "settingsType"
+                  ],
+                  "properties": {
+                    "settingsType": {
+                      "type": "string",
+                      "enum": [
+                        "custom"
+                      ]
+                    },
+                    "rrbs": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "non_directional": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "trimming": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "settingsType": {
+                      "type": "string",
+                      "enum": [
+                        "default"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "settingsType"
+                  ],
+                  "properties": {
+                    "settingsType": {
+                      "type": "string",
+                      "enum": [
+                        "custom"
+                      ]
+                    },
+                    "hardtrim5": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int",
+                              "description": "a number greater than or equal to 1",
+                              "title": "greaterThanOrEqualTo(1)",
+                              "minimum": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "hardtrim3": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int",
+                              "description": "a number greater than or equal to 1",
+                              "title": "greaterThanOrEqualTo(1)",
+                              "minimum": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "clock": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "polyA": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

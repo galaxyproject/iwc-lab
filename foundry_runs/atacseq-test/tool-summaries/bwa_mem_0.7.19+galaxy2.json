@@ -1,0 +1,4989 @@
+{
+  "schema_version": 1,
+  "tool_id": "bwa_mem",
+  "tool_version": "0.7.19+galaxy2",
+  "cache_key": "6e0125054034f6dca260e157a714651343e91be63c6508cb5dd8b02683f60f59",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/devteam~bwa~bwa_mem/versions/0.7.19+galaxy2",
+    "cached_at": "2026-11-12T04:36:52.657Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\6e0125054034f6dca260e157a714651343e91be63c6508cb5dd8b02683f60f59.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "bwa_mem",
+    "version": "0.7.19+galaxy2",
+    "name": "Map with BWA-MEM",
+    "description": "- map medium and long reads (> 100 bp) against reference genome",
+    "inputs": [
+      {
+        "name": "reference_source",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "reference_source_selector",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Will you select a reference genome from your history or use a built-in index?",
+          "help": "Built-ins were indexed using default options. See `Indexes` section of help below",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Use a built-in genome index",
+              "value": "cached",
+              "selected": false
+            },
+            {
+              "label": "Use a genome from history and build index",
+              "value": "history",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "cached",
+            "parameters": [
+              {
+                "name": "ref_file",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Using reference genome",
+                "help": "Select genome from the list",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": null,
+                "multiple": false,
+                "validators": [
+                  {
+                    "type": "no_options",
+                    "message": "A built-in reference genome is not available for the build associated with the selected input file",
+                    "implicit": false,
+                    "negate": false
+                  }
+                ]
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "history",
+            "parameters": [
+              {
+                "name": "ref_file",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Use the following dataset as the reference sequence",
+                "help": "You can upload a FASTA sequence (optionally gzip-compressed) to the history and use it as reference",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fasta",
+                  "fasta.gz"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "index_a",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Algorithm for constructing the BWT index",
+                "help": "(-a)",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Auto. Let BWA decide the best algorithm to use",
+                    "value": "auto",
+                    "selected": false
+                  },
+                  {
+                    "label": "IS linear-time algorithm for constructing suffix array. It requires 5.37N memory where N is the size of the database. IS is moderately fast, but does not work with database larger than 2GB",
+                    "value": "is",
+                    "selected": false
+                  },
+                  {
+                    "label": "BWT-SW algorithm. This method works also with big genomes",
+                    "value": "bwtsw",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "fastq_input",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "fastq_input_selector",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Single or Paired-end reads",
+          "help": "Select between paired and single end data",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Paired",
+              "value": "paired",
+              "selected": false
+            },
+            {
+              "label": "Single",
+              "value": "single",
+              "selected": false
+            },
+            {
+              "label": "Paired Collection",
+              "value": "paired_collection",
+              "selected": false
+            },
+            {
+              "label": "Paired Interleaved",
+              "value": "paired_iv",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "paired",
+            "parameters": [
+              {
+                "name": "fastq_input1",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Select first set of reads",
+                "help": "Specify dataset with forward reads",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fastqsanger",
+                  "fastqsanger.gz",
+                  "fasta"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "fastq_input2",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Select second set of reads",
+                "help": "Specify dataset with reverse reads",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fastqsanger",
+                  "fastqsanger.gz",
+                  "fasta"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "iset_stats",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Enter mean, standard deviation, max, and min for insert lengths.",
+                "help": "-I; This parameter is only used for paired reads. Only mean is required while sd, max, and min will be inferred. Examples: both \"250\" and \"250,25\" will work while \"250,,10\" will not. See below for details.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "single",
+            "parameters": [
+              {
+                "name": "fastq_input1",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Select fastq dataset",
+                "help": "Specify dataset with single reads",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fastqsanger",
+                  "fastqsanger.gz",
+                  "fasta"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "paired_collection",
+            "parameters": [
+              {
+                "name": "fastq_input1",
+                "parameter_type": "gx_data_collection",
+                "hidden": false,
+                "label": "Select a paired collection",
+                "help": "See help section for an explanation of dataset collections",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data_collection",
+                "collection_type": "paired",
+                "extensions": [
+                  "fastqsanger",
+                  "fastqsanger.gz",
+                  "fasta"
+                ],
+                "value": null
+              },
+              {
+                "name": "iset_stats",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Enter mean, standard deviation, max, and min for insert lengths.",
+                "help": "-I; This parameter is only used for paired reads. Only mean is required while sd, max, and min will be inferred. Examples: both \"250\" and \"250,25\" will work while \"250,,10\" will not. See below for details.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "paired_iv",
+            "parameters": [
+              {
+                "name": "fastq_input1",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Select fastq dataset",
+                "help": "Specify dataset with interleaved reads",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fastqsanger",
+                  "fastqsanger.gz",
+                  "fasta"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "iset_stats",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Enter mean, standard deviation, max, and min for insert lengths.",
+                "help": "-I; This parameter is only used for paired reads. Only mean is required while sd, max, and min will be inferred. Examples: both \"250\" and \"250,25\" will work while \"250,,10\" will not. See below for details.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "rg",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "rg_selector",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Set read groups information?",
+          "help": "Specifying read group information can greatly simplify your downstream analyses by allowing combining multiple datasets.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Set read groups (SAM/BAM specification)",
+              "value": "set",
+              "selected": false
+            },
+            {
+              "label": "Set read groups (Picard style)",
+              "value": "set_picard",
+              "selected": false
+            },
+            {
+              "label": "Automatically assign ID",
+              "value": "set_id_auto",
+              "selected": false
+            },
+            {
+              "label": "Do not set",
+              "value": "do_not_set",
+              "selected": true
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "set_picard",
+            "parameters": [
+              {
+                "name": "read_group_id_conditional",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "do_auto_name",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Auto-assign",
+                  "help": "Use dataset name or collection information to automatically assign this value",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "No",
+                      "value": "false",
+                      "selected": true
+                    },
+                    {
+                      "label": "Yes",
+                      "value": "true",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "true",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "false",
+                    "parameters": [
+                      {
+                        "name": "ID",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Read group identifier (ID)",
+                        "help": "This value must be unique among multiple samples in your experiment",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": [
+                          {
+                            "type": "empty_field",
+                            "message": "Field requires a value",
+                            "implicit": false,
+                            "negate": false
+                          }
+                        ]
+                      }
+                    ],
+                    "is_default_when": true
+                  }
+                ]
+              },
+              {
+                "name": "read_group_sm_conditional",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "do_auto_name",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Auto-assign",
+                  "help": "Use dataset name or collection information to automatically assign this value",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "No",
+                      "value": "false",
+                      "selected": true
+                    },
+                    {
+                      "label": "Yes",
+                      "value": "true",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "true",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "false",
+                    "parameters": [
+                      {
+                        "name": "SM",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Read group sample name (SM)",
+                        "help": "This value should be descriptive. Use pool name where a pool is being sequenced",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": true,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": []
+                      }
+                    ],
+                    "is_default_when": true
+                  }
+                ]
+              },
+              {
+                "name": "read_group_lb_conditional",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "do_auto_name",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Auto-assign",
+                  "help": "Use dataset name or collection information to automatically assign this value",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "No",
+                      "value": "false",
+                      "selected": true
+                    },
+                    {
+                      "label": "Yes",
+                      "value": "true",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "true",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "false",
+                    "parameters": [
+                      {
+                        "name": "LB",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Library name (LB)",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": [
+                          {
+                            "type": "empty_field",
+                            "message": "Field requires a value",
+                            "implicit": false,
+                            "negate": false
+                          }
+                        ]
+                      }
+                    ],
+                    "is_default_when": true
+                  }
+                ]
+              },
+              {
+                "name": "PL",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Platform/technology used to produce the reads (PL)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "CAPILLARY",
+                    "value": "CAPILLARY",
+                    "selected": false
+                  },
+                  {
+                    "label": "LS454",
+                    "value": "LS454",
+                    "selected": false
+                  },
+                  {
+                    "label": "ILLUMINA",
+                    "value": "ILLUMINA",
+                    "selected": true
+                  },
+                  {
+                    "label": "SOLID",
+                    "value": "SOLID",
+                    "selected": false
+                  },
+                  {
+                    "label": "HELICOS",
+                    "value": "HELICOS",
+                    "selected": false
+                  },
+                  {
+                    "label": "IONTORRENT",
+                    "value": "IONTORRENT",
+                    "selected": false
+                  },
+                  {
+                    "label": "PACBIO",
+                    "value": "PACBIO",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              {
+                "name": "PU",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Platform unit (PU)",
+                "help": "Unique identifier (e.g. flowcell-barcode.lane for Illumina or slide for SOLiD)",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "CN",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Sequencing center that produced the read (CN)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "DS",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Description (DS)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "PI",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Predicted median insert size (PI)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "DT",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Date that run was produced (DT)",
+                "help": "ISO8601 format date or date/time, like YYYY-MM-DD",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "set",
+            "parameters": [
+              {
+                "name": "read_group_id_conditional",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "do_auto_name",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Auto-assign",
+                  "help": "Use dataset name or collection information to automatically assign this value",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "No",
+                      "value": "false",
+                      "selected": true
+                    },
+                    {
+                      "label": "Yes",
+                      "value": "true",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "true",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "false",
+                    "parameters": [
+                      {
+                        "name": "ID",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Read group identifier (ID)",
+                        "help": "This value must be unique among multiple samples in your experiment",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": [
+                          {
+                            "type": "empty_field",
+                            "message": "Field requires a value",
+                            "implicit": false,
+                            "negate": false
+                          }
+                        ]
+                      }
+                    ],
+                    "is_default_when": true
+                  }
+                ]
+              },
+              {
+                "name": "read_group_sm_conditional",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "do_auto_name",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Auto-assign",
+                  "help": "Use dataset name or collection information to automatically assign this value",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "No",
+                      "value": "false",
+                      "selected": true
+                    },
+                    {
+                      "label": "Yes",
+                      "value": "true",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "true",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "false",
+                    "parameters": [
+                      {
+                        "name": "SM",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Read group sample name (SM)",
+                        "help": "This value should be descriptive. Use pool name where a pool is being sequenced",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": true,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": []
+                      }
+                    ],
+                    "is_default_when": true
+                  }
+                ]
+              },
+              {
+                "name": "PL",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Platform/technology used to produce the reads (PL)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "CAPILLARY",
+                    "value": "CAPILLARY",
+                    "selected": false
+                  },
+                  {
+                    "label": "LS454",
+                    "value": "LS454",
+                    "selected": false
+                  },
+                  {
+                    "label": "ILLUMINA",
+                    "value": "ILLUMINA",
+                    "selected": true
+                  },
+                  {
+                    "label": "SOLID",
+                    "value": "SOLID",
+                    "selected": false
+                  },
+                  {
+                    "label": "HELICOS",
+                    "value": "HELICOS",
+                    "selected": false
+                  },
+                  {
+                    "label": "IONTORRENT",
+                    "value": "IONTORRENT",
+                    "selected": false
+                  },
+                  {
+                    "label": "PACBIO",
+                    "value": "PACBIO",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              {
+                "name": "read_group_lb_conditional",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "do_auto_name",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Auto-assign",
+                  "help": "Use dataset name or collection information to automatically assign this value",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "No",
+                      "value": "false",
+                      "selected": true
+                    },
+                    {
+                      "label": "Yes",
+                      "value": "true",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "true",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "false",
+                    "parameters": [
+                      {
+                        "name": "LB",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Library name (LB)",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": true,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": []
+                      }
+                    ],
+                    "is_default_when": true
+                  }
+                ]
+              },
+              {
+                "name": "CN",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Sequencing center that produced the read (CN)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "DS",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Description (DS)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "DT",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Date that run was produced (DT)",
+                "help": "ISO8601 format date or date/time, like YYYY-MM-DD",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "FO",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Flow order (FO)",
+                "help": "The array of nucleotide bases that correspond to the nucleotides used for each flow of each read. Multi-base flows are encoded in IUPAC format, and non-nucleotide flows by various other characters. Format: /\\*|[ACMGRSVTWYHKDBN]+/",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": [
+                  {
+                    "type": "regex",
+                    "message": "Invalid flow order",
+                    "implicit": false,
+                    "negate": false,
+                    "expression": "\\*|[ACMGRSVTWYHKDBN]+$"
+                  }
+                ]
+              },
+              {
+                "name": "KS",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "The array of nucleotide bases that correspond to the key sequence of each read (KS)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "PG",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Programs used for processing the read group (PG)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "PI",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Predicted median insert size (PI)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "PU",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Platform unit (PU)",
+                "help": "Unique identifier (e.g. flowcell-barcode.lane for Illumina or slide for SOLiD)",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "set_id_auto",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "do_not_set",
+            "parameters": [],
+            "is_default_when": true
+          }
+        ]
+      },
+      {
+        "name": "analysis_type",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "analysis_type_selector",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Select analysis mode",
+          "help": "Please note that minimap2 is recommended over BWA as the aligner for long-read or contig data, for which it outperforms BWA in speed and typically in accuracy (see tool help below).",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "1.Simple Illumina mode",
+              "value": "illumina",
+              "selected": false
+            },
+            {
+              "label": "2.PacBio mode (-x pacbio)",
+              "value": "pacbio",
+              "selected": false
+            },
+            {
+              "label": "3.Nanopore 2D-reads mode (-x ont2d)",
+              "value": "ont2d",
+              "selected": false
+            },
+            {
+              "label": "4.Intra-species contigs mode (-x intractg)",
+              "value": "intractg",
+              "selected": false
+            },
+            {
+              "label": "5.Full list of options",
+              "value": "full",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "illumina",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "pacbio",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "ont2d",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "intractg",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "full",
+            "parameters": [
+              {
+                "name": "algorithmic_options",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "algorithmic_options_selector",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Set algorithmic options?",
+                  "help": "Sets -k, -w, -d, -r, -y, -c, -D, -W, -m, -S, -P, and -e options.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "Set",
+                      "value": "set",
+                      "selected": false
+                    },
+                    {
+                      "label": "Do not set",
+                      "value": "do_not_set",
+                      "selected": true
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "set",
+                    "parameters": [
+                      {
+                        "name": "k",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Minimum seed length",
+                        "help": "-k; default=19",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 19,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "w",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Band width for banded alignment",
+                        "help": "-w; default=100",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 100,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "d",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Off-diagonal X-dropoff",
+                        "help": "-d; default=100",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 100,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "r",
+                        "parameter_type": "gx_float",
+                        "hidden": false,
+                        "label": "Look for internal seeds inside a seed longer than -k * THIS VALUE",
+                        "help": "-r; default=1.5; This is a key heuristic parameter for tuning the performance. Larger value yields fewer seeds, which leads to faster alignment speed but lower accuracy",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "float",
+                        "value": 1.5,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "y",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Seed occurrence for the 3rd round seeding",
+                        "help": "-y; default=20",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 20,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "c",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Skip seeds with more than that many occurrences",
+                        "help": "-c; default=500",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 500,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "D",
+                        "parameter_type": "gx_float",
+                        "hidden": false,
+                        "label": "Drop chains shorter than this fraction of the longest overlapping chain",
+                        "help": "-D; default=0.5",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "float",
+                        "value": 0.5,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "W",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Discard a chain if seeded bases shorter than THIS VALUE",
+                        "help": "-W; default=0",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 0,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "m",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Perform at most this many rounds of mate rescues for each read",
+                        "help": "-m; default=50",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 50,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "S",
+                        "parameter_type": "gx_boolean",
+                        "hidden": false,
+                        "label": "Skip mate rescue",
+                        "help": "-S",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "boolean",
+                        "value": false,
+                        "truevalue": "-S",
+                        "falsevalue": ""
+                      },
+                      {
+                        "name": "P",
+                        "parameter_type": "gx_boolean",
+                        "hidden": false,
+                        "label": "Skip pairing; mate rescue performed unless -S also in use",
+                        "help": "-P",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "boolean",
+                        "value": false,
+                        "truevalue": "-P",
+                        "falsevalue": ""
+                      },
+                      {
+                        "name": "e",
+                        "parameter_type": "gx_boolean",
+                        "hidden": false,
+                        "label": "Discard full-length exact matches",
+                        "help": "-e",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "boolean",
+                        "value": false,
+                        "truevalue": "-e",
+                        "falsevalue": ""
+                      }
+                    ],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "do_not_set",
+                    "parameters": [],
+                    "is_default_when": true
+                  }
+                ]
+              },
+              {
+                "name": "scoring_options",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "scoring_options_selector",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Set scoring options?",
+                  "help": "Sets -A, -B, -O, -E, -L, and -U options.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "Set",
+                      "value": "set",
+                      "selected": false
+                    },
+                    {
+                      "label": "Do not set",
+                      "value": "do_not_set",
+                      "selected": true
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "set",
+                    "parameters": [
+                      {
+                        "name": "A",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Score for a sequence match",
+                        "help": "-A; scales options -T, -d, -B, -O, -E, -L, and -U unless overridden; default=1",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 1,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "B",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Penalty for a mismatch",
+                        "help": "-B; default=4",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 4,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "O",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Gap open penalties for deletions and insertions",
+                        "help": "-O; default=6,6",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": true,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": []
+                      },
+                      {
+                        "name": "E",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Gap extension penalties; a gap of size k cost '-O + -E*k'. If two numbers are specified, the first is the penalty of extending a deletion and the second for extending an insertion",
+                        "help": "-E; default=1,1",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": true,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": []
+                      },
+                      {
+                        "name": "L",
+                        "parameter_type": "gx_text",
+                        "hidden": false,
+                        "label": "Penalties for 5'-end and 3'-end clipping",
+                        "help": "-L; default=5,5; When performing Smith-Waterman extension, BWA-MEM keeps track of the best score reaching the end of query. If this score is larger than the best Smith-Waterman score minus the clipping penalty, clipping will not be applied. Note that in this case, the SAM AS tag reports the best Smith-Waterman score; clipping penalty is not deduced",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": true,
+                        "type": "text",
+                        "area": false,
+                        "value": null,
+                        "default_options": [],
+                        "validators": []
+                      },
+                      {
+                        "name": "U",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Penalty for an unpaired read pair",
+                        "help": "-U; default=17",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 17,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      }
+                    ],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "do_not_set",
+                    "parameters": [],
+                    "is_default_when": true
+                  }
+                ]
+              },
+              {
+                "name": "io_options",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "io_options_selector",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Set input/output options",
+                  "help": "Sets -T, -h, -a, -C, -V, -Y, and -M options.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "Set",
+                      "value": "set",
+                      "selected": false
+                    },
+                    {
+                      "label": "Do not set",
+                      "value": "do_not_set",
+                      "selected": true
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "set",
+                    "parameters": [
+                      {
+                        "name": "five",
+                        "parameter_type": "gx_boolean",
+                        "hidden": false,
+                        "label": "For split alignment, take alignment with smallest coordinate as primary",
+                        "help": "Useful for HiC data",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "boolean",
+                        "value": false,
+                        "truevalue": "-5",
+                        "falsevalue": ""
+                      },
+                      {
+                        "name": "q",
+                        "parameter_type": "gx_boolean",
+                        "hidden": false,
+                        "label": "Don't lower MAPQ for split alignment",
+                        "help": "By default the MAPQ score of a supplementary alignment will be lowered to the primary alignment score.",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "boolean",
+                        "value": false,
+                        "truevalue": "-q",
+                        "falsevalue": ""
+                      },
+                      {
+                        "name": "T",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Minimum score to output",
+                        "help": "-T; default=30",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 30,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "h",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "If there are less than THIS VALUE hits with score >80% of the max score, output them all in the XA tag",
+                        "help": "-h; default=5",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 5,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "a",
+                        "parameter_type": "gx_boolean",
+                        "hidden": false,
+                        "label": "Output all alignments for single-ends or unpaired paired-ends",
+                        "help": "-a; These alignments will be flagged as secondary alignments",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "boolean",
+                        "value": false,
+                        "truevalue": "-a",
+                        "falsevalue": ""
+                      },
+                      {
+                        "name": "C",
+                        "parameter_type": "gx_boolean",
+                        "hidden": false,
+                        "label": "Append FASTA/FASTQ comment to BAM output",
+                        "help": "-C",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "boolean",
+                        "value": false,
+                        "truevalue": "-C",
+                        "falsevalue": ""
+                      },
+                      {
+                        "name": "V",
+                        "parameter_type": "gx_boolean",
+                        "hidden": false,
+                        "label": "Output the reference FASTA header in the XR tag",
+                        "help": "-C",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "boolean",
+                        "value": false,
+                        "truevalue": "-V",
+                        "falsevalue": ""
+                      },
+                      {
+                        "name": "Y",
+                        "parameter_type": "gx_boolean",
+                        "hidden": false,
+                        "label": "Use soft clipping for supplementary alignments",
+                        "help": "-Y; By default, BWA-MEM uses soft clipping for the primary alignment and hard clipping for supplementary alignments",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "boolean",
+                        "value": false,
+                        "truevalue": "-Y",
+                        "falsevalue": ""
+                      },
+                      {
+                        "name": "M",
+                        "parameter_type": "gx_boolean",
+                        "hidden": false,
+                        "label": "Mark shorter split hits of a chimeric alignment in the FLAG field as 'secondary alignment' instead of 'supplementary alignment'",
+                        "help": "-M; For Picard<1.96 compatibility",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "boolean",
+                        "value": false,
+                        "truevalue": "-M",
+                        "falsevalue": ""
+                      }
+                    ],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "do_not_set",
+                    "parameters": [],
+                    "is_default_when": true
+                  }
+                ]
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "output_sort",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "BAM sorting mode",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Sort by chromosomal coordinates",
+            "value": "coordinate",
+            "selected": true
+          },
+          {
+            "label": "Sort by read names  (i.e., the QNAME field) ",
+            "value": "name",
+            "selected": false
+          },
+          {
+            "label": "Not sorted (sorted as input)",
+            "value": "unsorted",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "bam_output",
+        "label": "${tool.name} on ${on_string} (mapped reads in BAM format)",
+        "hidden": false,
+        "type": "data",
+        "format": "bam",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1093/bioinformatics/btp324"
+      },
+      {
+        "type": "doi",
+        "content": "10.1093/bioinformatics/btp698"
+      },
+      {
+        "type": "bibtex",
+        "content": "@misc{1303.3997,\n            Author = {Heng Li},\n            Title = {Aligning sequence reads, clone sequences and assembly contigs with BWA-MEM},\n            Year = {2013},\n            Eprint = {arXiv:1303.3997},\n            url = {http://arxiv.org/abs/1303.3997},\n            }"
+      }
+    ],
+    "license": null,
+    "profile": "22.05",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "bwa",
+        "type": "bio.tools"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n**What it does**\n\nThis Galaxy tool wraps the bwa-mem module of the BWA_ read mapping tool. For more details about the different modules of the BWA package see the `BWA manual`_.\n\nThe Galaxy implementation takes fastq files as input and produces output in BAM format, which can be further processed using various BAM utilities existing in Galaxy (BAMTools, SAMTools, Picard).\n\nFrom http://arxiv.org/abs/1303.3997:\n\nBWA-MEM is an alignment algorithm for aligning sequence reads or long query sequences against a large reference genome such as human.\nIt automatically chooses between local and end-to-end alignments, supports paired-end reads and performs chimeric alignment.\nThe algorithm is robust to sequencing errors and applicable to a wide range of sequence lengths from 70bp to a few megabases.\n\n-----\n\n\n**Indices: Selecting reference genomes for BWA**\n\nThe Galaxy wrapper for BWA allows you to select between precomputed and user-defined indices for reference genomes\nusing the **Will you select a reference genome from your history or use a built-in index?** select box.\n\nThis select box has two options:\n\n  1. **Use a built-in genome index**\n\n     With this option (which is the default), Galaxy provides you with a dropdown select menu populated with genomes that have been pre-indexed with the bwa index utility and are ready to map sequenced reads against.\n\n     The collection of pre-indexed genomes is managed by the administrators of your Galaxy instance. If your genome of interest is missing and its impractical to use the second option below to work with it, consider contacting the support team for the Galaxy server you are working on to let them know that you would like to have an additional genome indexed.\n\n  2. **Use a genome from history and build index**\n\n     With this option, Galaxy provides you with a dropdown select menu populated with all FASTA formatted files listed in your current history. If you have uploaded your genome of interest into your history it will be shown there.\n\n     Selecting a genome from this dropdown will cause Galaxy to index it transparently first using the `bwa index` command, and then map against it with `bwa aln`.\n    \n\n-----\n\n**Analysis modes**\n\nThe tool supports different preconfigured analysis modes optimized for different types of input data. Alternatively, it allows you to take full control over all available options.\n\nThe preconfigured modes are:\n\n  1. *Simple Illumina mode*\n\n     This corresponds to the simplest possible and standard bwa mem application in which it aligns single or paired-end data to a reference using default parameters. It is equivalent to the following command: bwa mem <reference index> <fastq dataset1> [fastq dataset2]\n  2. *PacBio mode*\n\n     This mode is adjusted specifically for mapping of long PacBio subreads. It is running bwa mame with the `-x pacbio` option.\n  3. *Nanopore 2D-reads mode*\n\n     This mode is running bwa mem with the `-x ont2d` option.\n  4. *Intra-sepcies contigs mode*\n\n     This mode is running bwa mem with the `-x intractg` option.\n\n.. class:: infomark\n\n   Please note: minimap2_ is recommended over and outperforms BWA-MEM for most types of input data except for Illumina short reads. For Illumina short-read mapping you may also consider using `BWA-MEM2`_, which is about twice as fast as BWA-MEM.\n\n-----\n\n**Bam sorting mode**\n\nThe generated bam files can be sorted according to three criteria: coordinates, names and input order.\n\nIn coordinate sorted mode the reads are sorted by coordinates. It means that the reads from the beginning of the first chromosome are first in the file. \n\nWhen sorted by read name, the file is sorted by the reference ID (i.e., the QNAME field). \n\nFinally, the *No sorted (sorted as input)* option yield a BAM file in which the records are sorted in an order corresponding to the order of the reads in the original input file. This option requires using a single thread to perform the conversion from SAM to BAM format, so the runtime is extended.\n\n\n\n-----\n\n.. class:: warningmark\n\n**Read Groups are Important!**\n\nOne of the recommended best practices in NGS analysis is adding read group information to BAM files. You can do this directly in BWA interface using the\n**Specify read group information?** widget. If you are not familiar with read groups you shold know that this is effectively a way to tag reads with an additional ID.\nThis allows you to combine BAM files from, for example, multiple BWA runs into a single dataset. This significantly simplifies downstream processing as\ninstead of dealing with multiple datasets you only have to handle only one. This is possible because the read group information allows you to identify\ndata from different experiments even if they are combined in one file. Many downstream analysis tools such as variant callers (e.g., FreeBayes or Naive Variant Caller\npresent in Galaxy) are aware of read groups and will automatically generate calls for each individual sample even if they are combined within a single file.\n\n**Description of read groups fields**\n\n(from GATK FAQ webpage):\n\n.. csv-table::\n   :header-rows: 1\n    \n    Tag,Importance,Definition,Meaning\n    \"ID\",\"Required\",\"Read group identifier. Each @RG line must have a unique ID. The value of ID is used in the RG tags of alignment records. Must be unique among all read groups in header section. Read group IDs may be modified when merging SAM files in order to handle collisions.\",\"Ideally, this should be a globally unique identify across all sequencing data in the world, such as the Illumina flowcell + lane name and number.  Will be referenced by each read with the RG:Z field, allowing tools to determine the read group information associated with each read, including the sample from which the read came.  Also, a read group is effectively treated as a separate run of the NGS instrument in tools like base quality score recalibration (a GATK component) -- all reads within a read group are assumed to come from the same instrument run and to therefore share the same error model.\"\n    \"SM\",\"Sample. Use pool name where a pool is being sequenced.\",\"Required.  As important as ID.\",\"The name of the sample sequenced in this read group.  GATK tools treat all read groups with the same SM value as containing sequencing data for the same sample.  Therefore it's critical that the SM field be correctly specified, especially when using multi-sample tools like the Unified Genotyper (a GATK component).\"\n    \"PL\",\"Platform/technology used to produce the read. Valid values: ILLUMINA, SOLID, LS454, HELICOS and PACBIO.\",\"Important.  Not currently used in the GATK, but was in the past, and may return.  The only way to known the sequencing technology used to generate the sequencing data\",\"It's a good idea to use this field.\"\n    \"LB\",\"DNA preparation library identify\",\"Essential for MarkDuplicates\",\"MarkDuplicates uses the LB field to determine which read groups might contain molecular duplicates, in case the same DNA library was sequenced on multiple lanes.\"\n\n\n**Example of Read Group usage**\n\nSuppose we have a trio of samples: MOM, DAD, and KID.  Each has two DNA libraries prepared, one with 400 bp inserts and another with 200 bp inserts.  Each of these libraries is run on two lanes of an illumina hiseq, requiring 3 x 2 x 2 = 12 lanes of data.  When the data come off the sequencer, we would create 12 BAM files, with the following @RG fields in the header::\n\n Dad's data:\n @RG     ID:FLOWCELL1.LANE1      PL:illumina     LB:LIB-DAD-1 SM:DAD      PI:200\n @RG     ID:FLOWCELL1.LANE2      PL:illumina     LB:LIB-DAD-1 SM:DAD      PI:200\n @RG     ID:FLOWCELL1.LANE3      PL:illumina     LB:LIB-DAD-2 SM:DAD      PI:400\n @RG     ID:FLOWCELL1.LANE4      PL:illumina     LB:LIB-DAD-2 SM:DAD      PI:400\n  \n Mom's data:\n @RG     ID:FLOWCELL1.LANE5      PL:illumina     LB:LIB-MOM-1 SM:MOM      PI:200\n @RG     ID:FLOWCELL1.LANE6      PL:illumina     LB:LIB-MOM-1 SM:MOM      PI:200\n @RG     ID:FLOWCELL1.LANE7      PL:illumina     LB:LIB-MOM-2 SM:MOM      PI:400\n @RG     ID:FLOWCELL1.LANE8      PL:illumina     LB:LIB-MOM-2 SM:MOM      PI:400\n \n Kid's data:\n @RG     ID:FLOWCELL2.LANE1      PL:illumina     LB:LIB-KID-1 SM:KID      PI:200\n @RG     ID:FLOWCELL2.LANE2      PL:illumina     LB:LIB-KID-1 SM:KID      PI:200\n @RG     ID:FLOWCELL2.LANE3      PL:illumina     LB:LIB-KID-2 SM:KID      PI:400\n @RG     ID:FLOWCELL2.LANE4      PL:illumina     LB:LIB-KID-2 SM:KID      PI:400\n\nNote the hierarchical relationship between read groups (unique for each lane) to libraries (sequenced on two lanes) and samples (across four lanes, two lanes for each library).\n    \n\n\n.. _BWA: https://github.com/lh3/bwa\n.. _`BWA manual`: https://bio-bwa.sourceforge.net/bwa.shtml\n    \n.. _minimap2: https://github.com/lh3/minimap2\n.. _`BWA-MEM2`: https://github.com/bwa-mem2/bwa-mem2\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "reference_source": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "reference_source_selector": {
+                  "type": "string",
+                  "enum": [
+                    "cached"
+                  ]
+                },
+                "ref_file": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "reference_source_selector"
+              ],
+              "properties": {
+                "reference_source_selector": {
+                  "type": "string",
+                  "enum": [
+                    "history"
+                  ]
+                },
+                "ref_file": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "index_a": {
+                  "type": "string",
+                  "enum": [
+                    "auto",
+                    "is",
+                    "bwtsw"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "fastq_input": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "fastq_input_selector": {
+                  "type": "string",
+                  "enum": [
+                    "paired"
+                  ]
+                },
+                "fastq_input1": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "fastq_input2": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "iset_stats": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "fastq_input_selector"
+              ],
+              "properties": {
+                "fastq_input_selector": {
+                  "type": "string",
+                  "enum": [
+                    "single"
+                  ]
+                },
+                "fastq_input1": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "fastq_input_selector"
+              ],
+              "properties": {
+                "fastq_input_selector": {
+                  "type": "string",
+                  "enum": [
+                    "paired_collection"
+                  ]
+                },
+                "fastq_input1": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "iset_stats": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "fastq_input_selector"
+              ],
+              "properties": {
+                "fastq_input_selector": {
+                  "type": "string",
+                  "enum": [
+                    "paired_iv"
+                  ]
+                },
+                "fastq_input1": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "iset_stats": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "rg": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "rg_selector"
+              ],
+              "properties": {
+                "rg_selector": {
+                  "type": "string",
+                  "enum": [
+                    "set_picard"
+                  ]
+                },
+                "read_group_id_conditional": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "do_auto_name"
+                      ],
+                      "properties": {
+                        "do_auto_name": {
+                          "type": "string",
+                          "enum": [
+                            "true"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "do_auto_name": {
+                          "type": "string",
+                          "enum": [
+                            "false"
+                          ]
+                        },
+                        "ID": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "read_group_sm_conditional": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "do_auto_name"
+                      ],
+                      "properties": {
+                        "do_auto_name": {
+                          "type": "string",
+                          "enum": [
+                            "true"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "do_auto_name": {
+                          "type": "string",
+                          "enum": [
+                            "false"
+                          ]
+                        },
+                        "SM": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "read_group_lb_conditional": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "do_auto_name"
+                      ],
+                      "properties": {
+                        "do_auto_name": {
+                          "type": "string",
+                          "enum": [
+                            "true"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "do_auto_name": {
+                          "type": "string",
+                          "enum": [
+                            "false"
+                          ]
+                        },
+                        "LB": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "PL": {
+                  "type": "string",
+                  "enum": [
+                    "CAPILLARY",
+                    "LS454",
+                    "ILLUMINA",
+                    "SOLID",
+                    "HELICOS",
+                    "IONTORRENT",
+                    "PACBIO"
+                  ]
+                },
+                "PU": {
+                  "type": "string"
+                },
+                "CN": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "DS": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "PI": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "DT": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "rg_selector"
+              ],
+              "properties": {
+                "rg_selector": {
+                  "type": "string",
+                  "enum": [
+                    "set"
+                  ]
+                },
+                "read_group_id_conditional": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "do_auto_name"
+                      ],
+                      "properties": {
+                        "do_auto_name": {
+                          "type": "string",
+                          "enum": [
+                            "true"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "do_auto_name": {
+                          "type": "string",
+                          "enum": [
+                            "false"
+                          ]
+                        },
+                        "ID": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "read_group_sm_conditional": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "do_auto_name"
+                      ],
+                      "properties": {
+                        "do_auto_name": {
+                          "type": "string",
+                          "enum": [
+                            "true"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "do_auto_name": {
+                          "type": "string",
+                          "enum": [
+                            "false"
+                          ]
+                        },
+                        "SM": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "PL": {
+                  "type": "string",
+                  "enum": [
+                    "CAPILLARY",
+                    "LS454",
+                    "ILLUMINA",
+                    "SOLID",
+                    "HELICOS",
+                    "IONTORRENT",
+                    "PACBIO"
+                  ]
+                },
+                "read_group_lb_conditional": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "do_auto_name"
+                      ],
+                      "properties": {
+                        "do_auto_name": {
+                          "type": "string",
+                          "enum": [
+                            "true"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "do_auto_name": {
+                          "type": "string",
+                          "enum": [
+                            "false"
+                          ]
+                        },
+                        "LB": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "CN": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "DS": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "DT": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "FO": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "(^$|^\\*|[ACMGRSVTWYHKDBN]+$)"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "KS": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "PG": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "PI": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "PU": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "rg_selector"
+              ],
+              "properties": {
+                "rg_selector": {
+                  "type": "string",
+                  "enum": [
+                    "set_id_auto"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "rg_selector": {
+                  "type": "string",
+                  "enum": [
+                    "do_not_set"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "analysis_type": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "analysis_type_selector": {
+                  "type": "string",
+                  "enum": [
+                    "illumina"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "analysis_type_selector"
+              ],
+              "properties": {
+                "analysis_type_selector": {
+                  "type": "string",
+                  "enum": [
+                    "pacbio"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "analysis_type_selector"
+              ],
+              "properties": {
+                "analysis_type_selector": {
+                  "type": "string",
+                  "enum": [
+                    "ont2d"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "analysis_type_selector"
+              ],
+              "properties": {
+                "analysis_type_selector": {
+                  "type": "string",
+                  "enum": [
+                    "intractg"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "analysis_type_selector"
+              ],
+              "properties": {
+                "analysis_type_selector": {
+                  "type": "string",
+                  "enum": [
+                    "full"
+                  ]
+                },
+                "algorithmic_options": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "algorithmic_options_selector"
+                      ],
+                      "properties": {
+                        "algorithmic_options_selector": {
+                          "type": "string",
+                          "enum": [
+                            "set"
+                          ]
+                        },
+                        "k": {
+                          "$ref": "#/$defs/Int"
+                        },
+                        "w": {
+                          "$ref": "#/$defs/Int"
+                        },
+                        "d": {
+                          "$ref": "#/$defs/Int"
+                        },
+                        "r": {
+                          "type": "number",
+                          "description": "a finite number",
+                          "title": "finite"
+                        },
+                        "y": {
+                          "$ref": "#/$defs/Int"
+                        },
+                        "c": {
+                          "$ref": "#/$defs/Int"
+                        },
+                        "D": {
+                          "type": "number",
+                          "description": "a finite number",
+                          "title": "finite"
+                        },
+                        "W": {
+                          "$ref": "#/$defs/Int"
+                        },
+                        "m": {
+                          "$ref": "#/$defs/Int"
+                        },
+                        "S": {
+                          "type": "boolean"
+                        },
+                        "P": {
+                          "type": "boolean"
+                        },
+                        "e": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "algorithmic_options_selector": {
+                          "type": "string",
+                          "enum": [
+                            "do_not_set"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "scoring_options": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "scoring_options_selector"
+                      ],
+                      "properties": {
+                        "scoring_options_selector": {
+                          "type": "string",
+                          "enum": [
+                            "set"
+                          ]
+                        },
+                        "A": {
+                          "$ref": "#/$defs/Int"
+                        },
+                        "B": {
+                          "$ref": "#/$defs/Int"
+                        },
+                        "O": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "E": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "L": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "U": {
+                          "$ref": "#/$defs/Int"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "scoring_options_selector": {
+                          "type": "string",
+                          "enum": [
+                            "do_not_set"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "io_options": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "io_options_selector"
+                      ],
+                      "properties": {
+                        "io_options_selector": {
+                          "type": "string",
+                          "enum": [
+                            "set"
+                          ]
+                        },
+                        "five": {
+                          "type": "boolean"
+                        },
+                        "q": {
+                          "type": "boolean"
+                        },
+                        "T": {
+                          "$ref": "#/$defs/Int"
+                        },
+                        "h": {
+                          "$ref": "#/$defs/Int"
+                        },
+                        "a": {
+                          "type": "boolean"
+                        },
+                        "C": {
+                          "type": "boolean"
+                        },
+                        "V": {
+                          "type": "boolean"
+                        },
+                        "Y": {
+                          "type": "boolean"
+                        },
+                        "M": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "io_options_selector": {
+                          "type": "string",
+                          "enum": [
+                            "do_not_set"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "output_sort": {
+          "type": "string",
+          "enum": [
+            "coordinate",
+            "name",
+            "unsorted"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "reference_source": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "reference_source_selector": {
+                      "type": "string",
+                      "enum": [
+                        "cached"
+                      ]
+                    },
+                    "ref_file": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "reference_source_selector",
+                    "ref_file"
+                  ],
+                  "properties": {
+                    "reference_source_selector": {
+                      "type": "string",
+                      "enum": [
+                        "history"
+                      ]
+                    },
+                    "ref_file": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "index_a": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "auto",
+                            "is",
+                            "bwtsw"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "fastq_input": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "fastq_input1",
+                    "fastq_input2"
+                  ],
+                  "properties": {
+                    "fastq_input_selector": {
+                      "type": "string",
+                      "enum": [
+                        "paired"
+                      ]
+                    },
+                    "fastq_input1": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "fastq_input2": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "iset_stats": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "fastq_input_selector",
+                    "fastq_input1"
+                  ],
+                  "properties": {
+                    "fastq_input_selector": {
+                      "type": "string",
+                      "enum": [
+                        "single"
+                      ]
+                    },
+                    "fastq_input1": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "fastq_input_selector",
+                    "fastq_input1"
+                  ],
+                  "properties": {
+                    "fastq_input_selector": {
+                      "type": "string",
+                      "enum": [
+                        "paired_collection"
+                      ]
+                    },
+                    "fastq_input1": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "iset_stats": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "fastq_input_selector",
+                    "fastq_input1"
+                  ],
+                  "properties": {
+                    "fastq_input_selector": {
+                      "type": "string",
+                      "enum": [
+                        "paired_iv"
+                      ]
+                    },
+                    "fastq_input1": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "iset_stats": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "rg": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "rg_selector"
+                  ],
+                  "properties": {
+                    "rg_selector": {
+                      "type": "string",
+                      "enum": [
+                        "set_picard"
+                      ]
+                    },
+                    "read_group_id_conditional": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "do_auto_name"
+                              ],
+                              "properties": {
+                                "do_auto_name": {
+                                  "type": "string",
+                                  "enum": [
+                                    "true"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "do_auto_name": {
+                                  "type": "string",
+                                  "enum": [
+                                    "false"
+                                  ]
+                                },
+                                "ID": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "read_group_sm_conditional": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "do_auto_name"
+                              ],
+                              "properties": {
+                                "do_auto_name": {
+                                  "type": "string",
+                                  "enum": [
+                                    "true"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "do_auto_name": {
+                                  "type": "string",
+                                  "enum": [
+                                    "false"
+                                  ]
+                                },
+                                "SM": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "read_group_lb_conditional": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "do_auto_name"
+                              ],
+                              "properties": {
+                                "do_auto_name": {
+                                  "type": "string",
+                                  "enum": [
+                                    "true"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "do_auto_name": {
+                                  "type": "string",
+                                  "enum": [
+                                    "false"
+                                  ]
+                                },
+                                "LB": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "PL": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "CAPILLARY",
+                            "LS454",
+                            "ILLUMINA",
+                            "SOLID",
+                            "HELICOS",
+                            "IONTORRENT",
+                            "PACBIO"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "PU": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "CN": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "DS": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "PI": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "DT": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "rg_selector"
+                  ],
+                  "properties": {
+                    "rg_selector": {
+                      "type": "string",
+                      "enum": [
+                        "set"
+                      ]
+                    },
+                    "read_group_id_conditional": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "do_auto_name"
+                              ],
+                              "properties": {
+                                "do_auto_name": {
+                                  "type": "string",
+                                  "enum": [
+                                    "true"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "do_auto_name": {
+                                  "type": "string",
+                                  "enum": [
+                                    "false"
+                                  ]
+                                },
+                                "ID": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "read_group_sm_conditional": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "do_auto_name"
+                              ],
+                              "properties": {
+                                "do_auto_name": {
+                                  "type": "string",
+                                  "enum": [
+                                    "true"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "do_auto_name": {
+                                  "type": "string",
+                                  "enum": [
+                                    "false"
+                                  ]
+                                },
+                                "SM": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "PL": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "CAPILLARY",
+                            "LS454",
+                            "ILLUMINA",
+                            "SOLID",
+                            "HELICOS",
+                            "IONTORRENT",
+                            "PACBIO"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "read_group_lb_conditional": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "do_auto_name"
+                              ],
+                              "properties": {
+                                "do_auto_name": {
+                                  "type": "string",
+                                  "enum": [
+                                    "true"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "do_auto_name": {
+                                  "type": "string",
+                                  "enum": [
+                                    "false"
+                                  ]
+                                },
+                                "LB": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "CN": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "DS": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "DT": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "FO": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "(^$|^\\*|[ACMGRSVTWYHKDBN]+$)"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "KS": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "PG": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "PI": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "PU": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "rg_selector"
+                  ],
+                  "properties": {
+                    "rg_selector": {
+                      "type": "string",
+                      "enum": [
+                        "set_id_auto"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "rg_selector": {
+                      "type": "string",
+                      "enum": [
+                        "do_not_set"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "analysis_type": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "analysis_type_selector": {
+                      "type": "string",
+                      "enum": [
+                        "illumina"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "analysis_type_selector"
+                  ],
+                  "properties": {
+                    "analysis_type_selector": {
+                      "type": "string",
+                      "enum": [
+                        "pacbio"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "analysis_type_selector"
+                  ],
+                  "properties": {
+                    "analysis_type_selector": {
+                      "type": "string",
+                      "enum": [
+                        "ont2d"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "analysis_type_selector"
+                  ],
+                  "properties": {
+                    "analysis_type_selector": {
+                      "type": "string",
+                      "enum": [
+                        "intractg"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "analysis_type_selector"
+                  ],
+                  "properties": {
+                    "analysis_type_selector": {
+                      "type": "string",
+                      "enum": [
+                        "full"
+                      ]
+                    },
+                    "algorithmic_options": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "algorithmic_options_selector"
+                              ],
+                              "properties": {
+                                "algorithmic_options_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "set"
+                                  ]
+                                },
+                                "k": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "w": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "d": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "r": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number",
+                                      "description": "a finite number",
+                                      "title": "finite"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "y": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "c": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "D": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number",
+                                      "description": "a finite number",
+                                      "title": "finite"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "W": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "m": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "S": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "P": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "e": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "algorithmic_options_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "do_not_set"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "scoring_options": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "scoring_options_selector"
+                              ],
+                              "properties": {
+                                "scoring_options_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "set"
+                                  ]
+                                },
+                                "A": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "B": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "O": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "E": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "L": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "U": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "scoring_options_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "do_not_set"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "io_options": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "io_options_selector"
+                              ],
+                              "properties": {
+                                "io_options_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "set"
+                                  ]
+                                },
+                                "five": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "q": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "T": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "h": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "a": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "C": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "V": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "Y": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "M": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "io_options_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "do_not_set"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "output_sort": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "coordinate",
+                "name",
+                "unsorted"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

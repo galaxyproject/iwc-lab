@@ -1,0 +1,53 @@
+class: GalaxyUserTool
+id: atacseq_bampe_rm_orphan
+version: 0.19.0
+name: Remove orphan and non-FR read pairs
+description: Drop singleton reads and pairs not in FR orientation on one chromosome from a name-sorted BAM (nf-core/atacseq bampe_rm_orphan.py --only_fr_pairs)
+license: MIT
+container: quay.io/biocontainers/mulled-v2-57736af1eb98c01010848572c9fec9fff6ffaafd:402e865b8f6af2f3e58c6fc8d57127ff0144b2c7-0
+requirements: []
+inputs:
+  - name: bam
+    type: data
+    format: [qname_sorted.bam, bam, unsorted.bam]
+    label: Name-sorted paired-end BAM
+shell_command: |
+  cat > rm_orphan.py <<'PYEOF'
+  import sys
+  import pysam
+  fin = pysam.AlignmentFile(sys.argv[1], "rb")
+  fout = pysam.AlignmentFile(sys.argv[2], "wb", header=fin.header)
+  it = fin.fetch(until_eof=True)
+  prev = next(it, None)
+  for read in it:
+      if prev is not None and prev.query_name == read.query_name:
+          a, b = prev, read
+          keep = False
+          if a.reference_id == b.reference_id:
+              if not a.is_reverse and b.is_reverse:
+                  keep = a.reference_start <= b.reference_start
+              elif a.is_reverse and not b.is_reverse:
+                  keep = b.reference_start <= a.reference_start
+          if keep:
+              fout.write(a)
+              fout.write(b)
+          prev = next(it, None)
+      else:
+          prev = read
+  fin.close()
+  fout.close()
+  PYEOF
+  python rm_orphan.py '$(inputs.bam.path)' clean.bam
+outputs:
+  - name: bam
+    type: data
+    format: qname_sorted.bam
+    from_work_dir: clean.bam
+    label: Cleaned name-sorted BAM
+help:
+  format: markdown
+  content: |
+    Compact port of nf-core/atacseq `bin/bampe_rm_orphan.py` with `--only_fr_pairs` (pysam 0.19.0 + samtools 1.15.1
+    biocontainer from the source module). Consecutive records sharing a read name are a pair; a pair is kept only
+    when both mates are on the same chromosome in forward-reverse orientation. Singletons are dropped. The run log is
+    not produced.

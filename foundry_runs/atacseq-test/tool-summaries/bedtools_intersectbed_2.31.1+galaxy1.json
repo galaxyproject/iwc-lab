@@ -1,0 +1,1471 @@
+{
+  "schema_version": 1,
+  "tool_id": "bedtools_intersectbed",
+  "tool_version": "2.31.1+galaxy1",
+  "cache_key": "6fa6d6d8eeade5672f9ef4cab479a88a012d692d149ae4642c1138549be6fd94",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~bedtools~bedtools_intersectbed/versions/2.31.1+galaxy1",
+    "cached_at": "2026-11-12T04:39:26.374Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\6fa6d6d8eeade5672f9ef4cab479a88a012d692d149ae4642c1138549be6fd94.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "bedtools_intersectbed",
+    "version": "2.31.1+galaxy1",
+    "name": "bedtools Intersect intervals",
+    "description": "find overlapping intervals in various ways",
+    "inputs": [
+      {
+        "name": "inputA",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "File A to intersect with B",
+        "help": "BAM/BED/bedGraph/GFF/VCF/EncodePeak format",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "bam",
+          "bed",
+          "bedgraph",
+          "gff",
+          "vcf",
+          "encodepeak"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "reduce_or_iterate",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "reduce_or_iterate_selector",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Combined or separate output files",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "One output file per 'input B' file",
+              "value": "iterate",
+              "selected": true
+            },
+            {
+              "label": "Single output containing intersections of any 'input B' lines with A",
+              "value": "reduce",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "iterate",
+            "parameters": [
+              {
+                "name": "inputB",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "File B to intersect with A",
+                "help": "BAM/BED/bedGraph/GFF/VCF/EncodePeak format",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "bam",
+                  "bed",
+                  "bedgraph",
+                  "gff",
+                  "vcf",
+                  "encodepeak"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "reduce",
+            "parameters": [
+              {
+                "name": "inputB",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "File(s) B to intersect with A",
+                "help": "BAM/BED/bedGraph/GFF/VCF/EncodePeak format",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "bam",
+                  "bed",
+                  "bedgraph",
+                  "gff",
+                  "vcf",
+                  "encodepeak"
+                ],
+                "multiple": true,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "names",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Add data set names instead of indices",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "yes",
+                "falsevalue": "no"
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "strand",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Calculation based on strandedness?",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Overlaps on either strand",
+            "value": "",
+            "selected": true
+          },
+          {
+            "label": "Only overlaps occurring on the **same** strand.",
+            "value": "-s",
+            "selected": false
+          },
+          {
+            "label": "Only overlaps occurring on the **opposite** strand.",
+            "value": "-S",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "overlap_mode",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "What should be written to the output file?",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Write the original entry in A for each overlap (-wa)",
+            "value": "-wa",
+            "selected": false
+          },
+          {
+            "label": "Write the original entry in B for each overlap. Useful for knowing what A overlaps. Restricted by the fraction- and reciprocal option (-wb)",
+            "value": "-wb",
+            "selected": false
+          },
+          {
+            "label": "Write the original A and B entries plus the number of base pairs of overlap between the two features. Only A features with overlap are reported. Restricted by the fraction- and reciprocal option (-wo)",
+            "value": "-wo",
+            "selected": false
+          },
+          {
+            "label": "Write the original A and B entries plus the number of base pairs of overlap between the two features. However, A features w/o overlap are also reported with a NULL B feature and overlap = 0. Restricted by the fraction- and reciprocal option (-wao)",
+            "value": "-wao",
+            "selected": false
+          },
+          {
+            "label": "Perform a \"left outer join\". That is, for each feature in A report each overlap with B.  If no overlaps are found, report a NULL feature for B (-loj)",
+            "value": "-loj",
+            "selected": false
+          }
+        ],
+        "multiple": true,
+        "validators": []
+      },
+      {
+        "name": "split",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Treat split/spliced BAM or BED12 entries as distinct BED intervals when computing coverage.",
+        "help": "If set, the coverage will be calculated based the spliced intervals only. For BAM files, this inspects the CIGAR N operation to infer the blocks for computing coverage. For BED12 files, this inspects the BlockCount, BlockStarts, and BlockEnds fields (i.e., columns 10,11,12). If this option is not set, coverage will be calculated based on the interval's START/END coordinates, and would include introns in the case of RNAseq data.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-split",
+        "falsevalue": ""
+      },
+      {
+        "name": "fraction_cond",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "fraction_select",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Required overlap",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Default: 1bp",
+              "value": "default",
+              "selected": true
+            },
+            {
+              "label": "Specify minimum overlap(s)",
+              "value": "specify",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "default",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "specify",
+            "parameters": [
+              {
+                "name": "overlap",
+                "parameter_type": "gx_float",
+                "hidden": false,
+                "label": "Minimum overlap required as a fraction of A",
+                "help": "Default is 1E-9, i.e. 1bp.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "float",
+                "value": null,
+                "min": 0,
+                "max": 1,
+                "validators": []
+              },
+              {
+                "name": "reciprocal_cond",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "reciprocal",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Require that the fraction of overlap be reciprocal for A and B",
+                  "help": "In other words, if -f is 0.90 and -r is used, this requires that B overlap at least 90% of A and that A also overlaps at least 90% of B.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "No",
+                      "value": "",
+                      "selected": true
+                    },
+                    {
+                      "label": "Yes",
+                      "value": "-r",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "-r",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "",
+                    "parameters": [
+                      {
+                        "name": "overlapB",
+                        "parameter_type": "gx_float",
+                        "hidden": false,
+                        "label": "Minimum overlap required as a fraction of B",
+                        "help": "Default is 1E-9, i.e. 1bp.",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": true,
+                        "type": "float",
+                        "value": null,
+                        "min": 0,
+                        "max": 1,
+                        "validators": []
+                      },
+                      {
+                        "name": "disjoint",
+                        "parameter_type": "gx_boolean",
+                        "hidden": false,
+                        "label": "Require that the fraction of overlap is fulfilled for A OR B.",
+                        "help": "If enabled, then for -f 0.90 and -F 0.10 this requires that either 90% of A is covered OR 10% of B is covered, otherwise, both fractions would have to be satisfied.",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "boolean",
+                        "value": false,
+                        "truevalue": "-e",
+                        "falsevalue": ""
+                      }
+                    ],
+                    "is_default_when": true
+                  }
+                ]
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "invert",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Report only those alignments that **do not** overlap with file(s) B",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-v",
+        "falsevalue": ""
+      },
+      {
+        "name": "once",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Write the original A entry _once_ if _any_ overlaps found in B.",
+        "help": "Just report the fact >=1 hit was found",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-u",
+        "falsevalue": ""
+      },
+      {
+        "name": "count",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "For each entry in A, report the number of overlaps with B.",
+        "help": "Reports 0 for A entries that have no overlap with B",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-c",
+        "falsevalue": ""
+      },
+      {
+        "name": "bed",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "When using BAM input, write output as BED instead of BAM.",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-bed",
+        "falsevalue": ""
+      },
+      {
+        "name": "sorted",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "For coordinate sorted input file the more efficient sweeping algorithm is enabled.",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-sorted",
+        "falsevalue": ""
+      },
+      {
+        "name": "genome_file_opts",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "genome_file_opts_selector",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Genome file",
+          "help": "Only applies when used with -sorted option.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Locally installed Genome file",
+              "value": "loc",
+              "selected": true
+            },
+            {
+              "label": "Genome file from your history",
+              "value": "hist",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "loc",
+            "parameters": [
+              {
+                "name": "genome",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Genome file",
+                "help": "This genome file determines the chromosome list and their order.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "select",
+                "options": null,
+                "multiple": false,
+                "validators": []
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "hist",
+            "parameters": [
+              {
+                "name": "genome",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Genome file",
+                "help": "The expected format of the genome file is first column with chromosome names and second column with chromosome lengths. This genome file determines the chromosome list and their order.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "data",
+                "extensions": [
+                  "tabular"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "header",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Print the header from the A file prior to results",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-header",
+        "falsevalue": ""
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output",
+        "label": null,
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "inputA",
+        "metadata_source": "inputA",
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1093/bioinformatics/btq033"
+      }
+    ],
+    "license": null,
+    "profile": "20.05",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "bedtools",
+        "type": "bio.tools"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n**What it does**\n\nBy far, the most common question asked of two sets of genomic features is whether or not any of the features in the two sets “overlap” with one another. This is known as feature intersection. bedtools intersect allows one to screen for overlaps between two sets of genomic features. Moreover, it allows one to have fine control as to how the intersections are reported. bedtools intersect works with both BED/bedGraph/GFF/VCF/EncodePeak and BAM files as input.\n\n.. image:: $PATH_TO_IMAGES/intersect-glyph.png\n\n.. class:: infomark\n\nNote that each BAM alignment is treated individually. Therefore, if one end of a paired-end alignment overlaps an interval in the BED file, yet the other end does not, the output file will only include the overlapping end.\n\n.. class:: infomark\n\nNote that a BAM alignment will be sent to the output file **once** even if it overlaps more than one interval in the BED file.\n\n\n\n------\n\nThis tool is part of the `bedtools package`_ from the `Quinlan laboratory`_.\n\n.. _bedtools package: https://github.com/arq5x/bedtools2\n.. _Quinlan laboratory: http://quinlanlab.org\n\n\n**Citation**\n\nIf you use this tool in Galaxy, please cite:\n\nBjoern A. Gruening (2014), `Galaxy wrapper <https://github.com/bgruening/galaxytools>`_\n\n    \n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "inputA": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "reduce_or_iterate": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "reduce_or_iterate_selector": {
+                  "type": "string",
+                  "enum": [
+                    "iterate"
+                  ]
+                },
+                "inputB": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "reduce_or_iterate_selector"
+              ],
+              "properties": {
+                "reduce_or_iterate_selector": {
+                  "type": "string",
+                  "enum": [
+                    "reduce"
+                  ]
+                },
+                "inputB": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "names": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "strand": {
+          "type": "string",
+          "enum": [
+            "",
+            "-s",
+            "-S"
+          ]
+        },
+        "overlap_mode": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "-wa",
+                  "-wb",
+                  "-wo",
+                  "-wao",
+                  "-loj"
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "split": {
+          "type": "boolean"
+        },
+        "fraction_cond": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "fraction_select": {
+                  "type": "string",
+                  "enum": [
+                    "default"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "fraction_select"
+              ],
+              "properties": {
+                "fraction_select": {
+                  "type": "string",
+                  "enum": [
+                    "specify"
+                  ]
+                },
+                "overlap": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "reciprocal_cond": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "reciprocal"
+                      ],
+                      "properties": {
+                        "reciprocal": {
+                          "type": "string",
+                          "enum": [
+                            "-r"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "reciprocal": {
+                          "type": "string",
+                          "enum": [
+                            ""
+                          ]
+                        },
+                        "overlapB": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "description": "a number less than or equal to 1",
+                              "title": "lessThanOrEqualTo(1)",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "disjoint": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "invert": {
+          "type": "boolean"
+        },
+        "once": {
+          "type": "boolean"
+        },
+        "count": {
+          "type": "boolean"
+        },
+        "bed": {
+          "type": "boolean"
+        },
+        "sorted": {
+          "type": "boolean"
+        },
+        "genome_file_opts": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "genome_file_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "loc"
+                  ]
+                },
+                "genome": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "genome_file_opts_selector"
+              ],
+              "properties": {
+                "genome_file_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "hist"
+                  ]
+                },
+                "genome": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "header": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [
+        "inputA"
+      ],
+      "properties": {
+        "inputA": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "reduce_or_iterate": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "inputB"
+                  ],
+                  "properties": {
+                    "reduce_or_iterate_selector": {
+                      "type": "string",
+                      "enum": [
+                        "iterate"
+                      ]
+                    },
+                    "inputB": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "reduce_or_iterate_selector",
+                    "inputB"
+                  ],
+                  "properties": {
+                    "reduce_or_iterate_selector": {
+                      "type": "string",
+                      "enum": [
+                        "reduce"
+                      ]
+                    },
+                    "inputB": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "names": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "strand": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "",
+                "-s",
+                "-S"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "overlap_mode": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "-wa",
+                      "-wb",
+                      "-wo",
+                      "-wao",
+                      "-loj"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "__class__"
+                    ],
+                    "properties": {
+                      "__class__": {
+                        "type": "string",
+                        "enum": [
+                          "ConnectedValue"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "split": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "fraction_cond": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "fraction_select": {
+                      "type": "string",
+                      "enum": [
+                        "default"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "fraction_select"
+                  ],
+                  "properties": {
+                    "fraction_select": {
+                      "type": "string",
+                      "enum": [
+                        "specify"
+                      ]
+                    },
+                    "overlap": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "description": "a number less than or equal to 1",
+                              "title": "lessThanOrEqualTo(1)",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "reciprocal_cond": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "reciprocal"
+                              ],
+                              "properties": {
+                                "reciprocal": {
+                                  "type": "string",
+                                  "enum": [
+                                    "-r"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "reciprocal": {
+                                  "type": "string",
+                                  "enum": [
+                                    ""
+                                  ]
+                                },
+                                "overlapB": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "description": "a number less than or equal to 1",
+                                          "title": "lessThanOrEqualTo(1)",
+                                          "minimum": 0,
+                                          "maximum": 1
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "disjoint": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "invert": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "once": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "count": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "bed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "sorted": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "genome_file_opts": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "genome_file_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "loc"
+                      ]
+                    },
+                    "genome": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "genome_file_opts_selector"
+                  ],
+                  "properties": {
+                    "genome_file_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "hist"
+                      ]
+                    },
+                    "genome": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "header": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

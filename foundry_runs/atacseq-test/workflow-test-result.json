@@ -1,0 +1,106 @@
+{
+  "status": "pass",
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "fail",
+      "command": "planemo test --engine external_galaxy --galaxy_url https://test.galaxyproject.org --galaxy_user_key <redacted> --no_shed_install --test_timeout 7200 --test_output_json test-output.json --test_output test-output.html galaxy-workflow.gxwf.yml",
+      "galaxy_mode": "external",
+      "galaxy_url": "https://test.galaxyproject.org",
+      "galaxy_version": "27.0.dev0",
+      "galaxy_branch": null,
+      "workflow_path": "run/galaxy-workflow.gxwf.yml",
+      "test_path": "run/galaxy-workflow.gxwf-tests.yml",
+      "staging": "copies of galaxy-workflow.gxwf.yml + tests in run/; tools pre-installed on server (--no_shed_install); inputs fetched by Galaxy from remote URLs",
+      "static_precheck": "gxwf validate-tests --workflow: OK; gxwf validate --strict: 79 ok, 0 skipped",
+      "ids": {
+        "workflow_id": null,
+        "invocation_id": null,
+        "history_id": null
+      },
+      "planemo_structured_result": null,
+      "artifacts": {
+        "planemo_log": "run/planemo.log"
+      },
+      "failure": {
+        "modality": "workflow-import-rejected",
+        "phase": "POST /api/workflows (bioblend import_workflow_dict) during planemo install_workflows",
+        "http_status": 400,
+        "response_body": {
+          "err_msg": "Input should be 'none', 'black', 'blue', 'turquoise', 'green', 'lime', 'orange', 'yellow', 'red' or 'pink' in ('frame', 'color')",
+          "err_code": 400008,
+          "validation_errors": [
+            "{\"type\": \"literal_error\", \"loc\": [\"frame\", \"color\"], \"msg\": \"Input should be 'none', 'black', 'blue', 'turquoise', 'green', 'lime', 'orange', 'yellow', 'red' or 'pink'\", \"input\": \"lightblue\", \"url\": \"https://errors.pydantic.dev/2.14/v/literal_error\"}"
+          ]
+        },
+        "next_reference_surface": "workflow import response"
+      }
+    },
+    {
+      "attempt": 2,
+      "status": "fail",
+      "role": "phase 13 re-run after routing the import rejection to the template phase (frame color lightblue -> yellow, only change)",
+      "command": "planemo test --engine external_galaxy --galaxy_url https://test.galaxyproject.org --galaxy_user_key <redacted> --no_shed_install --test_timeout 7200 --test_output_json test-output.json --test_output test-output.html galaxy-workflow.gxwf.yml",
+      "galaxy_mode": "external",
+      "galaxy_url": "https://test.galaxyproject.org",
+      "galaxy_version": "27.0.dev0",
+      "galaxy_branch": null,
+      "static_precheck": "gxwf validate-tests --workflow: OK; gxwf validate --strict: 79 ok, 0 skipped",
+      "workflow_path": "run2/galaxy-workflow.gxwf.yml",
+      "test_path": "run2/galaxy-workflow.gxwf-tests.yml",
+      "staging": "as attempt 1",
+      "ids": {
+        "workflow_id": "701bb08b3b6d20dc",
+        "invocation_id": "bb3f64d789035923",
+        "history_id": "b1251ce3b0e2e90fb0d8803099697973"
+      },
+      "planemo_structured_result": "run2/test-output.json",
+      "artifacts": {
+        "planemo_log": "run2/planemo.log",
+        "test_output_json": "run2/test-output.json",
+        "test_output_html": "run2/test-output.html"
+      },
+      "jobs_summary": {
+        "ok": 176,
+        "error": 3,
+        "paused": 3
+      },
+      "failure": {
+        "modality": "tool-job-failure",
+        "phase": "invocation scheduled; featurecounts jobs 3cfd783266481e23, 66e0243907a4dd86, 201d110e04cb9cf0 (SE library elements) exit 255",
+        "evidence": "subread featureCounts 2.1.1: \"ERROR: No paired-end reads were detected in paired-end read library\" (paired_end_status PE_fragments applied to single-end BAMs); downstream counts_matrix, deseq2_qc, multiqc paused",
+        "next_reference_surface": "Galaxy job API"
+      }
+    },
+    {
+      "attempt": 3,
+      "status": "pass",
+      "role": "re-run after topology repair: featureCounts split into pe_featurecounts (PE_fragments) and se_featurecounts (single_end) + merge_counts",
+      "command": "planemo test --engine external_galaxy --galaxy_url https://test.galaxyproject.org --galaxy_user_key <redacted> --no_shed_install --test_timeout 7200 --test_output_json test-output.json --test_output test-output.html galaxy-workflow.gxwf.yml",
+      "galaxy_mode": "external",
+      "galaxy_url": "https://test.galaxyproject.org",
+      "galaxy_version": "27.0.dev0",
+      "galaxy_branch": null,
+      "static_precheck": "gxwf validate-tests --workflow: OK; gxwf validate --strict: 79 ok, 0 skipped",
+      "workflow_path": "run3/galaxy-workflow.gxwf.yml",
+      "test_path": "run3/galaxy-workflow.gxwf-tests.yml",
+      "staging": "as attempt 1; deliverable galaxy-workflow.gxwf.yml identical to run3 copy",
+      "ids": {
+        "workflow_id": "b43f524d4344093a",
+        "invocation_id": "585d40391400052f",
+        "history_id": "b1251ce3b0e2e90fcb93b239532c69a3"
+      },
+      "planemo_structured_result": "run3/test-output.json",
+      "artifacts": {
+        "planemo_log": "run3/planemo.log",
+        "test_output_json": "run3/test-output.json",
+        "test_output_html": "run3/test-output.html"
+      },
+      "jobs_summary": {
+        "ok": 182
+      },
+      "failure": null
+    }
+  ],
+  "final_attempt": 3
+}

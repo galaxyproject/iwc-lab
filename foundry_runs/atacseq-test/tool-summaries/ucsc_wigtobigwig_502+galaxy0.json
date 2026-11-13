@@ -1,0 +1,682 @@
+{
+  "schema_version": 1,
+  "tool_id": "ucsc_wigtobigwig",
+  "tool_version": "502+galaxy0",
+  "cache_key": "c0e5863288c391f6ecac54dea63ff284d6bd8714ac9311ca089f5342d7efde58",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~ucsc_wigtobigwig~ucsc_wigtobigwig/versions/502+galaxy0",
+    "cached_at": "2026-11-10T02:29:27.068Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\c0e5863288c391f6ecac54dea63ff284d6bd8714ac9311ca089f5342d7efde58.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "ucsc_wigtobigwig",
+    "version": "502+galaxy0",
+    "name": "wigtobigwig",
+    "description": "bedGraph or Wig to bigWig converter",
+    "inputs": [
+      {
+        "name": "hist_or_builtin",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "genome_type_select",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Reference genome source",
+          "help": "Was the Wig/bedgraph input constructed using a genome from your history, or a built-in genome?",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Input data is for a built-in genome",
+              "value": "indexed",
+              "selected": true
+            },
+            {
+              "label": "Input data is for a genome from the current history",
+              "value": "history",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "indexed",
+            "parameters": [
+              {
+                "name": "input1",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Wig/Bedgraph to convert",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "wig",
+                  "bedgraph"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "index",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Source Genome Build",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": null,
+                "multiple": false,
+                "validators": [
+                  {
+                    "type": "no_options",
+                    "message": "The chosen genome build is not available.",
+                    "implicit": false,
+                    "negate": false
+                  }
+                ]
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "history",
+            "parameters": [
+              {
+                "name": "input1",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Wig/Bedgraph to convert",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "wig",
+                  "bedgraph"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "chromfile",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Chromosome length file",
+                "help": "A file of sequence lengths for the history reference is required to make a bigwig. Compute sequence length tool can make these from fasta files",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "len",
+                  "txt",
+                  "tabular"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "settings",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "settingsType",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Converter settings to use",
+          "help": "Default settings should usually be used.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Default",
+              "value": "preset",
+              "selected": false
+            },
+            {
+              "label": "Full parameter list",
+              "value": "full",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "preset",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "full",
+            "parameters": [
+              {
+                "name": "blockSize",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Items to bundle in r-tree",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 256,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "itemsPerSlot",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Data points bundled at lowest level",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 1024,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "clip",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Clip chromosome positions",
+                "help": "Issue warning messages rather than dying if wig file contains items off end of chromosome.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": true,
+                "truevalue": "-clip",
+                "falsevalue": ""
+              },
+              {
+                "name": "unc",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Do not use compression",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "-unc",
+                "falsevalue": ""
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out_file1",
+        "label": null,
+        "hidden": false,
+        "type": "data",
+        "format": "bigwig",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1093/bioinformatics/btq351"
+      }
+    ],
+    "license": null,
+    "profile": "22.05",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "UCSC_Genome_Browser_Utilities",
+        "type": "bio.tools"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n**Purpose**\n\nThis tool converts bedgraph or wiggle data into bigWig data for visualisation in browsers. The JBrowse tool can display these with other interesting tracks.\n\n**Technical format details**\n\n- **Wiggle format**: The .wig format is line-oriented. Wiggle data is preceded by a UCSC track definition line.  Following the track definition line is the track data, which can be entered in three different formats described below.\n\n  - **BED format** with no declaration line and four columns of data::\n\n      chromA  chromStartA  chromEndA  dataValueA\n      chromB  chromStartB  chromEndB  dataValueB\n\n  - **variableStep** two column data; started by a declaration line and followed with chromosome positions and data values::\n\n      variableStep  chrom=chrN  [span=windowSize]\n      chromStartA  dataValueA\n      chromStartB  dataValueB\n\n  - **fixedStep** single column data; started by a declaration line and followed with data values::\n\n      fixedStep  chrom=chrN  start=position  step=stepInterval  [span=windowSize]\n      dataValue1\n      dataValue2\n\n- The **BedGraph format** is described in detail at the `UCSC Bioinformatics website`_\n\nFor implementation details see wigToBigWig's `source code`_ and accompanying `docs`_.\n\n.. _UCSC Bioinformatics website: http://genome.ucsc.edu/goldenPath/help/bedgraph.html\n.. _docs: http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/FOOTER.txt\n.. _source code: https://github.com/ucscGenomeBrowser/kent/blob/master/src/utils/wigToBigWig/wigToBigWig.c\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "hist_or_builtin": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "genome_type_select": {
+                  "type": "string",
+                  "enum": [
+                    "indexed"
+                  ]
+                },
+                "input1": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "index": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "genome_type_select"
+              ],
+              "properties": {
+                "genome_type_select": {
+                  "type": "string",
+                  "enum": [
+                    "history"
+                  ]
+                },
+                "input1": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "chromfile": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "settings": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "settingsType": {
+                  "type": "string",
+                  "enum": [
+                    "preset"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "settingsType"
+              ],
+              "properties": {
+                "settingsType": {
+                  "type": "string",
+                  "enum": [
+                    "full"
+                  ]
+                },
+                "blockSize": {
+                  "$ref": "#/$defs/Int"
+                },
+                "itemsPerSlot": {
+                  "$ref": "#/$defs/Int"
+                },
+                "clip": {
+                  "type": "boolean"
+                },
+                "unc": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "hist_or_builtin": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "input1"
+                  ],
+                  "properties": {
+                    "genome_type_select": {
+                      "type": "string",
+                      "enum": [
+                        "indexed"
+                      ]
+                    },
+                    "input1": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "index": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "genome_type_select",
+                    "input1",
+                    "chromfile"
+                  ],
+                  "properties": {
+                    "genome_type_select": {
+                      "type": "string",
+                      "enum": [
+                        "history"
+                      ]
+                    },
+                    "input1": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "chromfile": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "settings": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "settingsType": {
+                      "type": "string",
+                      "enum": [
+                        "preset"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "settingsType"
+                  ],
+                  "properties": {
+                    "settingsType": {
+                      "type": "string",
+                      "enum": [
+                        "full"
+                      ]
+                    },
+                    "blockSize": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "itemsPerSlot": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "clip": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "unc": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

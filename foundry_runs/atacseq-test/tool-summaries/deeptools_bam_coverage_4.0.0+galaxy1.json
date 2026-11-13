@@ -1,0 +1,2021 @@
+{
+  "schema_version": 1,
+  "tool_id": "deeptools_bam_coverage",
+  "tool_version": "4.0.0+galaxy1",
+  "cache_key": "d00880fac8e9531a9745ab6086121cbf6b7738a6e55295249407d97d6c02f395",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/bgruening~deeptools_bam_coverage~deeptools_bam_coverage/versions/4.0.0+galaxy1",
+    "cached_at": "2026-11-12T04:40:42.169Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\d00880fac8e9531a9745ab6086121cbf6b7738a6e55295249407d97d6c02f395.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "deeptools_bam_coverage",
+    "version": "4.0.0+galaxy1",
+    "name": "bamCoverage",
+    "description": "generates a coverage bigWig file from a given BAM or CRAM file",
+    "inputs": [
+      {
+        "name": "bamInput",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "BAM/CRAM file",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "bam",
+          "cram"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "binSize",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "Bin size in bases",
+        "help": "The genome will be divided into bins of the specified size. For each bin, the overlaping number of fragments (or reads)  will be reported. If only half a fragment overlaps, this fraction will be reported.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "integer",
+        "value": 50,
+        "min": 1,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "scaling",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "type",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Scaling/Normalization method",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Normalize coverage to 1x",
+              "value": "1x",
+              "selected": false
+            },
+            {
+              "label": "Normalize to reads per kilobase per million (RPKM)",
+              "value": "rpkm",
+              "selected": false
+            },
+            {
+              "label": "Normalize to counts per million (CPM), same as CPM in RNA-seq",
+              "value": "cpm",
+              "selected": false
+            },
+            {
+              "label": "Normalize to bins per million (BPM), same as TPM in RNA-seq",
+              "value": "bpm",
+              "selected": false
+            },
+            {
+              "label": "Do not normalize or scale",
+              "value": "no",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "rpkm",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "cpm",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "bpm",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "no",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "1x",
+            "parameters": [
+              {
+                "name": "effectiveGenomeSize",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "effectiveGenomeSize_opt",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Effective genome size",
+                  "help": "The effective genome size is the portion of the genome that is mappable. Large fractions of the genome are stretches of NNNN that should be discarded.                     Also, if repetitive regions were not included in the mapping of reads, the effective genome size needs to be adjusted accordingly.                     We provide a table of useful sizes here: http://deeptools.readthedocs.io/en/latest/content/feature/effectiveGenomeSize.html",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "ce10 (93260000)",
+                      "value": "93260000",
+                      "selected": false
+                    },
+                    {
+                      "label": "dm3 (130428560)",
+                      "value": "130428560",
+                      "selected": false
+                    },
+                    {
+                      "label": "dm6 (125464728)",
+                      "value": "125464728",
+                      "selected": false
+                    },
+                    {
+                      "label": "hg19/GRCh37 (2685511504)",
+                      "value": "2685511504",
+                      "selected": true
+                    },
+                    {
+                      "label": "GRCh38/hg38 (2701495761)",
+                      "value": "2701495761",
+                      "selected": false
+                    },
+                    {
+                      "label": "GRCm37/mm9 (2304947926)",
+                      "value": "2304947926",
+                      "selected": false
+                    },
+                    {
+                      "label": "GRCm38/mm10 (2308125349)",
+                      "value": "2308125349",
+                      "selected": false
+                    },
+                    {
+                      "label": "user specified",
+                      "value": "specific",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "specific",
+                    "parameters": [
+                      {
+                        "name": "effectiveGenomeSize",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Effective genome size",
+                        "help": "e.g. ce10: 93260000, dm3: 130428560, hg19: 2685511504, mm9: 2304947926",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": null,
+                        "min": null,
+                        "max": null,
+                        "validators": []
+                      }
+                    ],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "93260000",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "130428560",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "125464728",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "2685511504",
+                    "parameters": [],
+                    "is_default_when": true
+                  },
+                  {
+                    "discriminator": "2701495761",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "2304947926",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "2308125349",
+                    "parameters": [],
+                    "is_default_when": false
+                  }
+                ]
+              }
+            ],
+            "is_default_when": true
+          }
+        ]
+      },
+      {
+        "name": "outFileFormat",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Coverage file format",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "bigwig",
+            "value": "bigwig",
+            "selected": true
+          },
+          {
+            "label": "bedgraph",
+            "value": "bedgraph",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "region",
+        "parameter_type": "gx_text",
+        "hidden": false,
+        "label": "Region of the genome to limit the operation to",
+        "help": "This is useful when testing parameters to reduce the time required. The format is chr:start:end, for example \"chr10\" or \"chr10:456700:891000\".",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "text",
+        "area": false,
+        "value": null,
+        "default_options": [],
+        "validators": []
+      },
+      {
+        "name": "advancedOpt",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "showAdvancedOpt",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Show advanced options",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "no",
+              "value": "no",
+              "selected": true
+            },
+            {
+              "label": "yes",
+              "value": "yes",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "no",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "yes",
+            "parameters": [
+              {
+                "name": "scaleFactor",
+                "parameter_type": "gx_float",
+                "hidden": false,
+                "label": "Scaling factor",
+                "help": "The computed scaling factor will be multiplied by this (default 1).",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "float",
+                "value": 1,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "smoothLength",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Smooth values using the following length (in bases)",
+                "help": "The smooth length defines a window, larger than the bin size, over which the number of reads is to be averaged. For example, if the bin size is set to 20 and the smooth length is 60, then, for each bin, its value is set to the average of it and its left and right neighbors. Any value smaller than the bin size will be ignored and no smoothing will be applied.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": 1,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "ignoreForNormalization",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Regions that should be excluded for normalization",
+                "help": "A list of chromosome names separated by spaces                     containing those chromosomes that should be excluded                     during normalization. This is useful when                     considering samples with unequal coverage across                     chromosomes, like male and female samples. Example: chrX chrM",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "skipNAs",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Ignore missing data?",
+                "help": "This parameter determines if non-covered regions                  (regions without overlapping reads) in a bam/bigWig file                  should be skipped. The default is to treat those                  regions as having a value of zero. The decision to                  skip non-covered regions depends on the interpretation                  of the data. Non-covered regions may represent, for                  example, repetitive regions that should be ignored.                  (default: False)",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "--skipNAs",
+                "falsevalue": ""
+              },
+              {
+                "name": "doExtendCustom",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "doExtend",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Extend reads to the given average fragment size.",
+                  "help": "If selected : Single-end reads and singletons are extended to match the given length and Paired-end reads are extended to match the fragment size.                      By default *each* read mate is extended.                      This can be modified using the SAM flags (see --samFlagInclude and --samFlagExclude options) to keep only the first or the second mate.                      Unmated reads, mate reads that map to different chromosomes or too far apart are extended to the given value.                      Reads are only extended if --extendReads is set to a value greater than the read length. *NOTE*: For spliced-read data, this option is not                      recommended as it will extend reads over skipped regions, e.g. introns in RNA-seq data.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "No extension. The default value and most typically appropriate.",
+                      "value": "no",
+                      "selected": true
+                    },
+                    {
+                      "label": "Paired-end extension. Suitable only for paired-end datasets.",
+                      "value": "yes",
+                      "selected": false
+                    },
+                    {
+                      "label": "A custom length, which will be applied to ALL reads.",
+                      "value": "custom",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "no",
+                    "parameters": [],
+                    "is_default_when": true
+                  },
+                  {
+                    "discriminator": "yes",
+                    "parameters": [],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "custom",
+                    "parameters": [
+                      {
+                        "name": "extendReadsValue",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Extend reads to the given average fragment size",
+                        "help": "Extend all reads to this length",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 300,
+                        "min": 1,
+                        "max": null,
+                        "validators": []
+                      }
+                    ],
+                    "is_default_when": false
+                  }
+                ]
+              },
+              {
+                "name": "centerReads",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Center regions with respect to the fragment length",
+                "help": "For paired-end data the fragment is defined by the bounds of the reads. For single-end data the bounds are defined by the read and the user-definable fragment/extension length. This option is useful to get a sharper signal around enriched regions.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "--centerReads",
+                "falsevalue": ""
+              },
+              {
+                "name": "minMappingQuality",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Minimum mapping quality",
+                "help": "If set, only reads with a mapping quality score at least this high are considered.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": 1,
+                "min": 0,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "samFlagInclude",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Include reads based on the SAM flag",
+                "help": "For example, to get only reads that are the first mate use a flag of 64. This is useful to count properly paired reads only once, otherwise the second mate will be also considered for the coverage.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "samFlagExclude",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Exclude reads based on the SAM flag",
+                "help": "For example, to get only reads that map to the forward strand, use --samFlagExclude 16, where 16 is the SAM flag for reads that map to the reverse strand.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "minFragmentLength",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Minimum fragment length for inclusion.",
+                "help": "This is primarily useful in things like ATACseq, where one would like to look specifically at mono- or di-nucleosome fragments.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": 0,
+                "min": 0,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "maxFragmentLength",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Maximum fragment length for inclusion.",
+                "help": "A value of 0 (the default) is equivalent to no maximum.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": 0,
+                "min": 0,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "MNase",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Determine nucleosome positions from MNase-seq data",
+                "help": "Only the 3 nucleotides at the center of each fragment are counted. The fragment ends are defined by the two mate reads. *NOTE*: Requires paired-end data. By default, only fragments between 130 and 200 bases will be used, though this can be changed with the --minFragmentLength and --maxFragmentLength options.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "--MNase",
+                "falsevalue": ""
+              },
+              {
+                "name": "Offset",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Offset inside each alignment to use for the signal location.",
+                "help": "Uses this offset inside of each read as the signal. This is useful in                     cases like RiboSeq or GROseq, where only the 12th, 15th or 1st base aligned                     should be used to denote where the signal is (rather than the span of the                     whole alignment). This can be paired with the --filterRNAstrand option. Note                     that negative values indicate offsets from the end of each read. A value of                     1 indicates the first base of the alignment (taking alignment orientation                     into account). Likewise, a value of -1 is the last base of the alignment. An                     offset of 0 is not permitted. If two values (separated by spaces) are specified, then they will be                     used to specify a range of positions. Note that specifying something like                     --Offset 5 -1 will result in the 5th through last position being used, which                     is equivalent to trimming 4 bases from the 5-prime end of alignments.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "filterRNAstrand",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Only include reads originating from fragments from the forward or reverse strand.",
+                "help": "By default (the no option), all reads are processed, regardless of the strand they originated from. For RNAseq, it can be useful to separately create bigWig files for the forward or reverse strands.                         Note that this tools assumes that a dUTP-based method was used, so fragments will be assigned to the reverse strand if the second read in a pair is reverse complemented.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "no",
+                    "value": "no",
+                    "selected": true
+                  },
+                  {
+                    "label": "forward",
+                    "value": "forward",
+                    "selected": false
+                  },
+                  {
+                    "label": "reverse",
+                    "value": "reverse",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              {
+                "name": "blackListFileName",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Blacklisted regions in BED/GTF format",
+                "help": "One or more files containing regions to exclude from the analysis",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "data",
+                "extensions": [
+                  "bed",
+                  "gtf"
+                ],
+                "multiple": true,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "outFileName",
+        "label": null,
+        "hidden": false,
+        "type": "data",
+        "format": "bigwig",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1093/nar/gkw257"
+      }
+    ],
+    "license": null,
+    "profile": "23.2",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n\nWhat it does\n--------------\n\nGiven a BAM file, this tool generates a bigWig or bedGraph file of fragment or\nread coverages. The way the method works is by first calculating all the\nnumber of reads (either extended to match the fragment length or not) that\noverlap each bin in the genome. Various options are available to normalize the reads:\n1) using a given scaling factor\n2) RPKM (reads per kilobase per million) : RPKM (per bin) =  number of reads per bin / ( number of mapped reads (in millions) * bin length (kb) ).\n3) CPM (counts per million) : CPM (per bin) =  number of reads per bin / number of mapped reads (in millions).\n4) BPM (bins per million) :  BPM (per bin) =  number of reads per bin / sum of all reads per bin (in millions).\n5) RPGC (1x sequencing depth ) : number of reads per bin /(total number of mapped reads * fragment length / effective genome size)\n\nIn the case of paired-end mapping, each read mate is treated\nindependently to avoid a bias when a mixture of concordant and discordant\npairs is present. This means that *each end* will be extended to match the\nfragment length.\n\nSee the usage hints below.\n\n.. image:: $PATH_TO_IMAGES/norm_IGVsnapshot_indFiles.png\n   :width: 600\n   :height: 336\n\nOutput\n-------------\n\n``bamCoverage`` produces a coverage file, either in bigWig or bedGraph format, where for each bin the number of overlapping reads (possibly normalized) is noted.\n\nLike BAM files, bigWig files are compressed, binary files. If you would like to see the coverage values, choose the bedGraph output. For more information on typical NGS file formats, see our `Glossary <http://deeptools.readthedocs.org/en/latest/content/help_glossary.html#file-formats>`_\n\n.. image:: $PATH_TO_IMAGES/bamCoverage_output.png\n   :width: 600\n   :height: 450\n\nUsage hints\n------------\n\n* A smaller ``bin size`` value will result in a higher resolution of the coverage track but also in a larger file size.\n* The ``1x normalization`` (RPGC) requires the input of a value for the **effective genome size**, which is the mappable part of the reference genome. Of course, this value is species-specific.\n* It might be useful for some studies to exclude certain chromosomes in order to avoid biases, e.g. chromosome X for many mammals where the males contain a pair of each autosome, but often only a single X chromosome.\n* By default, the read length is **NOT** extended! This is the preferred setting for **spliced-read** data like RNA-seq, where one usually wants to rely on the detected read locations only. A read extension would neglect potential splice sites in the unmapped part of the fragment.\n  Other data, e.g. ChIP-seq, where fragments are known to map contiuously, should be processed with read extension (``--extendReads [INT]``).\n* For paired-end data, the fragment length is generally defined by the two read mates. The user-provided fragment length is only used as a fallback for singletons or mate reads that map too far apart (with a distance greater than four times the fragment length or if the mates are located on different chromosomes).\n\n-----\n\n\n\n.. class:: infomark\n\nFor more information on the tools, please visit our `help site`_.\n\nFor support or questions please post to `Biostars`_. For bug reports and feature requests please open an issue `on github`_.\n\nThis tool is developed by the `Bioinformatics and Deep-Sequencing Unit`_ at the `Max Planck Institute for Immunobiology and Epigenetics`_.\n\n.. _Biostars: http://biostars.org\n.. _on github: http://github.com\n.. _Bioinformatics and Deep-Sequencing Unit: http://www.ie-freiburg.mpg.de/bioinformaticsfac\n.. _Max Planck Institute for Immunobiology and Epigenetics: http://www3.ie-freiburg.mpg.de\n.. _help site: https://deeptools.readthedocs.org/\n\n    \n\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "bamInput": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "binSize": {
+          "$ref": "#/$defs/Int",
+          "description": "a number greater than or equal to 1",
+          "title": "greaterThanOrEqualTo(1)",
+          "minimum": 1
+        },
+        "scaling": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "rpkm"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "cpm"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "bpm"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "no"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "1x"
+                  ]
+                },
+                "effectiveGenomeSize": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "effectiveGenomeSize_opt"
+                      ],
+                      "properties": {
+                        "effectiveGenomeSize_opt": {
+                          "type": "string",
+                          "enum": [
+                            "specific"
+                          ]
+                        },
+                        "effectiveGenomeSize": {
+                          "$ref": "#/$defs/Int"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "effectiveGenomeSize_opt"
+                      ],
+                      "properties": {
+                        "effectiveGenomeSize_opt": {
+                          "type": "string",
+                          "enum": [
+                            "93260000"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "effectiveGenomeSize_opt"
+                      ],
+                      "properties": {
+                        "effectiveGenomeSize_opt": {
+                          "type": "string",
+                          "enum": [
+                            "130428560"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "effectiveGenomeSize_opt"
+                      ],
+                      "properties": {
+                        "effectiveGenomeSize_opt": {
+                          "type": "string",
+                          "enum": [
+                            "125464728"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "effectiveGenomeSize_opt": {
+                          "type": "string",
+                          "enum": [
+                            "2685511504"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "effectiveGenomeSize_opt"
+                      ],
+                      "properties": {
+                        "effectiveGenomeSize_opt": {
+                          "type": "string",
+                          "enum": [
+                            "2701495761"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "effectiveGenomeSize_opt"
+                      ],
+                      "properties": {
+                        "effectiveGenomeSize_opt": {
+                          "type": "string",
+                          "enum": [
+                            "2304947926"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "effectiveGenomeSize_opt"
+                      ],
+                      "properties": {
+                        "effectiveGenomeSize_opt": {
+                          "type": "string",
+                          "enum": [
+                            "2308125349"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "outFileFormat": {
+          "type": "string",
+          "enum": [
+            "bigwig",
+            "bedgraph"
+          ]
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "advancedOpt": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "showAdvancedOpt": {
+                  "type": "string",
+                  "enum": [
+                    "no"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "showAdvancedOpt"
+              ],
+              "properties": {
+                "showAdvancedOpt": {
+                  "type": "string",
+                  "enum": [
+                    "yes"
+                  ]
+                },
+                "scaleFactor": {
+                  "type": "number",
+                  "description": "a finite number",
+                  "title": "finite"
+                },
+                "smoothLength": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number greater than or equal to 1",
+                      "title": "greaterThanOrEqualTo(1)",
+                      "minimum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "ignoreForNormalization": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "skipNAs": {
+                  "type": "boolean"
+                },
+                "doExtendCustom": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "doExtend": {
+                          "type": "string",
+                          "enum": [
+                            "no"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "doExtend"
+                      ],
+                      "properties": {
+                        "doExtend": {
+                          "type": "string",
+                          "enum": [
+                            "yes"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "doExtend"
+                      ],
+                      "properties": {
+                        "doExtend": {
+                          "type": "string",
+                          "enum": [
+                            "custom"
+                          ]
+                        },
+                        "extendReadsValue": {
+                          "$ref": "#/$defs/Int",
+                          "description": "a number greater than or equal to 1",
+                          "title": "greaterThanOrEqualTo(1)",
+                          "minimum": 1
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "centerReads": {
+                  "type": "boolean"
+                },
+                "minMappingQuality": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "samFlagInclude": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "samFlagExclude": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "minFragmentLength": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "maxFragmentLength": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "MNase": {
+                  "type": "boolean"
+                },
+                "Offset": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "filterRNAstrand": {
+                  "type": "string",
+                  "enum": [
+                    "no",
+                    "forward",
+                    "reverse"
+                  ]
+                },
+                "blackListFileName": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "bamInput"
+      ],
+      "properties": {
+        "bamInput": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "binSize": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int",
+              "description": "a number greater than or equal to 1",
+              "title": "greaterThanOrEqualTo(1)",
+              "minimum": 1
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "scaling": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "type"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "rpkm"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "type"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "cpm"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "type"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "bpm"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "type"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "no"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "1x"
+                      ]
+                    },
+                    "effectiveGenomeSize": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "effectiveGenomeSize_opt",
+                                "effectiveGenomeSize"
+                              ],
+                              "properties": {
+                                "effectiveGenomeSize_opt": {
+                                  "type": "string",
+                                  "enum": [
+                                    "specific"
+                                  ]
+                                },
+                                "effectiveGenomeSize": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "effectiveGenomeSize_opt"
+                              ],
+                              "properties": {
+                                "effectiveGenomeSize_opt": {
+                                  "type": "string",
+                                  "enum": [
+                                    "93260000"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "effectiveGenomeSize_opt"
+                              ],
+                              "properties": {
+                                "effectiveGenomeSize_opt": {
+                                  "type": "string",
+                                  "enum": [
+                                    "130428560"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "effectiveGenomeSize_opt"
+                              ],
+                              "properties": {
+                                "effectiveGenomeSize_opt": {
+                                  "type": "string",
+                                  "enum": [
+                                    "125464728"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "effectiveGenomeSize_opt": {
+                                  "type": "string",
+                                  "enum": [
+                                    "2685511504"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "effectiveGenomeSize_opt"
+                              ],
+                              "properties": {
+                                "effectiveGenomeSize_opt": {
+                                  "type": "string",
+                                  "enum": [
+                                    "2701495761"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "effectiveGenomeSize_opt"
+                              ],
+                              "properties": {
+                                "effectiveGenomeSize_opt": {
+                                  "type": "string",
+                                  "enum": [
+                                    "2304947926"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "effectiveGenomeSize_opt"
+                              ],
+                              "properties": {
+                                "effectiveGenomeSize_opt": {
+                                  "type": "string",
+                                  "enum": [
+                                    "2308125349"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "outFileFormat": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "bigwig",
+                "bedgraph"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "region": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "advancedOpt": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "showAdvancedOpt": {
+                      "type": "string",
+                      "enum": [
+                        "no"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "showAdvancedOpt"
+                  ],
+                  "properties": {
+                    "showAdvancedOpt": {
+                      "type": "string",
+                      "enum": [
+                        "yes"
+                      ]
+                    },
+                    "scaleFactor": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a finite number",
+                          "title": "finite"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "smoothLength": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int",
+                              "description": "a number greater than or equal to 1",
+                              "title": "greaterThanOrEqualTo(1)",
+                              "minimum": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "ignoreForNormalization": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "skipNAs": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "doExtendCustom": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "doExtend": {
+                                  "type": "string",
+                                  "enum": [
+                                    "no"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "doExtend"
+                              ],
+                              "properties": {
+                                "doExtend": {
+                                  "type": "string",
+                                  "enum": [
+                                    "yes"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "doExtend"
+                              ],
+                              "properties": {
+                                "doExtend": {
+                                  "type": "string",
+                                  "enum": [
+                                    "custom"
+                                  ]
+                                },
+                                "extendReadsValue": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int",
+                                      "description": "a number greater than or equal to 1",
+                                      "title": "greaterThanOrEqualTo(1)",
+                                      "minimum": 1
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "centerReads": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "minMappingQuality": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int",
+                              "description": "a non-negative number",
+                              "title": "greaterThanOrEqualTo(0)",
+                              "minimum": 0
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "samFlagInclude": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "samFlagExclude": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "minFragmentLength": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int",
+                              "description": "a non-negative number",
+                              "title": "greaterThanOrEqualTo(0)",
+                              "minimum": 0
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "maxFragmentLength": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int",
+                              "description": "a non-negative number",
+                              "title": "greaterThanOrEqualTo(0)",
+                              "minimum": 0
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "MNase": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "Offset": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "filterRNAstrand": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "no",
+                            "forward",
+                            "reverse"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "blackListFileName": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

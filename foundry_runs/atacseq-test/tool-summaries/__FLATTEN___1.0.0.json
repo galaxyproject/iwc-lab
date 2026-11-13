@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "tool_id": "__FLATTEN__",
+  "tool_version": "1.0.0",
+  "cache_key": "88a7cbba578a8370c93c14269b6ede37c69f99fa973c60ec01a9b07a4b8a507b",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/__FLATTEN__/versions/1.0.0",
+    "cached_at": "2026-11-10T02:37:43.162Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\88a7cbba578a8370c93c14269b6ede37c69f99fa973c60ec01a9b07a4b8a507b.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "__FLATTEN__",
+    "version": "1.0.0",
+    "name": "Flatten collection",
+    "description": "to a simple list",
+    "inputs": [
+      {
+        "name": "input",
+        "parameter_type": "gx_data_collection",
+        "hidden": false,
+        "label": "Input Collection",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data_collection",
+        "collection_type": null,
+        "extensions": [
+          "data"
+        ],
+        "value": null
+      },
+      {
+        "name": "join_identifier",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Join collection identifiers using",
+        "help": "Separator for merging dataset identifiers",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "underscore ( _ )",
+            "value": "_",
+            "selected": false
+          },
+          {
+            "label": "colon ( : )",
+            "value": ":",
+            "selected": false
+          },
+          {
+            "label": "dash ( - )",
+            "value": "-",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output",
+        "label": "${on_string} (flattened)",
+        "hidden": false,
+        "type": "collection",
+        "collection_type": "list",
+        "collection_type_source": null,
+        "collection_type_from_rules": null,
+        "structured_like": null,
+        "discover_datasets": []
+      }
+    ],
+    "citations": [],
+    "license": null,
+    "profile": "16.01",
+    "edam_operations": [
+      "operation_2409"
+    ],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n========\nSynopsis\n========\n\nFlattens a nested collection into a simple list.\n\n===========\nDescription\n===========\n\nThis tool takes a nested collection — such as a list of lists (``list:list``), a list of dataset pairs (``list:paired``), or even deeper structures — and collapses it into a single flat ``list``. Every dataset in the hierarchy becomes a top-level element in the output.\n\nBecause the hierarchy is removed, the element identifiers from each nesting level are joined together to form new unique names. By default the separator is an underscore (``_``), but you can choose a colon (``:``) or dash (``-``) instead.\n\n========\nExamples\n========\n\n**Flatten a list of pairs**\n\nA ``list:paired`` collection with two samples::\n\n list:paired: \"Sequencing reads\"\n\n   sample1/\n     forward  →  reads_R1.fastq\n     reverse  →  reads_R2.fastq\n   sample2/\n     forward  →  reads_R1.fastq\n     reverse  →  reads_R2.fastq\n\nAfter flattening with separator ``_``::\n\n list: \"Sequencing reads (flattened)\"\n\n   sample1_forward  →  reads_R1.fastq\n   sample1_reverse  →  reads_R2.fastq\n   sample2_forward  →  reads_R1.fastq\n   sample2_reverse  →  reads_R2.fastq\n\n-------\n\n**Flatten a list of lists**\n\nA ``list:list`` collection::\n\n list:list: \"Batches\"\n\n   batch1/\n     Dataset 1\n     Dataset 2\n   batch2/\n     Dataset 3\n\nAfter flattening::\n\n list: \"Batches (flattened)\"\n\n   batch1_Dataset 1\n   batch1_Dataset 2\n   batch2_Dataset 3\n\n-------\n\n**Choosing a different separator**\n\nWith separator set to ``-`` instead of ``_``, the same example would produce ``batch1-Dataset 1``, ``batch1-Dataset 2``, etc.\n\n-------\n\n.. image:: ${static_path}/images/tools/collection_ops/flatten.svg\n  :alt: Flatten a nested collection into a simple list\n  :width: 500\n\n-------\n\n.. class:: infomark\n\nThis tool will create new history datasets copied from your input collections but your quota usage will not increase.\n\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "join_identifier": {
+          "type": "string",
+          "enum": [
+            "_",
+            ":",
+            "-"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "join_identifier": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "_",
+                ":",
+                "-"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

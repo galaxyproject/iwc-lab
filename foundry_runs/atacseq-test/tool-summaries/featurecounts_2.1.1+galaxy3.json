@@ -1,0 +1,2759 @@
+{
+  "schema_version": 1,
+  "tool_id": "featurecounts",
+  "tool_version": "2.1.1+galaxy3",
+  "cache_key": "f2f7dc9e0c0036b06b2b64cd4632217701d19ee608e5f51b683a7f2b944d086f",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~featurecounts~featurecounts/versions/2.1.1+galaxy3",
+    "cached_at": "2026-11-12T04:39:10.456Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\f2f7dc9e0c0036b06b2b64cd4632217701d19ee608e5f51b683a7f2b944d086f.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "featurecounts",
+    "version": "2.1.1+galaxy3",
+    "name": "featureCounts",
+    "description": "Measure gene expression in RNA-Seq experiments from SAM or BAM files",
+    "inputs": [
+      {
+        "name": "alignment",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Alignment file",
+        "help": "The input alignment file(s) where the gene expression has to be counted. The file can have a SAM or BAM format; but ALL files must be in the same format. Unless you are using a Gene annotation file from the History, these files must have the database/genome attribute already specified e.g. hg38, not the default: ?",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "unsorted.bam",
+          "bam",
+          "sam"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "strand_specificity",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Specify strand information",
+        "help": "Indicate if the data is stranded and if strand-specific read counting should be performed. Strand setting must be the same as the strand settings used to produce the mapped BAM input(s)",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Unstranded",
+            "value": "0",
+            "selected": true
+          },
+          {
+            "label": "Stranded (Forward)",
+            "value": "1",
+            "selected": false
+          },
+          {
+            "label": "Stranded (Reverse)",
+            "value": "2",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "anno",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "anno_select",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Gene annotation file",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "featureCounts built-in",
+              "value": "builtin",
+              "selected": false
+            },
+            {
+              "label": "locally cached",
+              "value": "cached",
+              "selected": true
+            },
+            {
+              "label": "A GFF/GTF file in your history",
+              "value": "history",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "builtin",
+            "parameters": [
+              {
+                "name": "bgenome",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Select built-in genome",
+                "help": "Built-in gene annotations for genomes hg38, hg19, mm10 and mm9 are included in featureCounts",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": null,
+                "multiple": false,
+                "validators": [
+                  {
+                    "type": "no_options",
+                    "message": "A built-in annotation file is not available for the genome build associated with the selected input file",
+                    "implicit": false,
+                    "negate": false
+                  }
+                ]
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "cached",
+            "parameters": [
+              {
+                "name": "reference_gene_sets_cached",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Using locally cached annotation",
+                "help": "If the annotation file you require is not listed here, please contact the Galaxy administrator.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": null,
+                "multiple": false,
+                "validators": [
+                  {
+                    "type": "no_options",
+                    "message": "A cached annotation file is not available for the genome build associated with the selected input file",
+                    "implicit": false,
+                    "negate": false
+                  }
+                ]
+              },
+              {
+                "name": "gff_feature_type",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "GFF feature type filter",
+                "help": "Specify the feature type. Only rows which have the matched matched feature type in the provided GTF annotation file will be included for read counting. `exon' by default.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "gff_feature_attribute",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "GFF gene identifier",
+                "help": "Specify the attribute type used to group features (eg. exons) into meta-features (eg. genes), when GTF annotation is provided. `gene_id' by default. This attribute type is usually the gene identifier. This argument is useful for the meta-feature level summarization. Ex: if the 9th column is 'gene_id \"ENSG00000223972\"; gene_name \"DDX11L1\" gene_source \"havana\"' (GTF) or 'gene_id=ENSG00000223972; gene_name=DDX11L1; gene_source=havana' (GFF), the available attributes for this feature are 'gene_id', 'gene_name' and 'gene_source'.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "summarization_level",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "On feature level",
+                "help": "If specified, read summarization will be performed at the feature level. By default (-f is not specified), the read summarization is performed at the meta-feature level.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": " -f",
+                "falsevalue": ""
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "history",
+            "parameters": [
+              {
+                "name": "reference_gene_sets",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Gene annotation file",
+                "help": "The program assumes that the provided annotation file is in GFF/GTF format. Make sure that the gene annotation file corresponds to the same reference genome as used for the alignment.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "gff",
+                  "gtf",
+                  "gff3"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "gff_feature_type",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "GFF feature type filter",
+                "help": "Specify the feature type. Only rows which have the matched matched feature type in the provided GTF annotation file will be included for read counting. `exon' by default.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "gff_feature_attribute",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "GFF gene identifier",
+                "help": "Specify the attribute type used to group features (eg. exons) into meta-features (eg. genes), when GTF annotation is provided. `gene_id' by default. This attribute type is usually the gene identifier. This argument is useful for the meta-feature level summarization. Ex: if the 9th column is 'gene_id \"ENSG00000223972\"; gene_name \"DDX11L1\" gene_source \"havana\"' (GTF) or 'gene_id=ENSG00000223972; gene_name=DDX11L1; gene_source=havana' (GFF), the available attributes for this feature are 'gene_id', 'gene_name' and 'gene_source'.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "summarization_level",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "On feature level",
+                "help": "If specified, read summarization will be performed at the feature level. By default (-f is not specified), the read summarization is performed at the meta-feature level.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": " -f",
+                "falsevalue": ""
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "format",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Output format",
+        "help": "The output format will be tabular, select the preferred columns here",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Gene-ID \"\\t\" read-count (MultiQC/DESeq2/edgeR/limma-voom compatible)",
+            "value": "tabdel_short",
+            "selected": false
+          },
+          {
+            "label": "Gene-ID \"\\t\" read-count \"\\t\" gene-length",
+            "value": "tabdel_medium",
+            "selected": false
+          },
+          {
+            "label": "featureCounts 1.4.0+ default (includes regions provided by the GTF file)",
+            "value": "tabdel_full",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "include_feature_length_file",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Create gene-length file",
+        "help": "Creates a tabular file that contains the effective (nucleotides used for counting reads) length of the feature; might be useful for estimating FPKM/RPKM",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "true",
+        "falsevalue": "false"
+      },
+      {
+        "name": "pe_parameters",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "paired_end_status",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Does the input have read pairs?",
+          "help": "Were the bam files generated by aligning the output of a paired-end sequencing experiment? If yes, the tool can consider 2 reads = 1 read pair as 1 entity to count. Alternatively, you can opt to consider treating the read pairs as 2 individual reads to count seperately.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "No, single-end.",
+              "value": "single_end",
+              "selected": true
+            },
+            {
+              "label": "Yes, paired-end but still count them as if individual reads.",
+              "value": "PE_individual",
+              "selected": false
+            },
+            {
+              "label": "Yes, paired-end and count them as 1 single fragment.",
+              "value": "PE_fragments",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "single_end",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "PE_individual",
+            "parameters": [
+              {
+                "name": "only_both_ends",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Only allow fragments with both reads aligned",
+                "help": "If specified, only fragments that have both ends successfully aligned will be considered for summarization. This option is only applicable for paired-end reads.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": " -B",
+                "falsevalue": ""
+              },
+              {
+                "name": "exclude_chimerics",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Exclude chimeric fragments",
+                "help": "If specified, the chimeric fragments (those fragments that have their two ends aligned to different chromosomes) will NOT be included for summarization. This option is only applicable for paired-end read data.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": true,
+                "truevalue": " -C",
+                "falsevalue": ""
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "PE_fragments",
+            "parameters": [
+              {
+                "name": "check_distance_enabled",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "P",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Check paired-end distance",
+                  "help": "If specified, paired-end distance will be checked when assigning fragments to meta-features or features. This option is only applicable when -p (Count fragments instead of reads) is specified. The distance thresholds can be specified using -d and -D (minimum and maximum fragment/template length) options.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "Check the distance between paired reads",
+                      "value": "true",
+                      "selected": false
+                    },
+                    {
+                      "label": "Do not check",
+                      "value": "false",
+                      "selected": true
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "true",
+                    "parameters": [
+                      {
+                        "name": "minimum_fragment_length",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Minimum fragment/template length.",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 50,
+                        "min": 0,
+                        "max": null,
+                        "validators": []
+                      },
+                      {
+                        "name": "maximum_fragment_length",
+                        "parameter_type": "gx_integer",
+                        "hidden": false,
+                        "label": "Maximum fragment/template length.",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "integer",
+                        "value": 600,
+                        "min": 1,
+                        "max": null,
+                        "validators": []
+                      }
+                    ],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "false",
+                    "parameters": [],
+                    "is_default_when": true
+                  }
+                ]
+              },
+              {
+                "name": "only_both_ends",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Only allow fragments with both reads aligned",
+                "help": "If specified, only fragments that have both ends successfully aligned will be considered for summarization. This option is only applicable for paired-end reads.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": " -B",
+                "falsevalue": ""
+              },
+              {
+                "name": "exclude_chimerics",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Exclude chimeric fragments",
+                "help": "If specified, the chimeric fragments (those fragments that have their two ends aligned to different chromosomes) will NOT be included for summarization. This option is only applicable for paired-end read data.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": true,
+                "truevalue": " -C",
+                "falsevalue": ""
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "read_filtering_parameters",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "mapping_quality",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimum mapping quality per read",
+            "help": "The minimum mapping quality score a read must satisfy in order to be counted. For paired-end reads, at least one end should satisfy this criteria. 0 by default.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 0,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "splitonly",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Filter split alignments",
+            "help": "Split alignments are alignments with CIGAR string containing 'N', e.g. exon spanning reads in RNASeq.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "No filtering: count split and non-split alignments",
+                "value": "",
+                "selected": false
+              },
+              {
+                "label": "Count only split alignments (--splitOnly)",
+                "value": "--splitOnly",
+                "selected": false
+              },
+              {
+                "label": "Count only non-split alignments (--nonSplitOnly)",
+                "value": "--nonSplitOnly",
+                "selected": false
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          {
+            "name": "primary",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Only count primary alignments",
+            "help": "If specified, only primary alignments will be counted. Primary and secondary alignments are identified using bit 0x100 in theFlag field of SAM/BAM files. All primary alignments in a dataset will be counted regardless of whether they are from multi-mapping reads or not ('-M' is ignored).",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": " --primary",
+            "falsevalue": ""
+          },
+          {
+            "name": "ignore_dup",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Ignore reads marked as duplicate",
+            "help": "If specified, reads that were marked as duplicates will be ignored. Bit Ox400 in the FLAG field of a SAM/BAM file is used for identifying duplicate reads. In paired end data, the entire read pair will be ignored if at least one end is found to be a duplicate read.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": " --ignoreDup",
+            "falsevalue": ""
+          }
+        ]
+      },
+      {
+        "name": "extended_parameters",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "multifeatures",
+            "parameter_type": "gx_conditional",
+            "hidden": false,
+            "label": null,
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "conditional",
+            "test_parameter": {
+              "name": "multifeat",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Allow reads to map to multiple features",
+              "help": "Setting -O, -M and --fraction",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "Disabled: reads that align to multiple features or overlapping features are excluded",
+                  "value": "",
+                  "selected": true
+                },
+                {
+                  "label": "Enabled: multi-mapping reads are included (-M)",
+                  "value": "-M",
+                  "selected": false
+                },
+                {
+                  "label": "Enabled: multi-overlapping features are included (-O)",
+                  "value": "-O",
+                  "selected": false
+                },
+                {
+                  "label": "Enabled: both multi-mapping and multi-overlapping features are included (-M -O)",
+                  "value": "-O -M",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            "whens": [
+              {
+                "discriminator": "",
+                "parameters": [],
+                "is_default_when": true
+              },
+              {
+                "discriminator": "-M",
+                "parameters": [
+                  {
+                    "name": "fraction",
+                    "parameter_type": "gx_boolean",
+                    "hidden": false,
+                    "label": "Assign fractions to multi-mapping reads",
+                    "help": "If specified, a fractional count 1/x will be generated for each multi-mapping read, where x is the number of alignments (indicated by 'NH' tag) reported for the read.",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "boolean",
+                    "value": false,
+                    "truevalue": "--fraction",
+                    "falsevalue": ""
+                  }
+                ],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "-O",
+                "parameters": [
+                  {
+                    "name": "fraction",
+                    "parameter_type": "gx_boolean",
+                    "hidden": false,
+                    "label": "Assign fractions to multi-overlapping features",
+                    "help": "If specified, a fractional count 1/y will be generated for each multi-overlapping feature, where y is the number of features overlapping with the read.",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "boolean",
+                    "value": false,
+                    "truevalue": "--fraction",
+                    "falsevalue": ""
+                  }
+                ],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "-O -M",
+                "parameters": [
+                  {
+                    "name": "fraction",
+                    "parameter_type": "gx_boolean",
+                    "hidden": false,
+                    "label": "Assign fractions to both multi-mapping reads and multi-overlapping features",
+                    "help": "If specified, a fractional count 1/(x*y) will be generated, where x is the number of alignments (indicated by 'NH' tag) and y the number of overlapping features.",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "boolean",
+                    "value": false,
+                    "truevalue": "--fraction",
+                    "falsevalue": ""
+                  }
+                ],
+                "is_default_when": false
+              }
+            ]
+          },
+          {
+            "name": "exon_exon_junction_read_counting_enabled",
+            "parameter_type": "gx_conditional",
+            "hidden": false,
+            "label": null,
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "conditional",
+            "test_parameter": {
+              "name": "count_exon_exon_junction_reads",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Exon-exon junctions",
+              "help": "Junctions are identified from those exon-spanning reads (containing ‘N’ in CIGAR string) in input data. The output result includes names of primary and secondary genes that overlap at least one of the two splice sites of a junction.",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "Count reads supporting each exon-exon junction.",
+                  "value": "-J",
+                  "selected": false
+                },
+                {
+                  "label": "Do not count",
+                  "value": "",
+                  "selected": true
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            "whens": [
+              {
+                "discriminator": "-J",
+                "parameters": [
+                  {
+                    "name": "genome",
+                    "parameter_type": "gx_data",
+                    "hidden": false,
+                    "label": "Reference sequence file",
+                    "help": "The FASTA-format file that contains the reference sequences used in read mapping can be used to improve read counting for junctions",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": true,
+                    "type": "data",
+                    "extensions": [
+                      "fasta"
+                    ],
+                    "multiple": false,
+                    "min": null,
+                    "max": null,
+                    "url_default": null
+                  }
+                ],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "",
+                "parameters": [],
+                "is_default_when": true
+              }
+            ]
+          },
+          {
+            "name": "long_reads",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Long reads",
+            "help": "If specified, long reads such as Nanopore and PacBio reads will be counted. Long read counting can only run in one thread and only reads (not read-pairs) can be counted.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "-L",
+            "falsevalue": ""
+          },
+          {
+            "name": "by_read_group",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Count reads by read group",
+            "help": "If specified, reads are counted for each read group separately. The 'RG' tag must be present in the input BAM/SAM alignment files.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "--byReadGroup",
+            "falsevalue": ""
+          },
+          {
+            "name": "largest_overlap",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Largest overlap",
+            "help": "If specified, reads (or fragments) will be assigned to the target that has the largest number of overlapping bases",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": " --largestOverlap",
+            "falsevalue": ""
+          },
+          {
+            "name": "min_overlap",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimum bases of overlap",
+            "help": "Specify the minimum required number of overlapping bases between a read (or a fragment) and a feature. 1 by default. If a negative value is provided, the read will be extended from both ends.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 1,
+            "min": null,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "frac_overlap",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Minimum fraction (of read) overlapping a feature",
+            "help": "Specify the minimum required fraction of overlapping bases between a read (or a fragment) and a feature. Value should be within range [0,1]. 0 by default. Number of overlapping bases is counted from both reads if paired end. Both this option and '--minOverlap' need to be satisfied for read assignment.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "float",
+            "value": 0,
+            "min": 0,
+            "max": 1,
+            "validators": []
+          },
+          {
+            "name": "frac_overlap_feature",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Minimum fraction (of feature) overlapping a read",
+            "help": "Specify the minimum required fraction of bases included in a feature overlapping bases between a read (or a read-pair). Value should be within range [0,1]. 0 by default.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "float",
+            "value": 0,
+            "min": 0,
+            "max": 1,
+            "validators": []
+          },
+          {
+            "name": "read_extension_5p",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Read 5' extension",
+            "help": "Reads are extended upstream by ... bases from their 5' end",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 0,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "read_extension_3p",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Read 3' extension",
+            "help": "Reads are extended upstream by ... bases from their 3' end",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 0,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "read_reduction",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Reduce read to single position",
+            "help": "The read is reduced to its 5' most base or 3'most base. Read summarization is then performed based on the single base the the read is reduced to.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "Leave the read as it is",
+                "value": "",
+                "selected": true
+              },
+              {
+                "label": "Reduce it to the 5' end",
+                "value": "--read2pos 5",
+                "selected": false
+              },
+              {
+                "label": "Reduce it to the 3' end",
+                "value": "--read2pos 3",
+                "selected": false
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          {
+            "name": "R",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Annotates the alignment file with 'XS:Z:'-tags to described per read or read-pair the corresponding assigned feature(s).",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "-R BAM",
+            "falsevalue": ""
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output_medium",
+        "label": "${tool.name} on ${on_string}: Counts (with length)",
+        "hidden": false,
+        "type": "data",
+        "format": "tabular",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_bam",
+        "label": "${tool.name} on ${on_string}: Alignment file",
+        "hidden": false,
+        "type": "data",
+        "format": "bam",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_short",
+        "label": "${tool.name} on ${on_string}: Counts",
+        "hidden": false,
+        "type": "data",
+        "format": "tabular",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_full",
+        "label": "${tool.name} on ${on_string}: Counts (with location)",
+        "hidden": false,
+        "type": "data",
+        "format": "tabular",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_summary",
+        "label": "${tool.name} on ${on_string}: Summary",
+        "hidden": false,
+        "type": "data",
+        "format": "tabular",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_feature_lengths",
+        "label": "${tool.name} on ${on_string}: Feature lengths",
+        "hidden": false,
+        "type": "data",
+        "format": "tabular",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_jcounts",
+        "label": "${tool.name} on ${on_string}: Junction counts",
+        "hidden": false,
+        "type": "data",
+        "format": "tabular",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1093/bioinformatics/btt656"
+      }
+    ],
+    "license": null,
+    "profile": "25.0",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "featurecounts",
+        "type": "bio.tools"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\nfeatureCounts\n#############\n\nOverview\n--------\nFeatureCounts is a light-weight read counting program written entirely in the C programming language. It can be used to count both gDNA-seq and RNA-seq reads for genomic features in in SAM/BAM files. FeatureCounts is part of the Subread_ package.\n\nInput formats\n-------------\nAlignments should be provided in either:\n\n - SAM format, http://samtools.sourceforge.net/samtools.shtml#5\n - BAM format\n\nAnnotations for gene regions should be provided in the GFF/GTF format:\n\n - http://genome.ucsc.edu/FAQ/FAQformat.html#format3\n - http://www.ensembl.org/info/website/upload/gff.html\n\nAlternatively, the featureCounts built-in annotations for genomes hg38, hg19, mm10 and mm9 can be used through selecting the built-in option above. These annotation files are in simplified annotation format (SAF) as shown below. The GeneID column contains Entrez gene identifiers and each entry (row) is taken as a feature (e.g. an exon).\n\nExample - **Built-in annotation format**:\n\n  ======  ====  =======  =======  ======\n  GeneID  Chr   Start    End      Strand\n  ======  ====  =======  =======  ======\n  497097  chr1  3204563  3207049  -\n  497098  chr1  3411783  3411982  -\n  497099  chr1  3660633  3661579  -\n  ======  ====  =======  =======  ======\n\nThese annotation files can be found in the _`Subread package`_. You can see the version of Subread used by this wrapper in the tool form above under `Options > Requirements`. To create the files, the annotations were downloaded from NCBI RefSeq database and then adapted by merging overlapping exons from the same gene to form a set of disjoint exons for each gene. Genes with the same Entrez gene identifiers were also merged into one gene. See the `Subread User's Guide`_ for more information. Gene names can be obtained for these Entrez identifiers with the Galaxy **annotateMyIDs** tool.\n\nOutput format\n-------------\nFeatureCounts produces a table containing counted reads, per gene, per row. Optionally the last column can be set to be the effective gene-length. These tables are compatible with the DESeq2, edgeR and limma-voom Galaxy wrappers by IUC.\n\n.. _Subread: http://subread.sourceforge.net/\n.. _`Subread User's Guide`: https://bioconductor.org/packages/release/bioc/vignettes/Rsubread/inst/doc/SubreadUsersGuide.pdf\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "alignment": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "strand_specificity": {
+          "type": "string",
+          "enum": [
+            "0",
+            "1",
+            "2"
+          ]
+        },
+        "anno": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "anno_select"
+              ],
+              "properties": {
+                "anno_select": {
+                  "type": "string",
+                  "enum": [
+                    "builtin"
+                  ]
+                },
+                "bgenome": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "anno_select": {
+                  "type": "string",
+                  "enum": [
+                    "cached"
+                  ]
+                },
+                "reference_gene_sets_cached": {
+                  "type": "string"
+                },
+                "gff_feature_type": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "gff_feature_attribute": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "summarization_level": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "anno_select"
+              ],
+              "properties": {
+                "anno_select": {
+                  "type": "string",
+                  "enum": [
+                    "history"
+                  ]
+                },
+                "reference_gene_sets": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "gff_feature_type": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "gff_feature_attribute": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "summarization_level": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "tabdel_short",
+            "tabdel_medium",
+            "tabdel_full"
+          ]
+        },
+        "include_feature_length_file": {
+          "type": "boolean"
+        },
+        "pe_parameters": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "paired_end_status": {
+                  "type": "string",
+                  "enum": [
+                    "single_end"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "paired_end_status"
+              ],
+              "properties": {
+                "paired_end_status": {
+                  "type": "string",
+                  "enum": [
+                    "PE_individual"
+                  ]
+                },
+                "only_both_ends": {
+                  "type": "boolean"
+                },
+                "exclude_chimerics": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "paired_end_status"
+              ],
+              "properties": {
+                "paired_end_status": {
+                  "type": "string",
+                  "enum": [
+                    "PE_fragments"
+                  ]
+                },
+                "check_distance_enabled": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "P"
+                      ],
+                      "properties": {
+                        "P": {
+                          "type": "string",
+                          "enum": [
+                            "true"
+                          ]
+                        },
+                        "minimum_fragment_length": {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        "maximum_fragment_length": {
+                          "$ref": "#/$defs/Int",
+                          "description": "a number greater than or equal to 1",
+                          "title": "greaterThanOrEqualTo(1)",
+                          "minimum": 1
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "P": {
+                          "type": "string",
+                          "enum": [
+                            "false"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "only_both_ends": {
+                  "type": "boolean"
+                },
+                "exclude_chimerics": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "read_filtering_parameters": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "mapping_quality": {
+              "$ref": "#/$defs/Int",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            },
+            "splitonly": {
+              "type": "string",
+              "enum": [
+                "",
+                "--splitOnly",
+                "--nonSplitOnly"
+              ]
+            },
+            "primary": {
+              "type": "boolean"
+            },
+            "ignore_dup": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "extended_parameters": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "multifeatures": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "multifeat": {
+                      "type": "string",
+                      "enum": [
+                        ""
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "multifeat"
+                  ],
+                  "properties": {
+                    "multifeat": {
+                      "type": "string",
+                      "enum": [
+                        "-M"
+                      ]
+                    },
+                    "fraction": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "multifeat"
+                  ],
+                  "properties": {
+                    "multifeat": {
+                      "type": "string",
+                      "enum": [
+                        "-O"
+                      ]
+                    },
+                    "fraction": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "multifeat"
+                  ],
+                  "properties": {
+                    "multifeat": {
+                      "type": "string",
+                      "enum": [
+                        "-O -M"
+                      ]
+                    },
+                    "fraction": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "exon_exon_junction_read_counting_enabled": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "count_exon_exon_junction_reads"
+                  ],
+                  "properties": {
+                    "count_exon_exon_junction_reads": {
+                      "type": "string",
+                      "enum": [
+                        "-J"
+                      ]
+                    },
+                    "genome": {
+                      "$id": "/schemas/never",
+                      "not": {},
+                      "title": "never"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "count_exon_exon_junction_reads": {
+                      "type": "string",
+                      "enum": [
+                        ""
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "long_reads": {
+              "type": "boolean"
+            },
+            "by_read_group": {
+              "type": "boolean"
+            },
+            "largest_overlap": {
+              "type": "boolean"
+            },
+            "min_overlap": {
+              "$ref": "#/$defs/Int"
+            },
+            "frac_overlap": {
+              "type": "number",
+              "description": "a number less than or equal to 1",
+              "title": "lessThanOrEqualTo(1)",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "frac_overlap_feature": {
+              "type": "number",
+              "description": "a number less than or equal to 1",
+              "title": "lessThanOrEqualTo(1)",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "read_extension_5p": {
+              "$ref": "#/$defs/Int",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            },
+            "read_extension_3p": {
+              "$ref": "#/$defs/Int",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            },
+            "read_reduction": {
+              "type": "string",
+              "enum": [
+                "",
+                "--read2pos 5",
+                "--read2pos 3"
+              ]
+            },
+            "R": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "alignment"
+      ],
+      "properties": {
+        "alignment": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "strand_specificity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "2"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "anno": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "anno_select"
+                  ],
+                  "properties": {
+                    "anno_select": {
+                      "type": "string",
+                      "enum": [
+                        "builtin"
+                      ]
+                    },
+                    "bgenome": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "anno_select": {
+                      "type": "string",
+                      "enum": [
+                        "cached"
+                      ]
+                    },
+                    "reference_gene_sets_cached": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "gff_feature_type": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "gff_feature_attribute": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "summarization_level": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "anno_select",
+                    "reference_gene_sets"
+                  ],
+                  "properties": {
+                    "anno_select": {
+                      "type": "string",
+                      "enum": [
+                        "history"
+                      ]
+                    },
+                    "reference_gene_sets": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "gff_feature_type": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "gff_feature_attribute": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "summarization_level": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "format": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "tabdel_short",
+                "tabdel_medium",
+                "tabdel_full"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "include_feature_length_file": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "pe_parameters": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "paired_end_status": {
+                      "type": "string",
+                      "enum": [
+                        "single_end"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "paired_end_status"
+                  ],
+                  "properties": {
+                    "paired_end_status": {
+                      "type": "string",
+                      "enum": [
+                        "PE_individual"
+                      ]
+                    },
+                    "only_both_ends": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "exclude_chimerics": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "paired_end_status"
+                  ],
+                  "properties": {
+                    "paired_end_status": {
+                      "type": "string",
+                      "enum": [
+                        "PE_fragments"
+                      ]
+                    },
+                    "check_distance_enabled": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "P"
+                              ],
+                              "properties": {
+                                "P": {
+                                  "type": "string",
+                                  "enum": [
+                                    "true"
+                                  ]
+                                },
+                                "minimum_fragment_length": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int",
+                                      "description": "a non-negative number",
+                                      "title": "greaterThanOrEqualTo(0)",
+                                      "minimum": 0
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "maximum_fragment_length": {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int",
+                                      "description": "a number greater than or equal to 1",
+                                      "title": "greaterThanOrEqualTo(1)",
+                                      "minimum": 1
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "P": {
+                                  "type": "string",
+                                  "enum": [
+                                    "false"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "only_both_ends": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "exclude_chimerics": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "read_filtering_parameters": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "mapping_quality": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "splitonly": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "",
+                        "--splitOnly",
+                        "--nonSplitOnly"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "primary": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "ignore_dup": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "extended_parameters": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "multifeatures": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "multifeat": {
+                              "type": "string",
+                              "enum": [
+                                ""
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "multifeat"
+                          ],
+                          "properties": {
+                            "multifeat": {
+                              "type": "string",
+                              "enum": [
+                                "-M"
+                              ]
+                            },
+                            "fraction": {
+                              "anyOf": [
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "multifeat"
+                          ],
+                          "properties": {
+                            "multifeat": {
+                              "type": "string",
+                              "enum": [
+                                "-O"
+                              ]
+                            },
+                            "fraction": {
+                              "anyOf": [
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "multifeat"
+                          ],
+                          "properties": {
+                            "multifeat": {
+                              "type": "string",
+                              "enum": [
+                                "-O -M"
+                              ]
+                            },
+                            "fraction": {
+                              "anyOf": [
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "exon_exon_junction_read_counting_enabled": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "count_exon_exon_junction_reads"
+                          ],
+                          "properties": {
+                            "count_exon_exon_junction_reads": {
+                              "type": "string",
+                              "enum": [
+                                "-J"
+                              ]
+                            },
+                            "genome": {
+                              "type": "object",
+                              "required": [
+                                "__class__"
+                              ],
+                              "properties": {
+                                "__class__": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ConnectedValue"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "count_exon_exon_junction_reads": {
+                              "type": "string",
+                              "enum": [
+                                ""
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "long_reads": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "by_read_group": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "largest_overlap": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "min_overlap": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "frac_overlap": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "frac_overlap_feature": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "read_extension_5p": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "read_extension_3p": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "read_reduction": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "",
+                        "--read2pos 5",
+                        "--read2pos 3"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "R": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

@@ -1,0 +1,438 @@
+entries:
+- id: macs-gsize-no-compute-step
+  status: surrendered
+  blocking: false
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  unmet: MACS2 effective genome size when not supplied (NF computes KHMER_UNIQUEKMERS(fasta, read_length) or looks it up in iGenomes by genome+read_length)
+  missing: no khmer unique-kmers wrapper confirmed on test.galaxyproject.org; v1 exposes macs_gsize as a required integer parameter, and the test profile sets no value
+  resolved_by: null
+  supersedes: null
+  note: 'test-data phase must supply a value for the yeast test genome (e.g. computed unique 50-mers) or the workflow must add a compute step | still open after phase 7: macs_gsize stays a required int
+    input | test value supplied by nextflow-to-test-data: 11622260 = exact distinct canonical 50-mers in test genome.fa (read_length 50), stand-in for khmer unique-kmers; workflow still has no compute step
+    | surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: gff-input-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  units: params.gff and the GUNZIP_GFF + GFFREAD branch of PREPARE_GENOME
+  because: prepare_genome.nf uses gff only when gtf is unset (either-or); a gxformat2 either-or input needs a conditional and the test profile supplies gtf
+  unmet: annotation supplied as GFF3 only
+  missing: "no GFF\u2192GTF conversion in the workflow"
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: gene-tss-bed-override-inputs-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  units: params.gene_bed, params.tss_bed (user-supplied overrides); GUNZIP_GENE_BED, GUNZIP_TSS_BED
+  because: prepare_genome.nf rebuilds both from the GTF whenever they are unset (GTF2BED, TSS_EXTRACT); test profile sets neither, so Galaxy always derives them
+  unmet: user-supplied gene/TSS BED overriding the GTF-derived ones
+  missing: optional override inputs
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: prebuilt-aligner-index-inputs-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  units: params.bwa_index (and bowtie2_index/chromap_index/star_index subject to aligner scope); UNTAR_* aliases
+  because: devteam/bwa/bwa_mem 0.7.19+galaxy2 on test.galaxyproject.org takes an index only from a data table or builds from a history FASTA; uploaded index datasets are not consumable (wrapper inputs,
+    checked via /api/tools 2026-11-12, uncited beyond tool id)
+  unmet: reuse of a pre-built aligner index
+  missing: index rebuilt in-tool per alignment job
+  resolved_by: null
+  supersedes: null
+  note: 'rebuild cost is per job (8 runs in test); acceptable at yeast scale only | surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: igenomes-key-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  units: params.genome, igenomes_base, igenomes_ignore, save_reference; conf/igenomes.config lookup incl. macs_gsize table
+  because: 'v1 reference posture: no data tables / cached builds; Galaxy surface starts at resolved per-asset inputs (nextflow-to-galaxy-reference-data-mapping)'
+  unmet: one-key genome selection
+  missing: users upload fasta + gtf (+ blacklist) explicitly
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: bwa-index-rebuild-unverified-wrapper-param
+  status: resolved
+  blocking: false
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  unmet: in-tool BWA index rebuild from history FASTA
+  missing: wrapper's reference_source "history" branch not yet confirmed from the tool summary
+  resolved_by: advance-galaxy-draft-step
+  supersedes: null
+  note: confirm during phase 7 when the bwa_mem step is implemented | devteam/bwa/bwa_mem 0.7.19+galaxy2 has reference_source_selector=history (index built in job); bound
+- id: aligners-other-than-bwa
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: FASTQ_ALIGN_BOWTIE2, FASTQ_ALIGN_CHROMAP, ALIGN_STAR (+ their index builders/untars)
+  because: 'user scope decision 2026-11-12: core library spine, BWA only; params.aligner default is bwa (nextflow.config)'
+  unmet: alternative aligners
+  missing: aligner fixed to bwa
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: merged-replicate-level
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: PICARD_MERGESAMFILES_REPLICATE, MERGED_REPLICATE_MARKDUPLICATES_PICARD, MERGED_REPLICATE_BAM_TO_BIGWIG, MERGED_REPLICATE_CALL_ANNOTATE_PEAKS, MERGED_REPLICATE_CONSENSUS_PEAKS
+  because: 'user scope decision 2026-11-12: core library spine, BWA only'
+  unmet: merged-replicate BAMs, bigWigs, peaks and consensus
+  missing: library level only
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: extra-qc-stages
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: MERGED_LIBRARY_ATAQV_ATAQV, MERGED_LIBRARY_ATAQV_MKARV, IGV, MERGED_LIBRARY_BIGWIG_PLOT_DEEPTOOLS, MERGED_LIBRARY_DEEPTOOLS_PLOTFINGERPRINT, MERGED_LIBRARY_PICARD_COLLECTMULTIPLEMETRICS, MERGED_LIBRARY_PRESEQ_LCEXTRAP
+  because: 'user scope decision 2026-11-12: core library spine, BWA only (preseq already skipped by default: skip_preseq = true)'
+  unmet: ataqv, IGV session, deepTools profile/heatmap/fingerprint, Picard metrics, Preseq
+  missing: corresponding MultiQC sections absent
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: control-pairing-branch
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: params.with_control branches (ch_control_bam_bai combine, control BAM to MACS2)
+  because: 'with_control defaults false; the selected test profile has no control column; user scope decision 2026-11-12: core library spine, BWA only'
+  unmet: treatment/control peak calling
+  missing: MACS2 runs without control
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: min-trimmed-reads-filter
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: FASTQ_FASTQC_UMITOOLS_TRIMGALORE min_trimmed_reads (10000) run filter
+  because: 'uncited: no Galaxy step identified yet that filters collection elements by read count from Trim Galore logs'
+  unmet: drop runs with too few reads after trimming
+  missing: all runs proceed to alignment
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: paired-or-unpaired-mapping-unverified
+  status: resolved
+  blocking: false
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  unmet: map FastQC / Trim Galore / BWA-MEM over list:paired_or_unpaired reads
+  missing: target wrappers not yet checked for paired_or_unpaired collection inputs; fallback is split into list:paired + list and re-merge before library grouping
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+  supersedes: null
+  note: design splits reads into list:paired + list lanes at input (split_pe_se); no tool needs to accept paired_or_unpaired
+- id: mixed-se-pe-library-unsupported
+  status: surrendered
+  blocking: false
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  unmet: a library whose runs mix single- and paired-end reads
+  missing: not modelled; test data never mixes within a library
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: collection-builtins-unverified
+  blocking: false
+  step: split_pe_se
+  unmet: split paired_or_unpaired collection; filter collection by identifiers of another; filter empty elements
+  missing: target built-in collection tools not yet listed
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  resolved_by: advance-galaxy-draft-step
+  supersedes: null
+  note: 'template pins __SPLIT_PAIRED_AND_UNPAIRED__, __FILTER_EMPTY_DATASETS__, __FILTER_FROM_FILE__, __MERGE_COLLECTION__, __APPLY_RULES__; availability on target checked in phase 7 | GET /api/tools?in_panel=false
+    on test.galaxyproject.org 2026-11-12: __SPLIT_PAIRED_AND_UNPAIRED__ 1.0.0, __FILTER_EMPTY_DATASETS__ 1.1.0, __FILTER_FROM_FILE__ 1.0.0, __MERGE_COLLECTION__ 1.0.0, __APPLY_RULES__ 1.1.0, __FLATTEN__
+    1.0.0 present'
+- id: orphan-pair-removal-no-known-wrapper
+  blocking: false
+  step: remove_orphans
+  unmet: drop orphan / non-FR read pairs from filtered PE BAM
+  missing: source uses bundled bin/bampe_rm_orphan.py --only_fr_pairs; Galaxy equivalent unknown
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  resolved_by: advance-galaxy-draft-step
+  supersedes: null
+  note: implemented as GalaxyUserTool atacseq_bampe_rm_orphan (compact pysam port of bampe_rm_orphan.py --only_fr_pairs, source mulled container); runtime unverified
+- id: consensus-expand-script
+  blocking: false
+  step: consensus_peaks
+  unmet: per-interval library-support count and min_reps_consensus filter after bedtools merge; BED + SAF projection
+  missing: source uses bundled bin/macs2_merged_expand.py
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  resolved_by: compare-against-iwc-exemplar
+  supersedes: null
+  note: 'IWC epigenetics/consensus-peaks/consensus-peaks-atac-cutandrun: bedtools_multiintersectbed over per-library peaks -> Filter1 with compose_text_param "c4 >= N" -> bedtools merge -> Cut/awk to BED
+    + SAF'
+- id: deseq2-qc-script
+  blocking: false
+  step: deseq2_qc
+  unmet: DESeq2 VST PCA + sample distance heatmap from featureCounts matrix
+  missing: source uses bundled bin/deseq2_qc.r
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  resolved_by: advance-galaxy-draft-step
+  supersedes: null
+  note: 'implemented as GalaxyUserTool atacseq_deseq2_qc (condensed deseq2_qc.r: VST/rlog, PCA top 500, distance heatmap; source mulled DESeq2 container); runtime unverified'
+- id: featurecounts-multi-bam-matrix
+  blocking: false
+  step: featurecounts
+  unmet: one counts matrix over all library BAMs (count column 7 onward per sample)
+  missing: Galaxy featureCounts wrapper shape (multi-BAM vs per-BAM) unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  resolved_by: advance-galaxy-draft-step
+  supersedes: null
+  note: featureCounts mapped per library BAM (tabdel_short) + collection_column_join into Geneid x library matrix
+- id: peak-qc-plot-scripts
+  kind: dropped
+  units: PLOT_MACS2_QC, PLOT_HOMER_ANNOTATEPEAKS, MULTIQC_CUSTOM_PEAKS, plot_peak_intersect.r, CUSTOM_DUMPSOFTWAREVERSIONS
+  because: bundled R/Python plot or MultiQC-plumbing scripts with no interface output (nextflow-galaxy-interface.md outputs table); Galaxy records versions itself
+  unmet: peak QC summary plots and annotation distribution plots
+  missing: not produced
+  status: surrendered
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: macs2-tuning-inputs-fixed
+  kind: dropped
+  units: 'interface inputs narrow_peak, macs_fdr, macs_pvalue, bwa_min_score, keep_dups, keep_multi_map (fixed at nf-core defaults: broad, no p/q override, no -T, drop dups, drop multimappers)'
+  because: each drives a wrapper conditional selector or flag set (macs2 broad_options_selector / cutoff_options_selector, samtools view flag lists) that a connected workflow parameter cannot switch without
+    map_param_value plumbing per option; defaults reproduce the selected test profile
+  unmet: user control of peak mode, cutoffs, BWA min score, duplicate/multimapper retention
+  missing: values fixed in step state
+  status: surrendered
+  raised_by: nextflow-summary-to-galaxy-template
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: reduced-samtools-qc-levels
+  kind: dropped
+  units: run-level SAMTOOLS_STATS/FLAGSTAT/IDXSTATS; markdup-level stats/idxstats; filtered-level idxstats
+  because: MultiQC-only QC sections; kept flagstat at markdup + filtered levels and stats at filtered level to bound step count (78 steps)
+  unmet: full samtools QC sections in MultiQC
+  missing: those MultiQC sections
+  status: surrendered
+  raised_by: nextflow-summary-to-galaxy-template
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: consensus-needs-two-libraries
+  blocking: false
+  step: consensus_multiintersect
+  unmet: nf-core skips consensus when only one library has peaks (.filter { it.size() > 1 })
+  missing: 'no when: guard; multiintersect with one input may fail'
+  note: 'test data has 6 libraries | ran with 6 libraries; single-library case still untested | surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+  status: surrendered
+  raised_by: nextflow-summary-to-galaxy-template
+  resolved_by: null
+  supersedes: null
+- id: consensus-support-semantics-differ
+  blocking: false
+  step: consensus_filter
+  unmet: nf-core keeps a whole merged union interval when >= N libraries overlap it anywhere
+  missing: multiintersect+filter keeps only the sub-intervals covered by >= N libraries, then merges; consensus regions can be narrower; featureCounts counts will differ from nf-core
+  note: 'decision recorded; acceptable for v1 | surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+  status: surrendered
+  raised_by: nextflow-summary-to-galaxy-template
+  resolved_by: null
+  supersedes: null
+- id: fastqc-list-paired-vs-list-merge
+  status: resolved
+  blocking: true
+  step: merge_fastqc_raw
+  unmet: merge PE and SE raw FastQC report collections
+  missing: pe_fastqc_raw maps over list:paired -> list:paired output; se is list; __MERGE_COLLECTION__ needs equal collection types
+  resolved_by: advance-galaxy-draft-step
+  note: 'repaired in-loop: inserted pe_fastqc_flatten (__FLATTEN__ join "_") before merge_fastqc_raw; identifiers become <run>_forward/_reverse'
+  raised_by: advance-galaxy-draft-step
+  supersedes: null
+- id: markdup-flagstat-multiqc-collision
+  status: resolved
+  kind: dropped
+  units: pe_markdup_flagstat, se_markdup_flagstat
+  because: Galaxy element identifiers are the same library ids at markdup and filtered levels, so MultiQC would merge/overwrite the two flagstat sets (nf-core distinguishes them by file prefix .mLb.mkD
+    vs .mLb.clN); steps had no other consumer
+  unmet: MultiQC samtools flagstat section for marked (pre-filter) BAMs
+  missing: only filtered-level flagstat reported
+  resolved_by: advance-galaxy-draft-step
+  note: removed in-loop
+  raised_by: advance-galaxy-draft-step
+  supersedes: null
+- id: trimmed-fastqc-not-produced
+  status: surrendered
+  kind: dropped
+  units: TRIMGALORE --fastqc (FastQC on trimmed reads)
+  because: bgruening/trim_galore 0.6.10+galaxy1 has no --fastqc option (tool summary inputs); no extra FastQC steps added
+  unmet: trimmed-read FastQC in MultiQC
+  missing: only raw FastQC
+  raised_by: advance-galaxy-draft-step
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+- id: coverage-via-bamcoverage
+  status: surrendered
+  blocking: false
+  step: pe_genomecov
+  unmet: bedtools genomecov -bg -scale -pc (PE) / -fs fragment_size (SE)
+  missing: iuc bedtools_genomecoveragebed 2.31.1+galaxy0 exposes no -pc/-fs; deeptools_bam_coverage 4.0.0+galaxy1 used with scaleFactor=1e6/mapped, extendReads (PE pairs / SE fragment_size), binSize 10,
+    bedgraph output -> bin-level not base-level resolution
+  note: 'decision: acceptable deviation; tracks comparable but not byte-identical | surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+  raised_by: advance-galaxy-draft-step
+  resolved_by: null
+  supersedes: null
+- id: homer-gid-not-available
+  status: surrendered
+  blocking: false
+  step: pe_homer_annotate
+  unmet: annotatePeaks.pl -gid
+  missing: iuc homer_annotatePeaks 4.11+galaxy3 exposes no -gid; annotation keyed by transcript id
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+  raised_by: advance-galaxy-draft-step
+  resolved_by: null
+  supersedes: null
+- id: featurecounts-gtf-not-saf
+  status: surrendered
+  blocking: false
+  step: consensus_saf
+  unmet: featureCounts -F SAF on consensus intervals
+  missing: Galaxy featureCounts wrapper accepts gff/gtf/gff3 only; consensus_saf now emits GTF (feature peak, gene_id Interval_<n>) - same intervals, counted with -t peak -g gene_id
+  note: 'surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+  raised_by: advance-galaxy-draft-step
+  resolved_by: null
+  supersedes: null
+- id: read-group-id-only
+  status: surrendered
+  blocking: false
+  step: pe_bwa_mem
+  unmet: nf-core @RG with ID, SM (sample minus _T suffix), PL, LB, PU, CN
+  missing: bwa_mem rg_selector set_id_auto sets ID from dataset name only
+  note: 'no downstream tool in scope reads SM/LB | surrendered at run end (2026-11-12): carried into the final artifacts as a labelled gap/deviation'
+  raised_by: advance-galaxy-draft-step
+  resolved_by: null
+  supersedes: null
+- id: udt-runtime-unverified
+  status: resolved
+  blocking: false
+  step: null
+  unmet: include_regions_bed, pe_remove_orphans, deseq2_qc user-defined tools run correctly on target
+  missing: validated with gxwf validate-tool-source only; not executed
+  note: all three UDT steps ran green on test.galaxyproject.org (invocation 585d40391400052f)
+  raised_by: advance-galaxy-draft-step
+  resolved_by: debug-galaxy-workflow-output
+  supersedes: null
+- id: featurecounts-pe-mode-on-se-bams
+  status: resolved
+  blocking: true
+  raised_by: debug-galaxy-workflow-output
+  step: featurecounts
+  unmet: count SE library BAMs against consensus peaks
+  missing: single featureCounts step in PE_fragments mode over merged PE+SE libraries; subread 2.1.1 aborts on SE BAMs (jobs 3cfd783266481e23 et al., invocation bb3f64d789035923)
+  resolved_by: debug-galaxy-workflow-output
+  supersedes: null
+  note: 'repaired: pe_featurecounts / se_featurecounts + merge_counts; attempt 3 green'
+- id: frame-color-lightblue
+  status: resolved
+  blocking: true
+  raised_by: debug-galaxy-workflow-output
+  step: null
+  unmet: workflow import on target
+  missing: frame color lightblue not in Galaxy palette (400 on import)
+  resolved_by: debug-galaxy-workflow-output
+  supersedes: null
+  note: colour changed to yellow
+discoveries:
+- id: summary-lacks-reference-assets
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: 'summary-nextflow.json has reference_assets: [] and reference_rebuilds: []; rebuild branches read from subworkflows/local/prepare_genome.nf'
+  impact: derived reference steps (chrom sizes, autosomes, include-regions BED, gene/TSS BED) must be designed by data-flow from this brief rather than from summary fields
+- id: test-genome-small
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: 'test profile: fasta = nf-core/test-datasets atacseq reference/genome.fa, gtf = reference/genes.gtf, mito_name MT'
+  impact: in-tool index rebuild per job is affordable for the test
+- id: reference-derivatives-mostly-unneeded
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: gene BED, TSS BED and autosomes feed only deepTools/ataqv (dropped)
+  impact: reference prep reduces to fai/chrom sizes and include-regions BED
+- id: featurecounts-always-paired-flag
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: 'SUBREAD_FEATURECOUNTS meta is [id: consensus_peaks] (no single_end) so module adds -p for all BAMs'
+  impact: Galaxy featureCounts should mirror -p behaviour or note the deviation
+- id: iwc-atacseq-uses-data-table-index
+  raised_by: compare-against-iwc-exemplar
+  evidence: IWC atacseq Bowtie2 reference_genome|index from text parameter "Reference Genome" (cached index)
+  impact: do not copy; reference posture keeps history FASTA
+- id: test-macs-gsize-11622260
+  raised_by: nextflow-to-test-data
+  evidence: distinct canonical 50-mers of nf-core test-datasets atacseq reference/genome.fa (12,157,105 bp) computed locally 2026-11-12
+  impact: 'use macs_gsize: 11622260 in the Galaxy test job'
+- id: attempt-2-observed-values
+  raised_by: debug-galaxy-workflow-output
+  evidence: peaks 634-1483/library, FRiP 0.32-0.43, consensus 1874 intervals, PE properly paired 99.8%
+  impact: basis for tightening assertions
+decisions:
+- id: reference-inputs-fasta-gtf-blacklist
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: 'Workflow reference inputs: genome_fasta (fasta, required), genome_gtf (gtf, required), blacklist_bed (bed, optional), macs_gsize (integer, required), mito_name (text, optional), keep_mito (boolean).
+    All other reference assets derived inside the workflow.'
+  rationale: 'v1 posture: explicit inputs, no data tables, in-tool or workflow-tier rebuild'
+- id: scope-core-library-spine
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Carry QC+trim, BWA, library merge/dedup/filter, bigWig, MACS2+FRiP+HOMER, consensus+featureCounts+DESeq2, MultiQC.
+  rationale: user choice 2026-11-12 (AskUserQuestion)
+- id: reads-list-paired-or-unpaired-run-identifiers
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: reads input is list:paired_or_unpaired keyed <sample>_REP<r>_T<n>; workflow regroups into libraries by stripping _T<n>.
+  rationale: mirrors check_samplesheet.py ids and NF groupTuple; avoids sample_sheet metadata loss through map-over
+- id: skip-flags-fixed-on
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: All skip_* flags for carried stages fixed to run; not exposed.
+  rationale: 'no step-level when: in v1; test profile runs them all'
+- id: pe-se-lanes
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Split reads into PE and SE lanes at input; one lane subworkflow instantiated twice; merge per-library collections before consensus.
+  rationale: source branches on meta.single_end in TRIMGALORE, BAMTOOLS_FILTER args+config, BAM_REMOVE_ORPHANS, BEDTOOLS_GENOMECOV (-pc/-fs), MACS2_CALLPEAK (BAMPE/BAM); flag is lost once reads become BAMs
+- id: per-element-scale-factor-idiom
+  decided_by: compare-against-iwc-exemplar
+  decision: Where a tool needs a per-element numeric argument (bigWig scale = 1e6/mapped reads), use samtools view -c / flagstat -> column_maker -> param_value_from_file -> connected tool parameter.
+  rationale: IWC epigenetics/atacseq/atacseq steps "number of reads" -> "compute 1/million reads" -> "Convert 1/million reads to parameter" -> bigwigAverage scaleFactors
+- id: bamtools-filter-conditions-from-json
+  decided_by: compare-against-iwc-exemplar
+  decision: Encode assets/bamtools_filter_{pe,se}.json rules as devteam/bamtools_filter conditions; keep samtools view for flags and -L include regions.
+  rationale: IWC atacseq uses bamFilter conditions[].filters[] with mapQuality/isProperPair/reference
+- id: flat-twin-lanes-not-subworkflow
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: PE and SE lanes emitted as flat pe_*/se_* step twins, not one subworkflow used twice.
+  rationale: 'a run: subworkflow repeated inline would be implemented twice anyway; flat twins let phase 7 resolve each distinct tool once and copy to its twin'
+- id: frip-via-count-concat-awk
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: FRiP = frip_count -> cat1 with synced flagstat -> awk ratio.
+  rationale: IWC atacseq reads-in-peaks idiom; per-element pairing kept by filtering flagstats to peak-bearing identifiers
+- id: tool-version-pins-from-target
+  decided_by: advance-galaxy-draft-step
+  decision: Pin each wrapper to the newest version installed on test.galaxyproject.org (macs2 2.2.9.1+galaxy0 as IWC; trim_galore 0.6.10+galaxy1 not 2.3.0)
+  rationale: workflow must run on the target toolbox; IWC pin preferred where present
+- id: fasta-compute-length-for-sizes
+  decided_by: advance-galaxy-draft-step
+  decision: ref_faidx realised with devteam fasta_compute_length 1.0.4 (keep_first_word) since no samtools_faidx wrapper is installed on the target; chrom_sizes Cut1 kept.
+  rationale: target toolbox listing
+- id: ucsc-wigtobigwig-for-bigwig
+  decided_by: advance-galaxy-draft-step
+  decision: bigWig via iuc/ucsc_wigtobigwig 502+galaxy0 with history chrom sizes (built-in wig_to_bigWig absent on target).
+  rationale: target toolbox listing
+topology_repair:
+  escalations: 0
+  cap: 5
+  open_history: []
+  note: three structural edits (pe_fastqc_flatten, markdup flagstat removal, featureCounts lane split) were made in-loop/debug without escalating to repair-galaxy-draft-topology; see feedback ledger

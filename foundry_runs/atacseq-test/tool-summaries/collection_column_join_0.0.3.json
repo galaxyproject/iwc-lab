@@ -1,0 +1,403 @@
+{
+  "schema_version": 1,
+  "tool_id": "collection_column_join",
+  "tool_version": "0.0.3",
+  "cache_key": "8e50fd8a24188e986c49cebc05e203d0823197f3b291fcc19d212bb5d95a46d6",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~collection_column_join~collection_column_join/versions/0.0.3",
+    "cached_at": "2026-11-10T02:29:30.843Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\8e50fd8a24188e986c49cebc05e203d0823197f3b291fcc19d212bb5d95a46d6.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "collection_column_join",
+    "version": "0.0.3",
+    "name": "Column join",
+    "description": "on multiple datasets",
+    "inputs": [
+      {
+        "name": "input_tabular",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Tabular files",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "tabular"
+        ],
+        "multiple": true,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "identifier_column",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "Identifier column",
+        "help": "The column that will be used to join the input datasets",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "integer",
+        "value": 1,
+        "min": 0,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "has_header",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "Number of header lines in each input file",
+        "help": "If this is set to 0, a header line will be added containing column names as follows: the identifier column will be named #KEY and the other columns are named by the input dataset names/columns. If you have one or more header lines in your input, set this to the number of header lines.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "integer",
+        "value": 0,
+        "min": 0,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "old_col_in_header",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Add column name to header",
+        "help": "Disable if you want column headers to only be composed of the input file names, for example, if you want headers like file1 and not file1_column1, see Help section below. Default: Yes",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": true,
+        "truevalue": null,
+        "falsevalue": null
+      },
+      {
+        "name": "fill_char",
+        "parameter_type": "gx_text",
+        "hidden": false,
+        "label": "Fill character",
+        "help": "a placeholder for empty cells",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "text",
+        "area": false,
+        "value": null,
+        "default_options": [],
+        "validators": []
+      },
+      {
+        "name": "include_outputs",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Additional datasets to create",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Shell script",
+            "value": "output_shell_script",
+            "selected": false
+          }
+        ],
+        "multiple": true,
+        "validators": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "tabular_output",
+        "label": null,
+        "hidden": false,
+        "type": "data",
+        "format": "tabular",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [
+          {
+            "discover_via": "pattern",
+            "format": null,
+            "visible": false,
+            "assign_primary_output": false,
+            "directory": null,
+            "recurse": false,
+            "match_relative_path": false,
+            "sort_key": "filename",
+            "sort_comp": "lexical",
+            "sort_reverse": false,
+            "pattern": "primary_DATASET_ID_(?P<designation>[^_]+)_(?P<visible>[^_]+)_(?P<ext>[^_]+)(_(?P<dbkey>[^_]+))?"
+          }
+        ],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "script_output",
+        "label": null,
+        "hidden": false,
+        "type": "data",
+        "format": "txt",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [
+          {
+            "discover_via": "pattern",
+            "format": null,
+            "visible": false,
+            "assign_primary_output": false,
+            "directory": null,
+            "recurse": false,
+            "match_relative_path": false,
+            "sort_key": "filename",
+            "sort_comp": "lexical",
+            "sort_reverse": false,
+            "pattern": "primary_DATASET_ID_(?P<designation>[^_]+)_(?P<visible>[^_]+)_(?P<ext>[^_]+)(_(?P<dbkey>[^_]+))?"
+          }
+        ],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [],
+    "license": null,
+    "profile": "16.01",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n        \nJoins lists of tabular datasets together on a field.\n\n-----\n\n**Example**\n\nTo join three files, with headers, based on the first column:\n\n**First file (in_1)**::\n\n    #KEY    c2  c3  c4\n    one     1-1 1-2 1-3\n    two     1-4 1-5 1-6\n    three   1-7 1-8 1-9\n\n\n**Second File (in_2)**::\n\n    #KEY    c2  c3  c4\n    one     2-1 2-2 2-3\n    two     2-4 2-5 2-6\n    three   2-7 2-8 2-9\n\n**Third file (in_3)**::\n\n    #KEY    c2  c3  c4\n    one     3-3 3-2 3-3\n    two     3-4 3-5 3-6\n    three   3-7 3-8 3-9\n\n\n**Joining** the files, using **identifier column of 1** and a **header lines of 1**, will return::\n\n    #KEY    in_1_c2 in_1_c3 in_1_c4 in_2_c2 in_2_c3 in_2_c4 in_3_c2 in_3_c3 in_3_c4\n    one     1-1              1-2            1-3             2-1              2-2             2-3             3-3             3-2             3-3\n    three   1-7              1-8            1-9             2-7              2-8             2-9             3-7             3-8             3-9\n    two     1-4              1-5            1-6             2-4              2-5             2-6             3-4             3-5             3-6\n\n\n**Joining** the files, using **identifier column of 1** and a **header lines of 1**, but disabling **Add column name to header**, will return::\n\n    #KEY    in_1 in_1 in_1 in_2 in_2 in_2 in_3 in_3 in_3\n    one     1-1              1-2            1-3             2-1              2-2             2-3             3-3             3-2             3-3\n    three   1-7              1-8            1-9             2-7              2-8             2-9             3-7             3-8             3-9\n    two     1-4              1-5            1-6             2-4              2-5             2-6             3-4             3-5             3-6\n\n        \n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input_tabular": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "identifier_column": {
+          "$ref": "#/$defs/Int",
+          "description": "a non-negative number",
+          "title": "greaterThanOrEqualTo(0)",
+          "minimum": 0
+        },
+        "has_header": {
+          "$ref": "#/$defs/Int",
+          "description": "a non-negative number",
+          "title": "greaterThanOrEqualTo(0)",
+          "minimum": 0
+        },
+        "old_col_in_header": {
+          "type": "boolean"
+        },
+        "fill_char": {
+          "type": "string"
+        },
+        "include_outputs": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "output_shell_script"
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "input_tabular"
+      ],
+      "properties": {
+        "input_tabular": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "identifier_column": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "has_header": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "old_col_in_header": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "fill_char": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "include_outputs": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "output_shell_script"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "__class__"
+                    ],
+                    "properties": {
+                      "__class__": {
+                        "type": "string",
+                        "enum": [
+                          "ConnectedValue"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

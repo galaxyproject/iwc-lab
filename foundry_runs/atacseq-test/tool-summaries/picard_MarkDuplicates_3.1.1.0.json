@@ -1,0 +1,610 @@
+{
+  "schema_version": 1,
+  "tool_id": "picard_MarkDuplicates",
+  "tool_version": "3.1.1.0",
+  "cache_key": "6bb9615c01cbd85fe28b635336b9d3357ecbd5df91aa4f728b58bb5ae8889162",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/devteam~picard~picard_MarkDuplicates/versions/3.1.1.0",
+    "cached_at": "2026-11-10T02:23:24.783Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\6bb9615c01cbd85fe28b635336b9d3357ecbd5df91aa4f728b58bb5ae8889162.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "picard_MarkDuplicates",
+    "version": "3.1.1.0",
+    "name": "MarkDuplicates",
+    "description": "examine aligned records in BAM datasets to locate duplicate molecules",
+    "inputs": [
+      {
+        "name": "inputFile",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Select SAM/BAM dataset or dataset collection",
+        "help": "If empty, upload or import a SAM/BAM dataset",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "bam"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "comments",
+        "parameter_type": "gx_repeat",
+        "hidden": false,
+        "label": null,
+        "help": "You can provide multiple comments",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "repeat",
+        "parameters": [
+          {
+            "name": "comment",
+            "parameter_type": "gx_text",
+            "hidden": false,
+            "label": "Add this comment to BAM dataset",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "text",
+            "area": false,
+            "value": null,
+            "default_options": [],
+            "validators": []
+          }
+        ],
+        "min": 0,
+        "max": null
+      },
+      {
+        "name": "remove_duplicates",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "If true do not write duplicates to the output file instead of writing them with appropriate flags set",
+        "help": "REMOVE_DUPLICATES; default=False",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": null,
+        "falsevalue": null
+      },
+      {
+        "name": "assume_sorted",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Assume the input file is already sorted",
+        "help": "ASSUME_SORTED; default=True",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": true,
+        "truevalue": "true",
+        "falsevalue": "false"
+      },
+      {
+        "name": "duplicate_scoring_strategy",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "The scoring strategy for choosing the non-duplicate among candidates",
+        "help": "DUPLICATE_SCORING_STRATEGY; default=SUM_OF_BASE_QUALITIES",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "SUM_OF_BASE_QUALITIES",
+            "value": "SUM_OF_BASE_QUALITIES",
+            "selected": true
+          },
+          {
+            "label": "TOTAL_MAPPED_REFERENCE_LENGTH",
+            "value": "TOTAL_MAPPED_REFERENCE_LENGTH",
+            "selected": false
+          },
+          {
+            "label": "RANDOM",
+            "value": "RANDOM",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "read_name_regex",
+        "parameter_type": "gx_text",
+        "hidden": false,
+        "label": "Regular expression that can be used in unusual situations to parse non-standard read names in the incoming SAM/BAM dataset",
+        "help": "READ_NAME_REGEX; Read names are parsed to extract three variables: tile/region, x coordinate and y coordinate. These values are used to estimate the rate of optical duplication in order to give a more accurate estimated library size. See help below for more info; default='' (uses : separation)",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "text",
+        "area": false,
+        "value": null,
+        "default_options": [],
+        "validators": []
+      },
+      {
+        "name": "optical_duplicate_pixel_distance",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "The maximum offset between two duplicte clusters in order to consider them optical duplicates",
+        "help": "OPTICAL_DUPLICATE_PIXEL_DISTANCE; default=100",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "integer",
+        "value": 100,
+        "min": 0,
+        "max": 5000,
+        "validators": []
+      },
+      {
+        "name": "barcode_tag",
+        "parameter_type": "gx_text",
+        "hidden": false,
+        "label": "Barcode Tag",
+        "help": "Barcode SAM tag. This tag can be utilized when you have data from an assay that includes Unique Molecular Indices. Typically 'RX' ",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "text",
+        "area": false,
+        "value": null,
+        "default_options": [],
+        "validators": []
+      },
+      {
+        "name": "validation_stringency",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Select validation stringency",
+        "help": " Setting stringency to SILENT can improve performance when processing a BAM file in which variable-length data (read, qualities, tags) do not otherwise need to be decoded.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Lenient",
+            "value": "LENIENT",
+            "selected": true
+          },
+          {
+            "label": "Silent",
+            "value": "SILENT",
+            "selected": false
+          },
+          {
+            "label": "Strict",
+            "value": "STRICT",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "metrics_file",
+        "label": "${tool.name} on ${on_string}: tabular",
+        "hidden": false,
+        "type": "data",
+        "format": "txt",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "outFile",
+        "label": "${tool.name} on ${on_string}: BAM",
+        "hidden": false,
+        "type": "data",
+        "format": "bam",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "bibtex",
+        "content": "@misc{Picard,\n                  author = {Broad Institute},\n                  title = {Picard},\n                  publisher = {GitHub},\n                  journal = { Broad Institute, GitHub repository},\n                  url = {http://broadinstitute.github.io/picard/}\n                }"
+      }
+    ],
+    "license": null,
+    "profile": "22.05",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n**Purpose**\n\nExamines aligned records in the supplied SAM or BAM dataset to locate duplicate molecules. All records are then written to the output file with the duplicate records flagged.\n\n\n------\n\n**Dataset collections - processing large numbers of datasets at once**\n\nThis will be added shortly\n\n    \n\n\n------\n\n**Inputs, outputs, and parameters**\n\nEither a SAM file or a BAM file must be supplied. Galaxy automatically coordinate-sorts all uploaded BAM files.\n\nFrom Picard documentation( http://broadinstitute.github.io/picard/)::\n\n    \n\n  COMMENT=String\n  CO=String                     Comment(s) to include in the output file's header.  This option may be specified 0 or\n                                more times.\n\n  REMOVE_DUPLICATES=Boolean     If true do not write duplicates to the output file instead of writing them with\n                                appropriate flags set.  Default value: false.\n\n  READ_NAME_REGEX=String        This option is only needed if your read names do not follow a standard illumina convention\n                                of colon separation but do contain tile, x, and y coordinates (unusual).\n                                A regular expression that can be used to parse read names in the incoming SAM file. Read\n                                names are parsed to extract three variables: tile/region, x coordinate and y coordinate.\n                                These values are used to estimate the rate of optical duplication in order to give a more\n                                accurate estimated library size. Set this option to null to disable optical duplicate\n                                detection. The regular expression should contain three capture groups for the three\n                                variables, in order. It must match the entire read name. Note that if the default regex\n                                is specified, a regex match is not actually done, but instead the read name  is split on\n                                colon character. For 5 element names, the 3rd, 4th and 5th elements are assumed to be\n                                tile, x and y values. For 7 element names (CASAVA 1.8), the 5th, 6th, and 7th elements\n                                are assumed to be tile, x and y values.  Default value: ''\n\n\n  DUPLICATE_SCORING_STRATEGY=ScoringStrategy\n  DS=ScoringStrategy            The scoring strategy for choosing the non-duplicate among candidates.  Default value:\n                                SUM_OF_BASE_QUALITIES. Possible values: {SUM_OF_BASE_QUALITIES, TOTAL_MAPPED_REFERENCE_LENGTH}\n\n  OPTICAL_DUPLICATE_PIXEL_DISTANCE=Integer\n                                The maximum offset between two duplicate clusters in order to consider them optical\n                                duplicates. This should be set to 100 for (circa 2011+) read names and typical flowcells.\n                                Structured flow cells (NovaSeq, HiSeq 4000, X) should use ~2500.\n                                For older conventions, distances could be to some fairly small number (e.g. 5-10 pixels)\n                                Default value: 100.\n\n  BARCODE_TAG=String            Barcode SAM tag (ex. BC for 10X Genomics)  Default value: null.\n\n\n------\n\n**Additional information**\n\nAdditional information about Picard tools is available from Picard web site at http://broadinstitute.github.io/picard/ .\n    \n\n  "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "inputFile": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [],
+            "properties": {
+              "comment": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "remove_duplicates": {
+          "type": "boolean"
+        },
+        "assume_sorted": {
+          "type": "boolean"
+        },
+        "duplicate_scoring_strategy": {
+          "type": "string",
+          "enum": [
+            "SUM_OF_BASE_QUALITIES",
+            "TOTAL_MAPPED_REFERENCE_LENGTH",
+            "RANDOM"
+          ]
+        },
+        "read_name_regex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "optical_duplicate_pixel_distance": {
+          "$ref": "#/$defs/Int",
+          "description": "a number less than or equal to 5000",
+          "title": "lessThanOrEqualTo(5000)",
+          "minimum": 0,
+          "maximum": 5000
+        },
+        "barcode_tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "validation_stringency": {
+          "type": "string",
+          "enum": [
+            "LENIENT",
+            "SILENT",
+            "STRICT"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "inputFile"
+      ],
+      "properties": {
+        "inputFile": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "comments": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [],
+                "properties": {
+                  "comment": {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "__class__"
+                        ],
+                        "properties": {
+                          "__class__": {
+                            "type": "string",
+                            "enum": [
+                              "ConnectedValue"
+                            ]
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "remove_duplicates": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "assume_sorted": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "duplicate_scoring_strategy": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "SUM_OF_BASE_QUALITIES",
+                "TOTAL_MAPPED_REFERENCE_LENGTH",
+                "RANDOM"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "read_name_regex": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "optical_duplicate_pixel_distance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int",
+              "description": "a number less than or equal to 5000",
+              "title": "lessThanOrEqualTo(5000)",
+              "minimum": 0,
+              "maximum": 5000
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "barcode_tag": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "validation_stringency": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "LENIENT",
+                "SILENT",
+                "STRICT"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

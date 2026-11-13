@@ -1,0 +1,548 @@
+class: GalaxyWorkflow
+label: IWC exemplar subgraph (epigenetics/atacseq/atacseq + epigenetics/consensus-peaks/consensus-peaks-atac-cutandrun)
+doc: 'Relevant subgraph only, converted with gxwf convert --to format2 --compact from galaxyproject/iwc @ 5bfb694 (2026-11-11). Not runnable as-is: connections into
+  omitted steps remain.'
+inputs:
+  PE fastq input:
+    id: PE fastq input
+    type: collection
+    collection_type: list:paired
+    optional: false
+    fields: null
+    column_definitions: null
+    doc: Should be a paired collection with ATAC-seq fastqs
+  Reference Genome:
+    id: Reference Genome
+    type: string
+    optional: false
+    restrictOnConnections: true
+    doc: Choose a reference genome to map on
+  Effective genome size:
+    id: Effective genome size
+    type: int
+    optional: false
+    doc: 'Used by macs2:\nH. sapiens: 2700000000, M. musculus: 1870000000, D. melanogaster: 120000000, C. elegans: 90000000'
+steps:
+  atacseq:
+  - id: Bowtie2 map on reference
+    label: Bowtie2 map on reference
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/bowtie2/bowtie2/2.5.5+galaxy0
+    tool_version: 2.5.5+galaxy0
+    tool_shed_repository:
+      changeset_revision: a470b376503d
+      name: bowtie2
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: library|input_1
+      source: Fastp (remove adapter and bad quality reads)/output_paired_coll
+    - id: reference_genome|index
+      source: Reference Genome
+    out:
+    - id: output
+      hide: true
+      rename: bowtie2 output (BAM)
+    - id: mapping_stats
+      rename: mapping stats
+    tool_state:
+      analysis_type:
+        analysis_type_selector: simple
+        __current_case__: 0
+        presets: --very-sensitive
+      library:
+        type: paired_collection
+        __current_case__: 1
+        input_1:
+          __class__: ConnectedValue
+        unaligned_file: false
+        aligned_file: false
+        paired_options:
+          paired_options_selector: 'yes'
+          __current_case__: 0
+          I: '0'
+          X: '1000'
+          fr_rf_ff: --fr
+          no_mixed: false
+          no_discordant: false
+          dovetail: true
+          no_contain: false
+          no_overlap: false
+      reference_genome:
+        source: indexed
+        __current_case__: 0
+        index:
+          __class__: ConnectedValue
+      rg:
+        rg_selector: do_not_set
+        __current_case__: 3
+      sam_options:
+        sam_options_selector: 'no'
+        __current_case__: 1
+      save_mapping_stats: true
+    uuid: c32a3847-f673-487f-af98-8d50999f2d21
+  - id: filter MAPQ30 concordant pairs and not mitochondrial pairs
+    label: filter MAPQ30 concordant pairs and not mitochondrial pairs
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/bamtools_filter/bamFilter/2.5.3+galaxy0
+    tool_version: 2.5.3+galaxy0
+    tool_shed_repository:
+      changeset_revision: 47db0f26ca31
+      name: bamtools_filter
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: input_bam
+      source: Bowtie2 map on reference
+    out:
+    - id: out_file1
+      hide: true
+      rename: filtered BAM
+    - id: out_file2
+      hide: true
+    tool_state:
+      conditions:
+      - __index__: 0
+        filters:
+        - __index__: 0
+          bam_property:
+            bam_property_selector: mapQuality
+            __current_case__: 14
+            bam_property_value: '>=30'
+        - __index__: 1
+          bam_property:
+            bam_property_selector: isProperPair
+            __current_case__: 11
+            bam_property_value: true
+        - __index__: 2
+          bam_property:
+            bam_property_selector: reference
+            __current_case__: 20
+            bam_property_value: '!chrM'
+        - __index__: 3
+          bam_property:
+            bam_property_selector: mateReference
+            __current_case__: 16
+            bam_property_value: '!MT'
+      input_bam:
+        __class__: ConnectedValue
+      rule_configuration:
+        rules_selector: 'true'
+        __current_case__: 1
+        rules: null
+    uuid: eba4c413-30c9-4bab-a088-dc12d5956c91
+  - id: remove PCR duplicates
+    label: remove PCR duplicates
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/picard/picard_MarkDuplicates/3.1.1.0
+    tool_version: 3.1.1.0
+    tool_shed_repository:
+      changeset_revision: 933d5b76e8e8
+      name: picard
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: inputFile
+      source: filter MAPQ30 concordant pairs and not mitochondrial pairs/out_file1
+    out:
+    - id: metrics_file
+      rename: MarkDuplicates metrics
+    - id: outFile
+      rename: BAM filtered rmDup
+    state:
+      comments: []
+      remove_duplicates: true
+      assume_sorted: true
+      duplicate_scoring_strategy: SUM_OF_BASE_QUALITIES
+      read_name_regex: ''
+      optical_duplicate_pixel_distance: 100
+      barcode_tag: ''
+      validation_stringency: LENIENT
+    tool_state: null
+    uuid: d0a9998c-18a9-4579-8d33-f0897e1ceaeb
+  - id: convert BAM to BED to improve peak calling
+    label: convert BAM to BED to improve peak calling
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_bamtobed/2.31.1+galaxy0
+    tool_version: 2.31.1+galaxy0
+    tool_shed_repository:
+      changeset_revision: d57471728f7b
+      name: bedtools
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: input
+      source: remove PCR duplicates/outFile
+    out:
+    - id: output
+      hide: true
+      rename: BED filtered rmDup
+    tool_state:
+      __job_resource:
+        __current_case__: 0
+        __job_resource__select: 'no'
+      ed_score: false
+      input:
+        __class__: ConnectedValue
+      option: ''
+      split: false
+      tag: ''
+    uuid: 12ca18f2-222b-4e9c-8ae0-b5772cd51bd7
+  - id: number of reads
+    label: number of reads
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: input
+      source: remove PCR duplicates/outFile
+    out:
+    - id: outputcnt
+      hide: true
+    tool_state:
+      addref_cond:
+        addref_select: 'no'
+        __current_case__: 0
+      input:
+        __class__: ConnectedValue
+      mode:
+        outtype: all_reads
+        __current_case__: 0
+        output_options:
+          reads_report_type: count
+          __current_case__: 1
+    uuid: 2999f836-c74f-47ed-b1ad-81f43349fe11
+  - id: Call Peak with MACS2
+    label: Call Peak with MACS2
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/macs2/macs2_callpeak/2.2.9.1+galaxy0
+    tool_version: 2.2.9.1+galaxy0
+    tool_shed_repository:
+      changeset_revision: d8362a868940
+      name: macs2
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: effective_genome_size_options|gsize
+      source: Effective genome size
+    - id: treatment|input_treatment_file
+      source: convert BAM to BED to improve peak calling
+    out:
+    - id: output_control_lambda
+      hide: true
+      rename: MACS2 control coverage
+    - id: output_extra_files
+      hide: true
+    - id: output_tabular
+      hide: true
+      rename: MACS2 peaks xls
+    - id: output_treat_pileup
+      hide: true
+      rename: MACS2 treatment coverage
+    - id: output_narrowpeaks
+      rename: MACS2 narrowPeak
+    - id: output_summits
+      rename: MACS2 summits
+    tool_state:
+      advanced_options:
+        to_large: false
+        nolambda: false
+        spmr: false
+        ratio: null
+        slocal: null
+        llocal: null
+        broad_options:
+          broad_options_selector: nobroad
+          __current_case__: 1
+          call_summits: true
+        keep_dup_options:
+          keep_dup_options_selector: all
+          __current_case__: 2
+        d_min: '20'
+        buffer_size: '100000'
+      control:
+        c_select: 'No'
+        __current_case__: 1
+      cutoff_options:
+        cutoff_options_selector: qvalue
+        __current_case__: 1
+        qvalue: '0.05'
+      effective_genome_size_options:
+        effective_genome_size_options_selector: user_defined
+        __current_case__: 4
+        gsize:
+          __class__: ConnectedValue
+      format: BED
+      nomodel_type:
+        nomodel_type_selector: nomodel
+        __current_case__: 1
+        extsize: '200'
+        shift: '-100'
+      outputs:
+      - peaks_tabular
+      - summits
+      - bdg
+      - html
+      treatment:
+        t_multi_select: 'No'
+        __current_case__: 0
+        input_treatment_file:
+          __class__: ConnectedValue
+    uuid: 57386f5d-96bb-4684-97dc-3b2228189c01
+  - id: compute 1/million reads
+    label: compute 1/million reads
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/column_maker/Add_a_column1/2.1+galaxy0
+    tool_version: 2.1+galaxy0
+    tool_shed_repository:
+      changeset_revision: b6236eb1a50b
+      name: column_maker
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: input
+      source: number of reads/outputcnt
+    out:
+    - id: out_file1
+      hide: true
+    tool_state:
+      avoid_scientific_notation: true
+      error_handling:
+        auto_col_types: true
+        fail_on_non_existent_columns: true
+        non_computable:
+          action: --fail-on-non-computable
+          __current_case__: 0
+      input:
+        __class__: ConnectedValue
+      ops:
+        header_lines_select: 'no'
+        __current_case__: 0
+        expressions:
+        - __index__: 0
+          cond: 1000000/c1
+          add_column:
+            mode: R
+            __current_case__: 2
+            pos: '1'
+    uuid: ec62cddf-fb04-4185-b9f4-709de2ce0202
+  - id: Bigwig from MACS2 (no norm)
+    label: Bigwig from MACS2 (no norm)
+    tool_id: wig_to_bigWig
+    tool_version: 1.1.1
+    in:
+    - id: input1
+      source: Call Peak with MACS2/output_treat_pileup
+    out:
+    - id: out_file1
+      rename: Coverage from MACS2 (bigwig)
+    tool_state:
+      input1:
+        __class__: ConnectedValue
+      settings:
+        settingsType: preset
+        __current_case__: 0
+    uuid: 4eea632c-ec31-43e7-88d2-79895b764a06
+  - id: Compute coverage on summits +/-500kb
+    label: Compute coverage on summits +/-500kb
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_coveragebed/2.31.1+galaxy0
+    tool_version: 2.31.1+galaxy0
+    tool_shed_repository:
+      changeset_revision: d57471728f7b
+      name: bedtools
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: inputA
+      source: Merge summits +/-500kb
+    - id: reduce_or_iterate|inputB
+      source: remove PCR duplicates/outFile
+    out:
+    - id: output
+      hide: true
+      rename: coverage on MACS2 peaks
+    tool_state:
+      a_or_b: false
+      d: false
+      hist: false
+      inputA:
+        __class__: ConnectedValue
+      mean: false
+      overlap_a: null
+      overlap_b: null
+      reciprocal_overlap: false
+      reduce_or_iterate:
+        reduce_or_iterate_selector: iterate
+        __current_case__: 0
+        inputB:
+          __class__: ConnectedValue
+      sorted: false
+      split: false
+      strandedness: false
+    uuid: f3681ac7-e1ba-4442-971f-8353389c5265
+  - id: number of reads in peaks
+    label: number of reads in peaks
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0
+    tool_version: 9.11+galaxy0
+    tool_shed_repository:
+      changeset_revision: 30b60202d990
+      name: text_processing
+      owner: bgruening
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: infile
+      source: Compute coverage on summits +/-500kb
+    out:
+    - id: outfile
+      change_datatype: tabular
+      rename: Nb of reads in summits +-500bp
+    tool_state:
+      code: '{S=S+$4}END{print S}'
+      infile:
+        __class__: ConnectedValue
+      variables: []
+    uuid: f65b3936-595c-4ddb-88bc-2cc41e514e38
+  consensus_peaks:
+  - id: generate filter rule
+    label: generate filter rule
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/compose_text_param/compose_text_param/0.1.1
+    tool_version: 0.1.1
+    tool_shed_repository:
+      changeset_revision: e188c9826e0f
+      name: compose_text_param
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: components_1|param_type|component_value
+      source: Minimum number of overlap
+    out:
+    - id: out1
+      hide: true
+    tool_state:
+      components:
+      - __index__: 0
+        param_type:
+          select_param_type: text
+          __current_case__: 0
+          component_value: 'c4 >= '
+      - __index__: 1
+        param_type:
+          select_param_type: integer
+          __current_case__: 1
+          component_value:
+            __class__: ConnectedValue
+    uuid: e6855df9-0e94-4310-835c-15514bd37974
+  - id: call peaks individually
+    label: call peaks individually
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/macs2/macs2_callpeak/2.2.9.1+galaxy0
+    tool_version: 2.2.9.1+galaxy0
+    tool_shed_repository:
+      changeset_revision: 86e2413cf3f8
+      name: macs2
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: effective_genome_size_options|gsize
+      source: effective_genome_size
+    - id: treatment|input_treatment_file
+      source: convert BAM to BED
+    out:
+    - id: output_control_lambda
+      hide: true
+    - id: output_tabular
+      hide: true
+      rename: individual macs2 tabular
+    - id: output_treat_pileup
+      hide: true
+      rename: individual macs2 coverage normalized
+    - id: output_narrowpeaks
+      rename: individual macs2 narrowPeaks
+    tool_state:
+      advanced_options:
+        to_large: false
+        nolambda: false
+        spmr: true
+        ratio: null
+        slocal: null
+        llocal: null
+        broad_options:
+          broad_options_selector: nobroad
+          __current_case__: 1
+          call_summits: true
+        keep_dup_options:
+          keep_dup_options_selector: all
+          __current_case__: 2
+        d_min: '20'
+        buffer_size: '100000'
+      control:
+        c_select: 'No'
+        __current_case__: 1
+      cutoff_options:
+        cutoff_options_selector: qvalue
+        __current_case__: 1
+        qvalue: '0.05'
+      effective_genome_size_options:
+        effective_genome_size_options_selector: user_defined
+        __current_case__: 4
+        gsize:
+          __class__: ConnectedValue
+      format: BED
+      nomodel_type:
+        nomodel_type_selector: nomodel
+        __current_case__: 1
+        extsize: '200'
+        shift: '-100'
+      outputs:
+      - bdg
+      - peaks_tabular
+      treatment:
+        t_multi_select: 'No'
+        __current_case__: 0
+        input_treatment_file:
+          __class__: ConnectedValue
+    uuid: 8f2a3aa4-704e-4d90-a672-94b97996dd56
+  - id: compute multi intersect
+    label: compute multi intersect
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_multiintersectbed/2.31.1+galaxy0
+    tool_version: 2.31.1+galaxy0
+    tool_shed_repository:
+      changeset_revision: d57471728f7b
+      name: bedtools
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: tag|inputs
+      source: call peaks individually/output_narrowpeaks
+    out:
+    - id: output
+      hide: true
+    tool_state:
+      cluster: false
+      empty:
+        empty_selector: ''
+        __current_case__: 1
+      filler: '0'
+      header: false
+      tag:
+        tag_select: tag
+        __current_case__: 0
+        inputs:
+          __class__: ConnectedValue
+    uuid: 9edd1aab-eb4c-4fd4-b9f6-a6dbcae46dd2
+  - id: filter multi intersect
+    label: filter multi intersect
+    tool_id: Filter1
+    tool_version: 1.1.1
+    in:
+    - id: cond
+      source: generate filter rule/out1
+    - id: input
+      source: compute multi intersect
+    out:
+    - id: out_file1
+      hide: true
+    tool_state:
+      cond:
+        __class__: ConnectedValue
+      header_lines: '0'
+      input:
+        __class__: ConnectedValue
+    uuid: 4acd5289-87cc-4cfb-9863-35248989ab27

@@ -1,0 +1,660 @@
+plan_version: '1'
+source:
+  kind: nextflow
+  name: nf-core/atacseq
+  derived_from: test-evidence
+  notes: Translated from profile:test (conf/test.config; no nf-test suite in 2.1.2, so the profile is the only test evidence). test_controls (eligible, control branch not carried) and test_full (reference-scale,
+    deferred) are not translated. The source test asserts nothing beyond a successful run, so every assertion below is intent.
+workflow:
+  title: ATAC-seq library-level peaks and consensus (nf-core/atacseq 2.1.2 core spine)
+  label_source: draft
+  notes: Labels read from galaxy-workflow.gxwf.yml.
+test_cases:
+- id: atacseq_profile_test_core_spine
+  doc: 'Yeast osmotic-stress ATAC test set: 4 PE + 4 SE runs -> 3 PE + 3 SE libraries through QC, BWA, merge/dedup/filter, bigWig, MACS2 broad peaks, FRiP, HOMER, consensus, featureCounts, DESeq2 QC, MultiQC.'
+  derived_from: intent
+  provenance: 'profile:test (nextflow.config -> conf/test.config: input samplesheet/v2.0/samplesheet_test.csv, fasta reference/genome.fa, gtf reference/genes.gtf, mito_name MT, read_length 50)'
+  job_inputs:
+  - workflow_label: reads
+    label_status: resolved
+    description: 8 runs from samplesheet_test.csv (4 PE, 4 SE); elements and per-file SHA-1 in test-data-refs.json
+    collection_shape: list:paired_or_unpaired
+    datatype: fastqsanger.gz
+    fixture:
+      storage: remote-url
+      location: null
+      checksum: null
+      provenance: test-data-refs.json reads elements (remote-url + SHA-1 per FASTQ)
+  - workflow_label: genome_fasta
+    label_status: resolved
+    description: S. cerevisiae test genome (17 contigs incl. MT)
+    collection_shape: null
+    datatype: fasta
+    fixture:
+      storage: remote-url
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/atacseq/reference/genome.fa
+      checksum: SHA-1:45824b2faa6e96edfb1d7cd0c1428896de47bde6
+      provenance: conf/test.config params.fasta (S. cerevisiae, 17 contigs incl. MT, 12,157,105 bp); local copy test-data/genome.fa
+  - workflow_label: genome_gtf
+    label_status: resolved
+    description: S. cerevisiae test GTF
+    collection_shape: null
+    datatype: gtf
+    fixture:
+      storage: remote-url
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/atacseq/reference/genes.gtf
+      checksum: SHA-1:258654d38c9c17ec21b2ce2d8585cddecfd0d12e
+      provenance: conf/test.config params.gtf; local copy test-data/genes.gtf
+  - workflow_label: macs_gsize
+    label_status: resolved
+    description: 'MACS2 effective genome size: exact distinct canonical 50-mers of the test genome (read_length 50), standing in for nf-core KHMER_UNIQUEKMERS which the test profile relies on'
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: '11622260'
+      checksum: null
+      provenance: computed from test-data/genome.fa (see open-requirements ledger discovery test-macs-gsize-11622260)
+  - workflow_label: mito_name
+    label_status: resolved
+    description: conf/test.config mito_name
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: MT
+      checksum: null
+      provenance: conf/test.config mito_name
+  - workflow_label: keep_mito
+    label_status: resolved
+    description: params default
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: 'false'
+      checksum: null
+      provenance: params default
+  - workflow_label: broad_cutoff
+    label_status: resolved
+    description: params default
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: '0.1'
+      checksum: null
+      provenance: params default
+  - workflow_label: min_reps_consensus
+    label_status: resolved
+    description: params default
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: '1'
+      checksum: null
+      provenance: params default
+  - workflow_label: fragment_size
+    label_status: resolved
+    description: params default
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: '200'
+      checksum: null
+      provenance: params default
+  - workflow_label: deseq2_vst
+    label_status: resolved
+    description: params default
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: 'true'
+      checksum: null
+      provenance: params default
+  expected_outputs:
+  - workflow_label: multiqc_report
+    label_status: resolved
+    description: MultiQC HTML report aggregating FastQC, Trim Galore, samtools, Picard MarkDuplicates, featureCounts
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_text
+      intent: report is a MultiQC HTML page
+      expected_value: MultiQC
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: report carries the featureCounts section
+      expected_value: featureCounts
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+  - workflow_label: library_bam
+    label_status: resolved
+    description: 'Filtered, deduplicated library BAMs (runs merged per sample+replicate): the main per-library checkpoint'
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_size
+      intent: 'non-trivial filtered BAM for library OSMOTIC_STRESS_T0_PE_REP1 (has_size min: 10000 bytes)'
+      expected_value: '10000'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP1
+      evidence: intent
+      confidence: medium
+    - family: has_size
+      intent: 'non-trivial filtered BAM for library OSMOTIC_STRESS_T0_PE_REP2 (has_size min: 10000 bytes)'
+      expected_value: '10000'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP2
+      evidence: intent
+      confidence: medium
+    - family: has_size
+      intent: 'non-trivial filtered BAM for library OSMOTIC_STRESS_T15_PE_REP1 (has_size min: 10000 bytes)'
+      expected_value: '10000'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T15_PE_REP1
+      evidence: intent
+      confidence: medium
+    - family: has_size
+      intent: 'non-trivial filtered BAM for library OSMOTIC_STRESS_T100_SE_REP1 (has_size min: 10000 bytes)'
+      expected_value: '10000'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP1
+      evidence: intent
+      confidence: medium
+    - family: has_size
+      intent: 'non-trivial filtered BAM for library OSMOTIC_STRESS_T100_SE_REP2 (has_size min: 10000 bytes)'
+      expected_value: '10000'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP2
+      evidence: intent
+      confidence: medium
+    - family: has_size
+      intent: 'non-trivial filtered BAM for library OSMOTIC_STRESS_T150_SE_REP1 (has_size min: 10000 bytes)'
+      expected_value: '10000'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T150_SE_REP1
+      evidence: intent
+      confidence: medium
+  - workflow_label: library_flagstat
+    label_status: resolved
+    description: samtools flagstat on filtered library BAMs
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_text
+      intent: flagstat reports mapped reads
+      expected_value: mapped (
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: flagstat reports mapped reads
+      expected_value: mapped (
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP2
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: flagstat reports mapped reads
+      expected_value: mapped (
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T15_PE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: flagstat reports mapped reads
+      expected_value: mapped (
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: flagstat reports mapped reads
+      expected_value: mapped (
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP2
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: flagstat reports mapped reads
+      expected_value: mapped (
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T150_SE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: PE libraries keep properly paired reads only
+      expected_value: properly paired
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: PE libraries keep properly paired reads only
+      expected_value: properly paired
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP2
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: PE libraries keep properly paired reads only
+      expected_value: properly paired
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T15_PE_REP1
+      evidence: intent
+      confidence: high
+  - workflow_label: markduplicates_metrics
+    label_status: resolved
+    description: Picard MarkDuplicates metrics per library
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_text
+      intent: Picard metrics header
+      expected_value: PERCENT_DUPLICATION
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: Picard metrics header
+      expected_value: PERCENT_DUPLICATION
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP2
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: Picard metrics header
+      expected_value: PERCENT_DUPLICATION
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T15_PE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: Picard metrics header
+      expected_value: PERCENT_DUPLICATION
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: Picard metrics header
+      expected_value: PERCENT_DUPLICATION
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP2
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: Picard metrics header
+      expected_value: PERCENT_DUPLICATION
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T150_SE_REP1
+      evidence: intent
+      confidence: high
+  - workflow_label: library_bigwig
+    label_status: resolved
+    description: CPM-scaled coverage bigWig per library
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_size
+      intent: 'non-empty bigWig (has_size min: 1000 bytes)'
+      expected_value: '1000'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP1
+      evidence: intent
+      confidence: medium
+    - family: has_size
+      intent: 'non-empty bigWig (has_size min: 1000 bytes)'
+      expected_value: '1000'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP2
+      evidence: intent
+      confidence: medium
+    - family: has_size
+      intent: 'non-empty bigWig (has_size min: 1000 bytes)'
+      expected_value: '1000'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T15_PE_REP1
+      evidence: intent
+      confidence: medium
+    - family: has_size
+      intent: 'non-empty bigWig (has_size min: 1000 bytes)'
+      expected_value: '1000'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP1
+      evidence: intent
+      confidence: medium
+    - family: has_size
+      intent: 'non-empty bigWig (has_size min: 1000 bytes)'
+      expected_value: '1000'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP2
+      evidence: intent
+      confidence: medium
+    - family: has_size
+      intent: 'non-empty bigWig (has_size min: 1000 bytes)'
+      expected_value: '1000'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T150_SE_REP1
+      evidence: intent
+      confidence: medium
+  - workflow_label: library_peaks
+    label_status: resolved
+    description: MACS2 broadPeak calls per library (empty peak files dropped)
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_n_columns
+      intent: broadPeak has 9 columns
+      expected_value: '9'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_n_columns
+      intent: broadPeak has 9 columns
+      expected_value: '9'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP2
+      evidence: intent
+      confidence: high
+    - family: has_n_columns
+      intent: broadPeak has 9 columns
+      expected_value: '9'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T15_PE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_n_columns
+      intent: broadPeak has 9 columns
+      expected_value: '9'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_n_columns
+      intent: broadPeak has 9 columns
+      expected_value: '9'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP2
+      evidence: intent
+      confidence: high
+    - family: has_n_columns
+      intent: broadPeak has 9 columns
+      expected_value: '9'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T150_SE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_n_lines
+      intent: 'at least one peak per library (has_n_lines min: 1; nf-core test shows peaks for all libraries)'
+      expected_value: '1'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP1
+      evidence: intent
+      confidence: medium
+    - family: has_n_lines
+      intent: 'at least one peak per library (has_n_lines min: 1; nf-core test shows peaks for all libraries)'
+      expected_value: '1'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP2
+      evidence: intent
+      confidence: medium
+    - family: has_n_lines
+      intent: 'at least one peak per library (has_n_lines min: 1; nf-core test shows peaks for all libraries)'
+      expected_value: '1'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T15_PE_REP1
+      evidence: intent
+      confidence: medium
+    - family: has_n_lines
+      intent: 'at least one peak per library (has_n_lines min: 1; nf-core test shows peaks for all libraries)'
+      expected_value: '1'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP1
+      evidence: intent
+      confidence: medium
+    - family: has_n_lines
+      intent: 'at least one peak per library (has_n_lines min: 1; nf-core test shows peaks for all libraries)'
+      expected_value: '1'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP2
+      evidence: intent
+      confidence: medium
+    - family: has_n_lines
+      intent: 'at least one peak per library (has_n_lines min: 1; nf-core test shows peaks for all libraries)'
+      expected_value: '1'
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T150_SE_REP1
+      evidence: intent
+      confidence: medium
+  - workflow_label: library_frip
+    label_status: resolved
+    description: Fraction of reads in peaks per library
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_line_matching
+      intent: single FRiP value between 0 and 1
+      expected_value: ^0?\.[0-9]+$|^0$|^1(\.0+)?$
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP1
+      evidence: intent
+      confidence: medium
+    - family: has_line_matching
+      intent: single FRiP value between 0 and 1
+      expected_value: ^0?\.[0-9]+$|^0$|^1(\.0+)?$
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP2
+      evidence: intent
+      confidence: medium
+    - family: has_line_matching
+      intent: single FRiP value between 0 and 1
+      expected_value: ^0?\.[0-9]+$|^0$|^1(\.0+)?$
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T15_PE_REP1
+      evidence: intent
+      confidence: medium
+    - family: has_line_matching
+      intent: single FRiP value between 0 and 1
+      expected_value: ^0?\.[0-9]+$|^0$|^1(\.0+)?$
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP1
+      evidence: intent
+      confidence: medium
+    - family: has_line_matching
+      intent: single FRiP value between 0 and 1
+      expected_value: ^0?\.[0-9]+$|^0$|^1(\.0+)?$
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP2
+      evidence: intent
+      confidence: medium
+    - family: has_line_matching
+      intent: single FRiP value between 0 and 1
+      expected_value: ^0?\.[0-9]+$|^0$|^1(\.0+)?$
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T150_SE_REP1
+      evidence: intent
+      confidence: medium
+  - workflow_label: library_peaks_annotated
+    label_status: resolved
+    description: HOMER annotatePeaks table per library
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_text
+      intent: HOMER annotation header
+      expected_value: Distance to TSS
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: HOMER annotation header
+      expected_value: Distance to TSS
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T0_PE_REP2
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: HOMER annotation header
+      expected_value: Distance to TSS
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T15_PE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: HOMER annotation header
+      expected_value: Distance to TSS
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP1
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: HOMER annotation header
+      expected_value: Distance to TSS
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T100_SE_REP2
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: HOMER annotation header
+      expected_value: Distance to TSS
+      tolerance: null
+      element_identifier: OSMOTIC_STRESS_T150_SE_REP1
+      evidence: intent
+      confidence: high
+  - workflow_label: consensus_peaks_bed
+    label_status: resolved
+    description: Consensus peak regions across libraries
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_n_columns
+      intent: 6-column BED
+      expected_value: '6'
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: intervals named Interval_<n>
+      expected_value: Interval_1
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: consensus_peaks_annotated
+    label_status: resolved
+    description: HOMER annotation of consensus peaks
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_text
+      intent: HOMER annotation header
+      expected_value: Distance to TSS
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: consensus_counts
+    label_status: resolved
+    description: 'featureCounts matrix: consensus intervals x libraries'
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_n_columns
+      intent: Geneid + one column per library (6)
+      expected_value: '7'
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: column for OSMOTIC_STRESS_T0_PE_REP1
+      expected_value: OSMOTIC_STRESS_T0_PE_REP1
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: column for OSMOTIC_STRESS_T0_PE_REP2
+      expected_value: OSMOTIC_STRESS_T0_PE_REP2
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: column for OSMOTIC_STRESS_T15_PE_REP1
+      expected_value: OSMOTIC_STRESS_T15_PE_REP1
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: column for OSMOTIC_STRESS_T100_SE_REP1
+      expected_value: OSMOTIC_STRESS_T100_SE_REP1
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: column for OSMOTIC_STRESS_T100_SE_REP2
+      expected_value: OSMOTIC_STRESS_T100_SE_REP2
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: column for OSMOTIC_STRESS_T150_SE_REP1
+      expected_value: OSMOTIC_STRESS_T150_SE_REP1
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: deseq2_qc_plots
+    label_status: resolved
+    description: DESeq2 PCA + sample-distance PDF
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_size
+      intent: 'non-empty PDF (has_size min: 5000 bytes)'
+      expected_value: '5000'
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+unresolved:
+- kind: assertion
+  description: No upstream expected values exist; thresholds (has_size, >=1 peak) are design guesses until a first run measures the outputs.
+  blocking: false
+  suggested_resolution: after the first green run, tighten with fixture-derived values (peak counts, matrix rows)
+omissions:
+- target: fastqc_raw_html
+  reason: HTML FastQC reports; existence covered by MultiQC
+  category: weak-output
+- target: trimming_reports
+  reason: text logs; covered by MultiQC cutadapt section
+  category: weak-output
+- target: test_controls and test_full profiles
+  reason: control pairing not carried; full test is reference-scale (hg19)
+  category: out-of-scope
+warnings:
+- code: no-upstream-expected-outputs
+  message: nf-core/atacseq 2.1.2 has no nf-test suite or snapshot; the test profile only checks that the pipeline completes, so no assertion carries test-evidence.
+  path: test_cases[0]
+- code: computed-scalar-input
+  message: macs_gsize is not declared by the source test (nf-core computes it with khmer); value 11622260 was computed from the fixture genome.
+  path: test_cases[0].job_inputs[macs_gsize]

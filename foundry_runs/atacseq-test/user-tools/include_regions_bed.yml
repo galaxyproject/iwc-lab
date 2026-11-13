@@ -1,0 +1,53 @@
+class: GalaxyUserTool
+id: atacseq_include_regions_bed
+version: 2.30.0
+name: Genome include-regions BED
+description: Complement of a blacklist against chromosome sizes, minus the mitochondrial contig (nf-core/atacseq GENOME_BLACKLIST_REGIONS)
+license: MIT
+container: quay.io/biocontainers/bedtools:2.30.0--hc088bd4_0
+requirements: []
+inputs:
+  - name: sizes
+    type: data
+    format: [tabular]
+    label: Chromosome sizes (name, length)
+  - name: blacklist
+    type: data
+    format: [bed]
+    optional: true
+    label: Blacklist regions (optional)
+  - name: mito_name
+    type: text
+    optional: true
+    label: Mitochondrial contig name
+  - name: keep_mito
+    type: boolean
+    value: false
+    label: Keep mitochondrial contig
+shell_command: |
+  SIZES='$(inputs.sizes.path)'
+  BL='$(inputs.blacklist ? inputs.blacklist.path : "")'
+  MITO='$(inputs.mito_name ? inputs.mito_name : "")'
+  KEEP='$(inputs.keep_mito)'
+  if [ -n "$BL" ]; then
+    sortBed -i "$BL" -g "$SIZES" | complementBed -i stdin -g "$SIZES" > regions.bed
+  else
+    awk -v OFS='\t' '{print $1, 0, $2}' "$SIZES" > regions.bed
+  fi
+  if [ -n "$MITO" ] && [ "$KEEP" != "true" ]; then
+    awk -v m="$MITO" '$1 != m' regions.bed > include_regions.bed
+  else
+    cp regions.bed include_regions.bed
+  fi
+outputs:
+  - name: bed
+    type: data
+    format: bed
+    from_work_dir: include_regions.bed
+    label: Include regions BED
+help:
+  format: markdown
+  content: |
+    Port of nf-core/atacseq `GENOME_BLACKLIST_REGIONS`: `sortBed -i blacklist -g sizes | complementBed -i stdin -g sizes`,
+    or the whole genome from the sizes file when no blacklist is given; then drops the `mito_name` contig unless
+    `keep_mito`. nf-core matches the mito name as a regex (`$1 !~ /MT/`); this port matches it exactly.

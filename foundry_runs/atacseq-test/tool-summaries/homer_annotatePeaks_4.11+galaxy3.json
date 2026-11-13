@@ -1,0 +1,535 @@
+{
+  "schema_version": 1,
+  "tool_id": "homer_annotatePeaks",
+  "tool_version": "4.11+galaxy3",
+  "cache_key": "3a5b1e9e06880e719b758d3deb7ec131081d2cea6b797b24e653f22a7fbd12ec",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~homer_annotatepeaks~homer_annotatePeaks/versions/4.11+galaxy3",
+    "cached_at": "2026-11-12T04:38:36.195Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\3a5b1e9e06880e719b758d3deb7ec131081d2cea6b797b24e653f22a7fbd12ec.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "homer_annotatePeaks",
+    "version": "4.11+galaxy3",
+    "name": "annotatePeaks",
+    "description": null,
+    "inputs": [
+      {
+        "name": "input",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Peak file",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "bed",
+          "encodepeak",
+          "tabular"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "CpG",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "bool",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Do you want to compute CpG/GC content?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Yes",
+              "value": "true",
+              "selected": false
+            },
+            {
+              "label": "No",
+              "value": "false",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "true",
+            "parameters": [
+              {
+                "name": "genome",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "source",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Will you select a reference genome from your history or use a installed genome?",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "Installed",
+                      "value": "installed",
+                      "selected": false
+                    },
+                    {
+                      "label": "From History",
+                      "value": "history",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "installed",
+                    "parameters": [
+                      {
+                        "name": "all_fasta_source",
+                        "parameter_type": "gx_select",
+                        "hidden": false,
+                        "label": "Source FASTA Sequence",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "select",
+                        "options": null,
+                        "multiple": false,
+                        "validators": []
+                      }
+                    ],
+                    "is_default_when": true
+                  },
+                  {
+                    "discriminator": "history",
+                    "parameters": [
+                      {
+                        "name": "fasta",
+                        "parameter_type": "gx_data",
+                        "hidden": false,
+                        "label": "Select reference genome",
+                        "help": null,
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "data",
+                        "extensions": [
+                          "fasta"
+                        ],
+                        "multiple": false,
+                        "min": null,
+                        "max": null,
+                        "url_default": null
+                      }
+                    ],
+                    "is_default_when": false
+                  }
+                ]
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "false",
+            "parameters": [],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "gtf_file",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "GTF file",
+        "help": "Must be of datatype \"gtf\" or \"gff\" or \"gff3\"",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "data",
+        "extensions": [
+          "gtf",
+          "gff",
+          "gff3"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "ann_file",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Annotation data file for HOMER",
+        "help": "This file can be generated from gtf with the tool 'Converts GTF to Annotations file for Homer",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "data",
+        "extensions": [
+          "tabular"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output",
+        "label": null,
+        "hidden": false,
+        "type": "data",
+        "format": "tabular",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1016/j.molcel.2010.05.004"
+      }
+    ],
+    "license": null,
+    "profile": "20.05",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\nThis wrapper allow to annotate peaks with simple annotations with annotatePeaks.pl from HOMER.\nThe annotation file and the GTF file may seem redundant but:\n- the use of gtf file only misses the UTR annotations and does not allow to set the desired offsets for TSS and TTS.\n- the use of annotation file only misses the distance to tss and the correspondance between id and classical gene name.\n        "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "CpG": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "bool": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                },
+                "genome": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "installed"
+                          ]
+                        },
+                        "all_fasta_source": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "source"
+                      ],
+                      "properties": {
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "history"
+                          ]
+                        },
+                        "fasta": {
+                          "$id": "/schemas/never",
+                          "not": {},
+                          "title": "never"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "bool"
+              ],
+              "properties": {
+                "bool": {
+                  "type": "string",
+                  "enum": [
+                    "false"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "gtf_file": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "ann_file": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "CpG": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "bool": {
+                      "type": "string",
+                      "enum": [
+                        "true"
+                      ]
+                    },
+                    "genome": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "source": {
+                                  "type": "string",
+                                  "enum": [
+                                    "installed"
+                                  ]
+                                },
+                                "all_fasta_source": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "source",
+                                "fasta"
+                              ],
+                              "properties": {
+                                "source": {
+                                  "type": "string",
+                                  "enum": [
+                                    "history"
+                                  ]
+                                },
+                                "fasta": {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "bool"
+                  ],
+                  "properties": {
+                    "bool": {
+                      "type": "string",
+                      "enum": [
+                        "false"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "gtf_file": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "ann_file": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

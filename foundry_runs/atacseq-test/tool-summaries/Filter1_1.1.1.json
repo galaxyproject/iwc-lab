@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "tool_id": "Filter1",
+  "tool_version": "1.1.1",
+  "cache_key": "bdbc1f5eccfaa1f0e373ea0bd2cc3e3da9f281e3603a0082ac7aa396d50d4a70",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/Filter1/versions/1.1.1",
+    "cached_at": "2026-11-12T04:38:58.274Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\bdbc1f5eccfaa1f0e373ea0bd2cc3e3da9f281e3603a0082ac7aa396d50d4a70.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "Filter1",
+    "version": "1.1.1",
+    "name": "Filter",
+    "description": "data on any column using simple expressions",
+    "inputs": [
+      {
+        "name": "input",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Filter",
+        "help": "Dataset missing? See TIP below.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "tabular"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "cond",
+        "parameter_type": "gx_text",
+        "hidden": false,
+        "label": "With following condition",
+        "help": "Double equal signs, ==, must be used as shown above. To filter for an arbitrary string, use the Select tool.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "text",
+        "area": false,
+        "value": null,
+        "default_options": [],
+        "validators": [
+          {
+            "type": "empty_field",
+            "message": "Enter a valid filtering condition, see syntax and examples below.",
+            "implicit": false,
+            "negate": false
+          }
+        ]
+      },
+      {
+        "name": "header_lines",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "Number of header lines to skip",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "integer",
+        "value": 0,
+        "min": null,
+        "max": null,
+        "validators": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out_file1",
+        "label": null,
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "input",
+        "metadata_source": "input",
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [],
+    "license": null,
+    "profile": "24.2",
+    "edam_operations": [
+      "operation_0335"
+    ],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n.. class:: warningmark\n\nDouble equal signs, ==, must be used as *\"equal to\"* (e.g., **c1 == 'chr22'**)\n\n.. class:: infomark\n\n**TIP:** Attempting to apply a filtering condition may throw exceptions if the data type (e.g., string, integer) in every line of the columns being filtered is not appropriate for the condition (e.g., attempting certain numerical calculations on strings).  If an exception is thrown when applying the condition to a line, that line is skipped as invalid for the filter condition.  The number of invalid skipped lines is documented in the resulting history item as a \"Condition/data issue\".\n\n.. class:: infomark\n\n**TIP:** If your data is not TAB delimited, use *Text Manipulation->Convert*\n\n-----\n\n**Syntax**\n\nThe filter tool allows you to restrict the dataset using simple conditional statements.\n\n- Columns are referenced with **c** and a **number**. For example, **c1** refers to the first column of a tab-delimited file\n- Make sure that multi-character operators contain no white space ( e.g., **<=** is valid while **< =** is not valid )\n- When using 'equal-to' operator **double equal sign '==' must be used** ( e.g., **c1=='chr1'** )\n- Non-numerical values must be included in single or double quotes ( e.g., **c6=='+'** )\n- Filtering condition can include logical operators, but **make sure operators are all lower case** ( e.g., **(c1!='chrX' and c1!='chrY') or not c6=='+'** )\n\n-----\n\n**Example**\n\n- **c1=='chr1'** selects lines in which the first column is chr1\n- **c3-c2<100*c4** selects lines where subtracting column 3 from column 2 is less than the value of column 4 times 100\n- **len(c2.split(',')) < 4** will select lines where the second column has less than four comma separated elements\n- **c2>=1** selects lines in which the value of column 2 is greater than or equal to 1\n- Numbers should not contain commas - **c2<=44,554,350** will not work, but **c2<=44554350** will\n- Some words in the data can be used, but must be single or double quoted ( e.g., **c3=='exon'** )\n\n  "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "cond": {
+          "type": "string"
+        },
+        "header_lines": {
+          "$ref": "#/$defs/Int"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "cond": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "header_lines": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

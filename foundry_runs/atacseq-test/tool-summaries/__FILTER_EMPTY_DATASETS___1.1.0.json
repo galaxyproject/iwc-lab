@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "tool_id": "__FILTER_EMPTY_DATASETS__",
+  "tool_version": "1.1.0",
+  "cache_key": "e963f688577fd4cd7484e2ab88d7689f283b8ebaa132801c276364c264ed42d9",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/__FILTER_EMPTY_DATASETS__/versions/1.1.0",
+    "cached_at": "2026-11-12T04:38:14.526Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\e963f688577fd4cd7484e2ab88d7689f283b8ebaa132801c276364c264ed42d9.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "__FILTER_EMPTY_DATASETS__",
+    "version": "1.1.0",
+    "name": "Filter empty datasets",
+    "description": "from a collection",
+    "inputs": [
+      {
+        "name": "input",
+        "parameter_type": "gx_data_collection",
+        "hidden": false,
+        "label": "Input Collection",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data_collection",
+        "collection_type": "list,list:paired",
+        "extensions": [
+          "data"
+        ],
+        "value": null
+      },
+      {
+        "name": "replacement",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Replace empty elements with this dataset",
+        "help": "If provided, empty elements will be replaced with this dataset",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "data",
+        "extensions": [
+          "data"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output",
+        "label": "${on_string} (filtered empty datasets)",
+        "hidden": false,
+        "type": "collection",
+        "collection_type": null,
+        "collection_type_source": "input",
+        "collection_type_from_rules": null,
+        "structured_like": null,
+        "discover_datasets": []
+      }
+    ],
+    "citations": [],
+    "license": null,
+    "profile": "16.01",
+    "edam_operations": [
+      "operation_3695"
+    ],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n========\nSynopsis\n========\n\nRemoves empty (zero-byte) datasets from a collection.\n\n===========\nDescription\n===========\n\nThis tool takes a dataset collection and filters out elements that have no content. A dataset is considered empty if it contains zero bytes of actual data (including compressed archives that decompress to nothing).\n\nThis is useful when a multi-sample analysis produces some empty outputs — for example, when a filtering step removes all reads for certain samples. Downstream tools often fail on empty inputs, so removing them lets the rest of the analysis proceed.\n\nOptionally, you can provide a **replacement dataset**. When specified, empty elements are replaced with that dataset instead of being removed. This preserves the collection size, which is important when element-wise pairing with another collection is needed.\n\n========\nExamples\n========\n\n**Remove empty elements**\n\nGiven a list collection where one sample produced no output::\n\n List: \"Filtered reads\"\n\n   sample1  →  reads.fastq  (1.2 MB)\n   sample2  →  reads.fastq  (0 bytes)\n   sample3  →  reads.fastq  (800 KB)\n\nThe output keeps only non-empty elements::\n\n List: \"Filtered reads (filtered empty datasets)\"\n\n   sample1  →  reads.fastq  (1.2 MB)\n   sample3  →  reads.fastq  (800 KB)\n\n-------\n\n**Replace instead of remove**\n\nIf a replacement dataset is provided, empty elements are swapped rather than dropped, preserving the collection structure::\n\n List: \"Filtered reads (filtered empty datasets)\"\n\n   sample1  →  reads.fastq  (1.2 MB)\n   sample2  →  replacement.fastq\n   sample3  →  reads.fastq  (800 KB)\n\n-------\n\n.. image:: ${static_path}/images/tools/collection_ops/filter_empty.svg\n  :alt: Filter empty datasets from collection\n  :width: 500\n\n-------\n\n.. class:: infomark\n\nThis tool will create new history datasets copied from your input collections but your quota usage will not increase.\n\n      "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "replacement": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "replacement": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

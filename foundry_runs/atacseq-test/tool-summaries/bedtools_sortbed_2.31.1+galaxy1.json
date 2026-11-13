@@ -1,0 +1,438 @@
+{
+  "schema_version": 1,
+  "tool_id": "bedtools_sortbed",
+  "tool_version": "2.31.1+galaxy1",
+  "cache_key": "6e49b3268d5c7f009a7d38d958819815fb360c6abfce0eb0371876a175c4990f",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~bedtools~bedtools_sortbed/versions/2.31.1+galaxy1",
+    "cached_at": "2026-11-12T04:37:57.935Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\6e49b3268d5c7f009a7d38d958819815fb360c6abfce0eb0371876a175c4990f.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "bedtools_sortbed",
+    "version": "2.31.1+galaxy1",
+    "name": "bedtools SortBED",
+    "description": "order the intervals",
+    "inputs": [
+      {
+        "name": "input",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Sort the following BED/bedGraph/GFF/VCF/EncodePeak file",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "bed",
+          "bedgraph",
+          "gff",
+          "vcf",
+          "encodepeak"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "option",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Sort by",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "chromosome, then by start position (asc)",
+            "value": "",
+            "selected": false
+          },
+          {
+            "label": "feature size in ascending order.",
+            "value": "-sizeA",
+            "selected": false
+          },
+          {
+            "label": "feature size in descending order.",
+            "value": "-sizeD",
+            "selected": false
+          },
+          {
+            "label": "chromosome, then by feature size (asc).",
+            "value": "-chrThenSizeA",
+            "selected": false
+          },
+          {
+            "label": "chromosome, then by feature size (desc).",
+            "value": "-chrThenSizeD",
+            "selected": false
+          },
+          {
+            "label": "chromosome, then by score (asc).",
+            "value": "-chrThenScoreA",
+            "selected": false
+          },
+          {
+            "label": "chromosome, then by score (desc).",
+            "value": "-chrThenScoreD",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "genome_file_opts",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "genome_file_opts_selector",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Genome file",
+          "help": "Sort according to the chromosomes declared in a genome file",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Locally installed Genome file",
+              "value": "loc",
+              "selected": true
+            },
+            {
+              "label": "Genome file from your history",
+              "value": "hist",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "loc",
+            "parameters": [
+              {
+                "name": "genome",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Genome file",
+                "help": "This genome file determines the chromosome list and their order.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "select",
+                "options": null,
+                "multiple": false,
+                "validators": []
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "hist",
+            "parameters": [
+              {
+                "name": "genome",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Genome file",
+                "help": "The expected format of the genome file is first column with chromosome names and second column with chromosome lengths. This genome file determines the chromosome list and their order.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "data",
+                "extensions": [
+                  "tabular"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output",
+        "label": "SortBed on ${input.name}",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "input",
+        "metadata_source": "input",
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1093/bioinformatics/btq033"
+      }
+    ],
+    "license": null,
+    "profile": "20.05",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "bedtools",
+        "type": "bio.tools"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n**What it does**\n\nSorts a feature file by chromosome and other criteria.\n\n\n.. class:: warningmark\n\nIt should be noted that sortBed is merely a convenience utility, as the UNIX sort utility\nwill sort BED files more quickly while using less memory. For example, UNIX sort will sort a BED file\nby chromosome then by start position in the following manner: sort -k 1,1 -k2,2 -n a.bed\n\n\n\n------\n\nThis tool is part of the `bedtools package`_ from the `Quinlan laboratory`_.\n\n.. _bedtools package: https://github.com/arq5x/bedtools2\n.. _Quinlan laboratory: http://quinlanlab.org\n\n\n**Citation**\n\nIf you use this tool in Galaxy, please cite:\n\nBjoern A. Gruening (2014), `Galaxy wrapper <https://github.com/bgruening/galaxytools>`_\n\n    \n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "option": {
+          "type": "string",
+          "enum": [
+            "",
+            "-sizeA",
+            "-sizeD",
+            "-chrThenSizeA",
+            "-chrThenSizeD",
+            "-chrThenScoreA",
+            "-chrThenScoreD"
+          ]
+        },
+        "genome_file_opts": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "genome_file_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "loc"
+                  ]
+                },
+                "genome": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "genome_file_opts_selector"
+              ],
+              "properties": {
+                "genome_file_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "hist"
+                  ]
+                },
+                "genome": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "option": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "",
+                "-sizeA",
+                "-sizeD",
+                "-chrThenSizeA",
+                "-chrThenSizeD",
+                "-chrThenScoreA",
+                "-chrThenScoreD"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "genome_file_opts": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "genome_file_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "loc"
+                      ]
+                    },
+                    "genome": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "genome_file_opts_selector"
+                  ],
+                  "properties": {
+                    "genome_file_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "hist"
+                      ]
+                    },
+                    "genome": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

@@ -1,0 +1,685 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: atacseq-test
+  status: complete
+  started_at: '2026-11-12T03:53:55Z'
+  phases:
+  - n: 1
+    kind: mold
+    skill: summarize-nextflow
+    status: done
+    feedback_checked: true
+  - n: 2
+    kind: mold
+    skill: nextflow-summary-to-galaxy-reference-data
+    status: done
+    feedback_checked: true
+  - n: 3
+    kind: mold
+    skill: nextflow-summary-to-galaxy-interface
+    status: done
+    feedback_checked: true
+  - n: 4
+    kind: mold
+    skill: nextflow-summary-to-galaxy-data-flow
+    status: done
+    feedback_checked: true
+  - n: 5
+    kind: mold
+    skill: compare-against-iwc-exemplar
+    status: done
+    feedback_checked: true
+  - n: 6
+    kind: mold
+    skill: nextflow-summary-to-galaxy-template
+    status: done
+    feedback_checked: true
+  - n: 7
+    kind: mold
+    skill: advance-galaxy-draft-step
+    status: done
+    iterations: 1
+    feedback_checked: true
+  - n: 8
+    kind: branch
+    pattern: test-data-resolution
+    status: done
+    selected: nextflow-to-test-data
+    feedback_checked: true
+  - n: 9
+    kind: mold
+    skill: nextflow-test-to-galaxy-test-plan
+    status: done
+    feedback_checked: true
+  - n: 10
+    kind: mold
+    skill: implement-galaxy-workflow-test
+    status: done
+    feedback_checked: true
+  - n: 11
+    kind: mold
+    skill: validate-galaxy-workflow
+    status: done
+    feedback_checked: true
+  - n: 12
+    kind: mold
+    skill: run-workflow-test
+    status: done
+    feedback_checked: true
+  - n: 13
+    kind: mold
+    skill: debug-galaxy-workflow-output
+    status: done
+    feedback_checked: true
+  finished_at: '2026-11-12T06:45:25Z'
+entries:
+- id: summarize-nextflow-cli-draft07-definitions-params-empty
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: '@galaxy-foundry/summarize-nextflow CLI (via foundry summarize-nextflow)'
+    locator: packages/summarize-nextflow
+  kind: defect
+  severity: major
+  what: params[] was emitted empty for a pipeline whose nextflow_schema.json is draft-07 with groups under `definitions` (nf-validation era) rather than `$defs`.
+  expected: Read parameter groups from either `definitions` or `$defs` (and the params block as fallback) so draft-07 nf-core schemas yield params[].
+  evidence: 'nf-core/atacseq 2.1.2: 89 params (10 definitions groups) present; raw summary had params: []. Rebuilt by hand.'
+  status: open
+  issue: null
+- id: summarize-nextflow-cli-closure-args-split-into-edges
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: '@galaxy-foundry/summarize-nextflow CLI (via foundry summarize-nextflow)'
+    locator: packages/summarize-nextflow
+  kind: defect
+  severity: major
+  what: Multi-line call arguments containing closures were split on commas/newlines into spurious edges (`.map {` -> X, `[ [:], it ]` -> X, `}` -> X) and literal args (false, 0, []) were emitted as edge
+    sources; 213 edges, many junk.
+  expected: Parse call arguments as balanced expressions, attach closure operators to the preceding channel's `via`, and drop non-channel literals from edges.
+  evidence: 'nf-core/atacseq 2.1.2 workflows/atacseq.nf: e.g. PREPARE_GENOME.out.fasta.map{[[:],it]} became four edges to FASTQ_ALIGN_BWA. Reconciled by hand to 119 edges.'
+  status: open
+  issue: null
+- id: summarize-nextflow-cli-default-profile-treated-as-explicit
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: '@galaxy-foundry/summarize-nextflow CLI (via foundry summarize-nextflow)'
+    locator: packages/summarize-nextflow
+  kind: defect
+  severity: major
+  what: With no --profile given, the CLI default `test` was treated as an explicit caller override; only one test candidate was emitted (rationale "explicit caller profile override") though three body-classified
+    test profiles exist and there is no nf-test suite.
+  expected: Per the mold (no silent profile default; profile fallback emits every kinds:test profile), emit test, test_controls and test_full as candidates and classify test_full reference-scale.
+  evidence: 'nf-core/atacseq 2.1.2: profiles[] correctly classified test/test_controls/test_full as test, but test_candidates held only profile:test.'
+  status: open
+  issue: null
+- id: summarize-nextflow-cli-params-delta-drops-numeric
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: '@galaxy-foundry/summarize-nextflow CLI (via foundry summarize-nextflow)'
+    locator: packages/summarize-nextflow
+  kind: defect
+  severity: minor
+  what: The test candidate params_delta omitted unquoted numeric assignments from conf/test.config (max_cpus = 2, read_length = 50, fingerprint_bins = 100) while keeping string ones.
+  expected: Capture numeric and boolean literal assignments in params_delta.
+  evidence: nf-core/atacseq 2.1.2 conf/test.config; read_length matters (drives macs_gsize computation).
+  status: open
+  issue: null
+- id: summarize-nextflow-cli-script-level-channels-missed
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: '@galaxy-foundry/summarize-nextflow CLI (via foundry summarize-nextflow)'
+    locator: packages/summarize-nextflow
+  kind: defect
+  severity: minor
+  what: Channels/values built at script top level outside the workflow block (ch_input = file(params.input), bamtools configs, multiqc configs) were absent from workflow.channels although edges referenced
+    ch_input; no channel carried from_param input.
+  expected: Include script-scope channel constructions referenced by the primary workflow, with construct/from_param populated.
+  evidence: nf-core/atacseq 2.1.2 workflows/atacseq.nf lines 20-55.
+  status: open
+  issue: null
+- id: summarize-nextflow-cli-local-clone-placeholder-provenance
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: '@galaxy-foundry/summarize-nextflow CLI (via foundry summarize-nextflow)'
+    locator: packages/summarize-nextflow
+  kind: defect
+  severity: minor
+  what: On a local clone the source block got url https://example.invalid/unknown.git and version unknown; passing --pin instead made the CLI re-clone the local path, which failed under a Windows node on
+    a WSL path (git dubious ownership).
+  expected: Read remote URL and HEAD/tag from the local clone; with --pin on a local path, check out or verify the ref in place rather than cloning.
+  evidence: nf-core/atacseq 2.1.2 clone at tag 2.1.2; fixed by hand.
+  status: open
+  issue: null
+- id: summarize-nextflow-samplesheet-discovery-no-branch-for-legacy-check
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: mold
+    label: summarize-nextflow
+    locator: content/molds/summarize-nextflow/index.md
+  kind: gap
+  severity: minor
+  what: Step 3.5's discovery branches do not cover the legacy nf-core idiom where assets/schema_input.json exists but is used by neither an nf-schema `schema:` keyword nor samplesheetToList; the sheet is
+    validated by a SAMPLESHEET_CHECK python process and read with splitCsv on that process's output. The CLI emitted no sample_sheets entry.
+  expected: Add a branch (or rule) for SAMPLESHEET_CHECK + splitCsv-on-process-output that reads the sibling assets/schema_input.json for columns and notes derived meta (single_end).
+  evidence: 'nf-core/atacseq 2.1.2 subworkflows/local/input_check.nf; recorded as discovered_via: ad-hoc with schema_path set.'
+  status: open
+  issue: null
+- id: summarize-nextflow-cli-reference-assets-empty-legacy-genome-attribute
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in:
+    mold: nextflow-summary-to-galaxy-reference-data
+    path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+    revision: 5
+    content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: implementation
+    label: '@galaxy-foundry/summarize-nextflow CLI reference_assets / reference_rebuilds detection'
+    locator: packages/summarize-nextflow
+  kind: defect
+  severity: major
+  what: reference_assets[] and reference_rebuilds[] were both empty for nf-core/atacseq 2.1.2, which the classification note itself cites as a key-expanded example. The old template assigns `params.X =
+    WorkflowMain.getGenomeAttribute(params, 'X')` in main.nf (not nextflow.config / getGenomeAttribute('X')), and PREPARE_GENOME uses the positive form `if (params.bwa_index) { UNTAR } else { BWA_INDEX
+    }` plus `if (!params.tss_bed) { TSS_EXTRACT }`.
+  expected: Detect the WorkflowMain.getGenomeAttribute(params, 'attr') form in main.nf, populate reference_assets[] from Reference-genome-options path params, and emit reference_rebuilds[] for the negated
+    `if (!params.tss_bed)` / `if (!params.macs_gsize)` guards at least.
+  evidence: atacseq 2.1.2 main.nf L20-31 and subworkflows/local/prepare_genome.nf; brief built from a direct source read.
+  status: open
+  issue: null
+- id: reference-data-mold-no-fallback-when-inventory-empty
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in:
+    mold: nextflow-summary-to-galaxy-reference-data
+    path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+    revision: 5
+    content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: mold
+    label: nextflow-summary-to-galaxy-reference-data
+    locator: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+  kind: friction
+  severity: minor
+  what: The procedure says to flag assets rebuild-unverified "rather than re-parsing source files" when a signal is missing, but gives no path when the whole inventory is empty; following it literally would
+    leave derived assets (chrom sizes, autosomes, include-regions BED, gene/TSS BED) undesigned. I read prepare_genome.nf directly.
+  expected: "State an explicit fallback for an empty reference_assets[] on a pipeline with getGenomeAttribute params \u2014 e.g. permit a bounded read of the reference-prep subworkflow named in subworkflows[]\
+    \ and require citing it in the brief."
+  evidence: atacseq-test brief "Evidence note" section.
+  status: open
+  issue: null
+- id: interface-mold-no-scope-selection-guidance
+  raised_by: nextflow-summary-to-galaxy-interface
+  observed_in:
+    mold: nextflow-summary-to-galaxy-interface
+    path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+    revision: 6
+    content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: mold
+    label: nextflow-summary-to-galaxy-interface
+    locator: content/molds/nextflow-summary-to-galaxy-interface/index.md
+  kind: gap
+  severity: minor
+  what: The procedure never says who decides how much of a large pipeline the Galaxy interface carries (aligner branches, merged-replicate level, QC stages); the interface's input/output set depends entirely
+    on that choice. I asked the user, then recorded drops in the ledger.
+  expected: Name the scope decision as an explicit step (sourced from a Workflow Brief, the caller, or a stated default such as "default-route, default aligner") and require each excluded stage to land
+    as a kind:dropped ledger entry.
+  evidence: nf-core/atacseq 2.1.2 has 4 aligners x 2 merge levels; user chose a core library spine.
+  status: open
+  issue: null
+- id: summary-nextflow-no-ext-args-from-modules-config
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  observed_in:
+    mold: nextflow-summary-to-galaxy-data-flow
+    path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+    revision: 8
+    content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+    foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+  subject:
+    kind: schema
+    label: summary-nextflow schema (Process fields)
+    locator: package://@galaxy-foundry/summarize-nextflow#summaryNextflowSchema
+  kind: gap
+  severity: major
+  what: The summary carries no per-process `ext.args` / `ext.args2` / `ext.prefix` from conf/modules.config, yet in nf-core these hold most scientific settings (MACS2 --broad/--nomodel/--keep-dup, bamtools/samtools
+    filter flags, featureCounts -F SAF -O --fracOverlap, Picard REMOVE_DUPLICATES). Data-flow had to read conf/modules.config directly.
+  expected: Add a Process (or per-alias invocation) field recording verbatim `withName:` selector + ext.args/args2/prefix closures from conf/modules.config, keyed by the alias path they match.
+  evidence: nf-core/atacseq 2.1.2 conf/modules.config lines 166-712; process script_excerpt shows only `$args`.
+  status: open
+  issue: null
+- id: data-flow-no-recipe-for-meta-flag-branching-across-chain
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  observed_in:
+    mold: nextflow-summary-to-galaxy-data-flow
+    path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+    revision: 8
+    content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+    foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+  subject:
+    kind: research
+    label: nextflow-operators-to-galaxy-collection-recipes
+    locator: content/research/nextflow-operators-to-galaxy-collection-recipes/index.md
+  kind: gap
+  severity: minor
+  what: The operator note covers `branch` as an operator but not the common nf-core pattern where a per-element meta flag (meta.single_end) silently changes args in many processes (ternaries in ext.args,
+    module scripts) with no operator in the workflow body. Choosing to split into PE/SE lanes at input was unguided.
+  expected: Add a recipe for meta-flag-driven per-element behaviour - detect it from module/config ternaries on meta.*, and recommend split-at-input lanes (split paired_or_unpaired) vs per-tool auto-detection,
+    with the merge point.
+  evidence: atacseq single_end ternaries in TRIMGALORE, BAMTOOLS_FILTER, BAM_REMOVE_ORPHANS, BEDTOOLS_GENOMECOV, MACS2_CALLPEAK, FEATURECOUNTS.
+  status: open
+  issue: null
+- id: iwc-compare-single-exemplar-artifact-for-split-match
+  raised_by: compare-against-iwc-exemplar
+  observed_in:
+    mold: compare-against-iwc-exemplar
+    path: content/molds/compare-against-iwc-exemplar/index.md
+    revision: 12
+    content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: mold
+    label: compare-against-iwc-exemplar
+    locator: content/molds/compare-against-iwc-exemplar/index.md
+  kind: gap
+  severity: minor
+  what: The procedure and the iwc-exemplar-gxformat2 artifact assume one nearest exemplar, but IWC splits the ATAC domain into atacseq (per-sample) and consensus-peaks (cross-sample) workflows, each the
+    best match for a different sub-graph. I combined slices from both under one file with a non-runnable steps map keyed by source workflow.
+  expected: Allow the artifact to carry multiple labelled sub-graph slices (one per exemplar) with a documented shape, or permit one sibling file per exemplar.
+  evidence: atacseq-test iwc-exemplar.gxwf.yml steps.atacseq / steps.consensus_peaks.
+  status: open
+  issue: null
+- id: draft-format-no-guidance-for-repeated-lane
+  raised_by: nextflow-summary-to-galaxy-template
+  observed_in:
+    mold: nextflow-summary-to-galaxy-template
+    path: content/molds/nextflow-summary-to-galaxy-template/index.md
+    revision: 10
+    content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+    foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+  subject:
+    kind: research
+    label: galaxy-workflow-draft-format
+    locator: content/research/galaxy-workflow-draft-format/index.md
+  kind: gap
+  severity: minor
+  what: The draft format and draft-next-step reference cover subworkflow nesting but not a chain instantiated twice with different settings (PE/SE lanes). An inline `run:` subworkflow would be duplicated
+    and walked twice by the loop; there is no shared-definition idiom. I emitted flat pe_*/se_* twins (80 steps).
+  expected: State the recommended shape for parameterised repeated chains in a draft (flat twins with a twin-of hint, or a referenced subworkflow the loop implements once), and how the per-step loop should
+    copy a resolved step to its twin.
+  evidence: atacseq-test galaxy-workflow-draft.gxwf.yml; 30 of 80 steps are lane twins.
+  status: open
+  issue: null
+- id: advance-step-one-per-call-impractical-for-twinned-80-step-draft
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 11
+    content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: mold
+    label: advance-galaxy-draft-step
+    locator: content/molds/advance-galaxy-draft-step/index.md
+  kind: friction
+  severity: major
+  what: The Mold advances exactly one step per call. The atacseq draft had 78 drafty steps over 35 distinct wrappers (PE/SE twins, repeated samtools/awk/merge steps). I resolved and summarized each distinct
+    wrapper once against the target toolbox, then concretized all steps in one scripted pass and validated with --concrete --strict-state; the one-step contract was not followed.
+  expected: Allow a batch mode - resolve per distinct wrapper, implement every step sharing it, validate once - or make the harness loop's unit "one wrapper" rather than "one step", with the same validation
+    gate.
+  evidence: atacseq-test phase 7; 34 pins + 1 substitute cached, 3 UDTs, 1 validation fix round (11 state errors), draft-next-step draft:false.
+  status: open
+  issue: null
+- id: advance-step-in-loop-repairs-without-escalation
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 11
+    content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: mold
+    label: advance-galaxy-draft-step
+    locator: content/molds/advance-galaxy-draft-step/index.md
+  kind: friction
+  severity: minor
+  what: Two earlier-step defects surfaced only when wiring real port types - PE FastQC output is list:paired while SE is list (__MERGE_COLLECTION__ cannot merge them), and markdup/filtered flagstats share
+    element identifiers so MultiQC would collide. The procedure says append a blocking entry and escalate to repair-galaxy-draft-topology; I made the two one-step edits myself (insert __FLATTEN__, remove
+    two steps) and recorded them as resolved/dropped ledger entries with topology_repair.escalations 0.
+  expected: Define a lightweight in-loop path for trivial, local structural edits discovered at implementation time (one inserted collection op / one removed dead-end step), with the same ledger trail,
+    or state that even these must go through repair.
+  evidence: ledger entries fastqc-list-paired-vs-list-merge, markdup-flagstat-multiqc-collision.
+  status: open
+  issue: null
+- id: gxwf-strict-state-null-optional-data-message
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 11
+    content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: related-project
+    label: gxwf draft-validate --strict-state diagnostics (@galaxy-tool-util/cli)
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts
+  kind: friction
+  severity: minor
+  what: An unconnected optional data parameter set to null in state (e.g. fastqc contaminants, multiqc image_content_input) fails with "Expected never, actual null" / "Expected undefined, actual null";
+    a conditional whose branch holds such a param reports the selector itself as wrong ("Expected \"no\", actual \"yes\"").
+  expected: Report "optional data input must be omitted from state (or connected)" at the parameter path, and do not blame the conditional selector.
+  evidence: 11 errors on first --concrete --strict-state pass; all cleared by deleting the null keys.
+  status: open
+  issue: null
+- id: iuc-bedtools-genomecov-missing-pc-fs
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 11
+    content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: related-project
+    label: iuc bedtools_genomecoveragebed wrapper
+    locator: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_genomecoveragebed/2.31.1+galaxy0
+  kind: wish
+  severity: minor
+  what: The wrapper exposes -bg/-scale but not -pc (paired-end fragment coverage) or -fs (fragment size for single-end), which nf-core ChIP/ATAC pipelines use for normalised bigWigs. The step was realised
+    with deeptools_bam_coverage instead (bin-level, not base-level).
+  expected: Add -pc and -fs options to the BAM-input branch of the wrapper.
+  evidence: nf-core/atacseq BEDTOOLS_GENOMECOV ext.args; tool summary parsed_tool.inputs.
+  status: open
+  issue: null
+- id: iuc-featurecounts-no-saf-annotation
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 11
+    content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: related-project
+    label: iuc featurecounts wrapper
+    locator: toolshed.g2.bx.psu.edu/repos/iuc/featurecounts/featurecounts/2.1.1+galaxy3
+  kind: wish
+  severity: minor
+  what: The history annotation branch accepts gff/gtf/gff3 only; SAF (-F SAF), the format nf-core uses to count reads over peak sets, is not accepted, so consensus peaks had to be reformatted as GTF with
+    a synthetic feature type.
+  expected: Accept a tabular SAF annotation in the history branch and pass -F SAF.
+  evidence: nf-core/atacseq SUBREAD_FEATURECOUNTS ext.args -F SAF -O --fracOverlap 0.2.
+  status: open
+  issue: null
+- id: test-data-refs-no-carrier-for-computed-scalar-params
+  raised_by: nextflow-to-test-data
+  observed_in:
+    mold: nextflow-to-test-data
+    path: content/molds/nextflow-to-test-data/index.md
+    revision: 4
+    content_hash: 842e097edfb5bfbc37b62a35d5870ee2087df33919212a7965fd70dae799b189
+    foundry_head: 2f8792a62ca53f074605ddbcfb25e75871f52b24
+  subject:
+    kind: schema
+    label: test-data-refs schema
+    locator: package://@galaxy-foundry/gxwf-foundry#testDataRefsSchema
+  kind: gap
+  severity: minor
+  what: The Galaxy workflow needs a scalar test value (macs_gsize) that the source test never declares because nf-core computes it at runtime (khmer unique-kmers). test-data-refs carries only dataset fixtures,
+    so the computed value (11622260) went to the open-requirements ledger instead of the handoff the test-plan Mold reads.
+  expected: Let test-data-refs carry scalar parameter refs (value + provenance, e.g. derived-from-fixture), or tell the Mold where a derived scalar test value belongs.
+  evidence: atacseq-test test-data-refs.json; ledger discovery test-macs-gsize-11622260.
+  status: open
+  issue: null
+- id: test-data-refs-optional-unused-input-forced-unresolved
+  raised_by: nextflow-to-test-data
+  observed_in:
+    mold: nextflow-to-test-data
+    path: content/molds/nextflow-to-test-data/index.md
+    revision: 4
+    content_hash: 842e097edfb5bfbc37b62a35d5870ee2087df33919212a7965fd70dae799b189
+    foundry_head: 2f8792a62ca53f074605ddbcfb25e75871f52b24
+  subject:
+    kind: schema
+    label: test-data-refs schema
+    locator: package://@galaxy-foundry/gxwf-foundry#testDataRefsSchema
+  kind: friction
+  severity: minor
+  what: An optional workflow input the selected test deliberately leaves unset (blacklist_bed) can only be written as resolved:false / storage:unresolved, the same encoding as a real gap, which by the branch
+    rules routes to find-test-data.
+  expected: Add an explicit "not-needed / left unset by the source test" state so the branch does not fall through for it.
+  evidence: atacseq-test test-data-refs.json blacklist_bed ref.
+  status: open
+  issue: null
+- id: test-plan-tolerance-cannot-express-min-bound
+  raised_by: nextflow-test-to-galaxy-test-plan
+  observed_in:
+    mold: nextflow-test-to-galaxy-test-plan
+    path: content/molds/nextflow-test-to-galaxy-test-plan/index.md
+    revision: 8
+    content_hash: fa769216f621ef25470c9fb907df1278635c0a1e022b647b9462ff7b92469291
+    foundry_head: 47aa5c1cf419386ea72929c8ee34aec0db65588f
+  subject:
+    kind: schema
+    label: galaxy-workflow-test-plan schema (Tolerance)
+    locator: package://@galaxy-foundry/gxwf-foundry#galaxyWorkflowTestPlanSchema
+  kind: gap
+  severity: minor
+  what: AssertionIntent carries expected_value plus a Tolerance limited to delta / delta_frac / lines_diff / none, so lower-bound assertions (has_size min, has_n_lines min) - the common shape when no upstream
+    expected value exists - can only be written as prose inside intent.
+  expected: Add a bound form (min / max) to AssertionIntent or Tolerance.
+  evidence: atacseq-test galaxy-test-plan.yml library_peaks / library_bam assertions.
+  status: open
+  issue: null
+- id: test-plan-mold-silent-on-profile-only-evidence
+  raised_by: nextflow-test-to-galaxy-test-plan
+  observed_in:
+    mold: nextflow-test-to-galaxy-test-plan
+    path: content/molds/nextflow-test-to-galaxy-test-plan/index.md
+    revision: 8
+    content_hash: fa769216f621ef25470c9fb907df1278635c0a1e022b647b9462ff7b92469291
+    foundry_head: 47aa5c1cf419386ea72929c8ee34aec0db65588f
+  subject:
+    kind: mold
+    label: nextflow-test-to-galaxy-test-plan
+    locator: content/molds/nextflow-test-to-galaxy-test-plan/index.md
+  kind: gap
+  severity: minor
+  what: 'The procedure says to set source.derived_from: test-evidence "because this plan is translated from real nf-test evidence", but older nf-core pipelines have no nf-test at all, only a test profile;
+    the profile supplies inputs but no expected outputs. I set source test-evidence, test case intent, plus the no-upstream-expected-outputs warning, by judgment.'
+  expected: State the rule for a profile-only candidate (kind profile, no snapshot) - which derived_from values apply at source and test-case level.
+  evidence: nf-core/atacseq 2.1.2 has no tests/ directory.
+  status: open
+  issue: null
+- id: test-conventions-no-paired-or-unpaired-input-example
+  raised_by: implement-galaxy-workflow-test
+  observed_in:
+    mold: implement-galaxy-workflow-test
+    path: content/molds/implement-galaxy-workflow-test/index.md
+    revision: 11
+    content_hash: 34855691581889d36265e00178088b8a52a51ee72119329261bca186f7cb480e
+    foundry_head: a59d6025d612ce7013b09fa1ccb58f60507ccc6a
+  subject:
+    kind: research
+    label: iwc-test-data-conventions
+    locator: content/research/iwc-test-data-conventions/index.md
+  kind: gap
+  severity: minor
+  what: 'No packaged note shows how to stage a list:paired_or_unpaired job input. I guessed that inner elements are plain class: Collection with forward/reverse or a single "unpaired" File, and that no
+    per-element type/collection_type key is allowed (a type key failed validate-tests with 60+ oneOf errors pointing at the outer input).'
+  expected: Add a list:paired_or_unpaired job-input example (element identifiers forward/reverse/unpaired, which keys are legal on inner collections) beside the existing list:paired one.
+  evidence: atacseq-test galaxy-workflow.gxwf-tests.yml reads input; validate-tests OK only after removing inner type.
+  status: open
+  issue: null
+- id: gxwf-connections-cannot-infer-apply-rules-output
+  raised_by: validate-galaxy-workflow
+  observed_in:
+    mold: validate-galaxy-workflow
+    path: content/molds/validate-galaxy-workflow/index.md
+    revision: 5
+    content_hash: 74e3743fc376f33c1eb37832ab4869c327d48f87e015c7a38597cf4c4ca939cd
+    foundry_head: 88eb241e0b7226af678c1a938ab2bfc89a31aa1e
+  subject:
+    kind: related-project
+    label: gxwf validate --connections (@galaxy-tool-util/cli)
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts
+  kind: defect
+  severity: major
+  what: --connections reports "Cannot determine output type for output" on __APPLY_RULES__ and then treats every downstream mapped step as un-mapped, producing 18 "invalid" edges (output is dataset, input
+    expects collection) and 20 skips that are all false positives; exit code 1.
+  expected: Derive the Apply Rules output collection_type from the rules mapping in tool_state (list_identifiers with N columns -> list^N, paired_identifier -> :paired), or mark downstream edges unknown/skip
+    instead of invalid.
+  evidence: atacseq-test galaxy-workflow-validation-result.json; rules mapping list_identifiers columns [1,2] gives list:list.
+  status: open
+  issue: null
+- id: validate-mold-silent-on-connections-flag
+  raised_by: validate-galaxy-workflow
+  observed_in:
+    mold: validate-galaxy-workflow
+    path: content/molds/validate-galaxy-workflow/index.md
+    revision: 5
+    content_hash: 74e3743fc376f33c1eb37832ab4869c327d48f87e015c7a38597cf4c4ca939cd
+    foundry_head: 88eb241e0b7226af678c1a938ab2bfc89a31aa1e
+  subject:
+    kind: mold
+    label: validate-galaxy-workflow
+    locator: content/molds/validate-galaxy-workflow/index.md
+  kind: gap
+  severity: minor
+  what: The procedure says "run gxwf validate" without naming flags; plain validate passes while --strict --connections fails on checker limitations. Which invocation is the terminal gate, and how to classify
+    connection-checker false positives, is left to judgment.
+  expected: Name the gating command (e.g. --strict --offline, with --connections advisory) and how connection-report findings map to pass/fail.
+  evidence: atacseq-test phase 11.
+  status: open
+  issue: null
+- id: gxwf-validate-misses-frame-color-enum
+  raised_by: run-workflow-test
+  observed_in:
+    mold: run-workflow-test
+    path: content/molds/run-workflow-test/index.md
+    revision: 8
+    content_hash: 6e312c6ee27ef6e45a6ace74087cd28a6509ade11f788a51ee478efce58971b6
+    foundry_head: 0b06389d693ff56e7892349d90052de33156734c
+  subject:
+    kind: related-project
+    label: gxwf validate / draft-validate comment schema (@galaxy-tool-util/cli)
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts
+  kind: defect
+  severity: major
+  what: 'A frame comment with color "lightblue" passed gxwf draft-validate --concrete --strict-state and gxwf validate --strict, but Galaxy 27.0.dev0 rejected the import with 400 (frame.color must be none/black/blue/turquoise/green/lime/orange/yellow/red/pink).
+    Same class as the earlier geometry-less-frame import rejection: comment validation in gxwf is looser than Galaxy''s pydantic model.'
+  expected: Validate comments[] against Galaxy's comment model (color enum, required position/size) in gxwf validate --strict and draft-validate.
+  evidence: 'atacseq-test run/planemo.log: err_code 400008, input "lightblue".'
+  status: open
+  issue: null
+- id: pipeline-no-repair-rerun-path-after-debug
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: debug-galaxy-workflow-output
+    path: content/molds/debug-galaxy-workflow-output/index.md
+    revision: 6
+    content_hash: 0ea72a26de30b8086e4d11fea09bc269e94320ec97fb317f6c0232cd92841009
+    foundry_head: eec35c4bdb6f486a98372cbf022cced5b84e6556
+  subject:
+    kind: pipeline
+    label: nextflow-to-galaxy pipeline
+    locator: content/pipelines/nextflow-to-galaxy/index.md
+  kind: gap
+  severity: major
+  what: The pipeline ends at debug, which classifies and recommends but does not repair or re-run. Two runtime failures (import 400 on frame colour; featureCounts PE mode on SE BAMs) each needed a routed
+    fix and a re-run to reach green. I applied both fixes and ran attempts 2 and 3 inside phase 13, outside any declared phase, and recorded them in workflow-test-result.json attempts[].
+  expected: Add a bounded loop back from debug (route to template/loop phase -> re-validate -> re-run) with an attempt cap, or a post-debug repair phase, so fixes after a red run are part of the declared
+    pipeline.
+  evidence: 'atacseq-test workflow-test-result.json: attempt 1 fail (workflow-import-rejected), attempt 2 fail (tool-job-failure, 3 jobs), attempt 3 pass (182/182).'
+  status: open
+  issue: null
+- id: feedback-protocol-content-hash-algorithm-unstated
+  raised_by: report-foundry-run-feedback
+  observed_in:
+    mold: report-foundry-run-feedback
+    path: content/molds/report-foundry-run-feedback/index.md
+    revision: 1
+    content_hash: cffa8d8103479a92dd7282c6964cccfb7fb73d95f673f52e53e7743a2cb270da
+    foundry_head: 63a3f9cf9c97a637fe1628d298e524f35709e289
+  subject:
+    kind: mold
+    label: report-foundry-run-feedback (and _feedback.md protocol)
+    locator: content/molds/report-foundry-run-feedback/index.md
+    content_hash: cffa8d8103479a92dd7282c6964cccfb7fb73d95f673f52e53e7743a2cb270da
+  kind: gap
+  severity: minor
+  what: Step 5 asks to compare observed content hashes against current main, but neither the Mold nor _feedback.md says how content_hash is computed, so a triager must guess before it can check anything.
+  expected: State the algorithm (sha256 of the authored file bytes, as observed) and, for package-export schemas, which file is hashed.
+  evidence: Plain sha256 of the file reproduced all observed Mold hashes on main df991d0; confirmed empirically before use.
+  status: open
+  issue: null
+- id: report-mold-multiple-clusters-one-existing-issue
+  raised_by: report-foundry-run-feedback
+  observed_in:
+    mold: report-foundry-run-feedback
+    path: content/molds/report-foundry-run-feedback/index.md
+    revision: 1
+    content_hash: cffa8d8103479a92dd7282c6964cccfb7fb73d95f673f52e53e7743a2cb270da
+    foundry_head: 63a3f9cf9c97a637fe1628d298e524f35709e289
+  subject:
+    kind: mold
+    label: report-foundry-run-feedback
+    locator: content/molds/report-foundry-run-feedback/index.md
+    content_hash: cffa8d8103479a92dd7282c6964cccfb7fb73d95f673f52e53e7743a2cb270da
+  kind: gap
+  severity: minor
+  what: Step 8 says one draft section per correction cluster, but several distinct clusters (getGenomeAttribute two-arg form, script-scope channels, numeric params_delta) matched one open catch-all issue
+    (#666); the procedure does not say whether to post one combined comment or one per cluster. The ledger protocol also has no status for a correction already present on main (only filed/duplicate/wontfix).
+  expected: Say that clusters matching the same existing issue are combined into one comment listing each correction, and add a 'fixed' ledger status (or say to use duplicate with the fixing issue URL).
+  evidence: atacseq-test foundry-issue-drafts.md C5; review disposition 11 (fixed on main via
+  status: open
+  issue: null

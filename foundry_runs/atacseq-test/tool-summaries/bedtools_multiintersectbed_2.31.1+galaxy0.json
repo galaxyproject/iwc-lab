@@ -1,0 +1,885 @@
+{
+  "schema_version": 1,
+  "tool_id": "bedtools_multiintersectbed",
+  "tool_version": "2.31.1+galaxy0",
+  "cache_key": "892ae6834ce7832e034401cf04802afb6d10a322354621fd20af4a1099397ca1",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~bedtools~bedtools_multiintersectbed/versions/2.31.1+galaxy0",
+    "cached_at": "2026-11-12T04:38:47.029Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".galaxy-tool-cache\\892ae6834ce7832e034401cf04802afb6d10a322354621fd20af4a1099397ca1.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "bedtools_multiintersectbed",
+    "version": "2.31.1+galaxy0",
+    "name": "bedtools Multiple Intersect",
+    "description": "identifies common intervals among multiple interval files",
+    "inputs": [
+      {
+        "name": "tag",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "tag_select",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Sample name",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Use input's tag",
+              "value": "tag",
+              "selected": true
+            },
+            {
+              "label": "Enter custom name per file",
+              "value": "custom",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "tag",
+            "parameters": [
+              {
+                "name": "inputs",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "BED/bedGraph/GFF/VCF/EncodePeak files",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "bed",
+                  "bedgraph",
+                  "gff",
+                  "vcf",
+                  "encodepeak"
+                ],
+                "multiple": true,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "custom",
+            "parameters": [
+              {
+                "name": "beds",
+                "parameter_type": "gx_repeat",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "repeat",
+                "parameters": [
+                  {
+                    "name": "input",
+                    "parameter_type": "gx_data",
+                    "hidden": false,
+                    "label": "BED/bedGraph/GFF/VCF/EncodePeak file",
+                    "help": null,
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "data",
+                    "extensions": [
+                      "bed",
+                      "bedgraph",
+                      "gff",
+                      "vcf",
+                      "encodepeak"
+                    ],
+                    "multiple": false,
+                    "min": null,
+                    "max": null,
+                    "url_default": null
+                  },
+                  {
+                    "name": "custom_name",
+                    "parameter_type": "gx_text",
+                    "hidden": false,
+                    "label": "Custom sample name",
+                    "help": null,
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": true,
+                    "type": "text",
+                    "area": false,
+                    "value": null,
+                    "default_options": [],
+                    "validators": []
+                  }
+                ],
+                "min": 2,
+                "max": null
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "cluster",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Invoke Ryan Layers's clustering algorithm",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-cluster",
+        "falsevalue": ""
+      },
+      {
+        "name": "empty",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "empty_selector",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Report empty regions",
+          "help": "Include regions that have zero coverage in all BedGraph datasets",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Yes",
+              "value": "-empty",
+              "selected": false
+            },
+            {
+              "label": "No",
+              "value": "",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "-empty",
+            "parameters": [
+              {
+                "name": "genome_file_opts",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "genome_file_opts_selector",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Genome file",
+                  "help": null,
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "Locally installed Genome file",
+                      "value": "loc",
+                      "selected": true
+                    },
+                    {
+                      "label": "Genome file from your history",
+                      "value": "hist",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "loc",
+                    "parameters": [
+                      {
+                        "name": "genome",
+                        "parameter_type": "gx_select",
+                        "hidden": false,
+                        "label": "Genome file",
+                        "help": "This genome file determines the chromosome list and their order.",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "select",
+                        "options": null,
+                        "multiple": false,
+                        "validators": []
+                      }
+                    ],
+                    "is_default_when": true
+                  },
+                  {
+                    "discriminator": "hist",
+                    "parameters": [
+                      {
+                        "name": "genome",
+                        "parameter_type": "gx_data",
+                        "hidden": false,
+                        "label": "Genome file",
+                        "help": "The expected format of the genome file is first column with chromosome names and second column with chromosome lengths. This genome file determines the chromosome list and their order.",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "data",
+                        "extensions": [
+                          "tabular"
+                        ],
+                        "multiple": false,
+                        "min": null,
+                        "max": null,
+                        "url_default": null
+                      }
+                    ],
+                    "is_default_when": false
+                  }
+                ]
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "",
+            "parameters": [],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "filler",
+        "parameter_type": "gx_text",
+        "hidden": false,
+        "label": "Text to use for no-coverage value",
+        "help": "Can be 0.0, N/A, - or any other value",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "text",
+        "area": false,
+        "value": null,
+        "default_options": [],
+        "validators": []
+      },
+      {
+        "name": "header",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Print the header from the A file prior to results",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-header",
+        "falsevalue": ""
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output",
+        "label": null,
+        "hidden": false,
+        "type": "data",
+        "format": "bed",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1093/bioinformatics/btq033"
+      }
+    ],
+    "license": null,
+    "profile": "20.05",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "bedtools",
+        "type": "bio.tools"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n**What it does**\n\nThis tool identifies common intervals among multiple, sorted BED files. Intervals can be common among 0 to N of the N input BED files.\n\n\n.. class:: warningmark\n\nThis tool requires that each BED file is reference-sorted (chrom, then start).\n\n\n.. class:: infomark\n\nThe output file will contain five fixed columns, plus additional columns for each BED file:\n\n    * 1. Chromosome name (or 'genome' for whole-genome coverage).\n    * 2. The zero-based start position of the interval.\n    * 3. The one-based end position of the interval.\n    * 4. The number of input files that had at least one feature overlapping this interval.\n    * 5. A list of input files or labels that had at least one feature overlapping this interval.\n    * 6. For each input file, an indication (1 = Yes, 0 = No) of whether or not the file had at least one feature overlapping this interval.\n\n------\n\n**Example input**::\n\n    # a.bed\n    chr1  6   12bed\n    chr1  10  20\n    chr1  22  27\n    chr1  24  30\n\n    # b.bed\n    chr1  12  32\n    chr1  14  30\n\n    # c.bed\n    chr1  8   15\n    chr1  10  14\n    chr1  32  34\n\n\n------\n\n**Example without a header and without reporting intervals with zero coverage**::\n\n\n    chr1\t6\t8\t1\t1\t1\t0\t0\n    chr1\t8\t12\t2\t1,3\t1\t0\t1\n    chr1\t12\t15\t3\t1,2,3\t1\t1\t1\n    chr1\t15\t20\t2\t1,2\t1\t1\t0\n    chr1\t20\t22\t1\t2\t0\t1\t0\n    chr1\t22\t30\t2\t1,2\t1\t1\t0\n    chr1\t30\t32\t1\t2\t0\t1\t0\n    chr1\t32\t34\t1\t3\t0\t0\t1\n\n\n**Example adding a header line**::\n\n\n    chrom\tstart\tend\tnum\tlist\ta.bed\tb.bed\tc.bed\n    chr1\t6\t8\t1\t1\t1\t0\t0\n    chr1\t8\t12\t2\t1,3\t1\t0\t1\n    chr1\t12\t15\t3\t1,2,3\t1\t1\t1\n    chr1\t15\t20\t2\t1,2\t1\t1\t0\n    chr1\t20\t22\t1\t2\t0\t1\t0\n    chr1\t22\t30\t2\t1,2\t1\t1\t0\n    chr1\t30\t32\t1\t2\t0\t1\t0\n    chr1\t32\t34\t1\t3\t0\t0\t1\n\n\n**Example adding a header line and custom file labels**::\n\n\n    chrom\tstart\tend\tnum\tlist\t    joe\tbob\tsue\n    chr1\t6\t8\t1\tjoe\t    1\t0\t0\n    chr1\t8\t12\t2\tjoe,sue\t    1\t0\t1\n    chr1\t12\t15\t3\tjoe,bob,sue 1\t1\t1\n    chr1\t15\t20\t2\tjoe,bob\t    1\t1\t0\n    chr1\t20\t22\t1\tbob\t    0\t1\t0\n    chr1\t22\t30\t2\tjoe,bob\t    1\t1\t0\n    chr1\t30\t32\t1\tbob\t    0\t1\t0\n    chr1\t32\t34\t1\tsue\t    0\t0\t1\n\n\n\n\n------\n\nThis tool is part of the `bedtools package`_ from the `Quinlan laboratory`_.\n\n.. _bedtools package: https://github.com/arq5x/bedtools2\n.. _Quinlan laboratory: http://quinlanlab.org\n\n\n**Citation**\n\nIf you use this tool in Galaxy, please cite:\n\nBjoern A. Gruening (2014), `Galaxy wrapper <https://github.com/bgruening/galaxytools>`_\n\n    \n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "tag": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "tag_select": {
+                  "type": "string",
+                  "enum": [
+                    "tag"
+                  ]
+                },
+                "inputs": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "tag_select"
+              ],
+              "properties": {
+                "tag_select": {
+                  "type": "string",
+                  "enum": [
+                    "custom"
+                  ]
+                },
+                "beds": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [],
+                    "properties": {
+                      "input": {
+                        "$id": "/schemas/never",
+                        "not": {},
+                        "title": "never"
+                      },
+                      "custom_name": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "cluster": {
+          "type": "boolean"
+        },
+        "empty": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "empty_selector": {
+                  "type": "string",
+                  "enum": [
+                    "-empty"
+                  ]
+                },
+                "genome_file_opts": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "genome_file_opts_selector": {
+                          "type": "string",
+                          "enum": [
+                            "loc"
+                          ]
+                        },
+                        "genome": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "genome_file_opts_selector"
+                      ],
+                      "properties": {
+                        "genome_file_opts_selector": {
+                          "type": "string",
+                          "enum": [
+                            "hist"
+                          ]
+                        },
+                        "genome": {
+                          "$id": "/schemas/never",
+                          "not": {},
+                          "title": "never"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "empty_selector"
+              ],
+              "properties": {
+                "empty_selector": {
+                  "type": "string",
+                  "enum": [
+                    ""
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "filler": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "header": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "tag": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "inputs"
+                  ],
+                  "properties": {
+                    "tag_select": {
+                      "type": "string",
+                      "enum": [
+                        "tag"
+                      ]
+                    },
+                    "inputs": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "tag_select",
+                    "beds"
+                  ],
+                  "properties": {
+                    "tag_select": {
+                      "type": "string",
+                      "enum": [
+                        "custom"
+                      ]
+                    },
+                    "beds": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "input"
+                            ],
+                            "properties": {
+                              "input": {
+                                "type": "object",
+                                "required": [
+                                  "__class__"
+                                ],
+                                "properties": {
+                                  "__class__": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ConnectedValue"
+                                    ]
+                                  }
+                                },
+                                "additionalProperties": false
+                              },
+                              "custom_name": {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "__class__"
+                                    ],
+                                    "properties": {
+                                      "__class__": {
+                                        "type": "string",
+                                        "enum": [
+                                          "ConnectedValue"
+                                        ]
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          "description": "an array of at least 2 item(s)",
+                          "title": "minItems(2)",
+                          "minItems": 2
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "cluster": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "empty": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "empty_selector": {
+                      "type": "string",
+                      "enum": [
+                        "-empty"
+                      ]
+                    },
+                    "genome_file_opts": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "genome_file_opts_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "loc"
+                                  ]
+                                },
+                                "genome": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "__class__"
+                                      ],
+                                      "properties": {
+                                        "__class__": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ConnectedValue"
+                                          ]
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "genome_file_opts_selector",
+                                "genome"
+                              ],
+                              "properties": {
+                                "genome_file_opts_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "hist"
+                                  ]
+                                },
+                                "genome": {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "empty_selector"
+                  ],
+                  "properties": {
+                    "empty_selector": {
+                      "type": "string",
+                      "enum": [
+                        ""
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "filler": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "header": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}
