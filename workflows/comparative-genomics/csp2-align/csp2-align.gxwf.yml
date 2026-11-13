@@ -1,0 +1,369 @@
+class: GalaxyWorkflow
+label: CSP2 pairwise alignment of assemblies
+doc: |-
+  This workflow runs the CFSAN SNP Pipeline 2 (CSP2, v.0.9.7.8) in align mode on a collection of bacterial genome assemblies to generate one CSP2 snpdiffs alignment summary per pair of isolates, plus tables of the alignment statistics and assembly metrics. Every isolate is aligned against every named reference isolate with MUMmer, or, when no reference is named, every pair of isolates is aligned once; CSP2's own scripts do the alignment parsing. No quality filtering is applied.
+creator:
+  - class: Person
+    identifier: https://orcid.org/0000-0002-4882-5357
+    name: Dannon Baker
+license: MIT
+release: '0.1'
+inputs:
+  Query assemblies:
+    type: collection
+    collection_type: list
+    format:
+      - fasta
+    doc: "One uncompressed FASTA assembly per isolate; element identifier = isolate ID. This is the whole isolate pool: reference isolates must be in it too."
+  Reference isolate IDs:
+    type: string
+    optional: true
+    doc: Comma-separated element identifiers of Query assemblies to use as references; every other isolate is aligned against each of them. Leave empty to align every pair of isolates once (CSP2's all-vs-all).
+outputs:
+  Reference IDs:
+    outputSource: List pairs to align/references
+  SNPDiffs:
+    outputSource: Align pair and compile snpdiffs/snpdiffs
+  Raw MUMmer summary:
+    outputSource: Summarise snpdiffs/raw_mummer_summary
+  Isolate data:
+    outputSource: Summarise snpdiffs/isolate_data
+steps:
+  Reference isolate IDs to file:
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_text_file_with_recurring_lines/9.11+galaxy0
+    tool_version: 9.11+galaxy0
+    tool_shed_repository:
+      changeset_revision: 30b60202d990
+      name: text_processing
+      owner: bgruening
+      tool_shed: toolshed.g2.bx.psu.edu
+    doc: Write the optional comma-separated ID string to a one-line dataset (empty when not supplied).
+    in:
+      token_set_0|line: Reference isolate IDs
+    out:
+      - id: outfile
+    state:
+      token_set:
+        - repeat_select:
+            repeat_select_opts: user
+            times: 1
+  Split reference isolate IDs into lines:
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0
+    tool_version: 9.11+galaxy0
+    tool_shed_repository:
+      changeset_revision: 30b60202d990
+      name: text_processing
+      owner: bgruening
+      tool_shed: toolshed.g2.bx.psu.edu
+    doc: One unique isolate ID per line; an absent or blank string gives an empty dataset.
+    in:
+      infile: Reference isolate IDs to file/outfile
+    out:
+      - id: outfile
+    state:
+      code: |
+        BEGIN { FS = "," }
+        {
+            for (i = 1; i <= NF; i++) {
+                id = $i
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", id)
+                if (length(id) && !(id in seen)) {
+                    seen[id] = 1
+                    print id
+                }
+            }
+        }
+      variables: []
+  List pairs to align:
+    doc: Source fetchData plus the to_align channel of CSP2.nf in align mode, as one authored user-defined tool. With reference IDs, every isolate that is not a reference is paired with every reference; without, every two isolates are paired once. Self-pairs are never listed (source alignGenomes).
+    run:
+      class: GalaxyUserTool
+      id: csp2_align_pairs
+      version: 0.1.0
+      name: CSP2 align mode pairs
+      description: list the query and reference pairs that CSP2 align mode aligns, from a set of assemblies and optional reference isolate IDs
+      container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
+      configfiles:
+        - filename: isolates.txt
+          content: |
+            ${
+              return (inputs.assemblies.elements || inputs.assemblies).map(function (element) {
+                return String(element.element_identifier).replace(/[\r\n\t]/g, " ");
+              }).join("\n") + "\n";
+            }
+      shell_command: |
+        while IFS= read -r id; do
+          case "$id" in
+            ""|-*|*__vs__*|*[![:alnum:]._-]*) echo "Isolate ID '$id' is empty, starts with '-', contains '__vs__' or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
+          esac
+        done < isolates.txt &&
+        awk '
+          FILENAME == ARGV[1] { if (length($0)) { named[$0] = 1; nnamed++ }; next }
+          { id[++n] = $0; isref[n] = ($0 in named) }
+          END {
+            printf "" > "pairs.txt"
+            printf "" > "reference_ids.txt"
+            if (nnamed) {
+              for (i = 1; i <= n; i++) if (isref[i]) { print id[i] > "reference_ids.txt"; nref++ }
+              if (!nref) { print "None of the reference isolate IDs is an element identifier of the assemblies, so there is nothing to align" > "/dev/stderr"; exit 1 }
+              if (nref == n) { print "Every isolate is a reference, so there is no query to align" > "/dev/stderr"; exit 1 }
+              for (i = 1; i <= n; i++) if (!isref[i]) for (j = 1; j <= n; j++) if (isref[j]) print id[i] ":" id[j] > "pairs.txt"
+            } else {
+              if (n < 2) { print "Aligning without references needs at least two isolates" > "/dev/stderr"; exit 1 }
+              for (i = 1; i <= n; i++) for (j = i + 1; j <= n; j++) print id[j] ":" id[i] > "pairs.txt"
+            }
+          }' '$(inputs.reference_ids.path)' isolates.txt
+      inputs:
+        - name: assemblies
+          type: data_collection
+          collection_type: list
+          format:
+            - fasta
+          label: Isolate assemblies
+          help: One assembly per isolate. The element identifier is the isolate ID and may use only letters, digits, '.', '_' and '-', not starting with '-' or containing '__vs__'.
+        - name: reference_ids
+          type: data
+          format:
+            - txt
+          label: Reference isolate IDs
+          help: One reference isolate ID per line, or an empty dataset for all-vs-all. IDs that name no assembly are ignored.
+      outputs:
+        - name: pairs
+          type: data
+          format: txt
+          from_work_dir: pairs.txt
+          label: Pairs to align
+        - name: references
+          type: data
+          format: txt
+          from_work_dir: reference_ids.txt
+          label: Reference isolate IDs found
+      help:
+        format: markdown
+        content: |
+          Decides which pairs CFSAN CSP2 v.0.9.7.8 aligns in `align` mode and writes them as
+          `<query isolate ID>:<reference isolate ID>`, one per line.
+
+          With reference IDs, the references are the assemblies those IDs name, and every other
+          assembly is paired with every reference as the query. IDs that name no assembly are
+          dropped, as CSP2 does. Without reference IDs, every two assemblies are paired once, and
+          the assembly later in the collection is the query. No assembly is paired with itself.
+
+          The second output lists the reference isolates found among the assemblies, in collection
+          order; it is empty without reference IDs.
+    in:
+      assemblies: Query assemblies
+      reference_ids: Split reference isolate IDs into lines/outfile
+    out:
+      - id: pairs
+      - id: references
+  Pair isolates with each other:
+    tool_id: __CROSS_PRODUCT_FLAT__
+    tool_version: 1.0.0
+    doc: Every isolate against every isolate as two parallel flat lists keyed <query>:<reference>, from which the listed pairs are kept (source query_data.combine(query_data) or query_data.combine(reference_data); both sides come from the one pool here).
+    in:
+      input_a: Query assemblies
+      input_b: Query assemblies
+    out:
+      - id: output_a
+      - id: output_b
+    state:
+      join_identifier: ":"
+  Keep listed pairs, query side:
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.1.0
+    doc: Keep only the pairs CSP2 align mode aligns, query side.
+    in:
+      input: Pair isolates with each other/output_a
+      how|filter_source: List pairs to align/pairs
+    out:
+      - id: output_filtered
+      - id: output_discarded
+    state:
+      how:
+        how_filter: remove_if_absent
+  Keep listed pairs, reference side:
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.1.0
+    doc: Same filter, reference side, so the two lists stay element-wise parallel.
+    in:
+      input: Pair isolates with each other/output_b
+      how|filter_source: List pairs to align/pairs
+    out:
+      - id: output_filtered
+      - id: output_discarded
+    state:
+      how:
+        how_filter: remove_if_absent
+  Align pair and compile snpdiffs:
+    doc: Source process runMUMmer, one job per <query>:<reference> pair (dnadiff, then CSP2 compileMUMmer.py unmodified) as one authored user-defined tool from the FDA image; both isolate IDs are read from the pair's element identifier.
+    run:
+      class: GalaxyUserTool
+      id: csp2_align_pair_snpdiffs
+      version: 0.1.2
+      name: CSP2 MUMmer alignment to snpdiffs
+      description: align one query assembly to one reference assembly with MUMmer dnadiff and compile a CSP2 snpdiffs file
+      container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
+      configfiles:
+        - filename: pair.txt
+          content: |
+            ${
+              var pair = String(inputs.query_fasta.element_identifier).replace(/[\r\n\t]/g, " ");
+              var cut = pair.lastIndexOf(":");
+              return [
+                pair,
+                String(inputs.reference_fasta.element_identifier).replace(/[\r\n\t]/g, " "),
+                pair.substring(0, cut),
+                pair.substring(cut + 1),
+                inputs.query_fasta.path,
+                inputs.reference_fasta.path
+              ].join("\n") + "\n";
+            }
+      shell_command: |
+        { IFS= read -r pair && IFS= read -r reference_pair && IFS= read -r query && IFS= read -r reference && IFS= read -r query_path && IFS= read -r reference_path; } < pair.txt &&
+        if [ "$pair" != "$reference_pair" ]; then echo "Query assembly '$pair' and reference assembly '$reference_pair' are not the same pair" >&2; exit 1; fi &&
+        case "$pair" in
+          *:*) ;;
+          *) echo "Pair identifier '$pair' is not <query isolate ID>:<reference isolate ID>" >&2; exit 1 ;;
+        esac &&
+        for id in "$query" "$reference"; do
+          case "$id" in
+            ""|-*|*__vs__*|*[![:alnum:]._-]*) echo "Isolate ID '$id' from pair '$pair' is empty, starts with '-', contains '__vs__' or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
+          esac
+        done &&
+        work=`pwd` &&
+        report_id="$query"__vs__"$reference" &&
+        mkdir -p fasta mummer snpdiffs tmp &&
+        ln -s "$query_path" "fasta/$query.fasta" &&
+        ln -s "$reference_path" "fasta/$reference.fasta" &&
+        cd mummer &&
+        dnadiff -p "$report_id" "$work/fasta/$reference.fasta" "$work/fasta/$query.fasta" &&
+        cd "$work" &&
+        python /app/bin/compileMUMmer.py --query "$query" --query_fasta "fasta/$query.fasta" --reference "$reference" --reference_fasta "fasta/$reference.fasta" --mummer_dir mummer --snpdiffs_dir snpdiffs --temp_dir tmp --log_file "$report_id.log" &&
+        cp "snpdiffs/$report_id.snpdiffs" pair.snpdiffs
+      inputs:
+        - name: query_fasta
+          type: data
+          format:
+            - fasta
+          label: Query assembly
+          help: Uncompressed FASTA assembly of the query isolate. Its element identifier must be `<query isolate ID>:<reference isolate ID>`; the IDs may use only letters, digits, '.', '_' and '-', not starting with '-' or containing '__vs__'.
+        - name: reference_fasta
+          type: data
+          format:
+            - fasta
+          label: Reference assembly
+          help: Uncompressed FASTA assembly of the reference isolate, from the list parallel to the query list, carrying the same `<query isolate ID>:<reference isolate ID>` element identifier.
+      outputs:
+        - name: snpdiffs
+          type: data
+          format: txt
+          from_work_dir: pair.snpdiffs
+          label: CSP2 snpdiffs
+      help:
+        format: markdown
+        content: |
+          Runs the pairwise alignment of CFSAN CSP2 v.0.9.7.8 (process `runMUMmer`) in one job:
+          `dnadiff -p <query>__vs__<reference> <reference> <query>`, then CSP2's own
+          `compileMUMmer.py`, which reads the dnadiff report, 1-to-1 coordinates and SNP files plus both
+          assemblies and writes one `.snpdiffs` file.
+
+          Meant to be mapped over two parallel lists of assemblies whose element identifiers are
+          `<query isolate ID>:<reference isolate ID>`; the two isolate IDs are read from that identifier,
+          split at the last ':'.
+
+          The snpdiffs file is tab-delimited text: one `#` header line with the isolate IDs, assembly
+          metrics and alignment summary, `##` lines for the aligned regions, then one line per SNP, indel
+          or invalid site. The header's assembly paths are the relative labels `fasta/<isolate ID>.fasta`,
+          identical for an isolate across jobs and runs; they do not resolve outside the job.
+    in:
+      query_fasta: Keep listed pairs, query side/output_filtered
+      reference_fasta: Keep listed pairs, reference side/output_filtered
+    out:
+      - id: snpdiffs
+  Summarise snpdiffs:
+    doc: Source process saveMUMmerLog (CSP2 saveSNPDiffs.py unmodified) over all snpdiffs in one job, as one authored user-defined tool from the FDA image.
+    run:
+      class: GalaxyUserTool
+      id: csp2_summarise_snpdiffs
+      version: 0.1.3
+      name: CSP2 snpdiffs summary
+      description: tabulate the alignment summary and the assembly metrics recorded in the headers of a set of CSP2 snpdiffs files
+      container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
+      configfiles:
+        - filename: snpdiffs.tsv
+          content: |
+            ${
+              return (inputs.snpdiffs.elements || inputs.snpdiffs).map(function (element) {
+                var pair = String(element.element_identifier).replace(/[\r\n\t]/g, " ");
+                var cut = pair.lastIndexOf(":");
+                return [pair, pair.substring(0, cut), pair.substring(cut + 1), element.path].join("\t");
+              }).join("\n") + "\n";
+            }
+      shell_command: |
+        tab=`printf '\t'` &&
+        if [ -z "`tr -d '\n' < snpdiffs.tsv`" ]; then echo "No snpdiffs files to summarise, so no pair was aligned: check that the reference isolate IDs name elements of the query assemblies" >&2; exit 1; fi &&
+        mkdir -p snpdiffs &&
+        : > All_SNPDiffs.txt &&
+        while IFS="$tab" read -r pair query reference path; do
+          case "$pair" in
+            *:*) ;;
+            *) echo "snpdiffs identifier '$pair' is not <query isolate ID>:<reference isolate ID>" >&2; exit 1 ;;
+          esac
+          for id in "$query" "$reference"; do
+            case "$id" in
+              ""|-*|*__vs__*|*[![:alnum:]._-]*) echo "Isolate ID '$id' from pair '$pair' is empty, starts with '-', contains '__vs__' or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
+            esac
+          done
+          staged="snpdiffs/$query"__vs__"$reference.snpdiffs" &&
+          ln -s "$path" "$staged" &&
+          echo "$staged" >> All_SNPDiffs.txt || exit 1
+        done < snpdiffs.tsv &&
+        python /app/bin/saveSNPDiffs.py --snpdiffs_file All_SNPDiffs.txt --summary_file Raw_MUMmer_Summary.tsv --isolate_file Isolate_Data.tsv --trim_name "" --ref_id_file '$(inputs.reference_ids.path)'
+      inputs:
+        - name: snpdiffs
+          type: data_collection
+          collection_type: list
+          format:
+            - txt
+          label: CSP2 snpdiffs files
+          help: One snpdiffs file per aligned pair, at least one. Each element identifier must be `<query isolate ID>:<reference isolate ID>`; the IDs may use only letters, digits, '.', '_' and '-', not starting with '-' or containing '__vs__'.
+        - name: reference_ids
+          type: data
+          format:
+            - txt
+          label: Reference isolate IDs
+          help: One reference isolate ID per line. Isolates listed here are marked Reference in the isolate table, all others Query. May be empty.
+      outputs:
+        - name: raw_mummer_summary
+          type: data
+          format: tabular
+          from_work_dir: Raw_MUMmer_Summary.tsv
+          label: Raw MUMmer summary
+        - name: isolate_data
+          type: data
+          format: tabular
+          from_work_dir: Isolate_Data.tsv
+          label: Isolate data
+      help:
+        format: markdown
+        content: |
+          Runs the alignment summary of CFSAN CSP2 v.0.9.7.8 (process `saveMUMmerLog`) in one job: CSP2's own
+          `saveSNPDiffs.py` over every snpdiffs file. Only the `#` header line of each file is read.
+
+          **Raw MUMmer summary** has one row per snpdiffs file: the file path, both isolate IDs, the assembly
+          metrics of both isolates and the alignment summary (aligned bases and percentages, SNP, indel and
+          invalid-site counts), with the header fields as columns.
+
+          **Isolate data** has one row per isolate: isolate ID, whether it is a Reference or a Query, assembly
+          path, contig count, assembly bases, N50, N90, L50, L90 and SHA256.
+
+          Each file is staged as `<query>__vs__<reference>.snpdiffs`, the name CSP2 gives it, with both IDs
+          read from the element identifier split at the last ':'. The `SNPDiffs_File` and `Assembly_Path`
+          columns hold job-local paths.
+    in:
+      snpdiffs: Align pair and compile snpdiffs/snpdiffs
+      reference_ids: List pairs to align/references
+    out:
+      - id: raw_mummer_summary
+      - id: isolate_data
