@@ -78,6 +78,8 @@ In both cases the snpdiffs, summary tables, reference screening, pairwise distan
 matrices, SNP list and SNP alignment, raw and preserved, are checked on their content. Assembly
 paths are left out of those checks. CSP2 writes the screening rows and the preserved SNP list in
 an order that changes from run to run, so they are sorted before comparing, and the preserved
-alignment is checked by size and per-isolate base counts. The tree comes from a newer IQ-TREE than
-upstream's, so only its shape is checked. Choosing more than one reference has no published
+alignment is checked by size and per-isolate base counts. Each k-mer count may be one above the
+published value, because CSP2 counts an extra k-mer when its first k-mer counting attempt comes
+back empty on a host short of memory; every other value is checked exactly. The tree comes from a
+newer IQ-TREE than upstream's, so only its shape is checked. Choosing more than one reference has no published
 expected output and is not tested.
