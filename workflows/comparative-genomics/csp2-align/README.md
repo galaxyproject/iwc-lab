@@ -46,7 +46,8 @@ rename the elements to `sample` to get the names CSP2 would report.
 Isolate IDs may use only letters, digits, `.`, `_` and `-`, and may not start with `-` or
 contain `__vs__` (the separator in CSP2's file names). CSP2 builds file names and command
 arguments from these IDs, so anything else is rejected before
-alignment.
+alignment. So is a set of IDs where two pairs would get the same CSP2 file name, such as
+`a__vs` with `b` and `a` with `vs__b` (both `a__vs__vs__b.snpdiffs`).
 
 CSP2's `align` mode takes no thresholds, so there are no other parameters.
 

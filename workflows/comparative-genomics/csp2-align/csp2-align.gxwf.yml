@@ -98,6 +98,12 @@ steps:
           esac
         done < isolates.txt &&
         awk '
+          function pair(q, r,   name) {
+            name = q "__vs__" r
+            if (name in staged) { print "Pairs " staged[name] " and " q ":" r " would both be saved as " name ".snpdiffs; rename one of these isolates" > "/dev/stderr"; exit 1 }
+            staged[name] = q ":" r
+            print q ":" r > "pairs.txt"
+          }
           FILENAME == ARGV[1] { if (length($0)) { named[$0] = 1; nnamed++ }; next }
           { id[++n] = $0; isref[n] = ($0 in named) }
           END {
@@ -107,10 +113,10 @@ steps:
               for (i = 1; i <= n; i++) if (isref[i]) { print id[i] > "reference_ids.txt"; nref++ }
               if (!nref) { print "None of the reference isolate IDs is an element identifier of the assemblies, so there is nothing to align" > "/dev/stderr"; exit 1 }
               if (nref == n) { print "Every isolate is a reference, so there is no query to align" > "/dev/stderr"; exit 1 }
-              for (i = 1; i <= n; i++) if (!isref[i]) for (j = 1; j <= n; j++) if (isref[j]) print id[i] ":" id[j] > "pairs.txt"
+              for (i = 1; i <= n; i++) if (!isref[i]) for (j = 1; j <= n; j++) if (isref[j]) pair(id[i], id[j])
             } else {
               if (n < 2) { print "Aligning without references needs at least two isolates" > "/dev/stderr"; exit 1 }
-              for (i = 1; i <= n; i++) for (j = i + 1; j <= n; j++) print id[j] ":" id[i] > "pairs.txt"
+              for (i = 1; i <= n; i++) for (j = i + 1; j <= n; j++) pair(id[j], id[i])
             }
           }' '$(inputs.reference_ids.path)' isolates.txt
       inputs:
