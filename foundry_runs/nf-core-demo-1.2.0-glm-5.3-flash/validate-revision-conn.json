@@ -1,0 +1,211 @@
+{
+  "workflow": "galaxy-workflow.gxwf.yml",
+  "results": [
+    {
+      "step": "0",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1",
+      "version": "0.74+galaxy1",
+      "status": "ok",
+      "errors": []
+    },
+    {
+      "step": "1",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/seqtk/seqtk_trimfq/1.5+galaxy0",
+      "version": "1.5+galaxy0",
+      "status": "ok",
+      "errors": []
+    },
+    {
+      "step": "2",
+      "tool_id": "cowpy",
+      "version": "1.0.0",
+      "status": "ok",
+      "errors": []
+    },
+    {
+      "step": "3",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5",
+      "version": "1.35+galaxy5",
+      "status": "ok",
+      "errors": []
+    }
+  ],
+  "connection_report": {
+    "valid": true,
+    "step_results": [
+      {
+        "step": "0",
+        "tool_id": null,
+        "version": null,
+        "step_type": "data_collection_input",
+        "map_over": null,
+        "connections": [],
+        "resolved_outputs": [
+          {
+            "name": "output",
+            "collection_type": "sample_sheet:paired_or_unpaired"
+          }
+        ],
+        "errors": [],
+        "label": "Input samplesheet"
+      },
+      {
+        "step": "1",
+        "tool_id": null,
+        "version": null,
+        "step_type": "parameter_input",
+        "map_over": null,
+        "connections": [],
+        "resolved_outputs": [
+          {
+            "name": "output",
+            "collection_type": null
+          }
+        ],
+        "errors": [],
+        "label": "Skip trimming"
+      },
+      {
+        "step": "4",
+        "tool_id": "cowpy",
+        "version": "1.0.0",
+        "step_type": "tool",
+        "map_over": null,
+        "connections": [],
+        "resolved_outputs": [
+          {
+            "name": "txt",
+            "collection_type": null
+          }
+        ],
+        "errors": [],
+        "label": "cowpy"
+      },
+      {
+        "step": "2",
+        "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1",
+        "version": "0.74+galaxy1",
+        "step_type": "tool",
+        "map_over": "sample_sheet:paired_or_unpaired",
+        "connections": [
+          {
+            "source_step": "0",
+            "source_output": "output",
+            "target_step": "2",
+            "target_input": "input_file",
+            "status": "ok",
+            "mapping": "sample_sheet:paired_or_unpaired",
+            "errors": [],
+            "map_depth": 2,
+            "reduction": false
+          }
+        ],
+        "resolved_outputs": [
+          {
+            "name": "html_file",
+            "collection_type": "sample_sheet:paired_or_unpaired"
+          },
+          {
+            "name": "text_file",
+            "collection_type": "sample_sheet:paired_or_unpaired"
+          }
+        ],
+        "errors": [],
+        "label": "FastQC"
+      },
+      {
+        "step": "3",
+        "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/seqtk/seqtk_trimfq/1.5+galaxy0",
+        "version": "1.5+galaxy0",
+        "step_type": "tool",
+        "map_over": "sample_sheet:paired_or_unpaired",
+        "connections": [
+          {
+            "source_step": "0",
+            "source_output": "output",
+            "target_step": "3",
+            "target_input": "in_file",
+            "status": "ok",
+            "mapping": "sample_sheet:paired_or_unpaired",
+            "errors": [],
+            "map_depth": 2,
+            "reduction": false
+          },
+          {
+            "source_step": "1",
+            "source_output": "output",
+            "target_step": "3",
+            "target_input": "when",
+            "status": "ok",
+            "mapping": null,
+            "errors": [],
+            "map_depth": 0,
+            "reduction": false
+          }
+        ],
+        "resolved_outputs": [
+          {
+            "name": "default",
+            "collection_type": "sample_sheet:paired_or_unpaired"
+          }
+        ],
+        "errors": [],
+        "label": "seqtk trimfq"
+      },
+      {
+        "step": "5",
+        "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5",
+        "version": "1.35+galaxy5",
+        "step_type": "tool",
+        "map_over": null,
+        "connections": [
+          {
+            "source_step": "2",
+            "source_output": "text_file",
+            "target_step": "5",
+            "target_input": "results_0|software_cond|output_0|input",
+            "status": "ok",
+            "mapping": null,
+            "errors": [],
+            "map_depth": 0,
+            "reduction": true
+          }
+        ],
+        "resolved_outputs": [
+          {
+            "name": "plots",
+            "collection_type": "list"
+          },
+          {
+            "name": "png_plot",
+            "collection_type": "list"
+          },
+          {
+            "name": "html_report",
+            "collection_type": null
+          },
+          {
+            "name": "stats",
+            "collection_type": null
+          }
+        ],
+        "errors": [],
+        "label": "MultiQC"
+      }
+    ],
+    "summary": {
+      "ok": 4,
+      "invalid": 0,
+      "skip": 0
+    },
+    "has_details": true
+  },
+  "skipped_reason": null,
+  "structure_errors": [],
+  "encoding_errors": [],
+  "summary": {
+    "ok": 4,
+    "fail": 0,
+    "skip": 0
+  }
+}

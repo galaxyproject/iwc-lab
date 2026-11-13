@@ -1,0 +1,29 @@
+{
+  "command": "npx --yes --package @galaxy-tool-util/cli@1.15.0 gxwf validate galaxy-workflow.gxwf.yml --json --connections --strict --cache-dir .gxwf-tool-cache",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "not_run_reason": null,
+  "run_at": "2026-11-09T20:35:47+01:00",
+  "diagnostics": [],
+  "summary": {
+    "steps_ok": 4,
+    "steps_fail": 0,
+    "steps_skip": 0,
+    "structure_errors": 0,
+    "encoding_errors": 0,
+    "connection_report_valid": true
+  },
+  "notes": [
+    "Ran with --strict (structure + encoding + state) and --connections; all 4 tool steps validated against cached tool metadata.",
+    "Connection report: samplesheet collection (sample_sheet:paired_or_unpaired) maps over FastQC and seqtk trimfq at depth 2; FastQC text_file reduction feeds MultiQC (reduction: true); seqtk 'when' input bound to the boolean parameter (map_depth 0). All connections status ok.",
+    "The cowpy step (step 2, tool_id cowpy v1.0.0) is a workflow-embedded GalaxyUserTool; gxwf validated it and its state (no tool-state skips).",
+    "Static validation cannot settle: (a) the cowpy container must be pullable by the runtime's docker destination — proven by the phase-10 planemo run, which was green under --docker; (b) seqtk 1.5+galaxy0 output byte-parity vs the upstream nf-test snapshot — resolved empirically in phase 10 by recomputing checksums; (c) MultiQC behaviour over 4 FastQC text inputs — proven by the phase-10 planemo run."
+  ],
+  "residual_runtime_risks": [
+    {
+      "risk": "cowpy UDT requires a docker-enabled job destination for its container",
+      "proven_disproved_by": "planemo test --docker (phase 10, attempt 9, green at 2026-11-09 20:29:35)"
+    }
+  ],
+  "raw_output_file": "validate-result-raw.json"
+}
