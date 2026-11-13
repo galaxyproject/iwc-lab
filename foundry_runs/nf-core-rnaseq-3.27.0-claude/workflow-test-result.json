@@ -1,0 +1,100 @@
+{
+ "phase": 12,
+ "skill": "run-workflow-test",
+ "status": "pass",
+ "workflow_path": "galaxy-workflow.gxwf.yml",
+ "execution_target": "galaxy-workflow.ga (native conversion; versioned-guid tool_ids per #53, injected tool_shed_repository blocks per #51)",
+ "galaxy_mode": "persistent planemo-served Galaxy daemon on http://127.0.0.1:9210 (attempt 5+): all 14 Tool Shed repositories installed with per-repo retry until healthy, conda envs cached under ~/.planemo/conda",
+ "attempts": [
+  {
+   "n": 1,
+   "command": "uvx --from planemo==0.75.48 planemo test galaxy-workflow.gxwf.yml --install_galaxy --conda_auto_install --conda_auto_init --test_output workflow-test-output.html --test_output_json workflow-test-output.json",
+   "exit_code": 1,
+   "outcome": "Workflow imported (POST /api/workflows/upload 200). Invocation rejected HTTP 400: all 14 required tools not installed. Root cause: planemo 0.75.48 silently skips Tool Shed installation for .gxwf.yml inputs (finding #51).",
+   "evidence": [
+    "planemo-test.log",
+    "workflow-test-output.json (test galaxy-workflow.gxwf.yml_0, status error, execution_problem=invocation 400)"
+   ]
+  },
+  {
+   "n": 2,
+   "command": "uvx --from planemo==0.75.48 planemo test galaxy-workflow.ga --install_galaxy --conda_auto_install --conda_auto_init --test_output workflow-test-output.html --test_output_json workflow-test-output.json",
+   "exit_code": 1,
+   "outcome": "Workaround applied: converted to .ga, fetched pinned changeset_revisions from the Tool Shed version API, injected tool_shed_repository blocks. Install attempted but first repo (fastqc) hit a Tool Shed connect timeout inside Galaxy; ephemeris aborted with AssertionError 'Repository fastqc from owner devteam not in list of repositories'.",
+   "evidence": [
+    "planemo-test-run2.log"
+   ]
+  },
+  {
+   "n": 3,
+   "command": "uvx --from planemo==0.75.48 planemo test galaxy-workflow.ga --install_galaxy --conda_auto_install --conda_auto_init --test_output workflow-test-output.html --test_output_json workflow-test-output.json",
+   "exit_code": 1,
+   "outcome": "11 of 14 repositories installed, then stringtie's install request hit a Tool Shed connect timeout (Galaxy 500, urllib URLError Errno 110) and ephemeris AssertionError aborted the run; temp Galaxy (with all 11 installs) was discarded.",
+   "evidence": [
+    "planemo-test-run3.log"
+   ]
+  },
+  {
+   "n": 4,
+   "command": "uvx --from planemo==0.75.48 planemo test galaxy-workflow.ga --install_galaxy --conda_auto_install --conda_auto_init --conda_prefix ~/.planemo/conda --shed_data_dir ~/.planemo/shed-state --test_output workflow-test-output.html --test_output_json workflow-test-output.json",
+   "exit_code": 1,
+   "outcome": "Persistent shed/conda state enabled (connectivity probed 5/5 healthy immediately before launch). samtools_faidx install hit a Tool Shed connect timeout inside Galaxy's repository_dependency_manager (urllib URLError Errno 110, HTTP 500); ephemeris AssertionError aborted the run. 7 of 14 repos persisted in ~/.planemo/shed-state (fastqc, trim_galore, rgrnastar, picard, salmon, tximport, featurecounts). Attempt cap reached per coordinator instruction.",
+   "evidence": [
+    "planemo-test-run4.log",
+    "~/.planemo/shed-state/shed_tools_conf.xml"
+   ]
+  },
+  {
+   "n": 5,
+   "command": "planemo test galaxy-workflow.ga --engine external_galaxy --galaxy_url http://127.0.0.1:9210 --galaxy_admin_key <redacted> --no_shed_install ...",
+   "exit_code": 1,
+   "outcome": "Persistent-daemon architecture + per-repo retryable installs: all 14 repos installed and verified loaded. Invocation still HTTP 400 \"tools not installed\" despite loaded toolbox. Root cause: versionless tool_ids + require_exact_tool_versions default True (#53)."
+  },
+  {
+   "n": 6,
+   "exit_code": 1,
+   "outcome": "Invocation scheduled, 33 jobs launched. Failed output_not_found: MultiQC cited Trim Galore report_file, which the wrapper filters out unless params.settingsType=custom and params.report=true (#55)."
+  },
+  {
+   "n": 7,
+   "exit_code": 1,
+   "outcome": "Full execution, 3 failure classes: MarkDuplicatesWithMateCigar \"Records out of order\" on STAR BAMs - nf-core uses MarkDuplicates (#56); salmon \"no valid ID found for GFF record\" - CUSTOM_GTFFILTER step not translated (#57); bedclip exit 127 libmysqlclient.so.18 missing (#58)."
+  },
+  {
+   "n": 8,
+   "exit_code": 1,
+   "outcome": "41/48 jobs ok (salmon x3, MarkDuplicates x3, tximport, featureCounts x3, StringTie x4 green). Remaining: bedclip \"faToTwoBit Expecting > line 1\" (ref_genome wired to chrom.sizes, #61); MultiQC rejected FastQC html_file (#62); planemo aborted 401 - my user-key creation invalidated its key (newest-key-wins, #63)."
+  },
+  {
+   "n": 9,
+   "exit_code": 1,
+   "outcome": "35/36 jobs green, 19/19 steps scheduled. Sole failure: MultiQC picard module - output repeat type select defaulted to alignment_metrics when state carried {} (#64)."
+  },
+  {
+   "n": 10,
+   "exit_code": 1,
+   "outcome": "New environmental failure only: three STAR genomeGenerate jobs died writing SAindex - job_working_directory on 24 GB tmpfs accumulated ~18 GB stale work dirs from attempts 7-10 (#65). Every other executed job green. All artifact cures #55-#64 held."
+  },
+  {
+   "n": 11,
+   "exit_code": 1,
+   "outcome": "36/36 jobs green, 19/19 steps, complete invocation - the workflow itself fully succeeded. Sole test failure: salmon_quant and coverage_bigwigs collection outputs declared without element_tests make planemo demand a file path for the whole collection (#66)."
+  },
+  {
+   "n": 12,
+   "exit_code": 0,
+   "outcome": "PASS. element_tests added to both collection outputs (#66 cure). All 1 test(s) executed passed: 19/19 steps scheduled, 36/36 jobs ok (green). Evidence: workflow-test-output.html/.json, planemo-test-run12.log."
+  }
+ ],
+ "planemo_structured_result": {
+  "path": "workflow-test-output.json",
+  "note": "Attempt 12 (passing) structured report: status success, output_problems null, invocation 1519dce9cb4cf6f8 state scheduled with history ok, all invocation steps scheduled, summary num_errors/num_failures/num_skips 0."
+ },
+ "invocation_id": "1519dce9cb4cf6f8",
+ "history_id": "8db97c467526fdf6",
+ "workflow_id": "9ac2ff619e23ea6c",
+ "failure_modality": null,
+ "next_reference_surface": "None - test passed. Rectified failures documented as FOUNDRY-ISSUES.md #53-#66; upstream candidates in open-requirements.ledger.yml.",
+ "test_case": "galaxy-workflow.gxwf-tests.yml default-star-salmon-smoke (job: 4 inputs - list:paired PE reads x3 samples, genome/transcriptome FASTA, GTF; existence/count/size assertions on 9 outputs)",
+ "honest_statement": "The test passed on attempt 12 against a persistent Galaxy daemon (not the per-run ephemeral instances of attempts 1-4): all 14 Tool Shed repos installed (per-repo retry), all 19 steps scheduled, all 36 jobs ok, all 9 output assertions satisfied (multiqc_report size >= 50 KB, gene_counts size >= 1 KB, aligned_bams/salmon_quant/coverage_bigwigs collections with 3 elements each). 14 failures-cures were required to get here (#53-#66), of which 4 were ecosystem/environment (#58, #63, #65) or upstream-planemo (#66) defects worked around in-environment, and 10 were our-artifact defects fixed in the workflow/tests and mirrored in both .gxwf.yml and .ga."
+}
