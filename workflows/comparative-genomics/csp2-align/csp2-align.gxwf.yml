@@ -104,6 +104,8 @@ steps:
             if (length(name ".snpdiffs") > 255) { print "Pair " q ":" r " would be saved as " name ".snpdiffs, longer than the 255 characters a file name may have; shorten these isolate IDs" > "/dev/stderr"; exit 1 }
             if (name in staged) { print "Pairs " staged[name] " and " q ":" r " would both be saved as " name ".snpdiffs; rename one of these isolates" > "/dev/stderr"; exit 1 }
             staged[name] = q ":" r
+            asquery[q] = 1
+            asref[r] = 1
             print q ":" r > "pairs.txt"
           }
           FILENAME == ARGV[1] { if (length($0)) { named[$0] = 1; nnamed++ }; next }
@@ -119,6 +121,12 @@ steps:
             } else {
               if (n < 2) { print "Aligning without references needs at least two isolates" > "/dev/stderr"; exit 1 }
               for (i = 1; i <= n; i++) for (j = i + 1; j <= n; j++) pair(id[j], id[i])
+            }
+            printf "" > "query_side.txt"
+            printf "" > "reference_side.txt"
+            for (i = 1; i <= n; i++) {
+              if (id[i] in asquery) print id[i] > "query_side.txt"
+              if (id[i] in asref) print id[i] > "reference_side.txt"
             }
           }' '$(inputs.reference_ids.path)' isolates.txt
       inputs:
@@ -146,6 +154,16 @@ steps:
           format: txt
           from_work_dir: reference_ids.txt
           label: Reference isolate IDs found
+        - name: query_side
+          type: data
+          format: txt
+          from_work_dir: query_side.txt
+          label: Isolates aligned as a query
+        - name: reference_side
+          type: data
+          format: txt
+          from_work_dir: reference_side.txt
+          label: Isolates aligned as a reference
       help:
         format: markdown
         content: |
@@ -158,20 +176,50 @@ steps:
           the assembly later in the collection is the query. No assembly is paired with itself.
 
           The second output lists the reference isolates found among the assemblies, in collection
-          order; it is empty without reference IDs.
+          order; it is empty without reference IDs. The last two list, in collection order, every
+          isolate that is the query of some pair and every isolate that is the reference of some
+          pair, so the assemblies can be narrowed to each side before they are crossed.
     in:
       assemblies: Query assemblies
       reference_ids: Split reference isolate IDs into lines/outfile
     out:
       - id: pairs
       - id: references
+      - id: query_side
+      - id: reference_side
+  Keep query isolates:
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.1.0
+    doc: The assemblies that are the query of some pair (the non-references, or all but the first isolate in all-vs-all), so the cross product below is queries x references rather than the whole pool squared.
+    in:
+      input: Query assemblies
+      how|filter_source: List pairs to align/query_side
+    out:
+      - id: output_filtered
+      - id: output_discarded
+    state:
+      how:
+        how_filter: remove_if_absent
+  Keep reference isolates:
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.1.0
+    doc: The assemblies that are the reference of some pair (the named references, or all but the last isolate in all-vs-all).
+    in:
+      input: Query assemblies
+      how|filter_source: List pairs to align/reference_side
+    out:
+      - id: output_filtered
+      - id: output_discarded
+    state:
+      how:
+        how_filter: remove_if_absent
   Pair isolates with each other:
     tool_id: __CROSS_PRODUCT_FLAT__
     tool_version: 1.0.0
-    doc: Every isolate against every isolate as two parallel flat lists keyed <query>:<reference>, from which the listed pairs are kept (source query_data.combine(query_data) or query_data.combine(reference_data); both sides come from the one pool here).
+    doc: Every query isolate against every reference isolate as two parallel flat lists keyed <query>:<reference>, from which the listed pairs are kept (source query_data.combine(reference_data), or query_data.combine(query_data) in all-vs-all). With references this is already exactly the listed pairs; in all-vs-all the filter below drops self-pairs and the reverse direction.
     in:
-      input_a: Query assemblies
-      input_b: Query assemblies
+      input_a: Keep query isolates/output_filtered
+      input_b: Keep reference isolates/output_filtered
     out:
       - id: output_a
       - id: output_b
