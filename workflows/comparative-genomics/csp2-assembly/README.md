@@ -46,9 +46,9 @@ These figures are from that one dataset.
   reads beyond the last forward read.
 - **Reproduce CSP2 v.0.9.7.8 assembly (forward reads only)**: off by default. See above.
 
-Isolate IDs cannot contain whitespace, `,`, `/` or `:`. The other CSP2 workflows refuse the first
-three in any isolate ID and `:` in a reference ID, and any of these assemblies can become a
-reference, so an ID that has one fails here, before the assembly runs.
+Isolate IDs may use only letters, digits, `.`, `_` and `-`, and may not start with `-` or contain
+`__vs__`. That is the rule the other CSP2 workflows enforce on every isolate ID, so an ID that
+assembles here is always one they accept; an ID that breaks it fails here, before the assembly runs.
 
 ## Outputs
 

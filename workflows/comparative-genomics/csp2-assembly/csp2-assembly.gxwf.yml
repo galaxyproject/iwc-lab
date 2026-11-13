@@ -39,7 +39,7 @@ steps:
     run:
       class: GalaxyUserTool
       id: csp2_skesa_assemble
-      version: 0.2.1
+      version: 0.2.2
       name: CSP2 SKESA assembly
       description: assemble the paired reads of one isolate with the SKESA build of the CSP2 image
       container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
@@ -60,7 +60,7 @@ steps:
         { IFS= read -r id && IFS= read -r reverse_id && IFS= read -r forward && IFS= read -r reverse && IFS= read -r mode; } < reads.txt &&
         if [ "$id" != "$reverse_id" ]; then echo "Forward reads '$id' and reverse reads '$reverse_id' are not the same isolate" >&2; exit 1; fi &&
         case "$id" in
-          ""|*[[:space:],/:]*) echo "Isolate ID '$id' is empty or contains whitespace, ',', '/' or ':'" >&2; exit 1 ;;
+          ""|-*|*__vs__*|*[![:alnum:]._-]*) echo "Isolate ID '$id' is empty, starts with '-', contains '__vs__' or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
         esac &&
         slots=$GALAXY_SLOTS &&
         if [ -z "$slots" ]; then slots=1; fi &&
@@ -78,7 +78,7 @@ steps:
             - fastqsanger
             - fastqsanger.gz
           label: Forward reads
-          help: Forward FASTQ of one isolate, plain or gzipped. Its element identifier is the isolate ID and must not contain whitespace, ',', '/' or ':'.
+          help: Forward FASTQ of one isolate, plain or gzipped. Its element identifier is the isolate ID, which may use only letters, digits, '.', '_' and '-', not starting with '-' or containing '__vs__'.
         - name: reverse
           type: data
           format:
@@ -121,9 +121,9 @@ steps:
 
           Meant to be mapped over two parallel lists, the forward and the reverse reads of a `list:paired`
           collection, one job per isolate, giving a list of assemblies whose element identifiers are the
-          isolate IDs. The isolate ID is read from the element identifier and checked against the characters
-          the CSP2 alignment tools refuse in an isolate ID, plus `:`, which they refuse in a reference ID, so
-          that a bad ID fails here and not after the assembly.
+          isolate IDs. The isolate ID is read from the element identifier and held to the same rule as the
+          CSP2 alignment tools (letters, digits, `.`, `_` and `-` only, not starting with `-` or containing
+          `__vs__`), so that a bad ID fails here and not after the assembly.
 
           The assembly is an uncompressed FASTA with contigs named `Contig_<number>_<k-mer coverage>`; contigs
           shorter than 200 bases are not reported. The output does not depend on the number of cores. The
