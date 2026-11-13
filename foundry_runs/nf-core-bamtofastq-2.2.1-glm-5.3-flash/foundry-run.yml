@@ -1,0 +1,330 @@
+run_record_version: 1
+pipeline: nextflow-to-galaxy
+run_slug: nf-core-bamtofastq-glm
+harness_name: pipeline-nextflow-to-galaxy
+source_revision: 5
+assembly_sha256: d67b4ca056f02fed2046b1ed6898371174f3889511cc7a8179cd4cec3c8a8abc
+foundry_head: null
+started_at: 2026-11-09 23:27:18+01:00
+finished_at: 2026-11-10 08:16:39+01:00
+status: done
+phases:
+- n: 1
+  kind: mold
+  skill: summarize-nextflow
+  status: done
+  artifacts:
+  - id: summary-nextflow
+    file: summary-nextflow.json
+    at: '2026-11-09T23:34:45+01:00'
+  iterations: 1
+- n: 2
+  kind: mold
+  skill: nextflow-summary-to-galaxy-reference-data
+  status: done
+  artifacts:
+  - id: nextflow-galaxy-reference-data
+    file: nextflow-galaxy-reference-data.md
+    at: '2026-11-09T23:36:28+01:00'
+  - id: open-requirements-ledger
+    file: open-requirements.ledger.yml
+    at: '2026-11-09T23:36:40+01:00'
+  iterations: 1
+- n: 3
+  kind: mold
+  skill: nextflow-summary-to-galaxy-interface
+  status: done
+  artifacts:
+  - id: nextflow-galaxy-interface
+    file: nextflow-galaxy-interface.md
+    at: '2026-11-09T23:40:24+01:00'
+  - id: open-requirements-ledger
+    file: open-requirements.ledger.yml
+    at: '2026-11-09T23:45:00+01:00'
+  iterations: 1
+- n: 4
+  kind: mold
+  skill: nextflow-summary-to-galaxy-data-flow
+  status: done
+  artifacts:
+  - id: nextflow-galaxy-data-flow
+    file: nextflow-galaxy-data-flow.md
+    at: '2026-11-09T23:50:40+01:00'
+  - id: open-requirements-ledger
+    file: open-requirements.ledger.yml
+    at: '2026-11-09T23:51:00+01:00'
+  iterations: 1
+- n: 5
+  kind: mold
+  skill: compare-against-iwc-exemplar
+  status: done
+  artifacts:
+  - id: iwc-comparison-notes
+    file: iwc-comparison-notes.md
+    at: '2026-11-09T23:55:30+01:00'
+  - id: iwc-exemplar-gxformat2
+    file: iwc-exemplar.gxwf.yml
+    at: '2026-11-09T23:55:10+01:00'
+  iterations: 1
+- n: 6
+  kind: mold
+  skill: nextflow-summary-to-galaxy-template
+  status: done
+  artifacts:
+  - id: galaxy-workflow-draft
+    file: galaxy-workflow-draft.gxwf.yml
+    at: 00:21:52
+  - id: open-requirements-ledger
+    file: open-requirements.ledger.yml
+    at: 00:21:52
+- n: 7
+  kind: mold
+  skill: advance-galaxy-draft-step
+  status: done
+  artifacts:
+  - id: galaxy-workflow-draft
+    file: galaxy-workflow-draft.gxwf.yml
+    at: 01:53:05
+  - id: galaxy-workflow
+    file: galaxy-workflow.gxwf.yml
+    at: 01:53:05
+  - id: open-requirements-ledger
+    file: open-requirements.ledger.yml
+    at: 01:53:05
+  iterations: 20
+  note: draft-next-step draft:false; draft-validate --concrete --strict-state ok:true
+    29/29 steps; loop closed.
+- n: 8
+  kind: branch
+  pattern: test-data-resolution
+  status: done
+  artifacts:
+  - id: test-data-refs
+    file: test-data-refs.json
+    at: 01:54:56
+- n: 9
+  kind: mold
+  skill: nextflow-test-to-galaxy-test-plan
+  status: done
+  artifacts:
+  - id: galaxy-test-plan
+    file: galaxy-test-plan.yml
+    at: 01:55:56
+- n: 10
+  kind: mold
+  skill: implement-galaxy-workflow-test
+  status: done
+  artifacts:
+  - id: galaxy-workflow-test
+    file: galaxy-workflow.gxwf-tests.yml
+    at: 02:03:08
+- n: 11
+  kind: mold
+  skill: validate-galaxy-workflow
+  status: done
+  artifacts:
+  - id: galaxy-workflow-validation-result
+    file: galaxy-workflow-validation-result.json
+    at: 02:03:55
+- n: 12
+  kind: mold
+  skill: run-workflow-test
+  status: done
+  artifacts:
+  - id: workflow-test-result
+    file: workflow-test-result.json
+    at: 08:16:39
+  attempts:
+  - attempt 3 (02:07:09): fail — invocation 400, all 11 shed tools "not installed"
+    (root cause: version-less shed tool_ids; fixed by appending version segments).
+  - attempt 4 (02:50:35): fail — invocation failed at filter_bam_rows (__APPLY_RULES__
+    "list index out of range"; rules DSL rows start empty, add_column_from_sample_sheet_index
+    required before filtering; fixed).
+  - attempt 5 (03:00:35): fail — invocation failed at samtools_chr_view (when_not_boolean,
+    "Type is: str"; bare `$(inputs.when)` on a string input fails the isinstance-bool check —
+    fixed with `$(inputs.when != "")` boolean-producing expression).
+  - attempt 6 (03:03:47): fail — invocation failed at merge_fastqc_pre (__MERGE_COLLECTION__
+    "type_source 'inputs_0|input' does not name a collection input"; tool_state lacked the
+    inputs repeat array — repeat instances only auto-populated on the fill_defaults import
+    path, not the invocation path; fixed by adding the IWC-idiom ConnectedValue repeat array
+    to all four merge steps' state).
+  - attempt 7 (03:23:13): fail — merge steps fixed and scheduled (14/16 green), but two
+    job failures: (1) pairedness_split DataRequestInternalHda pydantic error — UDT input
+    was `type: data, multiple: true` fed an HDCA; retyped as `data_collection`
+    (collection_type list, elements[] iteration) in UDT + both gxwf files; (2) multiqc
+    fastqc entry rejects html — merge_fastqc_pre re-wired to fastqc text_file.
+  - attempt 8 (03:32:08): fail — 15/16 green (multiqc fixed); pairedness_split failed on
+    `alignments.collection_type — Input should be 'list' [input_value='sample_sheet']`:
+    the UDT's declared type didn't match the runtime sample_sheet collection handed over
+    by pick_input_collection. Fixed with `collection_type: list,sample_sheet` (UDT v1.0.2).
+  - attempt 9 (03:38:21): fail — collection_type fix PASSED state validation; new failure:
+    configfile templating `SyntaxError: Unexpected identifier 'samtools'` — shell command
+    substitutions in the UDT configfile were not escaped (`\$(...)`); every `$(...)` is
+    interpolated as CWL/JS. Fixed all three shell substitutions (UDT v1.0.3).
+  - attempt 10 (04:09:49): fail — escape fix advanced; new failure: bash parameter
+    expansions `${entry%|*}` parsed as CWL JS expression blocks ("unexpected token '|'");
+    escaped ALL shell constructs (`${...}`, `$VAR`, `$1`) in configfile (UDT v1.0.4).
+  - attempt 11 (04:41:14): fail — templating escaped fully; pairedness_split scheduled and
+    ran (invocation reached 89% of steps, 17/21 jobs green). Single failure: exit 126 —
+    interpolated REFERENCE_ARG became `VAR=--reference '/path'`, bash parsed it as the
+    env-prefix syntax and tried to execute the dataset file. Fixed by wrapping the
+    interpolated expression in single quotes (UDT v1.0.5). Downstream output_not_found
+    failure was a cascade of that one job.
+  - attempt 12 (05:12:49): fail — v1.0.5 single-quote fix worked; new failure
+    `split_pairedness.sh: line 16: $SAMTOOLS: command not found`: CWL interpolation
+    (escaping_behavior=2) consumes the backslash before `$(`/`${` but RETAINS it before
+    plain identifiers, so `\$SAMTOOLS` reached bash literally. Probe-confirmed fix:
+    de-escape all bare `$var` references, keep only `\$(` / `\${` escapes (UDT v1.0.6,
+    applied to all three files; full-render probe of corrected configfile produces valid bash).
+  - attempt 13 (05:22:09): fail — my edit error: the de-escape removed the `\$(` escapes
+    too (SyntaxError "Unexpected identifier 'view'" at job prep). Re-added `\$(` to the
+    three command substitutions, kept bare `$VAR` de-escaped (UDT v1.0.7). Verified with
+    the full render probe + `bash -n` against the on-disk file before relaunch.
+  - attempt 14 (05:26:31): fail — templating now clean; pairedness_split ran but samtools
+    rejected `--reference <path>` as ONE argv token (quoted "$REFERENCE_ARG" quotes the
+    whole string). Fixed by unquoting $REFERENCE_ARG at all use sites — empty value then
+    expands to zero words, BAM case needs no flag (UDT v1.0.8, render-probe verified both
+    cases). Invocation reached 92%, further than any prior attempt.
+  - attempt 15 (05:30:50): fail — quoting fixed, pairedness_split ran; new failure: samtools
+    builds a .fai index beside the reference and Galaxy's files/ dir is read-only in the
+    container (exit 141). Fixed by copying the reference into the writable job dir and
+    pointing --reference at the copy (UDT v1.0.9; render-probe verified CRAM + BAM cases).
+  - attempt 16 (05:36:23): fail — samtools received the reference path WITH literal quotes:
+    unquoted expansion word-splits a VALUE but bash does not re-parse embedded quotes
+    (`Failed to open the file "$(pwd)/ref_copy.fasta"`). Fixed by dropping the now-unnecessary
+    quotes around the fixed relative path (UDT v1.0.10; all six renders pass bash -n).
+  - attempt 17 (05:40:57): fail — ref path clean, pairedness_split ran; new failure: exit
+    141 with empty stderr = SIGPIPE. `samtools view | head -n1000` closes the pipe early;
+    under pipefail samtools dies when the input has >1000 records. Fixed by replacing
+    head-sampling with full-stream counting (`samtools view -c` total + `awk NR<=n` paired
+    count that consumes to EOF — same first-n semantics, no SIGPIPE) (UDT v1.0.11).
+  - attempt 18 (05:46:02): fail — SIGPIPE fix worked (zero failed jobs); invocation failed
+    on workflow_output_not_found: the 1.22+galaxy2 fastq2fq wrapper names its "other reads"
+    dataset `output`, not `other` (confirmed from wrapper XML + handled-output names in the
+    Galaxy log). Fixed step-24 out id and both consumers (workflow output + merge input).
+  - attempt 19 (05:56:59): fail — samtools_merge "You must specify at least one input
+    file": its `bamfiles` repeat got zero inputs — list-style `- id: bamfiles` ×3
+    connections collide on one key and augment_tool_state_for_input_connections only
+    processes `<repeat>_<idx>|<param>` keys (modules.py:3113). Fixed with key-style
+    `bamfiles_N|bamfiles` connections + ConnectedValue repeat-instance array in state
+    (same idiom as the attempt-6 __MERGE_COLLECTION__ fix).
+  - attempt 20 (06:04:21): fail — repeat wiring took effect but job creation failed
+    `'dict' object has no attribute 'find_conversion_destination'`: samtools_merge's
+    bamfiles is `data multiple=true` (wrapper XML), NOT a repeat — a multi-value data
+    param takes ONE connection. Fixed by inserting merge_unmapped_variants
+    (__MERGE_COLLECTION__, keep_first) pooling the three variants and feeding
+    samtools_merge a single bamfiles connection.
+  - attempt 21 (06:12:06): fail — samtools_merge exit 1 "You must specify at least one
+    (and usually two or more) input files" despite a correct single HDCA connection.
+    Root cause (source-verified): pairedness_split's output collections were EMPTY —
+    the UDT copies inputs to `paired/$base`/`single/$base` where base is the element
+    basename ("test"/"test2", from `set_basename_and_derived_properties` semantics:
+    input.basename for collection elements is the identifier, extensionless), but the
+    discover pattern `(?P<name>.+)\.bam` requires a `.bam` suffix; DatasetCollector.match
+    runs re.match against the plain filename, so nothing matched, both HDCA outputs had
+    zero elements, every downstream map-over (steps 17-22, 24-25, 29-32, 36) silently
+    created zero jobs (empty≠unpopulated: no DelayedWorkflowEvaluation, no warning),
+    and merge_unmapped_variants merged three empty ICJs into an empty pooled HDCA.
+    Attempt 18's fastq2fq output_not_found was a cascade of the same emptiness (log
+    re-analysis shows its only fastx/view job setups were step 8 chr_view + step 27/28
+    paused path, fed from raw samplesheet, not the UDT). Fixed in UDT v1.0.12 by
+    dropping `\.bam` from both patterns (format: bam declaration handles typing) in
+    galaxy-user-tool.yml + both gxwf files; draft-validate --concrete --strict-state
+    ok:true after edit.
+  - attempt 22 (07:01:37, ended 07:13): fail (assertions only) — FIRST full
+    end-to-end run: all 36 steps scheduled, zero failed jobs, invocation
+    8ad99893c111e35f completed. v1.0.12 pattern fix worked at job level
+    (downstream jobs created). Four assertion problems:
+    (1) merged_reads expected 4 elements, got 2 — NEW ROOT CAUSE (basename
+    collision): UDT used `input.basename`, but in the configfile JS context
+    basename renders to created_from_basename or the HDA NAME (runtime.py:354
+    `set_basename_and_derived_properties(properties, hda_entry.dataset.
+    created_from_basename or hda_entry.name)`), and pick_input_collection
+    renames its output HDAs to "Pick parameter value"; both samples' copies
+    went to `paired/Pick parameter value`, the second cp overwrote the first →
+    paired_alignments=1 element, single_alignments=0 (job 5491d4ba4f982360:
+    2 alignments in, single discovered output dataset named "Pick parameter
+    value"); cascades: steps 17-20 got 1 job each, merged_reads 2 elements,
+    fastqutils_reports 1 element. element_identifier IS exposed per element
+    (runtime.py _element_to_runtime sets it from the DatasetCollectionElement;
+    required field of DataCollectionElementInternalJson) — UDT v1.0.13
+    switches to `input.element_identifier`; render probe (galaxy venv do_eval,
+    flat job dict) renders `'/path|test' '/path2|test2'`, bash -n clean both
+    cases.
+    (2-5) four count-only outputs (unmapped_other_reads, fastqc_pre_zip,
+    fastqc_post_html, fastqc_post_zip) got "No path specified": planemo
+    runnable.py:404 routes non-collection checks unless `element_tests` is a
+    key of the test properties (_check_output.py for_collections) — added
+    `element_tests: {}` to all four (verify_collection runs count checks and
+    skips per-element verify when element_tests is empty).
+    (6) stats_reports md5 mismatch: samtools stats header embeds version +
+    command line (non-portable); BOTH per-sample outputs differ in content
+    (test: sequences 5642, unmapped 2; test2: 5436, 0) — replaced whole-file
+    md5 with has_line asserts on portable SN lines (test-evidence from the
+    attempt-22 collected outputs, which match the nf-test snapshot values).
+    All fixes applied to galaxy-workflow.gxwf-tests.yml + UDT v1.0.13 in all
+    three files; gxwf validate-tests (schema + --workflow) 0 errors;
+    draft-validate --concrete --strict-state ok:true.
+  - attempt 23 (07:35:42, ended 07:43:20): fail (assertions only) — v1.0.13
+    element_identifier fix CONFIRMED at runtime: pairedness_split discovered
+    `__new_primary_file_paired_alignments|test__` / `|test2__` (per-sample
+    elements, no collision), all element counts pass, zero failed jobs, 10
+    samtools_view + 4 cat + 4 fastq_info + 6 fastqc + 3 collate + 3 fastx +
+    1 samtools_merge jobs. Exactly TWO output problems remain, both
+    checksum-only on snapshot-translated md5s:
+    (1) merged_reads test_1: actual ca12601d… vs snapshot 9b0c0886… (and
+    unverified: test_2, test2_1, test2_2 — verify_collection aborts at the
+    first failing element). Element→file mapping traced via invocation
+    details: test_1=ea778a7f (ca12601d, 2820 reads), test2_1=c9171ae5
+    (bb6daa23, 2718), test_2=23ce35f5 (e9643d1f, 2820), test2_2=c9a3b86a
+    (e4d92aa0, 2718).
+    (2) fastqutils_reports test: actual cb0c3232… vs snapshot db31682c…
+    (test2 unverified). Report content read: fastq_utils 0.25.3 (SAME
+    version as the source container quay.io/biocontainers/
+    fastq_utils:0.25.3--ha9dfd29_0), "Reads processed: 2820"/"2718",
+    Quality encoding: 33, OK — but lines 3/8/9 embed per-run
+    /tmp/.../dataset_<uuid>.dat absolute paths, so the whole-file md5 can
+    never match across runs or implementations.
+    Root-cause analysis (attempt 24 prep): merged_reads md5 is
+    implementation-drift — the merged gz is a BGZF stream whose bytes
+    depend on the samtools/zlib build (source container
+    htslib_samtools:1.23.1--5b6bb4e vs Galaxy fastx wrapper build), while
+    CONTENT is right: 2820/2820/2718/2718 reads exactly matches the
+    snapshot-derivable expectation (snapshot stats: test 5642 sequences /
+    2 unmapped, test2 5436 / 0; source alignment_to_fastq/main.nf:73-88
+    concats mapped+unmapped R1/R2 via CAT_FASTQ, collatefastq/main.nf:34
+    routes mate-unmapped reads to the OPTIONAL, unconsumed singleton
+    bucket → R1=R2=(sequences−unmapped)/2). The single unmapped pair in
+    test is half-mapped (mate mapped → singleton), proven by
+    unmapped_other_reads element_count 0 passing. Fix: replaced both
+    outputs' checksums with portable content asserts (merged_reads:
+    has_n_lines 11280/11280/10872/10872 on the decompressed gz — planemo
+    decompress defaults true; fastqutils_reports: has_line on
+    "Reads processed"/"Number of reads"/"Quality encoding: 33"/"OK");
+    values derived from snapshot + source logic, NOT from our own run
+    (deviation logged in tests doc + model-test-log.md).
+  - attempt 24 (07:58:39, ended 08:07:02, EXIT=1): fail — ONE problem left,
+    and it is an assertion-mechanism bug, not content: merged_reads
+    "Expected 11280+-0 lines in the output found 1916". The failing element
+    (308570c3) decompresses to exactly 11280 lines when read from the tmp
+    collection dir — the count was right; planemo read the RAW GZIP BYTES.
+    Root cause (planemo source-verified): the OUTPUT-side verify() defaults
+    decompress to False (verify/__init__.py:102 attributes.get("decompress",
+    False)); the True default at interactor.py:660 applies only to INPUT
+    test data. verify_assertions then decompresses only when the attribute
+    is truthy (asserts/__init__.py:47). 1916 ≈ newline bytes inside the
+    compressed stream. Fix: `decompress: true` at element level (schema
+    TestCollectionDatasetElementAssertions carries decompress, line 1273)
+    on all four merged_reads elements; validate-tests OK exit 0. All other
+    assertions — including the fastqutils has_line set — PASSED in this
+    run (output_problems contains only the single merged_reads line-count
+    problem). Attempt 25 = decompress flag only.
+  - attempt 25 (08:08:45, ended 08:15:44, EXIT=0): PASS — "All 1 test(s)
+    executed passed." Invocation 760c54d78beab52c completed end-to-end, zero
+    failed jobs, zero output problems. workflow-test-result.json emitted
+    (status: pass).
+- n: 13
+  kind: mold
+  skill: debug-galaxy-workflow-output
+  status: not-needed
+  note: attempt 25 passed; debug pass never invoked.

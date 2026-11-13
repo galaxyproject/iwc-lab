@@ -1,0 +1,154 @@
+class: GalaxyUserTool
+id: pairedness_split
+version: 1.0.13
+name: Pairedness split (checkpairedend + route)
+description: >
+  Classify each alignment in a collection as paired-end or single-end (first
+  1000 records, or whole file when shorter) and route each input file into a
+  paired or single output collection, preserving element names.
+license: MIT
+container: quay.io/biocontainers/samtools:1.23.1--ha83d96e_0
+help:
+  format: markdown
+  content: |
+    Combines nf-core/bamtofastq's CHECKPAIREDEND and SPLIT_PAIRED_END
+    (modules/local/checkpairedend, workflows/bamtofastq.nf) in one job.
+
+    For each input alignment (BAM or CRAM) the tool counts the records in the
+    first 1000 lines of `samtools view` output (the whole file when it is
+    shorter), then re-counts the same slice requiring the paired flag (-f 1).
+    If every sampled record is paired, the file is routed to the
+    `paired_alignments` collection; otherwise to `single_alignments`. Both
+    outputs are copies of the input files named `<element identifier>` (sample
+    name), so downstream collection consumers keep per-sample identifiers.
+
+    CRAM inputs require a reference FASTA (supplied via the optional
+    reference input); BAM inputs leave it unset.
+
+    Both output collections are declared bam-format: for CRAM samples the
+    files keep their CRAM content but the element datatype metadata reads
+    bam (the tool cannot set per-element formats from a static definition;
+    recorded as a known limitation in the workflow step doc).
+inputs:
+  - name: alignments
+    type: data_collection
+    collection_type: list,sample_sheet
+    format: [bam, cram]
+    label: Alignment files (BAM or CRAM), one per sample
+    help: >
+      One list collection; each element is one sample's alignment. Element
+      identifiers become the output names (v1.0.13: copies are named from each
+element's `element_identifier`, not the file basename — pick_value renames
+HDAs to "Pick parameter value", so basename-based naming collided all copies
+onto one file and the discovered collections collapsed to a single element).
+      (v1.0.1: retyped from `data multiple: true` — a collection fed to a
+      multiple data input reaches the job as an HDCA and fails preparation;
+      `data_collection` exposes elements[] to expressions. v1.0.2: declared
+      `collection_type: list,sample_sheet` — pick_input_collection may hand
+      this input either the chr-filtered list or the raw samplesheet
+      collection depending on whether the chr gate ran. v1.0.3: escaped all
+      shell `\$(...)` command substitutions in the configfile — every
+      `$(...)` is interpolated as a CWL/JS expression, so bare shell
+      substitutions fail templating with "Unexpected identifier". v1.0.4:
+      escaped every shell `\${...}` parameter expansion and `\$var` reference
+      the same way — `${entry%|*}` was parsed as a JS expression block
+      ("unexpected token in expression: '|'"). v1.0.5: REFERENCE_ARG wrapped
+      in single quotes — the interpolated `--reference '/path/dat'` value was
+      previously parsed by bash as the VAR=value command prefix and bash tried
+      to EXECUTE the dataset file (exit 126 Permission denied). v1.0.8: unquoted
+      $REFERENCE_ARG at call sites — quoted "$REFERENCE_ARG" handed samtools the whole
+      string as one argv token ("unrecognised option '--reference <path>'"). v1.0.9: copy
+      the reference into the writable job dir before use — samtools builds a .fai index
+      beside the reference and Galaxy's files/ dir is read-only in the container
+      (exit 141 "Read-only file system"). v1.0.6: removed
+      backslash escapes from plain `$var` references (`$SAMTOOLS`,
+      `$LINES_TO_CHECK`, ...) — CWL escaping only parses `$(` and `${`;
+      a backslash before a plain identifier is RETAINED by interpolation and
+      reached bash as the literal text `$SAMTOOLS` ("command not found").
+      Only `\$(` and `\${` are correctly un-escaped by templating.)
+  - name: reference
+    type: data
+    format: [fasta]
+    optional: true
+    label: Reference FASTA (required for CRAM inputs)
+    help: >
+      Passed to samtools as --reference. Leave unset for BAM inputs.
+  - name: lines_to_check
+    type: integer
+    value: 1000
+    label: Number of alignment records to sample
+    help: >
+      The source module samples the first 1000 records; if the file has
+      fewer records the whole file is sampled.
+outputs:
+  - name: paired_alignments
+    type: collection
+    collection_type: list
+    label: Paired-end samples
+    format: bam
+    discover_datasets:
+      - discover_via: pattern
+        pattern: (?P<name>.+)
+        directory: paired
+  - name: single_alignments
+    type: collection
+    collection_type: list
+    label: Single-end samples
+    format: bam
+    discover_datasets:
+      - discover_via: pattern
+        pattern: (?P<name>.+)
+        directory: single
+configfiles:
+  - filename: split_pairedness.sh
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+
+      SAMTOOLS=\$(command -v samtools)
+      # samtools needs to build a .fai index next to the reference; Galaxy's
+      # files/ dir is read-only in the container, so copy it into the writable
+      # job dir first (unquoted expansion re-splits into two clean tokens, or none;
+      # embedded quotes in the VALUE are NOT re-parsed by bash — v1.0.10 removed them).
+      REFERENCE_ARG='$(inputs.reference ? `--reference ./ref_copy.fasta` : "")'
+      LINES_TO_CHECK=$(inputs.lines_to_check)
+      REF_PATH='$(inputs.reference ? `${inputs.reference.path}` : "")'
+      if [ -n "$REF_PATH" ]; then
+          cp "$REF_PATH" ./ref_copy.fasta
+      fi
+
+      mkdir -p paired single
+
+      # element_identifier is the collection element identifier (source-verified:
+      # galaxy/tools/runtime.py _element_to_runtime sets it from the
+      # DatasetCollectionElement; basename is created_from_basename or the HDA
+      # name, which pick_value renames to "Pick parameter value" — using basename
+      # collided both copies onto one name in v1.0.12).
+      for entry in $(inputs.alignments.elements.map((input) => `'${input.path}|${input.element_identifier}'`).join(" ")); do
+          path="\${entry%|*}"
+          base="\${entry#*|}"
+
+          total=\$("$SAMTOOLS" view -c $REFERENCE_ARG "$path")
+          if [ "$total" -lt "$LINES_TO_CHECK" ]; then
+              n="$total"
+          else
+              n="$LINES_TO_CHECK"
+          fi
+
+          if [ "$n" -eq 0 ]; then
+              fraction="0"
+          else
+              # awk consumes the whole stream: no SIGPIPE. (head closed the
+              # pipe early; under pipefail samtools died with exit 141 when
+              # the input had more than LINES_TO_CHECK records.)
+              paired=\$("$SAMTOOLS" view $REFERENCE_ARG "$path" | awk -v n="$n" 'NR<=n && $2%2==1 {c++} END{print c+0}')
+              fraction=\$(awk -v p="$paired" -v n="$n" 'BEGIN{print p/n}')
+          fi
+
+          if [ "$fraction" = "1" ]; then
+              cp "$path" "paired/$base"
+          else
+              cp "$path" "single/$base"
+          fi
+      done
+shell_command: bash split_pairedness.sh

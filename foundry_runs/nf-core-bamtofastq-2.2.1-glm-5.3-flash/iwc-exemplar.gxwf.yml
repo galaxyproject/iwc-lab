@@ -1,0 +1,107 @@
+# iwc-exemplar.gxwf.yml — relevant subgraph (bamtools_split_mapped -> samtools_fastx -> filter)
+
+# Source: IWC microbiome/pathogen-identification/nanopore-pre-processing/Nanopore-Pre-Processing
+# (abstract id: microbiome/pathogen-identification/nanopore-pre-processing/Nanopore-Pre-Processing)
+# Converted with: gxwf convert --to format2 --compact (tool-state warnings on unrelated
+# tabular steps are benign; this slice carries no unresolved tools).
+# Steps below are verbatim from the converted corpus workflow, restricted to the
+# BAM-collection -> mapping-split -> FASTQ-extraction -> failure-filter subgraph.
+
+  - id: _unlabeled_step_11
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bamtools_split_mapped/bamtools_split_mapped/2.5.3+galaxy0
+    tool_version: 2.5.3+galaxy0
+    tool_shed_repository:
+      changeset_revision: 90af4f8f59af
+      name: bamtools_split_mapped
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      - id: input_bam
+        source: _unlabeled_step_8/alignment_output
+    out:
+      - id: mapped
+        rename: host_sequences_bam
+      - id: unmapped
+        rename: non_host_sequences_bam
+    tool_state:
+      input_bam:
+        __class__: ConnectedValue
+    uuid: f4882cef-bfad-45ca-8274-d5b6b18fa314
+
+  - id: _unlabeled_step_13
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx/samtools_fastx/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 4bde991b8037
+      name: samtools_fastx
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      - id: input
+        source: _unlabeled_step_11/mapped
+    out:
+      - id: output
+        change_datatype: fastq.gz
+        rename: host_sequences_fastq
+    state:
+      output_fmt_cond:
+        output_fmt_select: fastqsanger.gz
+        output_quality: false
+        ilumina_casava: false
+      outputs:
+        - other
+      copy_tags: false
+      read_numbering: ""
+      exclusive_filter:
+        - "256"
+        - "2048"
+      idxout_cond:
+        idxout_select: "no"
+    tool_state: null
+    uuid: f79f5480-af0e-42e8-8a66-37dc436fedd9
+
+  - id: _unlabeled_step_14
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx/samtools_fastx/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 4bde991b8037
+      name: samtools_fastx
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      - id: input
+        source: _unlabeled_step_11/unmapped
+    out:
+      - id: output
+        change_datatype: fastq.gz
+        rename: non_host_sequences_fastq
+    state:
+      output_fmt_cond:
+        output_fmt_select: fastqsanger.gz
+        output_quality: false
+        ilumina_casava: false
+      outputs:
+        - other
+      copy_tags: false
+      read_numbering: ""
+      exclusive_filter:
+        - "256"
+        - "2048"
+      idxout_cond:
+        idxout_select: "no"
+    tool_state: null
+    uuid: 520e829b-f118-4655-8c0b-f996d01d67c3
+
+  - id: _unlabeled_step_16
+    tool_id: __FILTER_FAILED_DATASETS__
+    tool_version: 1.1.0
+    in:
+      - id: input
+        source: _unlabeled_step_13
+    out: []
+    tool_state:
+      input:
+        __class__: ConnectedValue
+      replacement:
+        __class__: RuntimeValue
+    uuid: 18f79c89-cdcf-4ee7-a85f-b06e862f2e07

@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "tool_id": "samtools_collate",
+  "tool_version": "1.22+galaxy1",
+  "cache_key": "8c97d8f9d243fec3dc173dbe511744222103615443174bb98341a1383d40cbf5",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~samtools_collate~samtools_collate/versions/1.22+galaxy1",
+    "cached_at": "2026-11-09T23:57:22.137Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": "tool-cache/8c97d8f9d243fec3dc173dbe511744222103615443174bb98341a1383d40cbf5.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "samtools_collate",
+    "version": "1.22+galaxy1",
+    "name": "Samtools collate",
+    "description": "shuffle and group reads together by their names",
+    "inputs": [
+      {
+        "name": "input",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Input File",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "sam",
+          "bam"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "no_pg",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Add @PG in Header",
+        "help": "Add a @PG line to the header of the output file. ",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": true,
+        "truevalue": "",
+        "falsevalue": "--no-PG"
+      },
+      {
+        "name": "fast_mode",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Fast Mode",
+        "help": "Fast mode will output only primary alignments that have either the READ1 or READ2 flags set (but not both). Any other alignment records will be filtered out. The collation will only work correctly if there are no more than two reads for any given QNAME after filtering. ",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-f",
+        "falsevalue": ""
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output_file",
+        "label": null,
+        "hidden": false,
+        "type": "data",
+        "format": "unsorted.bam",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1093/gigascience/giab008"
+      },
+      {
+        "type": "doi",
+        "content": "10.1093/bioinformatics/btr076"
+      }
+    ],
+    "license": null,
+    "profile": "24.0",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n**What it does**\n  \nSamtools collate shuffles and groups reads in a BAM file together by their read names (QNAME). \nThis is useful as a preprocessing step for tools that need reads from the same template (pairs or \nmultiple segments) to be grouped together.\n\nNote: The tools makes no guarantees about the order of read names between groups.\n\n**Fast Mode** : Only processes primary alignments, which speeds up collation but may lose secondary/supplementary alignments\n\n**Note**: Unlike 'samtools sort -n', collate does not produce a fully sorted output. Reads with the same \nname are grouped but groups appear in pseudo-random order. This is sufficient for tools that \nneed paired reads together but is faster than full name sorting.\n\n.. class:: infomark\n\n**More information**\n\nFor more details, see the samtools documentation at http://www.htslib.org/doc/samtools-collate.html\n\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "no_pg": {
+          "type": "boolean"
+        },
+        "fast_mode": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "no_pg": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "fast_mode": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

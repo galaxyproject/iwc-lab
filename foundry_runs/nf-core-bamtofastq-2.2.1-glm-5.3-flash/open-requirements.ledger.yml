@@ -1,0 +1,139 @@
+open_requirements_ledger_version: 1
+run_slug: nf-core-bamtofastq-glm
+entries:
+- id: sample-sheet-index-column-representation
+  raised_by: nextflow-summary-to-galaxy-interface
+  status: resolved
+  phase: 3
+  resolved_phase: 12
+  resolved_by: run-workflow-test
+  resolution: 'Kept D1 (plain sample_sheet, index dropped). Attempt 4+ evidence: index
+    building in-tool works — samtools view/filter steps accepted alignment without a
+    pre-existing index and created jobs; samtools_flagstat/idxstats/stats ran to completion
+    on the filtered BAMs. add_column_from_sample_sheet_index in the __APPLY_RULES__ rules
+    was needed to materialize columns into rule rows (rows start empty), not for the index.'
+  what: Samplesheet's optional per-row `index` column (bai/crai) has no clean slot
+    in a plain `sample_sheet` variant. Data-flow decision D1 pins the primary shape
+    as `sample_sheet` (one dataset per row) with the index dropped; v1-consistent
+    default is to rely on in-tool index building by samtools wrappers.
+  resolution_path: 'implement-galaxy-tool-step: confirm selected samtools wrappers
+    accept alignment without index and build one; else reopen D1 and switch to
+    sample_sheet:paired_or_unpaired with the index as the inner mate.'
+- id: fastqc-element-identifiers
+  raised_by: nextflow-summary-to-galaxy-interface
+  status: resolved
+  phase: 3
+  resolved_phase: 6
+  resolution: 'Template tier picked the wiring: merged mates zip to list:paired
+    (zip_mates, __ZIP_COLLECTION__), group into per-sample read groups
+    (group_post_qc_reads, TODO), and FastQC maps over those groups; element
+    identifiers must end up matching the snapshot shapes
+    (test.post_conversion_1_fastqc.html). Relabel intent recorded on
+    fastqc_post_conversion._plan_state and merge_mered_reads._plan_state;
+    per-step implement tier confirms actual identifiers vs snapshot.'
+  what: FastQC post-conversion consumes a mix of CAT_FASTQ merged reads and collatefastq
+    other buckets; the resulting collection element identifiers depend on the Galaxy
+    rename/rules wiring chosen at template time. Snapshot stable_names give the expected
+    name shapes (e.g. test.post_conversion_1_fastqc.html).
+  resolution_path: 'nextflow-summary-to-galaxy-template + implement-galaxy-tool-step:
+    pick rename rules so element identifiers match the source naming shapes; the
+    data-flow brief §6 records the derived identifier rules from the snapshot.'
+- id: single-paired-runtime-branch-representation
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  status: resolved
+  phase: 4
+  resolved_phase: 7
+  resolved_by: advance-galaxy-draft-step
+  what: >-
+    meta.single_end is runtime-derived (CHECKPAIREDEND); routing per element into the paired cascade
+    (N5-N10) vs the single-end collatefastq (N9) needs a verdict-driven collection split (T2) whose
+    exact Galaxy tooling (rules DSL / filter) is unproven. Fallback if brittle: a user-declared
+    pairedness boolean collapsing C1 to a whole-collection route — a semantic narrowing that must be
+    surfaced, not silently taken.
+  note: 'Resolved by authoring the pairedness_split GalaxyUserTool
+    (galaxy-user-tool.yml): per element, samtools view head -n 1000 vs view -c -f 1
+    mirrors CHECKPAIREDEND, and the job routes each input file into a paired or
+    single output list collection (element names preserved). Draft steps
+    pairedness_split → single_pairedness_verdict (map_param_value bool) consume the
+    split; T2 materialized as the UDT, not a rules-DSL filter. The boolean fallback
+    was not needed.'
+- id: fastqutils-per-sample-invocation
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  status: resolved
+  phase: 4
+  resolved_phase: 7
+  resolved_by: advance-galaxy-draft-step
+  what: Snapshot shows fastq_utils info runs once per sample over both mates
+    (test.txt, test2.txt), not once per file. The selected fastq_utils wrapper must
+    accept both mates in one job, or the output naming deviates from the snapshot
+    (deviation must be surfaced to the test plan).
+  note: 'Resolved: Tool Shed discovery found bgruening fastq_info 0.25.3+galaxy0
+    (changeset 2bca15e630a4). Its paired mode (conditional input_option, test
+    parameter input_type) takes fastq_1 and fastq_2 data inputs in ONE job — one job
+    per sample over both mates, matching the snapshot invocation shape. Wired as
+    fastqutils_info_paired (from concat_r1/concat_r2) and fastqutils_info_single
+    (structural approximation for the single-end arm); outputs merged via
+    merge_fastqutils (__MERGE_COLLECTION__, keep_first — per-sample identifiers
+    cannot collide across arms).'
+- id: multiqc-runner-boilerplate-dropped
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  status: open
+  kind: dropped
+  phase: 4
+  units: MultiQC fan-in boilerplate (collated software-versions YAML, workflow_summary_mqc.yaml,
+    methods_description_mqc.yaml, pipeline_info/ versions file)
+  because: Assembled via collectFile from Nextflow runtime introspection
+    (paramsSummaryMap(workflow), softwareVersionsToYAML, methodsDescriptionText) —
+    nf-core-runner artifacts, not scientific outputs; Galaxy's MultiQC wrapper
+    supplies its own metadata path. Cited in workflows/bamtofastq.nf:188-225.
+  unmet: multiqc_citations.txt content parity with the source snapshot (its md5 is
+    unassertable in the Galaxy test; smoke-only).
+  missing: The Galaxy multiqc_report will lack these mqc_yml inputs, so citations
+    content diverges from tests/default.nf.test.snap.
+  note: ''
+- id: chr-gate-needs-nonempty-string-evaluation
+  raised_by: nextflow-summary-to-galaxy-template
+  status: resolved
+  phase: 6
+  resolved_phase: 12
+  resolved_by: run-workflow-test
+  resolution: 'No helper step needed. Attempt 5 failed with when_not_boolean ("Type is:
+    str") proving Galaxy requires isinstance(bool) on the when expression result; attempt 6
+    fixed the gate as `when: $(inputs.when != "")` (boolean-producing expression over the
+    string input) and attempt 6 scheduled samtools_chr_view jobs without a when error. The
+    `!= ""` empty-string comparison is the canonical pattern for optional-string gating.'
+- id: group-post-qc-reads-shape-unproven
+  raised_by: nextflow-summary-to-galaxy-template
+  status: resolved
+  phase: 6
+  resolved_phase: 7
+  resolved_by: advance-galaxy-draft-step
+  what: group_post_qc_reads (T5) declares a per-sample read-group collection
+    combining list:paired merged mates with single-end other reads. The exact
+    Galaxy tooling for this heterogeneous reshape is unresolved (candidate
+    rules/relabel build); target shape paired_or_unpaired is the brief's
+    medium-confidence choice. Default test is all-paired so the default run
+    only exercises the paired arm.
+  note: 'Dissolved by port-shape evidence rather than implemented: the source
+    ch_reads_post_qc is a FLAT mix (channel.empty().mix(fastq_other,
+    CAT_FASTQ.reads), workflows/bamtofastq.nf:178), not grouped per sample. Downstream
+    consumers need no grouping — devteam fastqc input_file is multiple:false
+    (verified via Shed API), so fastqc runs per-dataset (per-mate approximation,
+    documented on fastqc_post_conversion), and bgruening fastq_info pairs mates by
+    identifier-aligned fastq_1/fastq_2 data inputs. zip_mates and group_post_qc_reads
+    were both dropped; replaced by merge_reads_post_qc (__MERGE_COLLECTION__,
+    keep_first — paired ids ${sample}_1/_2 vs single ids bare names cannot collide)
+    feeding fastqc_post_conversion directly. The paired_or_unpaired collection shape
+    is not needed.'
+discoveries:
+- id: unmapped-other-empty-for-default-test
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: SAMTOOLS_COLLATEFASTQ_SINGLE_END consumes only ch_single (meta.single_end
+    == true, workflows/bamtofastq.nf:149-161); both default-test samples are paired;
+    snapshot stable_names contain no *other.fq.gz. The interface brief's
+    element_count-2 anticipation for unmapped_other_reads is wrong for the default
+    test; the other bucket is the reads for single-end samples (no_bai test's test3).
+  impact: 'Default-test assertion for unmapped_other_reads = empty/0-element (type/count
+    check, logged per test-quality rule).'
+decisions: []
+brief_change_recommendations: []

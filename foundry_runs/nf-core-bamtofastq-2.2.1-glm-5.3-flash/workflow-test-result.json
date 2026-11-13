@@ -1,0 +1,62 @@
+{
+  "status": "pass",
+  "attempt": 25,
+  "attempts_total": 23,
+  "runtime_attempts_with_execution": ["3..25 (23 planemo runs; 3-21 failed at staging/job level, 22-24 failed at assertion level, 25 passed)"],
+  "galaxy_mode": "planemo-managed (external Galaxy root ~/Galaxy/galaxy-arash, docker --biocontainers execution)",
+  "command": "flock /tmp/galaxy-arash-planemo.lock planemo test --galaxy_root ~/Galaxy/galaxy-arash --docker --biocontainers galaxy-workflow.gxwf.yml",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "test_path": "galaxy-workflow.gxwf-tests.yml",
+  "planemo_structured_result": "tool_test_output.json",
+  "planemo_html_result": "tool_test_output.html",
+  "log": "planemo-test-25.log",
+  "final_run": {
+    "launched": "2026-11-10T08:08:45+01:00",
+    "ended": "2026-11-10T08:15:44+01:00",
+    "exit_code": 0,
+    "verdict": "All 1 test(s) executed passed. galaxy-workflow.gxwf.yml_0: passed",
+    "invocation_id": "760c54d78beab52c",
+    "history_id": "760c54d78beab52c",
+    "workflow_id": "760c54d78beab52c",
+    "invocation_state_at_capture": "scheduled (structured capture ran before completion polling; verdict and exit code are the authoritative pass evidence)",
+    "execution_problem": null,
+    "output_problems": null
+  },
+  "test_definition": {
+    "source": "nf-core/bamtofastq tests/default.nf.test::-profile test + tests/default.nf.test.snap (test-evidence)",
+    "case": "default-test: whole-workflow default-parameter run, 2 paired-end BAM samples (test, test2), no chr restriction, QC and stats on, standard collate"
+  },
+  "assertion_summary": {
+    "checksum_translated_from_snapshot": [
+      "flagstat_reports (test, test2)",
+      "idxstats_reports (test, test2)"
+    ],
+    "portable_content_asserts_in_place_of_nonportable_checksums": {
+      "stats_reports": "has_line on per-sample SN lines (sequences/reads unmapped) — samtools stats header embeds version + command line; values are the snapshot's own",
+      "merged_reads": "has_n_lines 11280/11280/10872/10872 on decompressed gz (decompress: true) — BGZF-stream md5 non-portable across samtools/zlib builds; counts derived from snapshot stats + source cat semantics (R1=R2=(sequences-unmapped)/2)",
+      "fastqutils_reports": "has_line on Reads processed / Number of reads / Quality encoding / OK — report embeds per-run /tmp dataset UUID paths, whole-file md5 unmatchable across runs"
+    },
+    "logged_deviations": [
+      "merged_reads: count-level on decompressed content instead of snapshot checksum (BGZF non-portability)",
+      "fastqutils_reports: has_line-level instead of snapshot checksum (per-run UUID paths in report)",
+      "stats_reports: has_line-level instead of snapshot checksum (header embeds version + command line)",
+      "fastqc/multiqc outputs: element-count/size level only (snapshot records names, not content hashes; Galaxy fastqc wrapper exposes text reports instead of zip)"
+    ],
+    "count_only_outputs_with_element_tests_empty": [
+      "unmapped_other_reads (element_count 0)",
+      "fastqc_pre_conversion_zip",
+      "fastqc_post_conversion_html",
+      "fastqc_post_conversion_zip"
+    ]
+  },
+  "key_fixes_during_iteration": {
+    "udt_pairedness_split": "v1.0.1..v1.0.13: data_collection typing, collection_type list,sample_sheet, CWL-escape of shell constructs, reference copy into writable job dir, unquoted expansion, full-stream counting (no SIGPIPE), fastq2fq output naming, discover pattern without .bam, element_identifier-based naming (basename collision with pick_value-renamed HDAs)",
+    "workflow_wiring": "samtools_merge single bamfiles connection via merge_unmapped_variants (__MERGE_COLLECTION__), ConnectedValue repeat arrays for merge steps, samtools_view when-boolean expression",
+    "test_assertions": "element_tests: {} routing for count-only outputs (planemo runnable.py:404), decompress: true for gz content asserts (output-side verify defaults decompress False, verify/__init__.py:102)"
+  },
+  "not_run_reason": null,
+  "next_reference_surface": null,
+  "feedback_ledger": "foundry-feedback.ledger.yml",
+  "run_log": "model-test-log.md",
+  "foundry_run_record": "foundry-run.yml"
+}
