@@ -1,0 +1,53 @@
+class: GalaxyUserTool
+id: oceanomics_blastn_v5db
+version: 2.13.0
+name: BLASTN against a BLAST v5 database archive
+description: blastn ASV/ZOTU sequences against an uploaded v5 database archive, keeping taxids
+license: MIT
+container: quay.io/biocontainers/blast:2.13.0--hf3cf87c_0
+configfiles:
+- filename: run_blastn.sh
+  content: |
+    set -euo pipefail
+    mkdir db
+    tar -xf '$(inputs.db_archive.path)' -C db
+    ndb=`find db -name '*.ndb' | head -n 1`
+    if [ -z "$ndb" ]; then echo 'Error: no .ndb volume in the database archive (BLAST v5 database expected)' >&2; exit 1; fi
+    DB="\${ndb%.ndb}"
+    blastn -num_threads "\${GALAXY_SLOTS:-1}" -db "$DB" -query '$(inputs.query.path)' -task blastn -perc_identity $(inputs.pid) -evalue $(inputs.evalue) -qcov_hsp_perc $(inputs.qcov) -max_target_seqs 99999 -outfmt 11 -out hits.asn
+    blast_formatter -archive hits.asn -outfmt '6 qseqid sseqid staxids sscinames scomnames sskingdoms pident length qlen slen mismatch gapopen gaps qstart qend sstart send stitle evalue bitscore qcovs qcovhsp' > blastn_results.tsv
+shell_command: |
+  bash run_blastn.sh
+inputs:
+- name: query
+  type: data
+  format:
+  - fasta
+  label: ASV/ZOTU sequences
+- name: db_archive
+  type: data
+  format:
+  - tar
+  label: tar archive of BLAST v5 nucleotide database volumes
+- name: pid
+  type: integer
+  value: 90
+  label: Minimum percent identity (-perc_identity)
+- name: qcov
+  type: integer
+  value: 90
+  label: Minimum query coverage per HSP (-qcov_hsp_perc)
+- name: evalue
+  type: float
+  value: 0.001
+  label: E-value cutoff
+outputs:
+- name: hits
+  type: data
+  format: tabular
+  from_work_dir: blastn_results.tsv
+  label: BLAST hits (source outfmt 6 column order)
+help:
+  format: markdown
+  content: |
+    Port of OceanOmics-amplicon-nf BLAST_BLASTN. The database arrives as one tar archive because Galaxy's blastdbn composite has no slots for the v5 .ndb/.nos/.not/.ntf/.nto volumes that carry the taxid map; staxids are needed by the LCA step.

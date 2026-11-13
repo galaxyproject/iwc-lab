@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "tool_id": "__APPLY_RULES__",
+  "tool_version": "1.1.0",
+  "cache_key": "b66044ced152a2038e3986c9ee112716de5668729546fd690186d7c6bd5bc955",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/__APPLY_RULES__/versions/1.1.0",
+    "cached_at": "2026-11-10T03:48:59.568Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/b66044ced152a2038e3986c9ee112716de5668729546fd690186d7c6bd5bc955.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "__APPLY_RULES__",
+    "version": "1.1.0",
+    "name": "Apply rules",
+    "description": "to reorganize a collection using the rule builder",
+    "inputs": [
+      {
+        "name": "input",
+        "parameter_type": "gx_data_collection",
+        "hidden": false,
+        "label": "Input Collection",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data_collection",
+        "collection_type": null,
+        "extensions": [
+          "data"
+        ],
+        "value": null
+      },
+      {
+        "name": "rules",
+        "parameter_type": "gx_rules",
+        "hidden": false,
+        "label": "Rules",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "rules"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output",
+        "label": "${input.name} (re-organized)",
+        "hidden": false,
+        "type": "collection",
+        "collection_type": null,
+        "collection_type_source": null,
+        "collection_type_from_rules": "rules",
+        "structured_like": null,
+        "discover_datasets": []
+      }
+    ],
+    "citations": [],
+    "license": null,
+    "profile": "16.01",
+    "edam_operations": [
+      "operation_2409",
+      "operation_3695"
+    ],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n========\nSynopsis\n========\n\nReorganizes a collection by applying a chain of rules (filter, sort, rename, nest, flatten, tag) through an interactive rule builder.\n\n===========\nDescription\n===========\n\nThis tool opens an interactive rule builder that lets you manipulate the element identifiers (and nesting structure) of a collection as if they were columns in a spreadsheet. You can chain multiple operations together — for example, split an identifier on a delimiter, use one part as a new nesting level and another as the element name, filter rows by a pattern, and sort the result — all in a single step.\n\nThis is an advanced tool that combines the capabilities of many simpler collection operations (sort, relabel, nest, flatten, filter) into one flexible interface. Use it when the simpler tools cannot achieve the reorganization you need.\n\n========\nExamples\n========\n\n**Flatten and re-nest by a different criterion**\n\nGiven a ``list:list`` collection where the outer identifiers are sequencing lanes and inner identifiers are sample names, you could use the rule builder to re-nest so that the outer level is sample name and the inner level is lane — effectively transposing the collection structure.\n\n-------\n\n**Extract metadata from identifiers**\n\nIf your element identifiers encode multiple pieces of information (e.g. ``patient01_treatment_rep2``), you can split on ``_`` to create columns, then use those columns to define new nesting levels, group tags, or filters.\n\n-------\n\n**Assign tags based on identifier patterns**\n\nYou can add a column derived from an identifier (e.g. extract \"treatment\" or \"control\" from the name) and assign it as a group tag, all within the rule builder.\n\n-------\n\n.. image:: ${static_path}/images/tools/collection_ops/apply_rules.svg\n  :alt: Apply rules to reorganize a collection\n  :width: 500\n\n-------\n\nFor detailed tutorials on the rule builder, visit `the Galaxy Training Network`_.\n\n.. _the Galaxy Training Network: https://training.galaxyproject.org/training-material/search?query=rule+builder\n\n-------\n\n.. class:: infomark\n\nThis tool will create new history datasets copied from your input collections but your quota usage will not increase.\n\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "rules": {
+          "type": "object",
+          "required": [
+            "rules",
+            "mapping"
+          ],
+          "properties": {
+            "rules": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "mapping": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "type",
+                  "columns"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string"
+                  },
+                  "columns": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [
+        "input",
+        "rules"
+      ],
+      "properties": {
+        "input": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "rules": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "rules",
+                "mapping"
+              ],
+              "properties": {
+                "rules": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "mapping": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "type",
+                      "columns"
+                    ],
+                    "properties": {
+                      "type": {
+                        "type": "string"
+                      },
+                      "columns": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

@@ -1,0 +1,217 @@
+- doc: Two simulated 12S/16S paired samples from the OceanOmics test profile through primer trimming, DADA2 ASVs, vsearch ZOTUs, LULU, BLAST/LCA, NBC, phyloseq and proportional filtering.
+  job:
+    reads:
+      class: Collection
+      collection_type: list:paired
+      elements:
+      - class: Collection
+        identifier: 12S_simulated-reads
+        elements:
+        - class: File
+          identifier: forward
+          location: https://raw.githubusercontent.com/a4000/test_data/main/fqs/12S_simulated-reads-R1.fq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: 1a6bba19b1b4bf0be8ee64a05f9c934e21d1955f
+        - class: File
+          identifier: reverse
+          location: https://raw.githubusercontent.com/a4000/test_data/main/fqs/12S_simulated-reads-R2.fq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: ba9ef3ef716d7ab43002326ef44ea9203775790c
+        collection_type: paired
+      - class: Collection
+        identifier: 16S_simulated-reads
+        elements:
+        - class: File
+          identifier: forward
+          location: https://raw.githubusercontent.com/a4000/test_data/main/fqs/16S_simulated-reads-R1.fq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: 5fca0a326feb468ceb49e9eef6e1c0261144a5bd
+        - class: File
+          identifier: reverse
+          location: https://raw.githubusercontent.com/a4000/test_data/main/fqs/16S_simulated-reads-R2.fq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: 3caa7fd18c81707e2eef5e1a79d14f50a45dc75d
+        collection_type: paired
+    sample_metadata:
+      class: File
+      path: test-data/sample_metadata.csv
+      filetype: csv
+    blast_db:
+      class: File
+      path: test-data/blast_db.tar
+      filetype: tar
+    taxonomy_lineage:
+      class: File
+      path: test-data/rankedlineage.dmp
+      filetype: tabular
+    filter_table:
+      class: File
+      location: https://raw.githubusercontent.com/a4000/test_data/main/other_files/filter.csv
+      filetype: csv
+      hashes:
+      - hash_function: SHA-1
+        hash_value: 81e0551a3bcef0c7d9f22109186596c77a817e22
+    fw_primer: AAAACCCCTTTTGGGG
+    asv_min_overlap: 0
+    asv_max_mismatch: 12
+    asv_pooled: 'FALSE'
+    blast_qcov: 50
+    blast_pid: 90
+    lca_qcov: 50
+    lca_pid: 90
+    zotu_min_size: 1
+  outputs:
+    multiqc_report:
+      asserts:
+      - has_text:
+          text: MultiQC
+    asv_track_reads:
+      asserts:
+      - has_text:
+          text: FiltTrim
+      - has_text:
+          text: 12S_simulated-reads
+    asv_table:
+      asserts:
+      - has_text:
+          text: ASV_sequence
+      - has_n_columns:
+          n: 4
+    asv_fasta:
+      asserts:
+      - has_text:
+          text: '>ASV_1'
+    zotu_table:
+      asserts:
+      - has_text:
+          text: ZOTU_sequence
+      - has_n_columns:
+          n: 4
+    zotu_fasta:
+      asserts:
+      - has_text:
+          text: '>zotu1'
+    lulu_curated_table:
+      element_tests:
+        asv:
+          asserts:
+          - has_text:
+              text: '#ID'
+        zotu:
+          asserts:
+          - has_text:
+              text: '#ID'
+      class: Collection
+    blast_results:
+      element_tests:
+        asv:
+          asserts:
+          - has_n_columns:
+              n: 22
+        zotu:
+          asserts:
+          - has_n_columns:
+              n: 22
+        asv_lulucurated:
+          asserts:
+          - has_n_columns:
+              n: 22
+        zotu_lulucurated:
+          asserts:
+          - has_n_columns:
+              n: 22
+      class: Collection
+    lca_table:
+      element_tests:
+        asv:
+          asserts:
+          - has_text:
+              text: numberOfUnq_BlastHits
+        zotu:
+          asserts:
+          - has_text:
+              text: numberOfUnq_BlastHits
+        asv_lulucurated:
+          asserts:
+          - has_text:
+              text: numberOfUnq_BlastHits
+        zotu_lulucurated:
+          asserts:
+          - has_text:
+              text: numberOfUnq_BlastHits
+      class: Collection
+    phyloseq_object:
+      element_tests:
+        asv:
+          asserts:
+          - has_size:
+              min: 1
+        zotu:
+          asserts:
+          - has_size:
+              min: 1
+        asv_lulucurated:
+          asserts:
+          - has_size:
+              min: 1
+        zotu_lulucurated:
+          asserts:
+          - has_size:
+              min: 1
+      class: Collection
+    final_taxa:
+      element_tests:
+        asv:
+          asserts:
+          - has_text:
+              text: seq_id
+        zotu:
+          asserts:
+          - has_text:
+              text: seq_id
+        asv_lulucurated:
+          asserts:
+          - has_text:
+              text: seq_id
+        zotu_lulucurated:
+          asserts:
+          - has_text:
+              text: seq_id
+      class: Collection
+    filtered_otu_table:
+      element_tests:
+        asv:
+          asserts:
+          - has_text:
+              text: simulated-reads
+        zotu:
+          asserts:
+          - has_text:
+              text: simulated-reads
+        asv_lulucurated:
+          asserts:
+          - has_text:
+              text: simulated-reads
+        zotu_lulucurated:
+          asserts:
+          - has_text:
+              text: simulated-reads
+      class: Collection
+    fastqc_html:
+      element_tests:
+        12S_simulated-reads:
+          class: Collection
+          element_tests:
+            forward:
+              asserts:
+              - has_text:
+                  text: FastQC
+      class: Collection

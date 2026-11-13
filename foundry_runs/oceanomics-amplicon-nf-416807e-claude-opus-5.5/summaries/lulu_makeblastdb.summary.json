@@ -1,0 +1,947 @@
+{
+  "schema_version": 1,
+  "tool_id": "ncbi_makeblastdb",
+  "tool_version": "2.16.0+galaxy1",
+  "cache_key": "a9db6927dc23037887b17aa24f61516250bae633f4a3e66c1a93eb9a52b8d974",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/devteam~ncbi_blast_plus~ncbi_makeblastdb/versions/2.16.0+galaxy1",
+    "cached_at": "2026-11-10T03:57:34.156Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/a9db6927dc23037887b17aa24f61516250bae633f4a3e66c1a93eb9a52b8d974.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "ncbi_makeblastdb",
+    "version": "2.16.0+galaxy1",
+    "name": "NCBI BLAST+ makeblastdb",
+    "description": "Make BLAST database",
+    "inputs": [
+      {
+        "name": "input",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "type",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Molecule type of input",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "protein",
+              "value": "protein",
+              "selected": false
+            },
+            {
+              "label": "nucleotide",
+              "value": "nucleotide",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "protein",
+            "parameters": [
+              {
+                "name": "selection",
+                "parameter_type": "gx_repeat",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "repeat",
+                "parameters": [
+                  {
+                    "name": "input_file",
+                    "parameter_type": "gx_data",
+                    "hidden": false,
+                    "label": "FASTA input",
+                    "help": "FASTA file with one or more sequences to add to the database",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "data",
+                    "extensions": [
+                      "fasta",
+                      "fasta.gz"
+                    ],
+                    "multiple": false,
+                    "min": null,
+                    "max": null,
+                    "url_default": null
+                  }
+                ],
+                "min": 1,
+                "max": null
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "nucleotide",
+            "parameters": [
+              {
+                "name": "selection",
+                "parameter_type": "gx_repeat",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "repeat",
+                "parameters": [
+                  {
+                    "name": "nuc_choice",
+                    "parameter_type": "gx_conditional",
+                    "hidden": false,
+                    "label": null,
+                    "help": null,
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "conditional",
+                    "test_parameter": {
+                      "name": "source",
+                      "parameter_type": "gx_select",
+                      "hidden": false,
+                      "label": "Input is a",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "select",
+                      "options": [
+                        {
+                          "label": "Dataset in history",
+                          "value": "history",
+                          "selected": false
+                        },
+                        {
+                          "label": "Genome on server",
+                          "value": "cached",
+                          "selected": false
+                        }
+                      ],
+                      "multiple": false,
+                      "validators": []
+                    },
+                    "whens": [
+                      {
+                        "discriminator": "history",
+                        "parameters": [
+                          {
+                            "name": "input_file",
+                            "parameter_type": "gx_data",
+                            "hidden": false,
+                            "label": "FASTA input",
+                            "help": "FASTA file with one or more sequences to add to the database",
+                            "argument": null,
+                            "is_dynamic": false,
+                            "optional": false,
+                            "type": "data",
+                            "extensions": [
+                              "fasta",
+                              "fasta.gz"
+                            ],
+                            "multiple": false,
+                            "min": null,
+                            "max": null,
+                            "url_default": null
+                          }
+                        ],
+                        "is_default_when": true
+                      },
+                      {
+                        "discriminator": "cached",
+                        "parameters": [
+                          {
+                            "name": "input_file",
+                            "parameter_type": "gx_select",
+                            "hidden": false,
+                            "label": "Installed genome",
+                            "help": null,
+                            "argument": null,
+                            "is_dynamic": false,
+                            "optional": false,
+                            "type": "select",
+                            "options": null,
+                            "multiple": false,
+                            "validators": []
+                          }
+                        ],
+                        "is_default_when": false
+                      }
+                    ]
+                  }
+                ],
+                "min": 1,
+                "max": null
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "title",
+        "parameter_type": "gx_text",
+        "hidden": false,
+        "label": "Title for BLAST database",
+        "help": "This is the database name shown in BLAST search output",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "text",
+        "area": false,
+        "value": "",
+        "default_options": [],
+        "validators": []
+      },
+      {
+        "name": "parse_seqids",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Parse the sequence identifiers",
+        "help": "This is only advised if your FASTA file follows the NCBI naming conventions using pipe '|' symbols",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-parse_seqids",
+        "falsevalue": ""
+      },
+      {
+        "name": "hash_index",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Enable the creation of sequence hash values",
+        "help": "These hash values can then be used to quickly determine if a given sequence data exists in this BLAST database.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": true,
+        "truevalue": "-hash_index",
+        "falsevalue": ""
+      },
+      {
+        "name": "mask_data_file",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Optional ASN.1 file(s) containing masking data",
+        "help": "As produced by NCBI masking applications (e.g. dustmasker, segmasker, windowmasker)",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "data",
+        "extensions": [
+          "maskinfo-asn1",
+          "maskinfo-asn1-binary"
+        ],
+        "multiple": true,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "tax",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "taxselect",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Taxonomy options",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Do not assign a Taxonomy ID to the sequences",
+              "value": "",
+              "selected": false
+            },
+            {
+              "label": "Assign the same Taxonomy ID to all the sequences",
+              "value": "id",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "id",
+            "parameters": [
+              {
+                "name": "taxid",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "NCBI taxonomy ID",
+                "help": "Integer >=0, e.g. 9606 for Homo sapiens",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": null,
+                "min": 0,
+                "max": null,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "outfile",
+        "label": "${input.type} BLAST database from ${on_string}",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1093/nar/25.17.3389"
+      },
+      {
+        "type": "doi",
+        "content": "10.1186/1471-2105-10-421"
+      },
+      {
+        "type": "doi",
+        "content": "10.1186/s13742-015-0080-7"
+      }
+    ],
+    "license": null,
+    "profile": "22.01",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n**What it does**\n\nMake BLAST database from one or more FASTA files and/or BLAST databases.\n\nThis is a wrapper for the NCBI BLAST+ tool 'makeblastdb', which is the\nreplacement for the 'formatdb' tool in the NCBI 'legacy' BLAST suite.\n\nMore information about makeblastdb can be found in the `BLAST Command Line Applications User Manual`_.\n\n.. _BLAST Command Line Applications User Manual: https://www.ncbi.nlm.nih.gov/books/NBK279690/\n\n\n\n\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "protein"
+                  ]
+                },
+                "selection": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [],
+                    "properties": {
+                      "input_file": {
+                        "$id": "/schemas/never",
+                        "not": {},
+                        "title": "never"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "nucleotide"
+                  ]
+                },
+                "selection": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [],
+                    "properties": {
+                      "nuc_choice": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "required": [],
+                            "properties": {
+                              "source": {
+                                "type": "string",
+                                "enum": [
+                                  "history"
+                                ]
+                              },
+                              "input_file": {
+                                "$id": "/schemas/never",
+                                "not": {},
+                                "title": "never"
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "source"
+                            ],
+                            "properties": {
+                              "source": {
+                                "type": "string",
+                                "enum": [
+                                  "cached"
+                                ]
+                              },
+                              "input_file": {
+                                "type": "string"
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parse_seqids": {
+          "type": "boolean"
+        },
+        "hash_index": {
+          "type": "boolean"
+        },
+        "mask_data_file": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "tax": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "taxselect": {
+                  "type": "string",
+                  "enum": [
+                    ""
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "taxselect"
+              ],
+              "properties": {
+                "taxselect": {
+                  "type": "string",
+                  "enum": [
+                    "id"
+                  ]
+                },
+                "taxid": {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "selection"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "protein"
+                      ]
+                    },
+                    "selection": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "input_file"
+                            ],
+                            "properties": {
+                              "input_file": {
+                                "type": "object",
+                                "required": [
+                                  "__class__"
+                                ],
+                                "properties": {
+                                  "__class__": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ConnectedValue"
+                                    ]
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          "description": "an array of at least 1 item(s)",
+                          "title": "minItems(1)",
+                          "minItems": 1
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "type"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "nucleotide"
+                      ]
+                    },
+                    "selection": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [],
+                            "properties": {
+                              "nuc_choice": {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "input_file"
+                                        ],
+                                        "properties": {
+                                          "source": {
+                                            "type": "string",
+                                            "enum": [
+                                              "history"
+                                            ]
+                                          },
+                                          "input_file": {
+                                            "type": "object",
+                                            "required": [
+                                              "__class__"
+                                            ],
+                                            "properties": {
+                                              "__class__": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ConnectedValue"
+                                                ]
+                                              }
+                                            },
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "source"
+                                        ],
+                                        "properties": {
+                                          "source": {
+                                            "type": "string",
+                                            "enum": [
+                                              "cached"
+                                            ]
+                                          },
+                                          "input_file": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "object",
+                                                "required": [
+                                                  "__class__"
+                                                ],
+                                                "properties": {
+                                                  "__class__": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                      "ConnectedValue"
+                                                    ]
+                                                  }
+                                                },
+                                                "additionalProperties": false
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "__class__"
+                                    ],
+                                    "properties": {
+                                      "__class__": {
+                                        "type": "string",
+                                        "enum": [
+                                          "ConnectedValue"
+                                        ]
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          "description": "an array of at least 1 item(s)",
+                          "title": "minItems(1)",
+                          "minItems": 1
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "title": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "parse_seqids": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "hash_index": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "mask_data_file": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "tax": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "taxselect": {
+                      "type": "string",
+                      "enum": [
+                        ""
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "taxselect",
+                    "taxid"
+                  ],
+                  "properties": {
+                    "taxselect": {
+                      "type": "string",
+                      "enum": [
+                        "id"
+                      ]
+                    },
+                    "taxid": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

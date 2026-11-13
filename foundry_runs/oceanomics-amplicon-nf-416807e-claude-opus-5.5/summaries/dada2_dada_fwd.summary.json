@@ -1,0 +1,1712 @@
+{
+  "schema_version": 1,
+  "tool_id": "dada2_dada",
+  "tool_version": "1.38.0+galaxy2",
+  "cache_key": "e23064fddf08ba4243ef416dd6f16506eacec3605f31e06e792875ad4e617ce9",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~dada2_dada~dada2_dada/versions/1.38.0+galaxy2",
+    "cached_at": "2026-11-10T03:50:23.887Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/e23064fddf08ba4243ef416dd6f16506eacec3605f31e06e792875ad4e617ce9.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "dada2_dada",
+    "version": "1.38.0+galaxy2",
+    "name": "dada2: dada",
+    "description": "Remove sequencing errors",
+    "inputs": [
+      {
+        "name": "batch_cond",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "batch_select",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Process samples in batches",
+          "help": "process samples jointly (default) or in independent jobs (see also below)",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "no",
+              "value": "no",
+              "selected": false
+            },
+            {
+              "label": "yes",
+              "value": "yes",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "yes",
+            "parameters": [
+              {
+                "name": "derep",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Reads",
+                "help": "despite the parameter name the sequences don't need to be dereplicated ",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fastq",
+                  "fastq.gz"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "no",
+            "parameters": [
+              {
+                "name": "derep",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Reads",
+                "help": "despite the parameter name the sequences don't need to be dereplicated ",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fastq",
+                  "fastq.gz"
+                ],
+                "multiple": true,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "pool",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Pool samples",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "process samples individually",
+                    "value": "FALSE",
+                    "selected": false
+                  },
+                  {
+                    "label": "pool samples",
+                    "value": "TRUE",
+                    "selected": false
+                  },
+                  {
+                    "label": "pseudo pooling between individually processed samples",
+                    "value": "pseudo",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              }
+            ],
+            "is_default_when": true
+          }
+        ]
+      },
+      {
+        "name": "err",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Error rates",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "dada2_errorrates"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "advanced",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "enable",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Set advanced options",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Yes",
+              "value": "yes",
+              "selected": false
+            },
+            {
+              "label": "No",
+              "value": "no",
+              "selected": true
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "yes",
+            "parameters": [
+              {
+                "name": "priors",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Priors",
+                "help": "The priors argument provides a set of sequences for which there is prior information suggesting they may truly exist, i.e. are not errors. The abundance p-value of dereplicated sequences that exactly match one of the priors are calculated without conditioning on presence, allowing singletons to be detected, and are compared to a reduced threshold ‘OMEGA_P‘ when forming new partitions.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "data",
+                "extensions": [
+                  "fasta",
+                  "fastq",
+                  "fastq.gz",
+                  "dada2_dada",
+                  "dada2_mergepairs",
+                  "tabular",
+                  "dada2_sequencetable",
+                  "dada2_uniques"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "sensitivity",
+                "parameter_type": "gx_section",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "section",
+                "parameters": [
+                  {
+                    "name": "OMEGA_A",
+                    "parameter_type": "gx_float",
+                    "hidden": false,
+                    "label": "Omega A",
+                    "help": "Threshold for calling unique sequences significantly overabundant, and therefore creating a new partition with that sequence as the center. Default is 1e-40, which is a conservative setting to avoid making false positive inferences, but which comes at the cost of reducing the ability to identify some rare variants.",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "float",
+                    "value": 1e-40,
+                    "min": 0,
+                    "max": 1,
+                    "validators": []
+                  },
+                  {
+                    "name": "OMEGA_P",
+                    "parameter_type": "gx_float",
+                    "hidden": false,
+                    "label": "Omega P",
+                    "help": "Threshold for unique sequences with prior evidence of existence (see ‘priors‘ argument)",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "float",
+                    "value": 0.0001,
+                    "min": 0,
+                    "max": 1,
+                    "validators": []
+                  },
+                  {
+                    "name": "OMEGA_C",
+                    "parameter_type": "gx_float",
+                    "hidden": false,
+                    "label": "Omega C",
+                    "help": "Threshold at which unique sequences inferred to contain errors are corrected in the final output. The probability that each unique sequence is generated at its observed abundance from the center of its final partition is evaluated, and compared to OMEGA_C. If that probability is >= OMEGA_C, it is 'corrected', i.e. replaced by the partition center sequence. The special value of 0 corresponds to correcting all input sequences, and any value > 1 corresponds to performing no correction on sequences found to contain error",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "float",
+                    "value": 1e-40,
+                    "min": 0,
+                    "max": 1,
+                    "validators": []
+                  },
+                  {
+                    "name": "DETECT_SINGLETONS",
+                    "parameter_type": "gx_boolean",
+                    "hidden": false,
+                    "label": "Detect singletons",
+                    "help": "et to TRUE, this removes the requirement for at least two reads with the same sequences to exist in order for a new ASV to be detected. It also somewhat increases sensitivity to other low abundance sequences as well, e.g. those present in just 2/3/4/... reads. Note, this applies to all unique sequences, not just those supported by prior evidence (see ‘priors‘ argument), and so it does make false-positive detections more likely.When enabled, singleton sequences are retained in the output",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "boolean",
+                    "value": false,
+                    "truevalue": "TRUE",
+                    "falsevalue": "FALSE"
+                  }
+                ]
+              },
+              {
+                "name": "alignment",
+                "parameter_type": "gx_section",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "section",
+                "parameters": [
+                  {
+                    "name": "MATCH",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Match score",
+                    "help": "Score of a match in the Needleman-Wunsch alignment",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 4,
+                    "min": null,
+                    "max": null,
+                    "validators": []
+                  },
+                  {
+                    "name": "MISMATCH",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Mismatch penalty",
+                    "help": "Cost of a mismatch in the Needleman-Wunsch alignmenmt",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": -5,
+                    "min": null,
+                    "max": null,
+                    "validators": []
+                  },
+                  {
+                    "name": "GAP_PENALTY",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Gap penalty",
+                    "help": "Cost of gaps in the Needleman-Wunsch alignment",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": -8,
+                    "min": null,
+                    "max": null,
+                    "validators": []
+                  },
+                  {
+                    "name": "HOMOPOLYMER_GAP_PENALTY",
+                    "parameter_type": "gx_text",
+                    "hidden": false,
+                    "label": "Homopolymer gap penalty",
+                    "help": "e cost of gaps in homopolymer regions (>=3 repeated bases). If not specified homopolymer gaps are treated as normal gaps.",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": true,
+                    "type": "text",
+                    "area": false,
+                    "value": null,
+                    "default_options": [],
+                    "validators": []
+                  },
+                  {
+                    "name": "BAND_SIZE",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Band size",
+                    "help": "When set, banded Needleman-Wunsch alignments are performed. Banding restricts the net cumulative number of insertion of one sequence relative to the other. The default value of BAND_SIZE is 16. If DADA is applied to sequencing technologies with high rates of indels, such as 454 sequencing, the BAND_SIZE parameter should be increased. Setting BAND_SIZE to a negative number turns off banding (i.e. full Needleman-Wunsch",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": true,
+                    "type": "integer",
+                    "value": 16,
+                    "min": null,
+                    "max": null,
+                    "validators": []
+                  }
+                ]
+              },
+              {
+                "name": "comparison_heuristics",
+                "parameter_type": "gx_section",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "section",
+                "parameters": [
+                  {
+                    "name": "USE_KMERS",
+                    "parameter_type": "gx_boolean",
+                    "hidden": false,
+                    "label": "K‑mers",
+                    "help": "If enabled, a 5-mer distance screen is performed prior to performing each pairwise alignment, and if the 5mer-distance is greater than KDIST_CUTOFF, no alignment is performed",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "boolean",
+                    "value": true,
+                    "truevalue": "TRUE",
+                    "falsevalue": "FALSE"
+                  },
+                  {
+                    "name": "KDIST_CUTOFF",
+                    "parameter_type": "gx_float",
+                    "hidden": false,
+                    "label": "K‑dist cutoff",
+                    "help": "The default value of 0.42 was chosen to screen pairs of sequences that differ by >10%, and was calibrated on Illumina sequenced 16S amplicon data. The assumption is that sequences that differ by such a large amount cannot be linked by amplicon errors (i.e. if you sequence one, you won’t get a read of other) and so careful (and costly) alignment is unnecessary",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "float",
+                    "value": 0.42,
+                    "min": 0,
+                    "max": 1,
+                    "validators": []
+                  },
+                  {
+                    "name": "GAPLESS",
+                    "parameter_type": "gx_boolean",
+                    "hidden": false,
+                    "label": "Perform gapless alignment",
+                    "help": "If enabled, the ordered kmer identity between pairs of sequences is compared to their unordered overlap. If equal, the optimal alignment is assumed to be gapless. Only relevant if USE_KMERS is enabled",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "boolean",
+                    "value": true,
+                    "truevalue": "TRUE",
+                    "falsevalue": "FALSE"
+                  },
+                  {
+                    "name": "GREEDY",
+                    "parameter_type": "gx_boolean",
+                    "hidden": false,
+                    "label": "Enable greedy partitioning",
+                    "help": "The DADA2 algorithm is not greedy, but a very restricted form of greediness can be turned on via this option. If TRUE, unique sequences with reads less than those expected to be generated by resequencing just the central unique in their partition are 'locked' to that partition. Modest (~30%) speedup, and almost no impact on output",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "boolean",
+                    "value": true,
+                    "truevalue": "TRUE",
+                    "falsevalue": "FALSE"
+                  }
+                ]
+              },
+              {
+                "name": "new_partition",
+                "parameter_type": "gx_section",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "section",
+                "parameters": [
+                  {
+                    "name": "MIN_FOLD",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Min fold-overabundance",
+                    "help": "Minimum fold-overabundance for sequences to form new partitions. ",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 1,
+                    "min": 1,
+                    "max": null,
+                    "validators": []
+                  },
+                  {
+                    "name": "MIN_HAMMING",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Minimum hamming separation",
+                    "help": "Minimum hamming-separation for sequences to form new partitions. Default value is 1, which means this criteria is ignored",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 1,
+                    "min": 1,
+                    "max": null,
+                    "validators": []
+                  },
+                  {
+                    "name": "MIN_ABUNDANCE",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Minimum abundance",
+                    "help": "Minimum abundance for unique sequences form new partition",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 1,
+                    "min": 1,
+                    "max": null,
+                    "validators": []
+                  },
+                  {
+                    "name": "MAX_CLUST",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Maximum number of partitions",
+                    "help": "Once this many partitions have been created, the algorithm terminates regardless of whether the statistical model suggests more real sequence variants exist. If set to 0 this argument is ignored. Default value is 0",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 0,
+                    "min": 0,
+                    "max": null,
+                    "validators": []
+                  }
+                ]
+              },
+              {
+                "name": "pseudo",
+                "parameter_type": "gx_section",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "section",
+                "parameters": [
+                  {
+                    "name": "PSEUDO_PREVALENCE",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Pseudo pooling prevalence",
+                    "help": "All sequence variants found in at least this many samples are used as priors for a subsequent round of sample inference",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 2,
+                    "min": 0,
+                    "max": null,
+                    "validators": []
+                  },
+                  {
+                    "name": "PSEUDO_ABUNDANCE",
+                    "parameter_type": "gx_float",
+                    "hidden": false,
+                    "label": "Pseudo pooling abundance",
+                    "help": "All denoised sequence variants with total abundance (over all samples) greater than this are used as priors for a subsequent round of sample inference. Default is to ignore abundance for this purpose.",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": true,
+                    "type": "float",
+                    "value": null,
+                    "min": 0,
+                    "max": null,
+                    "validators": []
+                  }
+                ]
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "no",
+            "parameters": [],
+            "is_default_when": true
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "data_collection",
+        "label": "${tool.name} on ${on_string}: outputs",
+        "hidden": false,
+        "type": "collection",
+        "collection_type": "list",
+        "collection_type_source": null,
+        "collection_type_from_rules": null,
+        "structured_like": null,
+        "discover_datasets": [
+          {
+            "discover_via": "pattern",
+            "format": "dada2_dada",
+            "visible": false,
+            "assign_primary_output": false,
+            "directory": "output",
+            "recurse": false,
+            "match_relative_path": false,
+            "sort_key": "filename",
+            "sort_comp": "lexical",
+            "sort_reverse": false,
+            "pattern": "(?P<name>.+)\\.dada2_dada"
+          }
+        ]
+      },
+      {
+        "name": "dada",
+        "label": "${tool.name} on ${on_string}",
+        "hidden": false,
+        "type": "data",
+        "format": "dada2_dada",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1038/nmeth.3869"
+      }
+    ],
+    "license": null,
+    "profile": "24.2",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "dada2",
+        "type": "bio.tools"
+      },
+      {
+        "value": "dada2",
+        "type": "bioconductor"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\nDescription\n...........\n\nThe dada function takes as input amplicon sequencing reads and returns the inferred\ncomposition of the sample (or samples). Put another way, dada removes all sequencing errors to\nreveal the members of the sequenced community.\n\nUsage\n.....\n\n**Input:**\n\n- A number of fastq(.gz) files (given as collection or multiple data sets)\n- An dada2_errorrates data set computed with learnErrors\n\nYou can decide to compute the data jointly or in batches.\n\n- Jointly (Process \"samples in batches\"=no): A single Galaxy job is started that processes all fastq data sets jointly. You may chose different pooling strategies: if the started dada job processes the samples individually, pooled, or pseudo pooled.\n- In batches (Process \"samples in batches\"=yes): A separate Galaxy job is started for earch fastq data set. This is equivalent to joint processing and choosing to process samples individually.\n\nWhile the single dada job (in case of joint processing) can use multiple cores on one compute node, batched processing distributes the work on a number of jobs (equal to the number of input fastq data sets) where each can use multiple cores. Hence, if you intend to or need to process the data sets individually, batched processing is more efficient -- in particular if Galaxy has access to a larger number of compute resources.\n\nA typical use case of individual processing of the samples are large data sets for which the pooled strategy needs to much time or memory. Pseudo-pooling is recommended for those interested in detecting singleton ASVs in their samples\n\n\n**Output**: a data set of type dada2_dada (which is a RData file containing the output of dada2's dada function).\n\nThe output of this tool can serve as input for *dada2: mergePairs*, *dada2: removeBimeraDinovo*, and \"dada2: makeSequenceTable\"\n\nDetails\n.......\n\nBriefly, dada implements a statistical test for the notion that a specific sequence was seen too many times to have been caused by amplicon errors from currently inferred sample sequences. Overly abundant sequences are used as the seeds of new partitions of sequencing reads, and the final set of partitions is taken to represent the denoised composition of the sample. A more detailed explanation of the algorithm is found in the dada2 puplication (see below) and https://doi.org/10.1186/1471-2105-13-283. dada depends on a parametric error model of substitutions. Thus the quality of its sample inference is affected by the accuracy of the estimated error rates. All comparisons between sequences performed by dada depend on pairwise alignments. This step is the most computationally intensive part of the algorithm, and two alignment heuristics have been implemented in dada for speed: A kmer-distance screen and banded Needleman-Wunsch alignmemt.\n\n\nOverview\n........\n\nThe intended use of the dada2 tools for paired sequencing data is shown in the following image.\n\n.. image:: pairpipe.png\n\nNote: In particular for the analysis of paired collections the collections should be sorted lexicographical\nbefore the analysis.\n\nFor single end data you the steps \"Unzip collection\" and \"mergePairs\" are not necessary.\n\nMore information may be found on the dada2 homepage:: https://benjjneb.github.io/dada2/index.html (in particular tutorials) or the documentation of dada2's R package https://bioconductor.org/packages/release/bioc/html/dada2.html (in particular the pdf which contains the full documentation of all parameters)\n    \n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "batch_cond": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "batch_select"
+              ],
+              "properties": {
+                "batch_select": {
+                  "type": "string",
+                  "enum": [
+                    "yes"
+                  ]
+                },
+                "derep": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "batch_select": {
+                  "type": "string",
+                  "enum": [
+                    "no"
+                  ]
+                },
+                "derep": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "pool": {
+                  "type": "string",
+                  "enum": [
+                    "FALSE",
+                    "TRUE",
+                    "pseudo"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "err": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "advanced": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "enable"
+              ],
+              "properties": {
+                "enable": {
+                  "type": "string",
+                  "enum": [
+                    "yes"
+                  ]
+                },
+                "priors": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "sensitivity": {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "OMEGA_A": {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "OMEGA_P": {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "OMEGA_C": {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "DETECT_SINGLETONS": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "alignment": {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "MATCH": {
+                      "$ref": "#/$defs/Int"
+                    },
+                    "MISMATCH": {
+                      "$ref": "#/$defs/Int"
+                    },
+                    "GAP_PENALTY": {
+                      "$ref": "#/$defs/Int"
+                    },
+                    "HOMOPOLYMER_GAP_PENALTY": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "BAND_SIZE": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "comparison_heuristics": {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "USE_KMERS": {
+                      "type": "boolean"
+                    },
+                    "KDIST_CUTOFF": {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "GAPLESS": {
+                      "type": "boolean"
+                    },
+                    "GREEDY": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "new_partition": {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "MIN_FOLD": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number greater than or equal to 1",
+                      "title": "greaterThanOrEqualTo(1)",
+                      "minimum": 1
+                    },
+                    "MIN_HAMMING": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number greater than or equal to 1",
+                      "title": "greaterThanOrEqualTo(1)",
+                      "minimum": 1
+                    },
+                    "MIN_ABUNDANCE": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number greater than or equal to 1",
+                      "title": "greaterThanOrEqualTo(1)",
+                      "minimum": 1
+                    },
+                    "MAX_CLUST": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "pseudo": {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "PSEUDO_PREVALENCE": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    "PSEUDO_ABUNDANCE": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "enable": {
+                  "type": "string",
+                  "enum": [
+                    "no"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "err"
+      ],
+      "properties": {
+        "batch_cond": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "batch_select",
+                    "derep"
+                  ],
+                  "properties": {
+                    "batch_select": {
+                      "type": "string",
+                      "enum": [
+                        "yes"
+                      ]
+                    },
+                    "derep": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "derep"
+                  ],
+                  "properties": {
+                    "batch_select": {
+                      "type": "string",
+                      "enum": [
+                        "no"
+                      ]
+                    },
+                    "derep": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "pool": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "FALSE",
+                            "TRUE",
+                            "pseudo"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "err": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "advanced": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "enable"
+                  ],
+                  "properties": {
+                    "enable": {
+                      "type": "string",
+                      "enum": [
+                        "yes"
+                      ]
+                    },
+                    "priors": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "sensitivity": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "OMEGA_A": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "description": "a number less than or equal to 1",
+                                  "title": "lessThanOrEqualTo(1)",
+                                  "minimum": 0,
+                                  "maximum": 1
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "OMEGA_P": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "description": "a number less than or equal to 1",
+                                  "title": "lessThanOrEqualTo(1)",
+                                  "minimum": 0,
+                                  "maximum": 1
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "OMEGA_C": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "description": "a number less than or equal to 1",
+                                  "title": "lessThanOrEqualTo(1)",
+                                  "minimum": 0,
+                                  "maximum": 1
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "DETECT_SINGLETONS": {
+                              "anyOf": [
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "alignment": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "MATCH": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "MISMATCH": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "GAP_PENALTY": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "HOMOPOLYMER_GAP_PENALTY": {
+                              "anyOf": [
+                                {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "BAND_SIZE": {
+                              "anyOf": [
+                                {
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/Int"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "comparison_heuristics": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "USE_KMERS": {
+                              "anyOf": [
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "KDIST_CUTOFF": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "description": "a number less than or equal to 1",
+                                  "title": "lessThanOrEqualTo(1)",
+                                  "minimum": 0,
+                                  "maximum": 1
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "GAPLESS": {
+                              "anyOf": [
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "GREEDY": {
+                              "anyOf": [
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "new_partition": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "MIN_FOLD": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a number greater than or equal to 1",
+                                  "title": "greaterThanOrEqualTo(1)",
+                                  "minimum": 1
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "MIN_HAMMING": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a number greater than or equal to 1",
+                                  "title": "greaterThanOrEqualTo(1)",
+                                  "minimum": 1
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "MIN_ABUNDANCE": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a number greater than or equal to 1",
+                                  "title": "greaterThanOrEqualTo(1)",
+                                  "minimum": 1
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "MAX_CLUST": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a non-negative number",
+                                  "title": "greaterThanOrEqualTo(0)",
+                                  "minimum": 0
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "pseudo": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "PSEUDO_PREVALENCE": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a non-negative number",
+                                  "title": "greaterThanOrEqualTo(0)",
+                                  "minimum": 0
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "PSEUDO_ABUNDANCE": {
+                              "anyOf": [
+                                {
+                                  "anyOf": [
+                                    {
+                                      "type": "number",
+                                      "description": "a non-negative number",
+                                      "title": "greaterThanOrEqualTo(0)",
+                                      "minimum": 0
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "enable": {
+                      "type": "string",
+                      "enum": [
+                        "no"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

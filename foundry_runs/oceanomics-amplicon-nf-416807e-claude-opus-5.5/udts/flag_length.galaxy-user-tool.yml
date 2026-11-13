@@ -1,0 +1,60 @@
+class: GalaxyUserTool
+id: oceanomics_flag_otus_outside_range
+version: 1.0.0
+name: Flag OTUs outside length range
+description: mark ASVs/ZOTUs whose sequence length is outside the expected amplicon range
+license: MIT
+container: adbennett/phyloseq_and_tree:v2
+configfiles:
+- filename: script.R
+  content: |
+    suppressPackageStartupMessages(library(phyloseq))
+
+    phyloseq <- readRDS("$(inputs.phyloseq.path)")
+    TAX  <- phyloseq@tax_table@.Data
+    OTU  <- phyloseq@otu_table
+    SAM  <- phyloseq@sam_data
+    TREE <- phyloseq@phy_tree
+
+    if ("ASV_sequence" %in% colnames(TAX)) {
+        TAX = cbind(TAX, unusual_size = nchar(TAX[, "ASV_sequence"]) >= as.numeric("$(inputs.max_length)") | nchar(TAX[, "ASV_sequence"]) <= as.numeric("$(inputs.min_length)"))
+    }
+    if ("ZOTU_sequence" %in% colnames(TAX)) {
+        TAX = cbind(TAX, unusual_size = nchar(TAX[, "ZOTU_sequence"]) >= as.numeric("$(inputs.max_length)") | nchar(TAX[, "ZOTU_sequence"]) <= as.numeric("$(inputs.min_length)"))
+    }
+
+    out_phyloseq <- phyloseq(tax_table(TAX), OTU, SAM, TREE)
+    saveRDS(out_phyloseq, paste0("$(inputs.phyloseq.element_identifier)", "_flagged_phyloseq.rds"))
+
+    write.table(TAX, file = paste0("$(inputs.phyloseq.element_identifier)", "_final_taxa.tsv"), sep = "\t", quote=FALSE)
+shell_command: |
+  Rscript script.R && mv *_flagged_phyloseq.rds flagged_phyloseq.rds && mv *_final_taxa.tsv flagged_taxa.tsv
+inputs:
+- name: phyloseq
+  type: data
+  format:
+  - rdata
+  label: phyloseq object (element identifier = OTU set)
+- name: min_length
+  type: integer
+  value: 0
+  label: Minimum expected length
+- name: max_length
+  type: integer
+  value: 1000
+  label: Maximum expected length
+outputs:
+- name: phyloseq_rds
+  type: data
+  format: rdata
+  from_work_dir: flagged_phyloseq.rds
+  label: Flagged phyloseq object
+- name: tsv
+  type: data
+  format: tabular
+  from_work_dir: flagged_taxa.tsv
+  label: Flagged taxa table
+help:
+  format: markdown
+  content: |
+    Port of OceanOmics-amplicon-nf FLAG_OTUS_OUTSIDERANGE.

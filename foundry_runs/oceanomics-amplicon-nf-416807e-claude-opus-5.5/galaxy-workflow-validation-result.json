@@ -1,0 +1,62 @@
+{
+  "command": "gxwf validate galaxy-workflow.gxwf.yml --json --cache-dir .tool-cache --connections",
+  "supplementary_commands": [
+    "gxwf validate galaxy-workflow.gxwf.yml --json --cache-dir .tool-cache",
+    "gxwf lint galaxy-workflow.gxwf.yml --cache-dir .tool-cache",
+    "gxwf validate-tests galaxy-workflow.gxwf-tests.yml --workflow galaxy-workflow.gxwf.yml"
+  ],
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "not_run_reason": null,
+  "summary": "structure OK; tool state 50 ok / 0 fail / 0 skip; connection report valid; tests file schema-valid and label cross-check clean; lint best-practice warnings only",
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "Workflow does not specify a creator.",
+      "addresses": "workflow.creator",
+      "routes_to": "mature-galaxy-workflow-for-iwc"
+    },
+    {
+      "severity": "info",
+      "message": "Steps without annotation (fastqc, multiqc, unzip_filtered, dada2_learn_errors_*, dada2_dada_*, dada2_merge_pairs, dada2_make_sequence_table, fastq_to_fasta, ...).",
+      "addresses": "steps[].doc",
+      "routes_to": "mature-galaxy-workflow-for-iwc"
+    },
+    {
+      "severity": "warning",
+      "message": "Connection checker resolves __MERGE_COLLECTION__ outputs (merge_otu_tables, merge_lca_tables, merge_blast_sets, merge_fasta_sets) to collection_type null, so downstream nbc, lca, lca_dedup, phyloseq, flag_length and proportional_filter report map_over None; the intended 4-element list map-over is not statically verified.",
+      "addresses": "steps.merge_*/output",
+      "routes_to": "run-workflow-test (runtime proof); gxwf connection inference upstream"
+    }
+  ],
+  "residual_runtime_risks": [
+    {
+      "risk": "Four-set map-over after __MERGE_COLLECTION__ (identifiers asv, zotu, asv_lulucurated, zotu_lulucurated) and identifier-matched multi-input mapping in lca/phyloseq/proportional_filter.",
+      "proof": "invocation: element identifiers of lca_table/phyloseq_object/final_taxa outputs"
+    },
+    {
+      "risk": "User-defined tools rely on $(inputs.x.element_identifier) on mapped-over data inputs (relabel_reads, lulu, phyloseq, flag_length, proportional_filter) and on \\$ / \\${ escaping inside configfiles.",
+      "proof": "job command lines and stderr of those steps; requires a Galaxy that supports GalaxyUserTool run: embedding (test.galaxyproject.org is 27.0.dev0)"
+    },
+    {
+      "risk": "Container pulls for custom images (adbennett/ocom_nbc:v1.4 1.8 GB, phyloseq images ~0.7 GB, mahsamousavi/lulu:2019) and the runner allowing arbitrary docker.io images for user tools.",
+      "proof": "job states / runner logs for nbc, phyloseq, lulu"
+    },
+    {
+      "risk": "cutadapt adapter text params connected from workflow string inputs inside repeats; R2 untrimmed under pair_filter both.",
+      "proof": "trim_primers report: pairs written > 0"
+    },
+    {
+      "risk": "DADA2 requires >= 2 samples surviving filterAndTrim for asv_final_outputs; 50 simulated pairs per sample.",
+      "proof": "dada2_seq_counts table and asv_final_outputs exit status"
+    },
+    {
+      "risk": "LCA needs staxids from the v5 DB archive and taxids present in the 401 MB rankedlineage; empty LCA (<2 OTUs) exits 1 by design.",
+      "proof": "lca stderr / lca_output row count"
+    },
+    {
+      "risk": "vsearch otutab sample columns depend on headers set by relabel_reads; header '@<sample>' with no ';sample=' tag.",
+      "proof": "zotu_table header row"
+    }
+  ]
+}

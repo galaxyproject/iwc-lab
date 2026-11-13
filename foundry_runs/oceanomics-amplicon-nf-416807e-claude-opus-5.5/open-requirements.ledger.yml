@@ -1,0 +1,222 @@
+topology_repair:
+  escalations: 2
+  cap: 5
+  open_history:
+  - 0
+  - 0
+entries:
+- id: blastdb-v5-composite-upload
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: params.dbfiles (required) as a single Galaxy blastdbn input carrying BLAST v5 volumes including the taxid map (.ndb .nos .not .ntf .nto)
+  missing: unverified that Galaxy's blastdbn composite accepts v5 extra volumes; staxids in BLAST_BLASTN outfmt 6 depends on them
+  resolved_by: repair-galaxy-draft-topology
+  note: 'Answered negatively: galaxy lib/galaxy/datatypes/blast.py BlastNucDb composite lists blastdb.nhr/nin/nsq/nal/nhd/nhi/nnd/nni/nog/nsd/nsi/00/shd/naa only; no .ndb/.nos/.not/.ntf/.nto. Closed by
+    blastdb-v5-taxid-map-lost repair.'
+- id: lca-taxdump-runtime-download
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: lca
+  unmet: NCBI ranked lineage (rankedlineage.dmp) that LCA's runAssign_collapsedTaxonomy.py wgets at run time
+  missing: no source param or test fixture supplies it; Galaxy jobs should not rely on network fetches
+  resolved_by: advance-galaxy-draft-step
+  note: lca step (authored GalaxyUserTool oceanomics_lca) stages taxonomy_lineage as rankedlineage_tabRemoved.dmp; the runtime wget block is removed from the embedded runAssign_collapsedTaxonomy.py.
+- id: ocomnbc-container-baked-model
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: ocomnbc
+  unmet: OceanOmics naive Bayes classifier output consumed by PHYLOSEQ
+  missing: classifier models exist only inside adbennett/ocom_nbc:v1.4; no Galaxy wrapper
+  resolved_by: advance-galaxy-draft-step
+  note: nbc step carries OCOMNBC as GalaxyUserTool oceanomics_naive_bayes_classifier pinned to public docker.io adbennett/ocom_nbc:v1.4 (models under /mnt/scratch).
+- id: dbfiles2-blast-twice-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  units: params.dbfiles2 + params.blast_twice branch (BLAST_BLASTN2 and every _db2-prefixed downstream mix)
+  because: blast_twice defaults false and conf/test.config does not set it; carrying it doubles every downstream prefix branch (workflows/oceanomics_amplicon.nf lines 603-689)
+  unmet: second-database BLAST/LCA results
+  missing: not exposed in v1 interface
+  resolved_by: null
+  note: ''
+- id: aquamaps-branch-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  units: AQUAMAPS, DOWNLOAD_AQUAMAPS, GET_AQUAMAP_PROBS
+  because: aquamaps_db default is a private s3://ocom-databases bucket; the fallback DOWNLOAD_AQUAMAPS fetches NetCDF over the network at run time (modules/local/custom/download_aquamaps/main.nf); outputs
+    are annotation-only and feed no downstream step
+  unmet: per-species AquaMaps occurrence probabilities
+  missing: no portable reference source
+  resolved_by: null
+  note: Could be reinstated as an optional aquamaps_db sqlite input consumed by an AQUAMAPS user-defined tool.
+- id: demux-plane-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: CUTADAPT_WORKFLOW (RAW_STATS, CREATE_DEMUX_DEPENDENCIES, CUTADAPT_DEMUX_UC/UDI, RENAME, UNKNOWN_STATS, CONCAT, ASSIGNED_STATS), ALT_CUTADAPT_WORKFLOW, POSTDEMUX_WORKFLOW, ALT_POSTDEMUX_WORKFLOW,
+    SAMPLESHEET_CHECK; params raw_data, skip_demux, alt_demux, demux_udi, cutadapt_*
+  because: conf/test.config raw_data is a single R1 file passed to Channel.fromFilePairs (yields no pairs) and the test samplesheet header uses 'sample' where bin/check_samplesheet.py requires samp_name,
+    so the source test cannot exercise demux; the same samplesheet carries per-sample paired fastq URLs matching the skip_demux entry (subworkflows/local/input_check.nf create_fastq_channel)
+  unmet: demultiplexing pooled raw reads by combinatorial/UDI barcodes
+  missing: Galaxy workflow starts from demultiplexed list:paired
+  resolved_by: null
+  note: ''
+- id: optional-trim-and-partial-entry-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: SEQTK_TRIM, FASTP (seqtk_trim/fastp_trim default null); start_from_blast/start_from_lca entry points; USEARCH32/64 ZOTU modes; FILT_WITH_MASTERLIST/ADD_BACK_MASTERLIST; LCA_WITH_FISHBASE; FAIRe
+    plane (RENAME_OTURAW, REFORMAT_OTUFINAL, ADD_EXPERIMENTRUNMETADATA, CREATE_FAIRE_METADATA*); PREFILTERING_STATS/INPUTFILE_INFO/CONCATFILE_INFO (FAIRe-only consumers)
+  because: each is off by default in nextflow.config params (seqtk_trim=null, fastp_trim=null, start_from_*=false, zotu_mode=vsearch, masterlist=null, lca_with_fishbase=false, faire_mode=false) and not
+    set by conf/test.config; usearch is a licence-restricted binary (params.usearch64)
+  unmet: non-default branches
+  missing: not exposed in v1 interface
+  resolved_by: null
+  note: ''
+- id: markdown-report-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: MARKDOWN_REPORT, PRIMER_CONTAM_STATS, FINAL_STATS (report-only consumers)
+  because: 'uncited: R Markdown template in a custom container (adbennett/amplicon_report:v1) whose only output is an HTML report fed to MultiQC; judged non-scientific for v1'
+  unmet: HTML amplicon report
+  missing: no Galaxy wrapper; would need a container-pinned user-defined tool
+  resolved_by: null
+  note: 'Debt: uncited drop.'
+- id: taxonomy-lineage-new-input
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: lca
+  unmet: test fixture for new workflow input taxonomy_lineage (NCBI rankedlineage.dmp)
+  missing: source tests never supply it (LCA downloads it); test data phase must source a small lineage file covering the test taxa
+  resolved_by: find-test-data
+  note: 'Fixture: NCBI taxdump_archive/new_taxdump_2026-11-01.zip member rankedlineage.dmp (unsubsetted, 401 MB).'
+- id: sample-metadata-samp-name-column
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: phyloseq
+  unmet: sample_metadata csv with a samp_name column matching reads element identifiers
+  missing: PHYLOSEQ sets rownames(meta) <- meta$samp_name; the source test samplesheet header uses 'sample', so the test fixture must be adapted
+  resolved_by: nextflow-to-test-data
+  note: Test fixture test-data/sample_metadata.csv renames the header column sample -> samp_name.
+- id: blast-taxdb-columns
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: blastn
+  unmet: outfmt 6 columns sscinames scomnames sskingdoms
+  missing: require NCBI taxdb.btd/bti beside the DB; absent from test volumes (values N/A); unclear whether LCA reads them
+  resolved_by: advance-galaxy-draft-step
+  note: bin/working_function.py reads staxids (ll[2]) for taxonomy and scomnames (ll[4]) only as a label; sscinames/sskingdoms are unused, so taxdb absence yields N/A labels without changing the LCA.
+- id: blast-chunk-scatter-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  units: 'splitFasta(by: 500) scatter, BLAST_BLASTN.out.txt.groupTuple gather, CONCAT_BLASTN_RESULTS, CONCAT_BLASTN_DEFAULT_RESULTS'
+  because: 'workflows/oceanomics_amplicon.nf: ch_fasta_split = ch_fasta_filtered.splitFasta(by: 500, file: true) then groupTuple+cat — a parallelism scatter with no semantic effect; default_format output
+    has no consumer'
+  unmet: chunked BLAST parallelism
+  missing: BLAST runs once per OTU set
+  resolved_by: null
+  note: ''
+- id: suffix-relabel-mapping-file
+  status: resolved
+  raised_by: compare-against-iwc-exemplar
+  step: relabel_curated
+  unmet: relabel {asv, zotu} curated lists to {asv_lulucurated, zotu_lulucurated}
+  missing: __RELABEL_FROM_FILE__ needs a mapping dataset; no IWC workflow derives one for a constant suffix
+  resolved_by: nextflow-summary-to-galaxy-template
+  note: 'Resolved: four __APPLY_RULES__ steps (relabel_curated_tables/fasta/blast, relabel_otu_tables) add the suffix by regex on the identifier column; no mapping dataset needed.'
+- id: dada2-report-plots-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-template
+  units: DADA2_PLOTQUALITYPROFILE, DADA2_PLOTERRORS, DADA2_SEQUENCEDISTRIBUTION PNGs
+  because: their only consumer is MARKDOWN_REPORT (workflows/oceanomics_amplicon.nf ch_pngs), which is itself dropped (markdown-report-not-carried)
+  unmet: DADA2 diagnostic plots
+  missing: not in the draft
+  resolved_by: null
+  note: ''
+- id: relabel-reads-needs-element-identifier
+  status: resolved
+  blocking: true
+  raised_by: nextflow-summary-to-galaxy-template
+  step: relabel_reads
+  unmet: FASTQ headers rewritten to the sample name
+  missing: the chosen tool must read the collection element identifier inside the job (Cheetah $input.element_identifier); a generic sed/awk wrapper cannot
+  note: 'advance-galaxy-draft-step (iteration 5): no shed wrapper relabels to the identifier (qfabrepo metadegalaxy_reheader appends a filename suffix). A GalaxyUserTool exposes element_identifier on a
+    mapped-over gx_data File (galaxy tool_util_models DataInternalJson.element_identifier) but its input here is list:paired, where the outer sample identifier reaching a paired-collection input is unevidenced.
+    Blocking: move relabel after adapterremoval_collapse (single fastq per sample, list) so a data input mapped over the list sees the sample identifier.'
+  resolved_by: repair-galaxy-draft-topology
+  repair_note: 'rewire: adapterremoval_collapse <- trim_leftover_primers/out_pairs; relabel_reads <- adapterremoval_collapse; pool_reads <- relabel_reads. Both steps remain drafty.'
+- id: leftover-3prime-rc-primers
+  status: open
+  raised_by: advance-galaxy-draft-step
+  step: trim_leftover_primers
+  unmet: '3'' trimming of reverse-complement primers (source primers_3end.fa: fw_rc, rv_rc as -a/-A)'
+  missing: Galaxy cannot reverse-complement a workflow string input inside cutadapt; needs either rc primer workflow inputs or a small step that emits a primer FASTA
+  resolved_by: null
+  note: 'Implemented 5''-only leftover trimming. Non-blocking: reads are amplicon-length and DADA2/vsearch run on merged pairs; residual 3'' primer remnants may lengthen some ASVs.'
+- id: blastdb-v5-taxid-map-lost
+  status: resolved
+  blocking: true
+  raised_by: nextflow-to-test-data
+  step: blastn
+  unmet: BLAST hits with staxids for the LCA step
+  missing: a blastdbn upload drops the v5 taxid volumes, so staxids would be N/A and runAssign_collapsedTaxonomy.py (working_function ll[2]) could not assign taxonomy
+  resolved_by: repair-galaxy-draft-topology
+  note: 'change-parameter: workflow input blast_db format blastdbn -> tar (archive of all v5 volumes); replace-tool: blastn -> GalaxyUserTool oceanomics_blastn_v5db (quay.io/biocontainers/blast:2.13.0--hf3cf87c_0,
+    source outfmt order); rewire: curate_blast and merge_blast_sets <- blastn/hits; change-parameter: lca UDT no longer reorders columns.'
+- id: trim-primers-pair-filter-any-discards-r1-only-matches
+  status: resolved
+  raised_by: nextflow-to-test-data
+  step: trim_primers
+  unmet: keep read pairs whose R1 carries the primer when R2 does not
+  missing: pair_filter any discards a pair when either mate is untrimmed; cutadapt defaults --pair-filter=both under --discard-untrimmed, which the source relies on (test R2 reads carry assay-specific reverse
+    primers absent from rv_primer)
+  resolved_by: repair-galaxy-draft-topology
+  note: 'change-parameter: trim_primers filter_options.pair_filter any -> both.'
+decisions:
+- id: entry-at-demultiplexed-reads
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: 'Workflow inputs: reads (list:paired fastqsanger.gz) + sample_metadata (csv) + blast_db (blastdbn) + taxonomy_lineage (tabular) + optional filter_table (csv) + scalar thresholds.'
+  rationale: Matches the runnable part of the source test fixture; see demux-plane-not-carried.
+- id: assay-presets-as-explicit-scalars
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Expose fw_primer, rv_primer, read_maxlen, asv_min_length, asv_max_length directly instead of the assay key.
+  rationale: assay only indexes conf/assay_params.config presets; explicit values keep the workflow self-describing.
+- id: otu-set-prefix-as-element-identifier
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Model the source prefix fan-out as parallel list collections with identifiers asv, zotu, asv_lulucurated, zotu_lulucurated (constant _db1 dropped); every prefix join becomes a multi-input map-over.
+  rationale: Prefixes are unique per method x curation; matching identifiers give Galaxy the same keyed join the source performs.
+- id: subsume-getprimerfiles-and-dereplicate
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: GET_PRIMERFILES folds into cutadapt adapter parameters; DADA2_DEREPLICATE folds into the DADA2 dada step.
+  rationale: Both are plumbing whose effect the downstream tool performs internally.
+- id: dada2-follow-iwc-exemplar-chain
+  decided_by: compare-against-iwc-exemplar
+  decision: 'Plane B follows amplicon/dada2/dada2_paired: sort list:paired, filterAndTrim(paired collection), unzip, learnErrors x2, dada x2 (batch_select no, pool from asv_pooled string), mergePairs, makeSequenceTable,
+    removeBimeraDenovo, seqCounts for read tracking.'
+  rationale: Nearest IWC exemplar (medium confidence); see iwc-comparison-notes.md.
+- id: adapterremoval-as-user-tool-for-target-server
+  decided_by: run-workflow-test
+  decision: 'replace-tool: adapterremoval_collapse uses GalaxyUserTool oceanomics_adapterremoval_collapse (quay.io/biocontainers/adapterremoval:2.3.2--hb7ba0dd_0) with a paired data_collection input.'
+  rationale: toolshed iuc/adapter_removal (any version) is not installed on test.galaxyproject.org and a non-admin key cannot install it; the user tool matches the source version and flags exactly.
+discoveries:
+- id: dada2-pooled-inference-supported
+  raised_by: compare-against-iwc-exemplar
+  evidence: IWC dada2_paired runs dada2_dada with batch_cond.batch_select=no and a string pool input over the whole collection.
+  impact: Answers data-flow OQ-D1; asv_pooled maps to the dada pool parameter.
+- id: no-iwc-vsearch-lulu
+  raised_by: compare-against-iwc-exemplar
+  evidence: No .ga in iwc @9f111cb references vsearch or lulu tool ids.
+  impact: Planes C and D6 have no corpus precedent; discovery must search the Tool Shed directly.
+- id: blast-column-order-galaxy-vs-source
+  raised_by: advance-galaxy-draft-step
+  evidence: ncbi_blastn_wrapper concatenates std,ext,ids,misc,tax column groups (ncbi_macros.xml line 665), unlike the source's custom outfmt 6 order.
+  impact: 'lca UDT reorders the 22 columns before running the source script; the exposed blast_results output is in Galaxy order. Superseded: blastn is now a user tool emitting source order.'
+- id: udt-paired-collection-input-supported
+  raised_by: run-workflow-test
+  evidence: 'galaxy tool_util_models GalaxyParameterT includes DataCollectionParameterModel; DataCollectionPairedRuntime exposes elements.forward/elements.reverse; gxwf validate-tool-source accepts type:
+    data_collection, collection_type: paired.'
+  impact: The earlier relabel_reads reorder repair was a safe choice but no longer strictly needed; left as is.

@@ -1,0 +1,3125 @@
+{
+  "schema_version": 1,
+  "tool_id": "ncbi_blastn_wrapper",
+  "tool_version": "2.16.0+galaxy1",
+  "cache_key": "3a5e80df39cb9baced957af3c1df97b47d93748ea7621a69e04b91910b156839",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/devteam~ncbi_blast_plus~ncbi_blastn_wrapper/versions/2.16.0+galaxy1",
+    "cached_at": "2026-11-10T03:57:24.404Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/3a5e80df39cb9baced957af3c1df97b47d93748ea7621a69e04b91910b156839.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "ncbi_blastn_wrapper",
+    "version": "2.16.0+galaxy1",
+    "name": "NCBI BLAST+ blastn",
+    "description": "Search nucleotide database with nucleotide query sequence(s)",
+    "inputs": [
+      {
+        "name": "query",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Nucleotide query sequence(s)",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "fasta",
+          "fasta.gz"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "db_opts",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "db_opts_selector",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Subject database/sequences",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Locally installed BLAST database",
+              "value": "db",
+              "selected": true
+            },
+            {
+              "label": "BLAST database from your history",
+              "value": "histdb",
+              "selected": false
+            },
+            {
+              "label": "FASTA file from your history (see warning note below)",
+              "value": "file",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "db",
+            "parameters": [
+              {
+                "name": "database",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Nucleotide BLAST database",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": null,
+                "multiple": true,
+                "validators": []
+              },
+              {
+                "name": "histdb",
+                "parameter_type": "gx_hidden",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "hidden",
+                "value": "",
+                "validators": []
+              },
+              {
+                "name": "subject",
+                "parameter_type": "gx_hidden",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "hidden",
+                "value": "",
+                "validators": []
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "histdb",
+            "parameters": [
+              {
+                "name": "database",
+                "parameter_type": "gx_hidden",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "hidden",
+                "value": "",
+                "validators": []
+              },
+              {
+                "name": "histdb",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Nucleotide BLAST database",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "blastdbn"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "subject",
+                "parameter_type": "gx_hidden",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "hidden",
+                "value": "",
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "file",
+            "parameters": [
+              {
+                "name": "database",
+                "parameter_type": "gx_hidden",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "hidden",
+                "value": "",
+                "validators": []
+              },
+              {
+                "name": "histdb",
+                "parameter_type": "gx_hidden",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "hidden",
+                "value": "",
+                "validators": []
+              },
+              {
+                "name": "subject",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Nucleotide FASTA subject file to use instead of a database",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fasta",
+                  "fasta.gz"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "blast_type",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Type of BLAST",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "megablast - Traditional megablast used to find very similar (e.g., intraspecies or closely related species) sequences",
+            "value": "megablast",
+            "selected": false
+          },
+          {
+            "label": "blastn - Traditional BLASTN requiring an exact match of 11, for somewhat similar sequences",
+            "value": "blastn",
+            "selected": false
+          },
+          {
+            "label": "blastn-short - BLASTN program optimized for sequences shorter than 50 bases",
+            "value": "blastn-short",
+            "selected": false
+          },
+          {
+            "label": "dc-megablast - Discontiguous megablast used to find more distant (e.g., interspecies) sequences",
+            "value": "dc-megablast",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "evalue_cutoff",
+        "parameter_type": "gx_float",
+        "hidden": false,
+        "label": "Set expectation value cutoff",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "float",
+        "value": 0.001,
+        "min": null,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "output",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "out_format",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Output format",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Tabular (standard 12 columns)",
+              "value": "6",
+              "selected": false
+            },
+            {
+              "label": "Tabular (extended 25 columns)",
+              "value": "ext",
+              "selected": true
+            },
+            {
+              "label": "Tabular (select which columns)",
+              "value": "cols",
+              "selected": false
+            },
+            {
+              "label": "BLAST XML",
+              "value": "5",
+              "selected": false
+            },
+            {
+              "label": "Pairwise text",
+              "value": "0",
+              "selected": false
+            },
+            {
+              "label": "Pairwise HTML",
+              "value": "0 -html",
+              "selected": false
+            },
+            {
+              "label": "Query-anchored text",
+              "value": "2",
+              "selected": false
+            },
+            {
+              "label": "Query-anchored HTML",
+              "value": "2 -html",
+              "selected": false
+            },
+            {
+              "label": "Flat query-anchored text",
+              "value": "4",
+              "selected": false
+            },
+            {
+              "label": "Flat query-anchored HTML",
+              "value": "4 -html",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "6",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "ext",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "cols",
+            "parameters": [
+              {
+                "name": "std_cols",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Standard columns",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "qseqid = Query Seq-id (ID of your sequence)",
+                    "value": "qseqid",
+                    "selected": true
+                  },
+                  {
+                    "label": "sseqid = Subject Seq-id (ID of the database hit)",
+                    "value": "sseqid",
+                    "selected": true
+                  },
+                  {
+                    "label": "pident = Percentage of identical matches",
+                    "value": "pident",
+                    "selected": true
+                  },
+                  {
+                    "label": "length = Alignment length",
+                    "value": "length",
+                    "selected": true
+                  },
+                  {
+                    "label": "mismatch = Number of mismatches",
+                    "value": "mismatch",
+                    "selected": true
+                  },
+                  {
+                    "label": "gapopen = Number of gap openings",
+                    "value": "gapopen",
+                    "selected": true
+                  },
+                  {
+                    "label": "qstart = Start of alignment in query",
+                    "value": "qstart",
+                    "selected": true
+                  },
+                  {
+                    "label": "qend = End of alignment in query",
+                    "value": "qend",
+                    "selected": true
+                  },
+                  {
+                    "label": "sstart = Start of alignment in subject (database hit)",
+                    "value": "sstart",
+                    "selected": true
+                  },
+                  {
+                    "label": "send = End of alignment in subject (database hit)",
+                    "value": "send",
+                    "selected": true
+                  },
+                  {
+                    "label": "evalue = Expectation value (E-value)",
+                    "value": "evalue",
+                    "selected": true
+                  },
+                  {
+                    "label": "bitscore = Bit score",
+                    "value": "bitscore",
+                    "selected": true
+                  }
+                ],
+                "multiple": true,
+                "validators": []
+              },
+              {
+                "name": "ext_cols",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Extended columns",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "sallseqid = All subject Seq-id(s), separated by a ';'",
+                    "value": "sallseqid",
+                    "selected": false
+                  },
+                  {
+                    "label": "score = Raw score",
+                    "value": "score",
+                    "selected": false
+                  },
+                  {
+                    "label": "nident = Number of identical matches",
+                    "value": "nident",
+                    "selected": false
+                  },
+                  {
+                    "label": "positive = Number of positive-scoring matches",
+                    "value": "positive",
+                    "selected": false
+                  },
+                  {
+                    "label": "gaps = Total number of gaps",
+                    "value": "gaps",
+                    "selected": false
+                  },
+                  {
+                    "label": "ppos = Percentage of positive-scoring matches",
+                    "value": "ppos",
+                    "selected": false
+                  },
+                  {
+                    "label": "qframe = Query frame",
+                    "value": "qframe",
+                    "selected": false
+                  },
+                  {
+                    "label": "sframe = Subject frame",
+                    "value": "sframe",
+                    "selected": false
+                  },
+                  {
+                    "label": "qseq = Aligned part of query sequence",
+                    "value": "qseq",
+                    "selected": false
+                  },
+                  {
+                    "label": "sseq = Aligned part of subject sequence",
+                    "value": "sseq",
+                    "selected": false
+                  },
+                  {
+                    "label": "qlen = Query sequence length",
+                    "value": "qlen",
+                    "selected": false
+                  },
+                  {
+                    "label": "slen = Subject sequence length",
+                    "value": "slen",
+                    "selected": false
+                  },
+                  {
+                    "label": "salltitles = All subject title(s), separated by a '<>'",
+                    "value": "salltitles",
+                    "selected": false
+                  }
+                ],
+                "multiple": true,
+                "validators": []
+              },
+              {
+                "name": "ids_cols",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Other identifier columns",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "qgi = Query GI",
+                    "value": "qgi",
+                    "selected": false
+                  },
+                  {
+                    "label": "qacc = Query accesion",
+                    "value": "qacc",
+                    "selected": false
+                  },
+                  {
+                    "label": "qaccver = Query accesion.version",
+                    "value": "qaccver",
+                    "selected": false
+                  },
+                  {
+                    "label": "sallseqid = All subject Seq-id(s), separated by a ';'",
+                    "value": "sallseqid",
+                    "selected": false
+                  },
+                  {
+                    "label": "sgi = Subject GI",
+                    "value": "sgi",
+                    "selected": false
+                  },
+                  {
+                    "label": "sallgi = All subject GIs",
+                    "value": "sallgi",
+                    "selected": false
+                  },
+                  {
+                    "label": "sacc = Subject accession",
+                    "value": "sacc",
+                    "selected": false
+                  },
+                  {
+                    "label": "saccver = Subject accession.version",
+                    "value": "saccver",
+                    "selected": false
+                  },
+                  {
+                    "label": "sallacc = All subject accessions",
+                    "value": "sallacc",
+                    "selected": false
+                  },
+                  {
+                    "label": "stitle = Subject Title",
+                    "value": "stitle",
+                    "selected": false
+                  }
+                ],
+                "multiple": true,
+                "validators": []
+              },
+              {
+                "name": "misc_cols",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Miscellaneous columns",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "sstrand = Subject Strand",
+                    "value": "sstrand",
+                    "selected": false
+                  },
+                  {
+                    "label": "frames = Query and subject frames separated by a '/'",
+                    "value": "frames",
+                    "selected": false
+                  },
+                  {
+                    "label": "btop = Blast traceback operations (BTOP)",
+                    "value": "btop",
+                    "selected": false
+                  },
+                  {
+                    "label": "qcovs = Query Coverage Per Subject",
+                    "value": "qcovs",
+                    "selected": false
+                  },
+                  {
+                    "label": "qcovhsp = Query Coverage Per HSP",
+                    "value": "qcovhsp",
+                    "selected": false
+                  }
+                ],
+                "multiple": true,
+                "validators": []
+              },
+              {
+                "name": "tax_cols",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Taxonomy columns",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "staxids = unique Subject Taxonomy ID(s), separated by a ';' (in numerical order)",
+                    "value": "staxids",
+                    "selected": false
+                  },
+                  {
+                    "label": "sscinames = unique Subject Scientific Name(s), separated by a ';'",
+                    "value": "sscinames",
+                    "selected": false
+                  },
+                  {
+                    "label": "scomnames = unique Subject Common Name(s), separated by a ';'",
+                    "value": "scomnames",
+                    "selected": false
+                  },
+                  {
+                    "label": "sblastnames = unique Subject Blast Name(s), separated by a ';' (in alphabetical order)",
+                    "value": "sblastnames",
+                    "selected": false
+                  },
+                  {
+                    "label": "sskingdoms = unique Subject Super Kingdom(s), separated by a ';' (in alphabetical order)",
+                    "value": "sskingdoms",
+                    "selected": false
+                  }
+                ],
+                "multiple": true,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "5",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "0",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "0 -html",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "2",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "2 -html",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "4",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "4 -html",
+            "parameters": [],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "adv_opts",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "adv_opts_selector",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Advanced Options",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Hide Advanced Options",
+              "value": "basic",
+              "selected": true
+            },
+            {
+              "label": "Show Advanced Options",
+              "value": "advanced",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "basic",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "advanced",
+            "parameters": [
+              {
+                "name": "filter_query",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Filter out low complexity regions (with DUST)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": true,
+                "truevalue": "-dust yes",
+                "falsevalue": "-dust no"
+              },
+              {
+                "name": "strand",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Query strand(s) to search against database/subject",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Both",
+                    "value": "-strand both",
+                    "selected": false
+                  },
+                  {
+                    "label": "Plus (forward)",
+                    "value": "-strand plus",
+                    "selected": false
+                  },
+                  {
+                    "label": "Minus (reverse complement)",
+                    "value": "-strand minus",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              {
+                "name": "max_hits",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Maximum hits to consider/show",
+                "help": "Use zero for default limits. For HTML and plain text output this value is passed -num_descriptions and -num_alignments but for XML and tabular etc, this is used with -max_target_seqs instead. In either case, in addition to limiting the final output, this alters internal limits during the search, which can in some cases exclude matches which would otherwise become the best hit.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "integer",
+                "value": 0,
+                "min": 0,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "max_hsps",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Maximum number of HSPs (alignments) to keep for any single query-subject pair",
+                "help": "The HSPs shown will be the best as judged by expect value. If this option is not set, BLAST shows all HSPs meeting the expect value criteria",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": 1,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "identity_cutoff",
+                "parameter_type": "gx_float",
+                "hidden": false,
+                "label": "Percent identity cutoff",
+                "help": "Use zero for no cutoff",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "float",
+                "value": 0,
+                "min": 0,
+                "max": 100,
+                "validators": []
+              },
+              {
+                "name": "word_size",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Word size for wordfinder algorithm",
+                "help": "Leave blank for default, otherwise minimum 4",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": 4,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "ungapped",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Perform ungapped alignment only?",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "-ungapped",
+                "falsevalue": ""
+              },
+              {
+                "name": "parse_deflines",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Should the query and subject defline(s) be parsed?",
+                "help": "This affects the formatting of the query/subject ID strings",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "-parse_deflines",
+                "falsevalue": ""
+              },
+              {
+                "name": "adv_optional_id_files_opts",
+                "parameter_type": "gx_conditional",
+                "hidden": false,
+                "label": null,
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "conditional",
+                "test_parameter": {
+                  "name": "adv_optional_id_files_opts_selector",
+                  "parameter_type": "gx_select",
+                  "hidden": false,
+                  "label": "Restrict search of database to a given set of ID's",
+                  "help": "This feature provides a means to exclude ID's from a BLAST database search. The expectation values in the BLAST results are based upon the sequences actually searched, and not on the underlying database. Note this cannot be used when comparing against a FASTA file.",
+                  "argument": null,
+                  "is_dynamic": false,
+                  "optional": false,
+                  "type": "select",
+                  "options": [
+                    {
+                      "label": "No restriction, search the entire database",
+                      "value": "none",
+                      "selected": true
+                    },
+                    {
+                      "label": "GI identifiers",
+                      "value": "gilist",
+                      "selected": false
+                    },
+                    {
+                      "label": "Negative GI identifiers",
+                      "value": "negative_gilist",
+                      "selected": false
+                    },
+                    {
+                      "label": "Sequence identifiers (SeqId's)",
+                      "value": "seqidlist",
+                      "selected": false
+                    },
+                    {
+                      "label": "Taxonomy identifiers (TaxId's)",
+                      "value": "taxidlist",
+                      "selected": false
+                    },
+                    {
+                      "label": "Negative taxonomy identifiers (TaxId's)",
+                      "value": "negative_taxidlist",
+                      "selected": false
+                    }
+                  ],
+                  "multiple": false,
+                  "validators": []
+                },
+                "whens": [
+                  {
+                    "discriminator": "none",
+                    "parameters": [],
+                    "is_default_when": true
+                  },
+                  {
+                    "discriminator": "gilist",
+                    "parameters": [
+                      {
+                        "name": "gilist",
+                        "parameter_type": "gx_data",
+                        "hidden": false,
+                        "label": "Restrict search of database to GI's listed in this file",
+                        "help": "This option is only available for database searches.",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "data",
+                        "extensions": [
+                          "txt"
+                        ],
+                        "multiple": false,
+                        "min": null,
+                        "max": null,
+                        "url_default": null
+                      }
+                    ],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "negative_gilist",
+                    "parameters": [
+                      {
+                        "name": "negative_gilist",
+                        "parameter_type": "gx_data",
+                        "hidden": false,
+                        "label": "Restrict search of database to everything except the GI's listed in this file",
+                        "help": "This option is only available for database searches.",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "data",
+                        "extensions": [
+                          "txt"
+                        ],
+                        "multiple": false,
+                        "min": null,
+                        "max": null,
+                        "url_default": null
+                      }
+                    ],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "seqidlist",
+                    "parameters": [
+                      {
+                        "name": "seqidlist",
+                        "parameter_type": "gx_data",
+                        "hidden": false,
+                        "label": " Restrict search of database to list of SeqId's",
+                        "help": "This option is only available for database searches.",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "data",
+                        "extensions": [
+                          "txt"
+                        ],
+                        "multiple": false,
+                        "min": null,
+                        "max": null,
+                        "url_default": null
+                      }
+                    ],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "taxidlist",
+                    "parameters": [
+                      {
+                        "name": "taxidlist",
+                        "parameter_type": "gx_data",
+                        "hidden": false,
+                        "label": "Restrict search of database to list of TaxId's",
+                        "help": "This option is only available for database searches.",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "data",
+                        "extensions": [
+                          "txt"
+                        ],
+                        "multiple": false,
+                        "min": null,
+                        "max": null,
+                        "url_default": null
+                      }
+                    ],
+                    "is_default_when": false
+                  },
+                  {
+                    "discriminator": "negative_taxidlist",
+                    "parameters": [
+                      {
+                        "name": "negative_taxidlist",
+                        "parameter_type": "gx_data",
+                        "hidden": false,
+                        "label": "Restrict search of database to list of TaxId's",
+                        "help": "This option is only available for database searches.",
+                        "argument": null,
+                        "is_dynamic": false,
+                        "optional": false,
+                        "type": "data",
+                        "extensions": [
+                          "txt"
+                        ],
+                        "multiple": false,
+                        "min": null,
+                        "max": null,
+                        "url_default": null
+                      }
+                    ],
+                    "is_default_when": false
+                  }
+                ]
+              },
+              {
+                "name": "qcov_hsp_perc",
+                "parameter_type": "gx_float",
+                "hidden": false,
+                "label": "Minimum query coverage per hsp (percentage, 0 to 100)",
+                "help": "See also the output column qcovhsp",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "float",
+                "value": 0,
+                "min": 0,
+                "max": 100,
+                "validators": []
+              },
+              {
+                "name": "window_size",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Multiple hits window size: use 0 to specify 1-hit algorithm, leave blank for default",
+                "help": "Only relevant for dc-megablast, and otherwise ignored. Default window size changes with substitution matrix and BLAST type.                     Entering a non-negative integer will override the default.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": 0,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "gapopen",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Cost to open a gap",
+                "help": "Leave blank for default. See tool help for defaults.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": 0,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "gapextend",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Cost to extend a gap",
+                "help": "Leave blank for default. See tool help for defaults.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": 1,
+                "max": null,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output1",
+        "label": "${blast_type.value} $query.name vs \n#if str($db_opts.db_opts_selector)=='db'\n'${db_opts.database}'\n#elif str($db_opts.db_opts_selector)=='histdb'\n'${db_opts.histdb.name}'\n#else\n'${db_opts.subject.name}'\n#end if\n",
+        "hidden": false,
+        "type": "data",
+        "format": "tabular",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1093/nar/25.17.3389"
+      },
+      {
+        "type": "doi",
+        "content": "10.1186/1471-2105-10-421"
+      },
+      {
+        "type": "doi",
+        "content": "10.1186/s13742-015-0080-7"
+      }
+    ],
+    "license": null,
+    "profile": "22.01",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n\n.. class:: warningmark\n\n**Note**. Database searches may take a substantial amount of time.\nFor large input datasets it is advisable to allow overnight processing.\n\n-----\n    \n\n**What it does**\n\nSearch a *nucleotide database* using a *nucleotide query*,\nusing the NCBI BLAST+ blastn command line tool.\nAlgorithms include blastn, megablast, and discontiguous megablast.\n\n\n.. class:: warningmark\n\nYou can also search against a FASTA file of subject (target)\nsequences. This is *not* advised because it is slower (only one\nCPU is used), but more importantly gives e-values for pairwise\nsearches (very small e-values which will look overly signficiant).\nIn most cases you should instead turn the other FASTA file into a\ndatabase first using *makeblastdb* and search against that.\n    \n\n-----\n\n\n**Output format**\n\nBecause Galaxy focuses on processing tabular data, the default output of this\ntool is tabular. The standard BLAST+ tabular output contains 12 columns:\n\n====== ========= ============================================\nColumn NCBI name Description\n------ --------- --------------------------------------------\n     1 qaccver   Query accession dot version\n     2 saccver   Subject accession dot version (database hit)\n     3 pident    Percentage of identical matches\n     4 length    Alignment length\n     5 mismatch  Number of mismatches\n     6 gapopen   Number of gap openings\n     7 qstart    Start of alignment in query\n     8 qend      End of alignment in query\n     9 sstart    Start of alignment in subject (database hit)\n    10 send      End of alignment in subject (database hit)\n    11 evalue    Expectation value (E-value)\n    12 bitscore  Bit score\n====== ========= ============================================\n\nUntil BLAST+ 2.5.0, the first two columns were ``qseqid`` and ``sseqid``,\nwhich were usually strings contained multiple pipe-separated entries.\nIn BLAST+ 2.5.0, the first two columns became ``qacc`` and ``sacc``\n(accesion only), while in BLAST+ 2.6.0 this was changed again to use\n``qaccver`` and ``saccver`` (accession dot version).\n\nThe BLAST+ tools can optionally output additional columns of information,\nbut this takes longer to calculate. Many commonly used extra columns are\nincluded by selecting the extended tabular output. The extra columns are\nincluded *after* the standard 12 columns. This is so that you can write\nworkflow filtering steps that accept either the 12 or 25 column tabular\nBLAST output. Galaxy now uses this extended 25 column output by default.\n\n====== ============= ===========================================\nColumn NCBI name     Description\n------ ------------- -------------------------------------------\n    13 sallseqid     All subject Seq-id(s), separated by a ';'\n    14 score         Raw score\n    15 nident        Number of identical matches\n    16 positive      Number of positive-scoring matches\n    17 gaps          Total number of gaps\n    18 ppos          Percentage of positive-scoring matches\n    19 qframe        Query frame\n    20 sframe        Subject frame\n    21 qseq          Aligned part of query sequence\n    22 sseq          Aligned part of subject sequence\n    23 qlen          Query sequence length\n    24 slen          Subject sequence length\n    25 salltitles    All subject title(s), separated by a '<>'\n====== ============= ===========================================\n\nThe third option is to customise the tabular output by selecting which\ncolumns you want, from the standard set of 12, the default set of 25,\nor any of the additional columns BLAST+ offers (including species name).\n\nThe fourth option is BLAST XML output, which is designed to be parsed by\nanother program, and is understood by some Galaxy tools.\n\nYou can also choose several plain text or HTML output formats which are designed to be read by a person (not by another program).\nThe HTML versions use basic webpage formatting and can include links to the hits on the NCBI website.\nThe pairwise output (the default on the NCBI BLAST website) shows each match as a pairwise alignment with the query.\nThe two query anchored outputs show a multiple sequence alignment between the query and all the matches,\nand differ in how insertions are shown (marked as insertions or with gap characters added to the other sequences).\n    \n\n-------\n\n\n**Advanced Options**\n\nFor help with advanced options and their default values, visit the\nNCBI BLAST® Command Line Applications User Manual, Appendices,\n`Options for the command-line applications\n<https://www.ncbi.nlm.nih.gov/books/NBK279684/#_appendices_Options_for_the_commandline_a_>`_.\n\nFor amino acid substitution matrices, see `BLAST Substitution Matrices\n<https://www.ncbi.nlm.nih.gov/books/NBK279684/#_appendices_BLAST_Substitution_Matrices_>`_ in the same\nappendices.\n\n    \n\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "query": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "db_opts": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "db_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "db"
+                  ]
+                },
+                "database": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "histdb": {
+                  "type": "string"
+                },
+                "subject": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "db_opts_selector"
+              ],
+              "properties": {
+                "db_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "histdb"
+                  ]
+                },
+                "database": {
+                  "type": "string"
+                },
+                "histdb": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "subject": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "db_opts_selector"
+              ],
+              "properties": {
+                "db_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "file"
+                  ]
+                },
+                "database": {
+                  "type": "string"
+                },
+                "histdb": {
+                  "type": "string"
+                },
+                "subject": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "blast_type": {
+          "type": "string",
+          "enum": [
+            "megablast",
+            "blastn",
+            "blastn-short",
+            "dc-megablast"
+          ]
+        },
+        "evalue_cutoff": {
+          "type": "number",
+          "description": "a finite number",
+          "title": "finite"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "out_format"
+              ],
+              "properties": {
+                "out_format": {
+                  "type": "string",
+                  "enum": [
+                    "6"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "out_format": {
+                  "type": "string",
+                  "enum": [
+                    "ext"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "out_format"
+              ],
+              "properties": {
+                "out_format": {
+                  "type": "string",
+                  "enum": [
+                    "cols"
+                  ]
+                },
+                "std_cols": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "qseqid",
+                          "sseqid",
+                          "pident",
+                          "length",
+                          "mismatch",
+                          "gapopen",
+                          "qstart",
+                          "qend",
+                          "sstart",
+                          "send",
+                          "evalue",
+                          "bitscore"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "ext_cols": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "sallseqid",
+                          "score",
+                          "nident",
+                          "positive",
+                          "gaps",
+                          "ppos",
+                          "qframe",
+                          "sframe",
+                          "qseq",
+                          "sseq",
+                          "qlen",
+                          "slen",
+                          "salltitles"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "ids_cols": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "qgi",
+                          "qacc",
+                          "qaccver",
+                          "sallseqid",
+                          "sgi",
+                          "sallgi",
+                          "sacc",
+                          "saccver",
+                          "sallacc",
+                          "stitle"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "misc_cols": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "sstrand",
+                          "frames",
+                          "btop",
+                          "qcovs",
+                          "qcovhsp"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "tax_cols": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "staxids",
+                          "sscinames",
+                          "scomnames",
+                          "sblastnames",
+                          "sskingdoms"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "out_format"
+              ],
+              "properties": {
+                "out_format": {
+                  "type": "string",
+                  "enum": [
+                    "5"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "out_format"
+              ],
+              "properties": {
+                "out_format": {
+                  "type": "string",
+                  "enum": [
+                    "0"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "out_format"
+              ],
+              "properties": {
+                "out_format": {
+                  "type": "string",
+                  "enum": [
+                    "0 -html"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "out_format"
+              ],
+              "properties": {
+                "out_format": {
+                  "type": "string",
+                  "enum": [
+                    "2"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "out_format"
+              ],
+              "properties": {
+                "out_format": {
+                  "type": "string",
+                  "enum": [
+                    "2 -html"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "out_format"
+              ],
+              "properties": {
+                "out_format": {
+                  "type": "string",
+                  "enum": [
+                    "4"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "out_format"
+              ],
+              "properties": {
+                "out_format": {
+                  "type": "string",
+                  "enum": [
+                    "4 -html"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "adv_opts": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "adv_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "basic"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "adv_opts_selector"
+              ],
+              "properties": {
+                "adv_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "advanced"
+                  ]
+                },
+                "filter_query": {
+                  "type": "boolean"
+                },
+                "strand": {
+                  "type": "string",
+                  "enum": [
+                    "-strand both",
+                    "-strand plus",
+                    "-strand minus"
+                  ]
+                },
+                "max_hits": {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                "max_hsps": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number greater than or equal to 1",
+                      "title": "greaterThanOrEqualTo(1)",
+                      "minimum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "identity_cutoff": {
+                  "type": "number",
+                  "description": "a number less than or equal to 100",
+                  "title": "lessThanOrEqualTo(100)",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "word_size": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number greater than or equal to 4",
+                      "title": "greaterThanOrEqualTo(4)",
+                      "minimum": 4
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "ungapped": {
+                  "type": "boolean"
+                },
+                "parse_deflines": {
+                  "type": "boolean"
+                },
+                "adv_optional_id_files_opts": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [],
+                      "properties": {
+                        "adv_optional_id_files_opts_selector": {
+                          "type": "string",
+                          "enum": [
+                            "none"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "adv_optional_id_files_opts_selector"
+                      ],
+                      "properties": {
+                        "adv_optional_id_files_opts_selector": {
+                          "type": "string",
+                          "enum": [
+                            "gilist"
+                          ]
+                        },
+                        "gilist": {
+                          "$id": "/schemas/never",
+                          "not": {},
+                          "title": "never"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "adv_optional_id_files_opts_selector"
+                      ],
+                      "properties": {
+                        "adv_optional_id_files_opts_selector": {
+                          "type": "string",
+                          "enum": [
+                            "negative_gilist"
+                          ]
+                        },
+                        "negative_gilist": {
+                          "$id": "/schemas/never",
+                          "not": {},
+                          "title": "never"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "adv_optional_id_files_opts_selector"
+                      ],
+                      "properties": {
+                        "adv_optional_id_files_opts_selector": {
+                          "type": "string",
+                          "enum": [
+                            "seqidlist"
+                          ]
+                        },
+                        "seqidlist": {
+                          "$id": "/schemas/never",
+                          "not": {},
+                          "title": "never"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "adv_optional_id_files_opts_selector"
+                      ],
+                      "properties": {
+                        "adv_optional_id_files_opts_selector": {
+                          "type": "string",
+                          "enum": [
+                            "taxidlist"
+                          ]
+                        },
+                        "taxidlist": {
+                          "$id": "/schemas/never",
+                          "not": {},
+                          "title": "never"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "adv_optional_id_files_opts_selector"
+                      ],
+                      "properties": {
+                        "adv_optional_id_files_opts_selector": {
+                          "type": "string",
+                          "enum": [
+                            "negative_taxidlist"
+                          ]
+                        },
+                        "negative_taxidlist": {
+                          "$id": "/schemas/never",
+                          "not": {},
+                          "title": "never"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "qcov_hsp_perc": {
+                  "type": "number",
+                  "description": "a number less than or equal to 100",
+                  "title": "lessThanOrEqualTo(100)",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "window_size": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "gapopen": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "gapextend": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number greater than or equal to 1",
+                      "title": "greaterThanOrEqualTo(1)",
+                      "minimum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "query"
+      ],
+      "properties": {
+        "query": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "db_opts": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "db_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "db"
+                      ]
+                    },
+                    "database": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "__class__"
+                                ],
+                                "properties": {
+                                  "__class__": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ConnectedValue"
+                                    ]
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "histdb": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "subject": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "db_opts_selector",
+                    "histdb"
+                  ],
+                  "properties": {
+                    "db_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "histdb"
+                      ]
+                    },
+                    "database": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "histdb": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "subject": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "db_opts_selector",
+                    "subject"
+                  ],
+                  "properties": {
+                    "db_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "file"
+                      ]
+                    },
+                    "database": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "histdb": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "subject": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "blast_type": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "megablast",
+                "blastn",
+                "blastn-short",
+                "dc-megablast"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "evalue_cutoff": {
+          "anyOf": [
+            {
+              "type": "number",
+              "description": "a finite number",
+              "title": "finite"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "output": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "out_format"
+                  ],
+                  "properties": {
+                    "out_format": {
+                      "type": "string",
+                      "enum": [
+                        "6"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "out_format": {
+                      "type": "string",
+                      "enum": [
+                        "ext"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "out_format"
+                  ],
+                  "properties": {
+                    "out_format": {
+                      "type": "string",
+                      "enum": [
+                        "cols"
+                      ]
+                    },
+                    "std_cols": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "qseqid",
+                                  "sseqid",
+                                  "pident",
+                                  "length",
+                                  "mismatch",
+                                  "gapopen",
+                                  "qstart",
+                                  "qend",
+                                  "sstart",
+                                  "send",
+                                  "evalue",
+                                  "bitscore"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "__class__"
+                                ],
+                                "properties": {
+                                  "__class__": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ConnectedValue"
+                                    ]
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "ext_cols": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "sallseqid",
+                                  "score",
+                                  "nident",
+                                  "positive",
+                                  "gaps",
+                                  "ppos",
+                                  "qframe",
+                                  "sframe",
+                                  "qseq",
+                                  "sseq",
+                                  "qlen",
+                                  "slen",
+                                  "salltitles"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "__class__"
+                                ],
+                                "properties": {
+                                  "__class__": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ConnectedValue"
+                                    ]
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "ids_cols": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "qgi",
+                                  "qacc",
+                                  "qaccver",
+                                  "sallseqid",
+                                  "sgi",
+                                  "sallgi",
+                                  "sacc",
+                                  "saccver",
+                                  "sallacc",
+                                  "stitle"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "__class__"
+                                ],
+                                "properties": {
+                                  "__class__": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ConnectedValue"
+                                    ]
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "misc_cols": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "sstrand",
+                                  "frames",
+                                  "btop",
+                                  "qcovs",
+                                  "qcovhsp"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "__class__"
+                                ],
+                                "properties": {
+                                  "__class__": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ConnectedValue"
+                                    ]
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "tax_cols": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "staxids",
+                                  "sscinames",
+                                  "scomnames",
+                                  "sblastnames",
+                                  "sskingdoms"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "__class__"
+                                ],
+                                "properties": {
+                                  "__class__": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ConnectedValue"
+                                    ]
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "out_format"
+                  ],
+                  "properties": {
+                    "out_format": {
+                      "type": "string",
+                      "enum": [
+                        "5"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "out_format"
+                  ],
+                  "properties": {
+                    "out_format": {
+                      "type": "string",
+                      "enum": [
+                        "0"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "out_format"
+                  ],
+                  "properties": {
+                    "out_format": {
+                      "type": "string",
+                      "enum": [
+                        "0 -html"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "out_format"
+                  ],
+                  "properties": {
+                    "out_format": {
+                      "type": "string",
+                      "enum": [
+                        "2"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "out_format"
+                  ],
+                  "properties": {
+                    "out_format": {
+                      "type": "string",
+                      "enum": [
+                        "2 -html"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "out_format"
+                  ],
+                  "properties": {
+                    "out_format": {
+                      "type": "string",
+                      "enum": [
+                        "4"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "out_format"
+                  ],
+                  "properties": {
+                    "out_format": {
+                      "type": "string",
+                      "enum": [
+                        "4 -html"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "adv_opts": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "adv_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "basic"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "adv_opts_selector"
+                  ],
+                  "properties": {
+                    "adv_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "advanced"
+                      ]
+                    },
+                    "filter_query": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "strand": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "-strand both",
+                            "-strand plus",
+                            "-strand minus"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "max_hits": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "max_hsps": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int",
+                              "description": "a number greater than or equal to 1",
+                              "title": "greaterThanOrEqualTo(1)",
+                              "minimum": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "identity_cutoff": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a number less than or equal to 100",
+                          "title": "lessThanOrEqualTo(100)",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "word_size": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int",
+                              "description": "a number greater than or equal to 4",
+                              "title": "greaterThanOrEqualTo(4)",
+                              "minimum": 4
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "ungapped": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "parse_deflines": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "adv_optional_id_files_opts": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [],
+                              "properties": {
+                                "adv_optional_id_files_opts_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "none"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "adv_optional_id_files_opts_selector",
+                                "gilist"
+                              ],
+                              "properties": {
+                                "adv_optional_id_files_opts_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "gilist"
+                                  ]
+                                },
+                                "gilist": {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "adv_optional_id_files_opts_selector",
+                                "negative_gilist"
+                              ],
+                              "properties": {
+                                "adv_optional_id_files_opts_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "negative_gilist"
+                                  ]
+                                },
+                                "negative_gilist": {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "adv_optional_id_files_opts_selector",
+                                "seqidlist"
+                              ],
+                              "properties": {
+                                "adv_optional_id_files_opts_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "seqidlist"
+                                  ]
+                                },
+                                "seqidlist": {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "adv_optional_id_files_opts_selector",
+                                "taxidlist"
+                              ],
+                              "properties": {
+                                "adv_optional_id_files_opts_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "taxidlist"
+                                  ]
+                                },
+                                "taxidlist": {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "adv_optional_id_files_opts_selector",
+                                "negative_taxidlist"
+                              ],
+                              "properties": {
+                                "adv_optional_id_files_opts_selector": {
+                                  "type": "string",
+                                  "enum": [
+                                    "negative_taxidlist"
+                                  ]
+                                },
+                                "negative_taxidlist": {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "qcov_hsp_perc": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a number less than or equal to 100",
+                          "title": "lessThanOrEqualTo(100)",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "window_size": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int",
+                              "description": "a non-negative number",
+                              "title": "greaterThanOrEqualTo(0)",
+                              "minimum": 0
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "gapopen": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int",
+                              "description": "a non-negative number",
+                              "title": "greaterThanOrEqualTo(0)",
+                              "minimum": 0
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "gapextend": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int",
+                              "description": "a number greater than or equal to 1",
+                              "title": "greaterThanOrEqualTo(1)",
+                              "minimum": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

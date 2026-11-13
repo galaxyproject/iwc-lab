@@ -1,0 +1,667 @@
+{
+  "schema_version": 1,
+  "tool_id": "__MERGE_COLLECTION__",
+  "tool_version": "1.0.0",
+  "cache_key": "cd92f1ad2bc27c406d3477a703e6bdfe0691303ffd1bb30eef43d514da7ef3b9",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/__MERGE_COLLECTION__/versions/1.0.0",
+    "cached_at": "2026-11-10T03:49:03.440Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/cd92f1ad2bc27c406d3477a703e6bdfe0691303ffd1bb30eef43d514da7ef3b9.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "__MERGE_COLLECTION__",
+    "version": "1.0.0",
+    "name": "Merge collections",
+    "description": "into a single collection",
+    "inputs": [
+      {
+        "name": "inputs",
+        "parameter_type": "gx_repeat",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "repeat",
+        "parameters": [
+          {
+            "name": "input",
+            "parameter_type": "gx_data_collection",
+            "hidden": false,
+            "label": "Input Collection",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "data_collection",
+            "collection_type": null,
+            "extensions": [
+              "data"
+            ],
+            "value": null
+          }
+        ],
+        "min": 2,
+        "max": null
+      },
+      {
+        "name": "advanced",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "conflict",
+            "parameter_type": "gx_conditional",
+            "hidden": false,
+            "label": null,
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "conditional",
+            "test_parameter": {
+              "name": "duplicate_options",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "How should conflicts (or potential conflicts) be handled?",
+              "help": "Collection elements must have unique element identifiers, when appending how should unique identifiers be assured. See Help section below for examples.",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "Append suffix to conflicted element identifiers",
+                  "value": "suffix_conflict",
+                  "selected": false
+                },
+                {
+                  "label": "Append suffix to conflicted element identifiers after first one encountered",
+                  "value": "suffix_conflict_rest",
+                  "selected": false
+                },
+                {
+                  "label": "Append suffix to every element identifier",
+                  "value": "suffix_every",
+                  "selected": false
+                },
+                {
+                  "label": "Keep first instance",
+                  "value": "keep_first",
+                  "selected": true
+                },
+                {
+                  "label": "Keep last instance",
+                  "value": "keep_last",
+                  "selected": false
+                },
+                {
+                  "label": "Fail collection creation",
+                  "value": "fail",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            "whens": [
+              {
+                "discriminator": "suffix_conflict",
+                "parameters": [
+                  {
+                    "name": "suffix_pattern",
+                    "parameter_type": "gx_text",
+                    "hidden": false,
+                    "label": "Use the following suffix pattern:",
+                    "help": "Describe the suffix pattern to use when joining element name and data copy number. For instance, the default is '_#', which will produce _1 as the first suffix used.",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": true,
+                    "type": "text",
+                    "area": false,
+                    "value": null,
+                    "default_options": [],
+                    "validators": []
+                  }
+                ],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "suffix_conflict_rest",
+                "parameters": [
+                  {
+                    "name": "suffix_pattern",
+                    "parameter_type": "gx_text",
+                    "hidden": false,
+                    "label": "Use the following suffix pattern:",
+                    "help": "Describe the suffix pattern to use when joining element name and data copy number. For instance, the default is '_#', which will produce _1 as the first suffix used.",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": true,
+                    "type": "text",
+                    "area": false,
+                    "value": null,
+                    "default_options": [],
+                    "validators": []
+                  }
+                ],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "suffix_every",
+                "parameters": [
+                  {
+                    "name": "suffix_pattern",
+                    "parameter_type": "gx_text",
+                    "hidden": false,
+                    "label": "Use the following suffix pattern:",
+                    "help": "Describe the suffix pattern to use when joining element name and data copy number. For instance, the default is '_#', which will produce _1 as the first suffix used.",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": true,
+                    "type": "text",
+                    "area": false,
+                    "value": null,
+                    "default_options": [],
+                    "validators": []
+                  }
+                ],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "keep_first",
+                "parameters": [],
+                "is_default_when": true
+              },
+              {
+                "discriminator": "keep_last",
+                "parameters": [],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "fail",
+                "parameters": [],
+                "is_default_when": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output",
+        "label": "${on_string} (merged)",
+        "hidden": false,
+        "type": "collection",
+        "collection_type": null,
+        "collection_type_source": "inputs_0|input",
+        "collection_type_from_rules": null,
+        "structured_like": null,
+        "discover_datasets": []
+      }
+    ],
+    "citations": [],
+    "license": null,
+    "profile": "16.01",
+    "edam_operations": [
+      "operation_2409"
+    ],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n========\nSynopsis\n========\n\nConcatenates two or more collections into a single collection.\n\n===========\nDescription\n===========\n\nThis tool takes two or more collections and combines their elements into one output collection. The elements from the first collection appear first, followed by the elements from the second, and so on.\n\nWhen the input collections contain elements with the same identifier (name), the tool must decide how to handle the duplicates. The default behavior (``keep first``) retains only the first occurrence and silently drops later duplicates. You can change this under **Advanced Options**.\n\n========\nExamples\n========\n\n**Basic merge (no duplicates)**\n\nTwo collections with unique identifiers::\n\n Collection 1:  sampleA, sampleB\n Collection 2:  sampleC, sampleD\n\nOutput::\n\n Merged:  sampleA, sampleB, sampleC, sampleD\n\n-------\n\n.. image:: ${static_path}/images/tools/collection_ops/merge.svg\n  :alt: Merge two collections into one\n  :width: 620\n\n-------\n\n==================================\nHandling duplicate identifiers\n==================================\n\nWhen two collections share element identifiers, the **Advanced Options** control what happens. All examples below use::\n\n Collection 1: [Dataset A]\n               [Dataset B]\n               [Dataset X]\n Collection 2: [Dataset A]\n               [Dataset B]\n               [Dataset Y]\n\n**Keep first instance** (default)\n\nDuplicates are silently dropped — only the copy from the first collection is kept::\n\n Merged: [Dataset A]  [Dataset B]  [Dataset X]  [Dataset Y]\n\n-------\n\n**Keep last instance**\n\nThe opposite — the copy from the last collection wins::\n\n Merged: [Dataset A]  [Dataset B]  [Dataset X]  [Dataset Y]\n\n-------\n\n**Append suffix to conflicted element identifiers**\n\nAll copies of a duplicated name get a numbered suffix (``_1``, ``_2``, …). Unique names are left unchanged::\n\n Merged: [Dataset A_1]  [Dataset B_1]  [Dataset X]\n         [Dataset A_2]  [Dataset B_2]  [Dataset Y]\n\n-------\n\n**Append suffix to conflicted identifiers after first one encountered**\n\nThe first copy keeps its original name; later copies get a suffix::\n\n Merged: [Dataset A]  [Dataset B]  [Dataset X]\n         [Dataset A_2]  [Dataset B_2]  [Dataset Y]\n\n-------\n\n**Append suffix to every element identifier**\n\nEvery element — even unique ones — gets a suffix indicating which input collection it came from::\n\n Merged: [Dataset A_1]  [Dataset B_1]  [Dataset X_1]\n         [Dataset A_2]  [Dataset B_2]  [Dataset Y_2]\n\n-------\n\n**Fail collection creation**\n\nThe tool raises an error if any duplicate identifiers are found.\n\n-------\n\n.. class:: infomark\n\nThis tool will create new history datasets copied from your input collections but your quota usage will not increase.\n\n  "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [],
+            "properties": {
+              "input": {
+                "$id": "/schemas/never",
+                "not": {},
+                "title": "never"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "advanced": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "conflict": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "duplicate_options"
+                  ],
+                  "properties": {
+                    "duplicate_options": {
+                      "type": "string",
+                      "enum": [
+                        "suffix_conflict"
+                      ]
+                    },
+                    "suffix_pattern": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "duplicate_options"
+                  ],
+                  "properties": {
+                    "duplicate_options": {
+                      "type": "string",
+                      "enum": [
+                        "suffix_conflict_rest"
+                      ]
+                    },
+                    "suffix_pattern": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "duplicate_options"
+                  ],
+                  "properties": {
+                    "duplicate_options": {
+                      "type": "string",
+                      "enum": [
+                        "suffix_every"
+                      ]
+                    },
+                    "suffix_pattern": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "duplicate_options": {
+                      "type": "string",
+                      "enum": [
+                        "keep_first"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "duplicate_options"
+                  ],
+                  "properties": {
+                    "duplicate_options": {
+                      "type": "string",
+                      "enum": [
+                        "keep_last"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "duplicate_options"
+                  ],
+                  "properties": {
+                    "duplicate_options": {
+                      "type": "string",
+                      "enum": [
+                        "fail"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [
+        "inputs"
+      ],
+      "properties": {
+        "inputs": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "input"
+                ],
+                "properties": {
+                  "input": {
+                    "type": "object",
+                    "required": [
+                      "__class__"
+                    ],
+                    "properties": {
+                      "__class__": {
+                        "type": "string",
+                        "enum": [
+                          "ConnectedValue"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              },
+              "description": "an array of at least 2 item(s)",
+              "title": "minItems(2)",
+              "minItems": 2
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "advanced": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "conflict": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "duplicate_options"
+                          ],
+                          "properties": {
+                            "duplicate_options": {
+                              "type": "string",
+                              "enum": [
+                                "suffix_conflict"
+                              ]
+                            },
+                            "suffix_pattern": {
+                              "anyOf": [
+                                {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "duplicate_options"
+                          ],
+                          "properties": {
+                            "duplicate_options": {
+                              "type": "string",
+                              "enum": [
+                                "suffix_conflict_rest"
+                              ]
+                            },
+                            "suffix_pattern": {
+                              "anyOf": [
+                                {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "duplicate_options"
+                          ],
+                          "properties": {
+                            "duplicate_options": {
+                              "type": "string",
+                              "enum": [
+                                "suffix_every"
+                              ]
+                            },
+                            "suffix_pattern": {
+                              "anyOf": [
+                                {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "duplicate_options": {
+                              "type": "string",
+                              "enum": [
+                                "keep_first"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "duplicate_options"
+                          ],
+                          "properties": {
+                            "duplicate_options": {
+                              "type": "string",
+                              "enum": [
+                                "keep_last"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "duplicate_options"
+                          ],
+                          "properties": {
+                            "duplicate_options": {
+                              "type": "string",
+                              "enum": [
+                                "fail"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

@@ -1,0 +1,411 @@
+class: GalaxyWorkflow
+label: dada2 amplicon analysis pipeline - for paired end data
+doc: Relevant subgraph of IWC amplicon/dada2/dada2_paired (iwc @9f111cb), converted with gxwf convert --to format2 --compact; assignTaxonomy (cached
+  data-table reference) removed.
+inputs:
+- id: Paired input data
+  type: collection
+  collection_type: list:paired
+  optional: false
+  fields: null
+  column_definitions: null
+  doc: Paired input data
+- id: Read length forward read
+  type: int
+  optional: true
+  doc: Forward reads will be truncated to this length. Empty means no truncation.
+- id: Read length reverse read
+  type: int
+  optional: true
+  doc: Reverse reads will be truncated to this length. Empty means no truncation.
+- id: Pool samples
+  type: string
+  optional: false
+  restrictOnConnections: true
+  doc: Pooling may increase sensitivity
+outputs:
+- id: Sequence Table
+  outputSource: _unlabeled_step_16/stable_sequencetable
+- id: Counts
+  outputSource: _unlabeled_step_17/counts
+steps:
+- id: Sort samples
+  label: Sort samples
+  tool_id: __APPLY_RULES__
+  tool_version: 1.1.0
+  in:
+  - id: input
+    source: Paired input data
+  out: []
+  tool_state:
+    input:
+      __class__: ConnectedValue
+    rules:
+      mapping:
+      - columns:
+        - 0
+        type: list_identifiers
+      - columns:
+        - 1
+        type: paired_identifier
+      rules:
+      - type: add_column_metadata
+        value: identifier0
+      - type: add_column_metadata
+        value: identifier1
+      - numeric: false
+        target_column: 0
+        type: sort
+- id: QualityProfile before filterAndTrim
+  label: QualityProfile before filterAndTrim
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/dada2_plotqualityprofile/dada2_plotQualityProfile/1.38.0+galaxy1
+  tool_version: 1.38.0+galaxy1
+  tool_shed_repository:
+    changeset_revision: 51971db051ba
+    name: dada2_plotqualityprofile
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: batch_cond|paired_cond|reads
+    source: Sort samples
+  out: []
+  tool_state:
+    batch_cond:
+      batch_select: joint
+      __current_case__: 0
+      paired_cond:
+        paired_select: paired
+        __current_case__: 0
+        reads:
+          __class__: ConnectedValue
+      aggregate: true
+    n: '10000000'
+- id: _unlabeled_step_7
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/dada2_filterandtrim/dada2_filterAndTrim/1.38.0+galaxy1
+  tool_version: 1.38.0+galaxy1
+  tool_shed_repository:
+    changeset_revision: 6be249bfd55b
+    name: dada2_filterandtrim
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: paired_cond|reads
+    source: Sort samples
+  - id: seprev_cond|trim|truncLen
+    source: Read length reverse read
+  - id: trim|truncLen
+    source: Read length forward read
+  out: []
+  tool_state:
+    filter:
+      maxLen: null
+      minLen: '20'
+      maxN: '0'
+      minQ: '0'
+      maxEE: '2'
+    orientFwd: ''
+    output_statistics: true
+    paired_cond:
+      paired_select: paired
+      __current_case__: 0
+      reads:
+        __class__: ConnectedValue
+    rmPhiX: true
+    rmlowcomplex: '0'
+    seprev_cond:
+      seprev_select: 'yes'
+      __current_case__: 1
+      trim:
+        truncQ: '2'
+        trimLeft: '0'
+        trimRight: '0'
+        truncLen:
+          __class__: ConnectedValue
+      filter:
+        maxLen: null
+        minLen: '20'
+        maxN: '0'
+        minQ: '0'
+        maxEE: '2'
+    trim:
+      truncQ: '2'
+      trimLeft: '0'
+      trimRight: '0'
+      truncLen:
+        __class__: ConnectedValue
+- id: QualityProfile after filterAndTrim
+  label: QualityProfile after filterAndTrim
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/dada2_plotqualityprofile/dada2_plotQualityProfile/1.38.0+galaxy1
+  tool_version: 1.38.0+galaxy1
+  tool_shed_repository:
+    changeset_revision: 51971db051ba
+    name: dada2_plotqualityprofile
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: batch_cond|paired_cond|reads
+    source: _unlabeled_step_7/paired_output
+  out: []
+  tool_state:
+    batch_cond:
+      batch_select: joint
+      __current_case__: 0
+      paired_cond:
+        paired_select: paired
+        __current_case__: 0
+        reads:
+          __class__: ConnectedValue
+      aggregate: true
+    n: '1000000'
+- id: _unlabeled_step_9
+  tool_id: __UNZIP_COLLECTION__
+  tool_version: 1.0.0
+  in:
+  - id: input
+    source: _unlabeled_step_7/paired_output
+  out:
+  - id: forward
+    add_tags:
+    - '#forward'
+  - id: reverse
+    add_tags:
+    - '#reverse'
+  tool_state:
+    input:
+      __class__: ConnectedValue
+- id: _unlabeled_step_10
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/dada2_learnerrors/dada2_learnErrors/1.38.0+galaxy1
+  tool_version: 1.38.0+galaxy1
+  tool_shed_repository:
+    changeset_revision: 4bba91a89457
+    name: dada2_learnerrors
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: fls
+    source: _unlabeled_step_9/forward
+  out: []
+  tool_state:
+    advanced:
+      errfoo: loessErrfun
+      quality_bins: ''
+      randomize: false
+      maxconsist: '10'
+      omegac: '0.0'
+    fls:
+      __class__: ConnectedValue
+    nbases: '8'
+    plotopt:
+      obs: true
+      err_out: true
+      err_in: false
+      nominalQ: true
+- id: _unlabeled_step_11
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/dada2_learnerrors/dada2_learnErrors/1.38.0+galaxy1
+  tool_version: 1.38.0+galaxy1
+  tool_shed_repository:
+    changeset_revision: 4bba91a89457
+    name: dada2_learnerrors
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: fls
+    source: _unlabeled_step_9/reverse
+  out: []
+  tool_state:
+    advanced:
+      errfoo: loessErrfun
+      quality_bins: ''
+      randomize: false
+      maxconsist: '10'
+      omegac: '0.0'
+    fls:
+      __class__: ConnectedValue
+    nbases: '8'
+    plotopt:
+      obs: true
+      err_out: true
+      err_in: false
+      nominalQ: true
+- id: _unlabeled_step_12
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/dada2_dada/dada2_dada/1.38.0+galaxy1
+  tool_version: 1.38.0+galaxy1
+  tool_shed_repository:
+    changeset_revision: b762f4d54f78
+    name: dada2_dada
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: batch_cond|derep
+    source: _unlabeled_step_9/forward
+  - id: batch_cond|pool
+    source: Pool samples
+  - id: err
+    source: _unlabeled_step_10/errors
+  out: []
+  tool_state:
+    advanced:
+      enable: 'no'
+      __current_case__: 1
+    batch_cond:
+      batch_select: 'no'
+      __current_case__: 1
+      derep:
+        __class__: ConnectedValue
+      pool:
+        __class__: ConnectedValue
+    err:
+      __class__: ConnectedValue
+- id: _unlabeled_step_13
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/dada2_dada/dada2_dada/1.38.0+galaxy1
+  tool_version: 1.38.0+galaxy1
+  tool_shed_repository:
+    changeset_revision: b762f4d54f78
+    name: dada2_dada
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: batch_cond|derep
+    source: _unlabeled_step_9/reverse
+  - id: batch_cond|pool
+    source: Pool samples
+  - id: err
+    source: _unlabeled_step_11/errors
+  out: []
+  tool_state:
+    advanced:
+      enable: 'no'
+      __current_case__: 1
+    batch_cond:
+      batch_select: 'no'
+      __current_case__: 1
+      derep:
+        __class__: ConnectedValue
+      pool:
+        __class__: ConnectedValue
+    err:
+      __class__: ConnectedValue
+- id: _unlabeled_step_14
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/dada2_mergepairs/dada2_mergePairs/1.38.0+galaxy1
+  tool_version: 1.38.0+galaxy1
+  tool_shed_repository:
+    changeset_revision: a35c40af067f
+    name: dada2_mergepairs
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: dadaF
+    source: _unlabeled_step_12/data_collection
+  - id: dadaR
+    source: _unlabeled_step_13/data_collection
+  - id: derepF
+    source: _unlabeled_step_9/forward
+  - id: derepR
+    source: _unlabeled_step_9/reverse
+  out: []
+  tool_state:
+    dadaF:
+      __class__: ConnectedValue
+    dadaF|__identifier__: pool.feces.fastq
+    dadaR:
+      __class__: ConnectedValue
+    dadaR|__identifier__: pool.feces.fastq
+    derepF:
+      __class__: ConnectedValue
+    derepF|__identifier__: pool.feces.fastq
+    derepR:
+      __class__: ConnectedValue
+    derepR|__identifier__: pool.feces.fastq
+    justConcatenate: false
+    maxMismatch: '0'
+    minOverlap: '12'
+    output_details: false
+    trimOverhang: false
+- id: _unlabeled_step_15
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/dada2_makesequencetable/dada2_makeSequenceTable/1.38.0+galaxy1
+  tool_version: 1.38.0+galaxy1
+  tool_shed_repository:
+    changeset_revision: aab8af79110e
+    name: dada2_makesequencetable
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: samples
+    source: _unlabeled_step_14/merged
+  out: []
+  tool_state:
+    filter_cond:
+      filter_select: 'no'
+      __current_case__: 0
+    orderBy: abundance
+    plot: true
+    samples:
+      __class__: ConnectedValue
+- id: _unlabeled_step_16
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/dada2_removebimeradenovo/dada2_removeBimeraDenovo/1.38.0+galaxy1
+  tool_version: 1.38.0+galaxy1
+  tool_shed_repository:
+    changeset_revision: 0a13d449d1bf
+    name: dada2_removebimeradenovo
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: unqs
+    source: _unlabeled_step_15/stable
+  out: []
+  tool_state:
+    method: consensus
+    unqs:
+      __class__: ConnectedValue
+- id: _unlabeled_step_17
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/dada2_seqcounts/dada2_seqCounts/1.38.0+galaxy1
+  tool_version: 1.38.0+galaxy1
+  tool_shed_repository:
+    changeset_revision: 256e7a119a95
+    name: dada2_seqcounts
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: inrep_0|input
+    source: _unlabeled_step_7/outtab
+  - id: inrep_1|input
+    source: _unlabeled_step_12/data_collection
+  - id: inrep_2|input
+    source: _unlabeled_step_13/data_collection
+  - id: inrep_3|input
+    source: _unlabeled_step_14/merged
+  - id: inrep_4|input
+    source: _unlabeled_step_15/stable
+  - id: inrep_5|input
+    source: _unlabeled_step_16/stable_sequencetable
+  out: []
+  tool_state:
+    inrep:
+    - __index__: 0
+      input:
+        __class__: ConnectedValue
+      name: FiltTrim
+    - __index__: 1
+      input:
+        __class__: ConnectedValue
+      name: Dada Fwd
+    - __index__: 2
+      input:
+        __class__: ConnectedValue
+      name: Dada Rev
+    - __index__: 3
+      input:
+        __class__: ConnectedValue
+      name: MakePairs
+    - __index__: 4
+      input:
+        __class__: ConnectedValue
+      name: SeqTab
+    - __index__: 5
+      input:
+        __class__: ConnectedValue
+      name: Bimera
+tags:
+- name:amplicon
+license: MIT
+release: '0.4'

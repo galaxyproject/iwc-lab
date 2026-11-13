@@ -1,0 +1,4084 @@
+{
+  "schema_version": 1,
+  "tool_id": "adapter_removal",
+  "tool_version": "3.0.2+galaxy0",
+  "cache_key": "56d8e577623f848f159a9f009aa22f986547c39010250cc64c9830c0ffb43100",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~adapter_removal~adapter_removal/versions/3.0.2+galaxy0",
+    "cached_at": "2026-11-10T03:48:33.170Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/56d8e577623f848f159a9f009aa22f986547c39010250cc64c9830c0ffb43100.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "adapter_removal",
+    "version": "3.0.2+galaxy0",
+    "name": "AdapterRemoval: remove adapter sequences",
+    "description": "from HTS data",
+    "inputs": [
+      {
+        "name": "input_type_cond",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "input_type",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Choose the category of the reads files to be analyzed",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Single dataset containing reads",
+              "value": "single",
+              "selected": true
+            },
+            {
+              "label": "Pair of forward and reverse reads in separate datasets",
+              "value": "pair",
+              "selected": false
+            },
+            {
+              "label": "Collection of paired reads",
+              "value": "paired",
+              "selected": false
+            },
+            {
+              "label": "Single dataset in which pairs of reads are written one after the other",
+              "value": "interleaved",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "single",
+            "parameters": [
+              {
+                "name": "read1",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Read file",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fastqsanger.gz",
+                  "fastqsanger"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "pair",
+            "parameters": [
+              {
+                "name": "read1",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Forward read file",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fastqsanger.gz",
+                  "fastqsanger"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "read2",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Reverse read file",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fastqsanger.gz",
+                  "fastqsanger"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "interleaved_output",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Write paired-end reads to a single file, interleaving mate 1 and mate 2 reads?",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "No",
+                    "value": "no",
+                    "selected": true
+                  },
+                  {
+                    "label": "Yes",
+                    "value": "yes",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "paired",
+            "parameters": [
+              {
+                "name": "reads_collection",
+                "parameter_type": "gx_data_collection",
+                "hidden": false,
+                "label": "Collection of fastq paired read files",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data_collection",
+                "collection_type": "paired",
+                "extensions": [
+                  "fastqsanger.gz",
+                  "fastqsanger"
+                ],
+                "value": null
+              },
+              {
+                "name": "interleaved_output",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Write paired-end reads to a single file, interleaving mate 1 and mate 2 reads?",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "No",
+                    "value": "no",
+                    "selected": true
+                  },
+                  {
+                    "label": "Yes",
+                    "value": "yes",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "interleaved",
+            "parameters": [
+              {
+                "name": "read1",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Interleaved read file",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fastqsanger.gz",
+                  "fastqsanger"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "interleaved_output",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Write paired-end reads to a single file, interleaving mate 1 and mate 2 reads?",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "No",
+                    "value": "no",
+                    "selected": true
+                  },
+                  {
+                    "label": "Yes",
+                    "value": "yes",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "adapter_cond",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "adapter_selection",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "How should the adapter sequences to trim be selected?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Auto - determine the adapter sequences from the input data",
+              "value": "auto",
+              "selected": true
+            },
+            {
+              "label": "Manual - use the adapter sequences specified below",
+              "value": "manual",
+              "selected": false
+            },
+            {
+              "label": "Undefined - trim based on overlap analysis (paired-end only) and/or 5' barcodes",
+              "value": "undefined",
+              "selected": false
+            },
+            {
+              "label": "None - assume that the data contains no adapter sequences",
+              "value": "none",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "auto",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "manual",
+            "parameters": [
+              {
+                "name": "adapter1",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Adapter sequence expected to be found in mate 1 reads, specified in read direction",
+                "help": "Any 'N' in this sequence is treated as a wildcard",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNATCTCGTATGCCGTCTTCTGCTTG",
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "adapter2",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Adapter sequence expected to be found in mate 2 reads, specified in read direction",
+                "help": "Any 'N' in this sequence is treated as a wildcard",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT",
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "adapter_table",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Tabular file containing adapter sequences",
+                "help": "The first two columns of each line in the file must correspond to values passed to --adapter1 and --adapter2. The best matching adapter pair is selected for each pair of input reads",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "data",
+                "extensions": [
+                  "tabular"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "undefined",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "none",
+            "parameters": [],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "fastq_options",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "mask_degenerate_bases",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Mask degenerate/ambiguous bases (B/D/H/K/M/N/R/S/V/W/Y)",
+            "help": "This option will replace 'N's; if this option is not used, AdapterRemoval will abort upon encountering degenerate bases.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "--mask-degenerate-bases",
+            "falsevalue": ""
+          },
+          {
+            "name": "convert_uracils",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Convert uracils (U) to thymine (T) ",
+            "help": "If this option is not used, AdapterRemoval will abort upon encountering uracils.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "--convert-uracils",
+            "falsevalue": ""
+          }
+        ]
+      },
+      {
+        "name": "alignment_options",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "min_overlap",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimum number of overlapping bases required for an alignment to be considered valid",
+            "help": "Ambiguous nucleotides (N) are not counted. Leave empty to use the AdapterRemoval defaults: 1 in single-end mode and the merge threshold in paired-end mode",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": null,
+            "min": 1,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "mismatch_rate",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Maximum error rate allowed when aligning reads and/or adapters",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "float",
+            "value": 0.1667,
+            "min": 0,
+            "max": 1,
+            "validators": []
+          },
+          {
+            "name": "shift",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Consider alignments where up to this number of nucleotides are missing from the 5' termini",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 2,
+            "min": 0,
+            "max": null,
+            "validators": []
+          }
+        ]
+      },
+      {
+        "name": "fastq_merging_options",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "merge",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Merge overlapping read pairs into a single consensus sequence?",
+            "help": "Paired-end input only; has no effect on single-end data",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "--merge",
+            "falsevalue": ""
+          },
+          {
+            "name": "merge_threshold",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimum number of bases that paired reads must overlap to be merged",
+            "help": "Overlapping bases where one or both bases are ambiguous (N) are not counted",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 11,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "merge_strategy",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Strategy used to recalculate quality scores for merged bases",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "Maximum - use Q=max(Q1,Q2) for matching bases",
+                "value": "maximum",
+                "selected": true
+              },
+              {
+                "label": "Additive - use Q=Q1+Q2 for matching bases",
+                "value": "additive",
+                "selected": false
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          {
+            "name": "merge_quality_max",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Maximum Phred score for recalculated quality scores",
+            "help": "Only applies to the 'additive' merging strategy. Possible values are 0 to 93 for Phred+33 encoded files",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 41,
+            "min": 0,
+            "max": 93,
+            "validators": []
+          }
+        ]
+      },
+      {
+        "name": "fastq_trimming_options",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "pre_trim3p_cond",
+            "parameter_type": "gx_conditional",
+            "hidden": false,
+            "label": null,
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "conditional",
+            "test_parameter": {
+              "name": "trim_param",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Trim the 3' of reads by a fixed amount before trimming adapters and low quality bases?",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "No",
+                  "value": "no",
+                  "selected": true
+                },
+                {
+                  "label": "Yes",
+                  "value": "yes",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            "whens": [
+              {
+                "discriminator": "no",
+                "parameters": [],
+                "is_default_when": true
+              },
+              {
+                "discriminator": "yes",
+                "parameters": [
+                  {
+                    "name": "trim_mate1",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Number of bases to trim from mate 1 reads",
+                    "help": null,
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 0,
+                    "min": 0,
+                    "max": null,
+                    "validators": []
+                  },
+                  {
+                    "name": "trim_mate2",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Number of bases to trim from mate 2 reads",
+                    "help": "Ignored for single-end input",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 0,
+                    "min": 0,
+                    "max": null,
+                    "validators": []
+                  }
+                ],
+                "is_default_when": false
+              }
+            ]
+          },
+          {
+            "name": "post_trim5p_cond",
+            "parameter_type": "gx_conditional",
+            "hidden": false,
+            "label": null,
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "conditional",
+            "test_parameter": {
+              "name": "trim_param",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Trim the 5' of reads by a fixed amount after removing adapters, but before quality based trimming?",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "No",
+                  "value": "no",
+                  "selected": true
+                },
+                {
+                  "label": "Yes",
+                  "value": "yes",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            "whens": [
+              {
+                "discriminator": "no",
+                "parameters": [],
+                "is_default_when": true
+              },
+              {
+                "discriminator": "yes",
+                "parameters": [
+                  {
+                    "name": "trim_mate1",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Number of bases to trim from mate 1 reads",
+                    "help": null,
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 0,
+                    "min": 0,
+                    "max": null,
+                    "validators": []
+                  },
+                  {
+                    "name": "trim_mate2",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Number of bases to trim from mate 2 reads",
+                    "help": "Ignored for single-end input",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 0,
+                    "min": 0,
+                    "max": null,
+                    "validators": []
+                  }
+                ],
+                "is_default_when": false
+              }
+            ]
+          },
+          {
+            "name": "post_trim3p_cond",
+            "parameter_type": "gx_conditional",
+            "hidden": false,
+            "label": null,
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "conditional",
+            "test_parameter": {
+              "name": "trim_param",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Trim the 3' of reads by a fixed amount after removing adapters, but before quality based trimming?",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "No",
+                  "value": "no",
+                  "selected": true
+                },
+                {
+                  "label": "Yes",
+                  "value": "yes",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            "whens": [
+              {
+                "discriminator": "no",
+                "parameters": [],
+                "is_default_when": true
+              },
+              {
+                "discriminator": "yes",
+                "parameters": [
+                  {
+                    "name": "trim_mate1",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Number of bases to trim from mate 1 reads",
+                    "help": null,
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 0,
+                    "min": 0,
+                    "max": null,
+                    "validators": []
+                  },
+                  {
+                    "name": "trim_mate2",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Number of bases to trim from mate 2 reads",
+                    "help": "Ignored for single-end input",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 0,
+                    "min": 0,
+                    "max": null,
+                    "validators": []
+                  }
+                ],
+                "is_default_when": false
+              }
+            ]
+          },
+          {
+            "name": "quality_trimming_cond",
+            "parameter_type": "gx_conditional",
+            "hidden": false,
+            "label": null,
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "conditional",
+            "test_parameter": {
+              "name": "quality_trimming",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Strategy for trimming low quality bases",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "Mott - the modified Mott's algorithm",
+                  "value": "mott",
+                  "selected": true
+                },
+                {
+                  "label": "Window - window based trimming inspired by sickle",
+                  "value": "window",
+                  "selected": false
+                },
+                {
+                  "label": "Per-base - trim individual low quality bases",
+                  "value": "per-base",
+                  "selected": false
+                },
+                {
+                  "label": "None - do not trim low quality bases",
+                  "value": "none",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            "whens": [
+              {
+                "discriminator": "mott",
+                "parameters": [
+                  {
+                    "name": "trim_mott_rate",
+                    "parameter_type": "gx_float",
+                    "hidden": false,
+                    "label": "Inclusive threshold used when trimming low-quality bases with the modified Mott's algorithm",
+                    "help": "A value of zero disables trimming",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "float",
+                    "value": 0.05,
+                    "min": 0,
+                    "max": 1,
+                    "validators": []
+                  }
+                ],
+                "is_default_when": true
+              },
+              {
+                "discriminator": "window",
+                "parameters": [
+                  {
+                    "name": "trim_windows",
+                    "parameter_type": "gx_float",
+                    "hidden": false,
+                    "label": "Initial size of the dynamic trimming window",
+                    "help": "See the Window based quality trimming section of the tool help below",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "float",
+                    "value": 0.1,
+                    "min": 0,
+                    "max": null,
+                    "validators": []
+                  },
+                  {
+                    "name": "trim_min_quality",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Inclusive minimum quality used when trimming low-quality bases",
+                    "help": "Possible values are 0 to 93 for Phred+33 encoded files",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 2,
+                    "min": 0,
+                    "max": 93,
+                    "validators": []
+                  }
+                ],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "per-base",
+                "parameters": [
+                  {
+                    "name": "trim_min_quality",
+                    "parameter_type": "gx_integer",
+                    "hidden": false,
+                    "label": "Inclusive minimum quality used when trimming low-quality bases",
+                    "help": "Possible values are 0 to 93 for Phred+33 encoded files",
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "integer",
+                    "value": 2,
+                    "min": 0,
+                    "max": 93,
+                    "validators": []
+                  }
+                ],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "none",
+                "parameters": [],
+                "is_default_when": false
+              }
+            ]
+          },
+          {
+            "name": "preserve5p",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Preserve bases at the 5' when performing quality based trimming?",
+            "help": "Merged reads will not be quality trimmed when this option is enabled",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "--preserve5p",
+            "falsevalue": ""
+          }
+        ]
+      },
+      {
+        "name": "polyx_options",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "pre_trim_polyx_cond",
+            "parameter_type": "gx_conditional",
+            "hidden": false,
+            "label": null,
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "conditional",
+            "test_parameter": {
+              "name": "mode",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Trim poly-X tails before read alignment and adapter trimming",
+              "help": "Poly-X tails must be at least as long as the poly-X threshold set below to be trimmed",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "Auto - trim poly-G tails on known 2-colour systems",
+                  "value": "auto",
+                  "selected": true
+                },
+                {
+                  "label": "Off - do not trim poly-X tails",
+                  "value": "off",
+                  "selected": false
+                },
+                {
+                  "label": "All - trim A, C, G and T tails",
+                  "value": "all",
+                  "selected": false
+                },
+                {
+                  "label": "Custom - select the nucleotides to trim",
+                  "value": "custom",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            "whens": [
+              {
+                "discriminator": "auto",
+                "parameters": [],
+                "is_default_when": true
+              },
+              {
+                "discriminator": "off",
+                "parameters": [],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "all",
+                "parameters": [],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "custom",
+                "parameters": [
+                  {
+                    "name": "nucleotides",
+                    "parameter_type": "gx_select",
+                    "hidden": false,
+                    "label": "Nucleotides whose tails should be trimmed",
+                    "help": null,
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "select",
+                    "options": [
+                      {
+                        "label": "A",
+                        "value": "A",
+                        "selected": false
+                      },
+                      {
+                        "label": "C",
+                        "value": "C",
+                        "selected": false
+                      },
+                      {
+                        "label": "G",
+                        "value": "G",
+                        "selected": true
+                      },
+                      {
+                        "label": "T",
+                        "value": "T",
+                        "selected": false
+                      }
+                    ],
+                    "multiple": true,
+                    "validators": [
+                      {
+                        "type": "no_options",
+                        "message": "Select at least one nucleotide",
+                        "implicit": false,
+                        "negate": false
+                      }
+                    ]
+                  }
+                ],
+                "is_default_when": false
+              }
+            ]
+          },
+          {
+            "name": "post_trim_polyx_cond",
+            "parameter_type": "gx_conditional",
+            "hidden": false,
+            "label": null,
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "conditional",
+            "test_parameter": {
+              "name": "mode",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Trim poly-X tails after read alignment and adapter trimming, but before quality trimming",
+              "help": "Poly-X tails must be at least as long as the poly-X threshold set below to be trimmed",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "Auto - trim poly-G tails on known 2-colour systems",
+                  "value": "auto",
+                  "selected": false
+                },
+                {
+                  "label": "Off - do not trim poly-X tails",
+                  "value": "off",
+                  "selected": true
+                },
+                {
+                  "label": "All - trim A, C, G and T tails",
+                  "value": "all",
+                  "selected": false
+                },
+                {
+                  "label": "Custom - select the nucleotides to trim",
+                  "value": "custom",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            "whens": [
+              {
+                "discriminator": "auto",
+                "parameters": [],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "off",
+                "parameters": [],
+                "is_default_when": true
+              },
+              {
+                "discriminator": "all",
+                "parameters": [],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "custom",
+                "parameters": [
+                  {
+                    "name": "nucleotides",
+                    "parameter_type": "gx_select",
+                    "hidden": false,
+                    "label": "Nucleotides whose tails should be trimmed",
+                    "help": null,
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": false,
+                    "type": "select",
+                    "options": [
+                      {
+                        "label": "A",
+                        "value": "A",
+                        "selected": false
+                      },
+                      {
+                        "label": "C",
+                        "value": "C",
+                        "selected": false
+                      },
+                      {
+                        "label": "G",
+                        "value": "G",
+                        "selected": true
+                      },
+                      {
+                        "label": "T",
+                        "value": "T",
+                        "selected": false
+                      }
+                    ],
+                    "multiple": true,
+                    "validators": [
+                      {
+                        "type": "no_options",
+                        "message": "Select at least one nucleotide",
+                        "implicit": false,
+                        "negate": false
+                      }
+                    ]
+                  }
+                ],
+                "is_default_when": false
+              }
+            ]
+          },
+          {
+            "name": "trim_polyx_threshold",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimum length of poly-X tails to be trimmed",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 10,
+            "min": 1,
+            "max": null,
+            "validators": []
+          }
+        ]
+      },
+      {
+        "name": "filtering_options",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "max_ns",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Discard reads containing more than this number of ambiguous bases ('N') after trimming",
+            "help": "Leave empty for no maximum. May be combined with the maximum fraction of ambiguous bases below",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": null,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "max_ns_fraction",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Discard reads where more than this fraction of the bases are ambiguous ('N') after trimming",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "float",
+            "value": 0.05,
+            "min": 0,
+            "max": 1,
+            "validators": []
+          },
+          {
+            "name": "min_length",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Reads shorter than this length are discarded following trimming",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 15,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "max_length",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Reads longer than this length are discarded following trimming",
+            "help": "Leave empty for no maximum",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": null,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "min_mean_quality",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Discard reads with a mean Phred quality score below this value following trimming",
+            "help": "Leave empty for no minimum. Possible values are 0 to 93 for Phred+33 encoded files",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": null,
+            "min": 0,
+            "max": 93,
+            "validators": []
+          },
+          {
+            "name": "min_complexity",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Discard reads with a complexity score below this value",
+            "help": "Complexity is measured as the fraction of positions that differ from the previous position. Leave empty for no minimum; a suggested value is 0.3",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "float",
+            "value": null,
+            "min": 0,
+            "max": 1,
+            "validators": []
+          }
+        ]
+      },
+      {
+        "name": "report_only",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Only write a report of the input data, without processing the reads?",
+        "help": "Adapter sequence inference is performed for paired-end data based on overlapping mate reads. No trimmed reads are produced in this mode",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "--report-only",
+        "falsevalue": ""
+      },
+      {
+        "name": "output_select",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Optionally select one or more of the following additional outputs",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "No additional outputs",
+            "value": "none",
+            "selected": true
+          },
+          {
+            "label": "Output file containing paired reads for which the mate has been discarded",
+            "value": "output_singleton",
+            "selected": false
+          },
+          {
+            "label": "Output file containing overlapping mate-pairs which have been merged into a single read (requires read merging to be enabled)",
+            "value": "output_merged",
+            "selected": false
+          },
+          {
+            "label": "Output reads discarded by the filtering options",
+            "value": "output_discarded",
+            "selected": false
+          }
+        ],
+        "multiple": true,
+        "validators": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output_html",
+        "label": "${tool.name} on ${on_string} (HTML report)",
+        "hidden": false,
+        "type": "data",
+        "format": "html",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_json",
+        "label": "${tool.name} on ${on_string} (JSON report)",
+        "hidden": false,
+        "type": "data",
+        "format": "json",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_truncated",
+        "label": "${tool.name} on ${on_string} (truncated)",
+        "hidden": false,
+        "type": "data",
+        "format": "fastqsanger.gz",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_forward_truncated",
+        "label": "${tool.name} on ${on_string} (forward truncated)",
+        "hidden": false,
+        "type": "data",
+        "format": "fastqsanger.gz",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_reverse_truncated",
+        "label": "${tool.name} on ${on_string} (reverse truncated)",
+        "hidden": false,
+        "type": "data",
+        "format": "fastqsanger.gz",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_interleaved_truncated",
+        "label": "${tool.name} on ${on_string} (interleaved truncated)",
+        "hidden": false,
+        "type": "data",
+        "format": "fastqsanger.gz",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_singleton_truncated",
+        "label": "${tool.name} on ${on_string} (singleton truncated)",
+        "hidden": false,
+        "type": "data",
+        "format": "fastqsanger.gz",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_merged",
+        "label": "${tool.name} on ${on_string} (merged)",
+        "hidden": false,
+        "type": "data",
+        "format": "fastqsanger.gz",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_discarded",
+        "label": "${tool.name} on ${on_string} (discarded)",
+        "hidden": false,
+        "type": "data",
+        "format": "fastqsanger.gz",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1186/s13104-016-1900-2"
+      }
+    ],
+    "license": null,
+    "profile": "25.0",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "adapterremoval",
+        "type": "bio.tools"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n**What it does**\n\nSearches for and removes remnant adapter sequences, poly-X tails and low quality bases from high-throughput sequencing (HTS)\ndata. This tool can analyze both single-end and paired-end data and can be used to merge overlapping paired-end reads into\nlonger consensus sequences. Adapter sequences are determined automatically from the input data by default.\n\nThe following outputs, some of which are optional or are only produced under certain scenarios, are produced.\n\n * **HTML report** - Human readable report covering the input data, trimming, merging and filtering statistics.\n * **JSON report** - The same statistics in a machine readable form, suitable for downstream parsing (for example by MultiQC).\n * **truncated** - File containing trimmed single-end reads.\n * **forward truncated** - File containing trimmed mate 1 reads.\n * **reverse truncated** - File containing trimmed mate 2 reads.\n * **interleaved truncated** - File containing trimmed mate 1 and mate 2 reads written one pair after the other.\n * **singleton truncated** - File containing trimmed paired reads for which the mate has been discarded.\n * **merged** - If read merging is enabled, contains overlapping mate-pairs which have been merged into a single read.\n * **discarded** - File containing reads discarded by the filtering options.\n\nTrimmed reads are written as gzip compressed FASTQ (``fastqsanger.gz``).\n\n-----\n\n**Adapter Selection**\n\n * **Auto** - AdapterRemoval attempts to determine the adapter sequences from the input data itself. This is the default and is recommended for most data.\n * **Manual** - The adapter sequences given below are used. For a detailed description of how to provide the appropriate adapter sequences, see the \"Adapters\" section of the online documentation. A tabular file of adapter pairs may be supplied instead, in which case the best aligning adapter pair is selected for each read (pair); the first two columns of each line must correspond to the values passed to --adapter1 and --adapter2, only column one is required in single-end mode, and lines starting with # are ignored.\n * **Undefined** - Adapters are trimmed based on overlap analysis between mates (paired-end data) and/or 5' barcodes.\n * **None** - The data is assumed to contain no adapter sequences.\n\n-----\n\n**Read Alignment Options**\n\n * **Minimum number of overlapping bases required for an alignment to be considered valid** - Reads are only trimmed if the overlap between the read and the adapter is at least this many bases long, not counting ambiguous nucleotides (N). Leaving this empty uses the AdapterRemoval defaults, which are 1 in single-end mode and the merge threshold in paired-end mode.\n * **Maximum error rate allowed when aligning reads and/or adapters** - The allowed fraction of mismatches in the aligned region.\n * **Consider alignments where up to this number of nucleotides are missing from the 5' termini** - To allow for missing bases in the 5' end of the read, the program can let the alignment slip this many bases in the 5' end.\n\n-----\n\n**FASTQ Merging Options**\n\nPaired-end only. When merging is enabled, read pairs overlapping by at least the merge threshold are merged into a single\nconsensus sequence written to the **merged** output. Two strategies are available for recalculating the quality scores of\nmerged bases: **maximum** uses Q=max(Q1,Q2) for matching bases, while **additive** uses Q=Q1+Q2, capped at the maximum\nPhred score. Both strategies use Q=abs(Q1-Q2) for mismatches and pick the highest quality base, unless the qualities are\nidentical, in which case an 'N' is used.\n\n-----\n\n**FASTQ Trimming Options**\n\n * **Fixed trimming** - Reads may be trimmed by a fixed amount at the 3' before adapter trimming, and at the 5' and/or 3' after adapter trimming but before quality based trimming. Specify separate values for mate 1 and mate 2 reads; the mate 2 value is ignored for single-end input. Note that post-trimming of the 5' trims both ends of merged reads, as both ends represent the 5' of a read.\n * **Strategy for trimming low quality bases** - Four strategies are available:\n\n   1. **Mott** - the modified Mott's algorithm, controlled by an error rate threshold. This is the default.\n   2. **Window** - window based trimming inspired by sickle, see below.\n   3. **Per-base** - individual bases below the minimum quality are trimmed.\n   4. **None** - no trimming of low quality bases.\n\n * **Window based quality trimming** - If the window size is greater than or equal to 1, that number is used as the window size for all reads. If it is greater than or equal to 0 and less than 1, then that number is multiplied by the length of individual reads to determine the window size. If the window length is zero or is greater than the current read length, then the read length is used instead. Reads are trimmed as follows for a given window size:\n\n   1. The new 5' is determined by locating the first window where both the average quality and the quality of the first base in the window is greater than the minimum quality.\n   2. The new 3' is located by sliding the first window right, until the average quality becomes less than or equal to the minimum quality. The new 3' is placed at the last base in that window where the quality is greater than or equal to the minimum quality.\n   3. If no 5' position could be determined, the read is discarded.\n\n-----\n\n**Poly-X Trimming Options**\n\nPoly-X tails may be trimmed both before read alignment and adapter trimming, and afterwards but before quality trimming.\nBy default, pre-trimming is set to **auto**, which trims poly-G tails from data produced by known 2-colour systems, and\npost-trimming is disabled. Merged reads are not affected by post-trimming, as both of their ends are 5'. Only tails at\nleast as long as the poly-X threshold are trimmed.\n\n-----\n\n**Filtering Options**\n\nReads are discarded after trimming if they contain too many ambiguous bases (in absolute terms and/or as a fraction of the\nread length), are shorter or longer than the given length limits, have a mean Phred quality below the given minimum, or\nhave a complexity score below the given minimum. Complexity is measured as the fraction of positions that differ from the\nprevious position; a suggested value is 0.3.\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input_type_cond": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "input_type": {
+                  "type": "string",
+                  "enum": [
+                    "single"
+                  ]
+                },
+                "read1": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "input_type"
+              ],
+              "properties": {
+                "input_type": {
+                  "type": "string",
+                  "enum": [
+                    "pair"
+                  ]
+                },
+                "read1": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "read2": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "interleaved_output": {
+                  "type": "string",
+                  "enum": [
+                    "no",
+                    "yes"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "input_type"
+              ],
+              "properties": {
+                "input_type": {
+                  "type": "string",
+                  "enum": [
+                    "paired"
+                  ]
+                },
+                "reads_collection": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "interleaved_output": {
+                  "type": "string",
+                  "enum": [
+                    "no",
+                    "yes"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "input_type"
+              ],
+              "properties": {
+                "input_type": {
+                  "type": "string",
+                  "enum": [
+                    "interleaved"
+                  ]
+                },
+                "read1": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "interleaved_output": {
+                  "type": "string",
+                  "enum": [
+                    "no",
+                    "yes"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "adapter_cond": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "adapter_selection": {
+                  "type": "string",
+                  "enum": [
+                    "auto"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "adapter_selection"
+              ],
+              "properties": {
+                "adapter_selection": {
+                  "type": "string",
+                  "enum": [
+                    "manual"
+                  ]
+                },
+                "adapter1": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "adapter2": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "adapter_table": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "adapter_selection"
+              ],
+              "properties": {
+                "adapter_selection": {
+                  "type": "string",
+                  "enum": [
+                    "undefined"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "adapter_selection"
+              ],
+              "properties": {
+                "adapter_selection": {
+                  "type": "string",
+                  "enum": [
+                    "none"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "fastq_options": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "mask_degenerate_bases": {
+              "type": "boolean"
+            },
+            "convert_uracils": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "alignment_options": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "min_overlap": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a number greater than or equal to 1",
+                  "title": "greaterThanOrEqualTo(1)",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mismatch_rate": {
+              "type": "number",
+              "description": "a number less than or equal to 1",
+              "title": "lessThanOrEqualTo(1)",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "shift": {
+              "$ref": "#/$defs/Int",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "fastq_merging_options": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "merge": {
+              "type": "boolean"
+            },
+            "merge_threshold": {
+              "$ref": "#/$defs/Int",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            },
+            "merge_strategy": {
+              "type": "string",
+              "enum": [
+                "maximum",
+                "additive"
+              ]
+            },
+            "merge_quality_max": {
+              "$ref": "#/$defs/Int",
+              "description": "a number less than or equal to 93",
+              "title": "lessThanOrEqualTo(93)",
+              "minimum": 0,
+              "maximum": 93
+            }
+          },
+          "additionalProperties": false
+        },
+        "fastq_trimming_options": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "pre_trim3p_cond": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "trim_param": {
+                      "type": "string",
+                      "enum": [
+                        "no"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "trim_param"
+                  ],
+                  "properties": {
+                    "trim_param": {
+                      "type": "string",
+                      "enum": [
+                        "yes"
+                      ]
+                    },
+                    "trim_mate1": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    "trim_mate2": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "post_trim5p_cond": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "trim_param": {
+                      "type": "string",
+                      "enum": [
+                        "no"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "trim_param"
+                  ],
+                  "properties": {
+                    "trim_param": {
+                      "type": "string",
+                      "enum": [
+                        "yes"
+                      ]
+                    },
+                    "trim_mate1": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    "trim_mate2": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "post_trim3p_cond": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "trim_param": {
+                      "type": "string",
+                      "enum": [
+                        "no"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "trim_param"
+                  ],
+                  "properties": {
+                    "trim_param": {
+                      "type": "string",
+                      "enum": [
+                        "yes"
+                      ]
+                    },
+                    "trim_mate1": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    "trim_mate2": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "quality_trimming_cond": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "quality_trimming": {
+                      "type": "string",
+                      "enum": [
+                        "mott"
+                      ]
+                    },
+                    "trim_mott_rate": {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "quality_trimming"
+                  ],
+                  "properties": {
+                    "quality_trimming": {
+                      "type": "string",
+                      "enum": [
+                        "window"
+                      ]
+                    },
+                    "trim_windows": {
+                      "type": "number",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    "trim_min_quality": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number less than or equal to 93",
+                      "title": "lessThanOrEqualTo(93)",
+                      "minimum": 0,
+                      "maximum": 93
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "quality_trimming"
+                  ],
+                  "properties": {
+                    "quality_trimming": {
+                      "type": "string",
+                      "enum": [
+                        "per-base"
+                      ]
+                    },
+                    "trim_min_quality": {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number less than or equal to 93",
+                      "title": "lessThanOrEqualTo(93)",
+                      "minimum": 0,
+                      "maximum": 93
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "quality_trimming"
+                  ],
+                  "properties": {
+                    "quality_trimming": {
+                      "type": "string",
+                      "enum": [
+                        "none"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "preserve5p": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "polyx_options": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "pre_trim_polyx_cond": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "auto"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "mode"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "off"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "mode"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "all"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "mode"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "custom"
+                      ]
+                    },
+                    "nucleotides": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "A",
+                              "C",
+                              "G",
+                              "T"
+                            ]
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "post_trim_polyx_cond": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "mode"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "auto"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "off"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "mode"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "all"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "mode"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "custom"
+                      ]
+                    },
+                    "nucleotides": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "A",
+                              "C",
+                              "G",
+                              "T"
+                            ]
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "trim_polyx_threshold": {
+              "$ref": "#/$defs/Int",
+              "description": "a number greater than or equal to 1",
+              "title": "greaterThanOrEqualTo(1)",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "filtering_options": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "max_ns": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "max_ns_fraction": {
+              "type": "number",
+              "description": "a number less than or equal to 1",
+              "title": "lessThanOrEqualTo(1)",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "min_length": {
+              "$ref": "#/$defs/Int",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            },
+            "max_length": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "min_mean_quality": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a number less than or equal to 93",
+                  "title": "lessThanOrEqualTo(93)",
+                  "minimum": 0,
+                  "maximum": 93
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "min_complexity": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "description": "a number less than or equal to 1",
+                  "title": "lessThanOrEqualTo(1)",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "report_only": {
+          "type": "boolean"
+        },
+        "output_select": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "output_singleton",
+                  "output_merged",
+                  "output_discarded"
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input_type_cond": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "read1"
+                  ],
+                  "properties": {
+                    "input_type": {
+                      "type": "string",
+                      "enum": [
+                        "single"
+                      ]
+                    },
+                    "read1": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "input_type",
+                    "read1",
+                    "read2"
+                  ],
+                  "properties": {
+                    "input_type": {
+                      "type": "string",
+                      "enum": [
+                        "pair"
+                      ]
+                    },
+                    "read1": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "read2": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "interleaved_output": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "no",
+                            "yes"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "input_type",
+                    "reads_collection"
+                  ],
+                  "properties": {
+                    "input_type": {
+                      "type": "string",
+                      "enum": [
+                        "paired"
+                      ]
+                    },
+                    "reads_collection": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "interleaved_output": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "no",
+                            "yes"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "input_type",
+                    "read1"
+                  ],
+                  "properties": {
+                    "input_type": {
+                      "type": "string",
+                      "enum": [
+                        "interleaved"
+                      ]
+                    },
+                    "read1": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "interleaved_output": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "no",
+                            "yes"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "adapter_cond": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "adapter_selection": {
+                      "type": "string",
+                      "enum": [
+                        "auto"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "adapter_selection"
+                  ],
+                  "properties": {
+                    "adapter_selection": {
+                      "type": "string",
+                      "enum": [
+                        "manual"
+                      ]
+                    },
+                    "adapter1": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "adapter2": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "adapter_table": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "adapter_selection"
+                  ],
+                  "properties": {
+                    "adapter_selection": {
+                      "type": "string",
+                      "enum": [
+                        "undefined"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "adapter_selection"
+                  ],
+                  "properties": {
+                    "adapter_selection": {
+                      "type": "string",
+                      "enum": [
+                        "none"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "fastq_options": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "mask_degenerate_bases": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "convert_uracils": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "alignment_options": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "min_overlap": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a number greater than or equal to 1",
+                          "title": "greaterThanOrEqualTo(1)",
+                          "minimum": 1
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "mismatch_rate": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "shift": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "fastq_merging_options": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "merge": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "merge_threshold": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "merge_strategy": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "maximum",
+                        "additive"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "merge_quality_max": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number less than or equal to 93",
+                      "title": "lessThanOrEqualTo(93)",
+                      "minimum": 0,
+                      "maximum": 93
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "fastq_trimming_options": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "pre_trim3p_cond": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "trim_param": {
+                              "type": "string",
+                              "enum": [
+                                "no"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "trim_param"
+                          ],
+                          "properties": {
+                            "trim_param": {
+                              "type": "string",
+                              "enum": [
+                                "yes"
+                              ]
+                            },
+                            "trim_mate1": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a non-negative number",
+                                  "title": "greaterThanOrEqualTo(0)",
+                                  "minimum": 0
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "trim_mate2": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a non-negative number",
+                                  "title": "greaterThanOrEqualTo(0)",
+                                  "minimum": 0
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "post_trim5p_cond": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "trim_param": {
+                              "type": "string",
+                              "enum": [
+                                "no"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "trim_param"
+                          ],
+                          "properties": {
+                            "trim_param": {
+                              "type": "string",
+                              "enum": [
+                                "yes"
+                              ]
+                            },
+                            "trim_mate1": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a non-negative number",
+                                  "title": "greaterThanOrEqualTo(0)",
+                                  "minimum": 0
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "trim_mate2": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a non-negative number",
+                                  "title": "greaterThanOrEqualTo(0)",
+                                  "minimum": 0
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "post_trim3p_cond": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "trim_param": {
+                              "type": "string",
+                              "enum": [
+                                "no"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "trim_param"
+                          ],
+                          "properties": {
+                            "trim_param": {
+                              "type": "string",
+                              "enum": [
+                                "yes"
+                              ]
+                            },
+                            "trim_mate1": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a non-negative number",
+                                  "title": "greaterThanOrEqualTo(0)",
+                                  "minimum": 0
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "trim_mate2": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a non-negative number",
+                                  "title": "greaterThanOrEqualTo(0)",
+                                  "minimum": 0
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "quality_trimming_cond": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "quality_trimming": {
+                              "type": "string",
+                              "enum": [
+                                "mott"
+                              ]
+                            },
+                            "trim_mott_rate": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "description": "a number less than or equal to 1",
+                                  "title": "lessThanOrEqualTo(1)",
+                                  "minimum": 0,
+                                  "maximum": 1
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "quality_trimming"
+                          ],
+                          "properties": {
+                            "quality_trimming": {
+                              "type": "string",
+                              "enum": [
+                                "window"
+                              ]
+                            },
+                            "trim_windows": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "description": "a non-negative number",
+                                  "title": "greaterThanOrEqualTo(0)",
+                                  "minimum": 0
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "trim_min_quality": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a number less than or equal to 93",
+                                  "title": "lessThanOrEqualTo(93)",
+                                  "minimum": 0,
+                                  "maximum": 93
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "quality_trimming"
+                          ],
+                          "properties": {
+                            "quality_trimming": {
+                              "type": "string",
+                              "enum": [
+                                "per-base"
+                              ]
+                            },
+                            "trim_min_quality": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/Int",
+                                  "description": "a number less than or equal to 93",
+                                  "title": "lessThanOrEqualTo(93)",
+                                  "minimum": 0,
+                                  "maximum": 93
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "__class__"
+                                  ],
+                                  "properties": {
+                                    "__class__": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ConnectedValue"
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "quality_trimming"
+                          ],
+                          "properties": {
+                            "quality_trimming": {
+                              "type": "string",
+                              "enum": [
+                                "none"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "preserve5p": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "polyx_options": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "pre_trim_polyx_cond": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "auto"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "mode"
+                          ],
+                          "properties": {
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "off"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "mode"
+                          ],
+                          "properties": {
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "all"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "mode"
+                          ],
+                          "properties": {
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "custom"
+                              ]
+                            },
+                            "nucleotides": {
+                              "anyOf": [
+                                {
+                                  "type": "array",
+                                  "items": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "A",
+                                          "C",
+                                          "G",
+                                          "T"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "__class__"
+                                        ],
+                                        "properties": {
+                                          "__class__": {
+                                            "type": "string",
+                                            "enum": [
+                                              "ConnectedValue"
+                                            ]
+                                          }
+                                        },
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "post_trim_polyx_cond": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "mode"
+                          ],
+                          "properties": {
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "auto"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [],
+                          "properties": {
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "off"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "mode"
+                          ],
+                          "properties": {
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "all"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "mode"
+                          ],
+                          "properties": {
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "custom"
+                              ]
+                            },
+                            "nucleotides": {
+                              "anyOf": [
+                                {
+                                  "type": "array",
+                                  "items": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "A",
+                                          "C",
+                                          "G",
+                                          "T"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "__class__"
+                                        ],
+                                        "properties": {
+                                          "__class__": {
+                                            "type": "string",
+                                            "enum": [
+                                              "ConnectedValue"
+                                            ]
+                                          }
+                                        },
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "trim_polyx_threshold": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a number greater than or equal to 1",
+                      "title": "greaterThanOrEqualTo(1)",
+                      "minimum": 1
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "filtering_options": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "max_ns": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "max_ns_fraction": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "description": "a number less than or equal to 1",
+                      "title": "lessThanOrEqualTo(1)",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "min_length": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "max_length": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "min_mean_quality": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a number less than or equal to 93",
+                          "title": "lessThanOrEqualTo(93)",
+                          "minimum": 0,
+                          "maximum": 93
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "min_complexity": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a number less than or equal to 1",
+                          "title": "lessThanOrEqualTo(1)",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "report_only": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "output_select": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "output_singleton",
+                      "output_merged",
+                      "output_discarded"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "__class__"
+                    ],
+                    "properties": {
+                      "__class__": {
+                        "type": "string",
+                        "enum": [
+                          "ConnectedValue"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

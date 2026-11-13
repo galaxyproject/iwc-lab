@@ -1,0 +1,27 @@
+class: GalaxyUserTool
+id: oceanomics_fastq_relabel
+version: 1.0.1
+name: Relabel FASTQ headers with sample name
+description: set every read header to the dataset's collection element identifier
+license: MIT
+container: quay.io/biocontainers/gawk:5.1.0--2
+requirements: []
+shell_command: |
+  { if gzip -t '$(inputs.reads.path)' 2>/dev/null; then zcat '$(inputs.reads.path)'; else cat '$(inputs.reads.path)'; fi; } | awk -v s='$(inputs.reads.element_identifier)' 'NR % 4 == 1 {print "@" s; next} {print}' | gzip -c > relabeled.fq.gz
+inputs:
+- name: reads
+  type: data
+  format: [fastqsanger.gz, fastqsanger]
+  label: Reads for one sample (map over a list keyed by sample name)
+outputs:
+- name: relabeled
+  type: data
+  format: fastqsanger.gz
+  from_work_dir: relabeled.fq.gz
+  label: Relabelled reads
+help:
+  format: markdown
+  content: |
+    Port of OceanOmics-amplicon-nf FASTQRELABEL. Replaces each FASTQ header with `@<sample>`, where
+    the sample is the collection element identifier of the input, so pooled reads keep their sample
+    for `vsearch --usearch_global --otutabout`.
