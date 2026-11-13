@@ -1,0 +1,123 @@
+{
+  "entries": [
+    {
+      "id": "drop-outdir-publication-interface",
+      "status": "surrendered",
+      "kind": "dropped",
+      "blocking": false,
+      "raised_by": "nextflow-summary-to-galaxy-interface",
+      "units": "params.outdir: пользовательский выбор каталога публикации двух файлов",
+      "because": "summary-nextflow.json: params[name=outdir] задает directory-path; оба processes[].publish_dir используют params.outdir, mode: copy; scripts, workflow.channels и workflow.conditionals не используют outdir. Packaged references/notes/nextflow-params-to-galaxy-inputs.md, Control params и Warning and impact assessment: Galaxy управляет историями и выходами, поэтому безопасный publish-control исключается с записью причины.",
+      "unmet": "Исходная поверхность выбора каталога публикации не переносится в интерфейс Galaxy.",
+      "missing": "Скалярный вход outdir отсутствует; его функцию выполняют история и два публичных выхода Galaxy.",
+      "note": "Осознанно исключен только параметр публикации. UPPERCASE, COUNT_LINES, uppercase.txt и summary.txt сохранены. Это безопасное отличие интерфейса, не вычислительный блокер. Статус open оставлен по протоколу учета dropped; итоговый учет исключения принадлежит терминальному этапу. Итоговое отличие явно раскрыто в workflow-limitations.md. Оба процесса и оба результата сохранены."
+    },
+    {
+      "id": "text-semantics-needs-executable-evidence",
+      "status": "resolved",
+      "kind": "gap",
+      "blocking": false,
+      "raised_by": "compare-against-iwc-exemplar",
+      "unmet": "Подтвержденная реализация двух текстовых операций с точным ASCII/LF/UTF-8 контрактом.",
+      "missing": "Ни один проверенный структурный IWC-кандидат не устанавливает семантику LC_ALL=C tr и AWK NR для будущих Galaxy-инструментов.",
+      "note": "Реальные 3 теста Planemo прошли; 6/6 фактических выходов побайтово равны Nextflow. galaxy-results/comparison.json и reports/galaxy-dataset-metadata.json.",
+      "resolved_by": "debug-galaxy-workflow-output"
+    }
+  ],
+  "discoveries": [
+    {
+      "id": "no-external-reference-assets",
+      "raised_by": "nextflow-summary-to-galaxy-reference-data",
+      "evidence": "summary-nextflow.reference_assets=[]; reference_rebuilds=[]; input содержит обычный текст, outdir задает публикацию.",
+      "impact": "Galaxy не требует входов справочных данных, таблиц или индексов."
+    },
+    {
+      "id": "no-nearest-iwc-text-exemplar",
+      "raised_by": "compare-against-iwc-exemplar",
+      "evidence": "IWC deafc4876f2c778aaf075e48bd8e95f3604ccc92: обзор 120 skeleton workflow и четырех кандидатов в iwc-format2; iwc-comparison-notes.md и logs/phase5-corpus-review.json.",
+      "impact": "No nearest exemplar. Предметный gxformat2 exemplar отсутствует; общий мотив публичного промежуточного dataset подтвержден. Граф из двух текстовых операций не меняется."
+    }
+  ],
+  "decisions": [
+    {
+      "id": "single-text-file-interface",
+      "decided_by": "nextflow-summary-to-galaxy-interface",
+      "decision": "Представить params.input обязательным одиночным data-входом text_input с format=txt, одинаковыми id и label и без серверного пути default.",
+      "rationale": "Channel.fromPath получает конкретный путь и передает один текстовый файл в UPPERCASE. Default источника существует локально, но отсутствие файла не является допустимым режимом обработки Galaxy.",
+      "evidence": [
+        "summary-nextflow.json: params[name=input]",
+        "summary-nextflow.json: workflow.channels[name=source]",
+        "summary-nextflow.json: test_candidates[id=pipeline-defaults].inputs[role=source_text]"
+      ]
+    },
+    {
+      "id": "retain-both-published-text-outputs",
+      "decided_by": "nextflow-summary-to-galaxy-interface",
+      "decision": "Сохранить оба процесса и публичные выходы uppercase_text и line_count_summary; результат UPPERCASE одновременно является checkpoint и входом COUNT_LINES.",
+      "rationale": "Оба файла объявлены процессами и публикуются. Отдельная проверка uppercase_text выявляет ошибку регистра, которую число строк само по себе не обнаружит.",
+      "evidence": [
+        "summary-nextflow.json: processes[name=UPPERCASE].outputs и publish_dir",
+        "summary-nextflow.json: processes[name=COUNT_LINES].outputs и publish_dir",
+        "summary-nextflow.json: workflow.edges[1]"
+      ]
+    },
+    {
+      "id": "exclude-outdir-publication-control",
+      "decided_by": "nextflow-summary-to-galaxy-interface",
+      "decision": "Исключить params.outdir как publish-control; assessment=safe. Сохранить единую заметку об отличии и отдельную запись dropped.",
+      "rationale": "Сводка относит outdir только к двум publishDir; скрипты, создание канала и условия от него не зависят. Galaxy управляет физическими путями публикации dataset.",
+      "evidence": [
+        "summary-nextflow.json: params[name=outdir] и processes[].publish_dir",
+        "nextflow-galaxy-interface.md: Excluded parameters and notice",
+        "drop-outdir-publication-interface"
+      ]
+    },
+    {
+      "id": "preserve-ascii-case-and-record-count",
+      "decided_by": "nextflow-summary-to-galaxy-interface",
+      "decision": "Сохранить ASCII-преобразование при LC_ALL=C, байты вне ASCII и семантику AWK NR с точной русской подписью UTF-8 и завершающим переводом строки.",
+      "rationale": "Unicode uppercase и подсчет только символов LF могут менять результаты источника. Будущий реальный Galaxy-тест должен сравнивать содержимое обоих файлов с Nextflow-эталоном.",
+      "evidence": [
+        "summary-nextflow.json: processes[name=UPPERCASE].script_excerpt",
+        "summary-nextflow.json: processes[name=COUNT_LINES].script_excerpt"
+      ]
+    },
+    {
+      "id": "settled-text-template-topology",
+      "decided_by": "nextflow-summary-to-galaxy-template",
+      "decision": "Один обязательный одиночный txt-вход text_input, два последовательных tool-шага uppercase и count_lines, два публичных выхода uppercase_text и line_count_summary. Результат первого шага одновременно публикуется и подается второму. Оба шага Deferred до проверки конкретных оберток и параметров.",
+      "rationale": "Исходные процессы и оба brief однозначно задают арность и зависимости. Каждый результат вычислим из поданного текста; внешние данные и дополнительные узлы не нужны. IWC подтверждает общий мотив публичного промежуточного dataset, но не точную текстовую семантику.",
+      "evidence": [
+        "source/main.nf: UPPERCASE и COUNT_LINES",
+        "summary-nextflow.json: workflow.edges",
+        "nextflow-galaxy-interface.md: Workflow inputs и Workflow outputs",
+        "nextflow-galaxy-data-flow.md: Abstract DAG",
+        "iwc-comparison-notes.md: Structural comparison and routing"
+      ]
+    },
+    {
+      "id": "uppercase-sed-ascii-transliteration",
+      "decided_by": "implement-galaxy-tool-step",
+      "decision": "Реализовать uppercase через tp_sed_tool 9.5+galaxy3, changeset ab83aa685821, программу y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/ и basic adv_opts. infile связан с text_input, output опубликован и подан следующему шагу.",
+      "rationale": "Проверенные порты и linked-state schema из детерминированной сводки. Замена исходного tr на явную ASCII-транслитерацию должна пройти реальные сравнения обоих результатов.",
+      "evidence": [
+        "steps/01-uppercase/galaxy-tool-pin.json",
+        "steps/01-uppercase/galaxy-tool-summary.json",
+        "steps/01-uppercase/draft-validation.json"
+      ]
+    },
+    {
+      "id": "line-count-awk-octal-utf8",
+      "decided_by": "implement-galaxy-tool-step",
+      "decision": "Реализовать count_lines через tp_awk_tool 9.5+galaxy3, changeset ab83aa685821, END print русской подписи и NR; variables=[]; infile получает uppercase/output, outfile опубликован как line_count_summary. UTF-8 байты подписи представлены ASCII octal escape в программе AWK.",
+      "rationale": "Октальные escape сохраняют точные байты русской подписи и обходят ограничение wrapper sanitizer на непечатные символы кода. Сводка подтверждает порты infile/outfile и schema; фактическая эквивалентность проверяется последующим Galaxy-тестом.",
+      "evidence": [
+        "steps/02-count-lines/galaxy-tool-pin.json",
+        "steps/02-count-lines/galaxy-tool-summary.json",
+        "steps/02-count-lines/state-validation.json",
+        "steps/02-count-lines/draft-validation.json"
+      ]
+    }
+  ],
+  "brief_change_recommendations": []
+}

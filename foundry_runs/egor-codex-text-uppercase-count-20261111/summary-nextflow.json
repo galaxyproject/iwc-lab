@@ -1,0 +1,194 @@
+{
+  "source": {
+    "ecosystem": "nextflow",
+    "workflow": "text-uppercase-count",
+    "url": "file:source/",
+    "version": "sha256:81abf32dc874c8aab7db43ae1a5a7b959a5cb57017b84abc908f3384bee7740d",
+    "license": null,
+    "slug": "text-uppercase-count"
+  },
+  "params": [
+    {
+      "name": "input",
+      "type": "path",
+      "default": "${projectDir}/data/words.txt",
+      "description": "Исходный текстовый файл; значение по умолчанию существует в data/words.txt.",
+      "required": false,
+      "format": "file-path",
+      "source_kind": "computed",
+      "source_expression": "\"${projectDir}/data/words.txt\"",
+      "source_path": "main.nf"
+    },
+    {
+      "name": "outdir",
+      "type": "path",
+      "default": "${projectDir}/results",
+      "description": "Каталог для публикации uppercase.txt и summary.txt.",
+      "required": false,
+      "format": "directory-path",
+      "source_kind": "computed",
+      "source_expression": "\"${projectDir}/results\"",
+      "source_path": "main.nf"
+    }
+  ],
+  "sample_sheets": [],
+  "profiles": [],
+  "tools": [],
+  "processes": [
+    {
+      "name": "UPPERCASE",
+      "aliases": [],
+      "in_subworkflows": [],
+      "module_path": "main.nf",
+      "meta": null,
+      "module_tests": [],
+      "tool": null,
+      "container": null,
+      "conda": null,
+      "inputs": [
+        {
+          "name": "source_text",
+          "shape": "path source_text",
+          "topic": null,
+          "description": "Входной текстовый файл из канала source."
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output_1681429697",
+          "shape": "path 'uppercase.txt'",
+          "topic": null,
+          "description": "Безымянный выход процесса, файл uppercase.txt; идентификатор output_* создан CLI."
+        }
+      ],
+      "when": null,
+      "script_excerpt": "\"\"\"\nLC_ALL=C tr '[:lower:]' '[:upper:]' < \"${source_text}\" > uppercase.txt\n\"\"\"",
+      "publish_dir": "params.outdir, mode: 'copy'",
+      "publish_dir_matches": [],
+      "resolved_args": [],
+      "template": null,
+      "script_summary": "Преобразует строчные ASCII-буквы входного текста в прописные через tr при LC_ALL=C."
+    },
+    {
+      "name": "COUNT_LINES",
+      "aliases": [],
+      "in_subworkflows": [],
+      "module_path": "main.nf",
+      "meta": null,
+      "module_tests": [],
+      "tool": null,
+      "container": null,
+      "conda": null,
+      "inputs": [
+        {
+          "name": "upper_text",
+          "shape": "path upper_text",
+          "topic": null,
+          "description": "Файл uppercase.txt, полученный от UPPERCASE через переменную upper."
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output_7601658389",
+          "shape": "path 'summary.txt'",
+          "topic": null,
+          "description": "Безымянный выход процесса, файл summary.txt; идентификатор output_* создан CLI."
+        }
+      ],
+      "when": null,
+      "script_excerpt": "\"\"\"\nawk 'END { print \"Количество строк: \" NR }' \"${upper_text}\" > summary.txt\n\"\"\"",
+      "publish_dir": "params.outdir, mode: 'copy'",
+      "publish_dir_matches": [],
+      "resolved_args": [],
+      "template": null,
+      "script_summary": "Считает записи-строки входного текста через awk и записывает русскую подпись с числом строк."
+    }
+  ],
+  "subworkflows": [],
+  "workflow": {
+    "name": "ANONYMOUS",
+    "channels": [
+      {
+        "name": "source",
+        "source": "Channel.fromPath(params.input, checkIfExists: true)",
+        "shape": "path",
+        "construct": "fromPath",
+        "from_param": "input",
+        "required_runtime": false
+      }
+    ],
+    "edges": [
+      {
+        "from": "source",
+        "to": "UPPERCASE",
+        "via": []
+      },
+      {
+        "from": "UPPERCASE.out.output_1681429697",
+        "to": "COUNT_LINES",
+        "via": [],
+        "notes": "Прямое связывание установлено из upper = UPPERCASE(source) и COUNT_LINES(upper) в единственном безымянном workflow."
+      }
+    ],
+    "conditionals": []
+  },
+  "reference_assets": [],
+  "reference_rebuilds": [],
+  "test_candidates": [
+    {
+      "id": "pipeline-defaults",
+      "kind": "pipeline-defaults",
+      "name": "Запуск с параметрами по умолчанию",
+      "path": "main.nf",
+      "effective_profiles": [],
+      "params_delta": {},
+      "inputs": [
+        {
+          "role": "source_text",
+          "path": "data/words.txt",
+          "url": null,
+          "sha1": "903bd24c965e537f3b4c3dea1298fb749691f740",
+          "filetype": "txt",
+          "description": "Обычный текстовый файл, который params.input выбирает по умолчанию; это не таблица образцов."
+        }
+      ],
+      "outputs": [
+        {
+          "role": "uppercase",
+          "path": "results/uppercase.txt",
+          "kind": "other",
+          "description": "Публикуемый текстовый файл из объявления path uppercase.txt и params.outdir; путь относителен к source/."
+        },
+        {
+          "role": "line_count",
+          "path": "results/summary.txt",
+          "kind": "other",
+          "description": "Публикуемый отчет о числе строк из объявления path summary.txt и params.outdir; путь относителен к source/."
+        }
+      ],
+      "execution_mode": "real",
+      "scope": "primary",
+      "disposition": "selected",
+      "rationale": "В source/ нет nf-test и профилей; основной запуск использует существующий data/words.txt и оба процесса без stub.",
+      "assert_workflow_success": null,
+      "snapshot": null,
+      "prose_assertions": []
+    }
+  ],
+  "test_selection": {
+    "status": "selected",
+    "selected_candidate_id": "pipeline-defaults",
+    "rationale": "Единственный кандидат без профиля имеет существующий вход по умолчанию. Это выбор исходного запуска, а не утверждение о наличии nf-test."
+  },
+  "warnings": [
+    "Сводка дополнена агентом после статического CLI. Неизмененные результаты CLI сохранены в logs/phase1-cli-summary.raw.json и logs/phase1-cli-no-profile.raw.json; изменения перечислены в phase1-notes.md.",
+    "Исходник содержит только безымянный workflow. ANONYMOUS и text-uppercase-count являются обозначениями сводки, а не именами из manifest.",
+    "CLI не извлек параметры из main.nf и граф безымянного workflow; соответствующие поля восстановлены по явным присваиваниям и вызовам в source/main.nf.",
+    "Обычный вызов CLI создал несуществующий профиль test; повторный вызов с --profile пустой строкой выбрал pipeline-defaults. Профиль test в итоговой сводке отсутствует.",
+    "Исходник находится внутри репозитория iwc-lab, но не имеет собственного git-пина. Метаданные родительского репозитория заменены локальным file:source/ и хешем дерева; алгоритм сохранен в logs/phase1-source-provenance.json.",
+    "В source/ нет nextflow.config, nextflow_schema.json, meta.yml, nf-test или контейнерных и conda-директив. tr и awk вызываются из окружения; их версии исходником не закреплены, поэтому tools пуст.",
+    "Оба объявления output не имеют emit-имен; сохранены синтетические идентификаторы output_*, выданные CLI.",
+    "Ранее выполненный реальный запуск Nextflow завершил оба процесса с exit 0; его результаты лежат в nextflow-results/, а трасса в logs/nextflow-first-trace.tsv. Запуск переопределял outdir, поэтому результаты этого запуска не выдаются за файлы в source/results/.",
+    "В исходнике нет объявленных проверок содержимого. assert_workflow_success и snapshot оставлены null; точные результаты реального запуска приведены в phase1-notes.md как отдельные наблюдения."
+  ]
+}
