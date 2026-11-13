@@ -30,8 +30,10 @@ other. An isolate ID that appears in both collections is used as a reference onl
 reference-collection file is the one aligned (CSP2 would take the file given on the query side).
 If that leaves no queries at all, there is nothing to pair and the run fails, as CSP2 does.
 
-Isolate IDs cannot contain whitespace, `,`, `/`, `:` or `__vs__` (CSP2 joins the two IDs
-of a pair with `__vs__` in file names).
+Isolate IDs may use only letters, digits, `.`, `_` and `-`, and may not start with `-` or
+contain `__vs__` (CSP2 joins the two IDs of a pair with `__vs__` in file names). CSP2 builds
+file names and command arguments from these IDs, so anything else is rejected before
+alignment.
 
 The remaining parameters are CSP2's quality thresholds, with CSP2's defaults: minimum reference
 coverage (85%), minimum alignment length (500) and identity (99%), reference and query contig
