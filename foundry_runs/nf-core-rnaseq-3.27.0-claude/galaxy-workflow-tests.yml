@@ -1,0 +1,72 @@
+- doc: 'Default-route smoke test (galaxy-test-plan.yml default-star-salmon-smoke): nf-core/rnaseq 3.27.0
+    test-profile PE subset (WT_REP1, WT_REP2, RAP1_IAA_30M_REP1) through the star_salmon default route:
+    FastQC, trim_galore, STAR (history FASTA, in-tool index), picard MarkDuplicates, salmon (history
+    transcriptome), tximport, featureCounts, bedclip+wigToBigWig, MultiQC.'
+  job:
+    PE reads:
+      class: Collection
+      collection_type: list:paired
+      elements:
+      - class: Collection
+        collection_type: paired
+        identifier: WT_REP1
+        elements:
+        - class: File
+          identifier: forward
+          path: test-data/WT_REP1_1.fastq.gz
+        - class: File
+          identifier: reverse
+          path: test-data/WT_REP1_2.fastq.gz
+      - class: Collection
+        collection_type: paired
+        identifier: WT_REP2
+        elements:
+        - class: File
+          identifier: forward
+          path: test-data/WT_REP2_1.fastq.gz
+        - class: File
+          identifier: reverse
+          path: test-data/WT_REP2_2.fastq.gz
+      - class: Collection
+        collection_type: paired
+        identifier: RAP1_IAA_30M_REP1
+        elements:
+        - class: File
+          identifier: forward
+          path: test-data/RAP1_IAA_30M_REP1_1.fastq.gz
+        - class: File
+          identifier: reverse
+          path: test-data/RAP1_IAA_30M_REP1_2.fastq.gz
+    Genome FASTA:
+      class: File
+      path: test-data/genome.fasta
+    Annotation GTF:
+      class: File
+      path: test-data/genes_with_empty_tid.gtf
+    Transcriptome FASTA:
+      class: File
+      path: test-data/transcriptome.fasta
+  outputs:
+    multiqc_report:
+      asserts:
+        has_size:
+          min: 50000
+    gene_counts:
+      asserts:
+        has_size:
+          min: 1000
+    aligned_bams:
+      class: Collection
+      element_count: 3
+      element_tests:
+        WT_REP1: {}
+    salmon_quant:
+      class: Collection
+      element_count: 3
+      element_tests:
+        WT_REP1: {}
+    coverage_bigwigs:
+      class: Collection
+      element_count: 3
+      element_tests:
+        WT_REP1: {}
