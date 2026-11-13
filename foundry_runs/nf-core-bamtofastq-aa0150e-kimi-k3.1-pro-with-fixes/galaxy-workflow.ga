@@ -1,0 +1,1445 @@
+{
+  "a_galaxy_workflow": "true",
+  "format-version": "0.1",
+  "name": "nf-core/bamtofastq 2.2.1",
+  "annotation": "Convert BAM/CRAM alignments to validated FASTQ reads with optional reference handling, region selection, FastQC, samtools statistics and MultiQC. Converted from commit aa0150e34a159fa9f3d0ff62128cafeaa2e5fe78.",
+  "tags": [],
+  "uuid": "4c83c931-07bd-44dc-ae6d-c645e46515e2",
+  "license": "MIT",
+  "steps": {
+    "0": {
+      "id": 0,
+      "type": "data_collection_input",
+      "label": "alignment_samples",
+      "name": "alignment_samples",
+      "annotation": "BAM/CRAM datasets keyed by sample identifier. Missing BAI/CRAI indices are built; Galaxy's native datatype and index metadata replace the source sample-sheet projection.",
+      "tool_state": {
+        "name": "alignment_samples",
+        "format": [
+          "bam",
+          "cram"
+        ],
+        "collection_type": "list"
+      },
+      "position": {
+        "top": 0,
+        "left": 0
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "alignment_samples",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "1": {
+      "id": 1,
+      "type": "parameter_input",
+      "label": "chromosome",
+      "name": "chromosome",
+      "annotation": "Optional source-compatible chromosome/region expression; empty converts all reads.",
+      "tool_state": {
+        "name": "chromosome",
+        "parameter_type": "text",
+        "optional": true,
+        "default": ""
+      },
+      "position": {
+        "top": 10,
+        "left": 10
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "chromosome",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "2": {
+      "id": 2,
+      "type": "parameter_input",
+      "label": "skip_read_qc",
+      "name": "skip_read_qc",
+      "annotation": "",
+      "tool_state": {
+        "name": "skip_read_qc",
+        "parameter_type": "boolean",
+        "optional": true,
+        "default": false
+      },
+      "position": {
+        "top": 20,
+        "left": 20
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "skip_read_qc",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "3": {
+      "id": 3,
+      "type": "parameter_input",
+      "label": "alignment_stats_mode",
+      "name": "alignment_stats_mode",
+      "annotation": "Statistics mode: with_reference, without_reference, or skip.",
+      "tool_state": {
+        "name": "alignment_stats_mode",
+        "parameter_type": "text",
+        "optional": true,
+        "default": "with_reference"
+      },
+      "position": {
+        "top": 30,
+        "left": 30
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "alignment_stats_mode",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "4": {
+      "id": 4,
+      "type": "parameter_input",
+      "label": "fast_collate",
+      "name": "fast_collate",
+      "annotation": "",
+      "tool_state": {
+        "name": "fast_collate",
+        "parameter_type": "boolean",
+        "optional": true,
+        "default": false
+      },
+      "position": {
+        "top": 40,
+        "left": 40
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "fast_collate",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "5": {
+      "id": 5,
+      "type": "parameter_input",
+      "label": "reads_in_memory",
+      "name": "reads_in_memory",
+      "annotation": "",
+      "tool_state": {
+        "name": "reads_in_memory",
+        "parameter_type": "integer",
+        "optional": true,
+        "default": 100000,
+        "validators": [
+          {
+            "type": "in_range",
+            "min": 1,
+            "max": null,
+            "negate": false
+          }
+        ]
+      },
+      "position": {
+        "top": 50,
+        "left": 50
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "reads_in_memory",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "6": {
+      "id": 6,
+      "type": "data_input",
+      "label": "reference_fasta",
+      "name": "reference_fasta",
+      "annotation": "Required for reference-requiring CRAM operations.",
+      "tool_state": {
+        "name": "reference_fasta",
+        "optional": true,
+        "format": [
+          "fasta"
+        ]
+      },
+      "position": {
+        "top": 60,
+        "left": 60
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "reference_fasta",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "7": {
+      "id": 7,
+      "type": "data_input",
+      "label": "reference_fai",
+      "name": "reference_fai",
+      "annotation": "Built from FASTA when absent; must match the reference.",
+      "tool_state": {
+        "name": "reference_fai",
+        "optional": true,
+        "format": [
+          "fai"
+        ]
+      },
+      "position": {
+        "top": 70,
+        "left": 70
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "reference_fai",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "8": {
+      "id": 8,
+      "type": "parameter_input",
+      "label": "multiqc_title",
+      "name": "multiqc_title",
+      "annotation": "",
+      "tool_state": {
+        "name": "multiqc_title",
+        "parameter_type": "text",
+        "optional": true,
+        "default": ""
+      },
+      "position": {
+        "top": 80,
+        "left": 80
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "multiqc_title",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "9": {
+      "id": 9,
+      "type": "data_input",
+      "label": "multiqc_logo",
+      "name": "multiqc_logo",
+      "annotation": "",
+      "tool_state": {
+        "name": "multiqc_logo",
+        "optional": true
+      },
+      "position": {
+        "top": 90,
+        "left": 90
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "multiqc_logo",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "10": {
+      "id": 10,
+      "type": "parameter_input",
+      "label": "reference_mode",
+      "name": "reference_mode",
+      "annotation": "Reference/FAI mode: build_fai, supplied_fai, or no_reference.",
+      "tool_state": {
+        "name": "reference_mode",
+        "parameter_type": "text",
+        "optional": true,
+        "default": "build_fai"
+      },
+      "position": {
+        "top": 260,
+        "left": 260
+      },
+      "input_connections": {},
+      "inputs": [
+        {
+          "name": "reference_mode",
+          "description": ""
+        }
+      ],
+      "outputs": [],
+      "workflow_outputs": [],
+      "post_job_actions": {}
+    },
+    "12": {
+      "id": 12,
+      "type": "tool",
+      "label": "Build reference FAI when absent",
+      "name": "toolshed.g2.bx.psu.edu/repos/iuc/samtools_faidx/samtools_faidx/1.22+galaxy1",
+      "annotation": "",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/samtools_faidx/samtools_faidx/1.22+galaxy1",
+      "tool_version": "1.22+galaxy1",
+      "tool_shed_repository": {
+        "name": "samtools_faidx",
+        "owner": "iuc",
+        "changeset_revision": "78d6d62d4ce4",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "__page__": 0
+      },
+      "input_connections": {
+        "input": [
+          {
+            "id": 6,
+            "output_name": "output"
+          }
+        ],
+        "when": {
+          "id": 10,
+          "output_name": "output"
+        }
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 100,
+        "left": 100
+      },
+      "when": "$(inputs.when == \"build_fai\")",
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": []
+    },
+    "13": {
+      "id": 13,
+      "type": "tool",
+      "label": "Select supplied or rebuilt reference FAI",
+      "name": "toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0",
+      "annotation": "",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0",
+      "tool_version": "0.2.0",
+      "tool_shed_repository": {
+        "name": "pick_value",
+        "owner": "iuc",
+        "changeset_revision": "b19e21af9c52",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "__page__": 0,
+        "style_cond": {
+          "pick_style": "first",
+          "type_cond": {
+            "param_type": "data",
+            "pick_from": [
+              {},
+              {}
+            ]
+          }
+        }
+      },
+      "input_connections": {
+        "style_cond|type_cond|pick_from_0|value": [
+          {
+            "id": 7,
+            "output_name": "output"
+          }
+        ],
+        "style_cond|type_cond|pick_from_1|value": [
+          {
+            "id": 12,
+            "output_name": "output"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 110,
+        "left": 110
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": []
+    },
+    "14": {
+      "id": 14,
+      "type": "tool",
+      "label": "Prepare alignment indices",
+      "name": "toolshed.g2.bx.psu.edu/repos/jackcurragh/ribogalaxy_samtools_index/samtools_index/2.0.4",
+      "annotation": "",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/jackcurragh/ribogalaxy_samtools_index/samtools_index/2.0.4",
+      "tool_version": "2.0.4",
+      "tool_shed_repository": {
+        "name": "ribogalaxy_samtools_index",
+        "owner": "jackcurragh",
+        "changeset_revision": "d90d874e1d9e",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "__page__": 0,
+        "prim_key_cond": {
+          "prim_key_select": "-b"
+        }
+      },
+      "input_connections": {
+        "input1": [
+          {
+            "id": 0,
+            "output_name": "output"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 120,
+        "left": 120
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": []
+    },
+    "15": {
+      "id": 15,
+      "type": "tool",
+      "label": "Pre-conversion FastQC",
+      "name": "FastQC for BAM and FASTQ reads",
+      "annotation": "",
+      "tool_id": null,
+      "tool_state": {
+        "__page__": 0,
+        "mode": "pre_conversion"
+      },
+      "tool_representation": {
+        "class": "GalaxyUserTool",
+        "id": "bamtofastq_fastqc",
+        "version": "1.0.0",
+        "name": "FastQC for BAM and FASTQ reads",
+        "description": "Run native FastQC with quiet threading and extract HTML, ZIP, and raw data for BAM/CRAM or FASTQ inputs.",
+        "container": "quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0",
+        "shell_command": "SAMPLE='$(inputs.reads.element_identifier)'\nMODE='$(inputs.mode)'\nEXT='$(inputs.mode == \"post_conversion\" ? \"fastq.gz\" : inputs.reads.format)'\nmkdir -p fastqc_out work\nln -s '$(inputs.reads.path)' \"work/\\${SAMPLE}.\\${MODE}.$EXT\"\nfastqc --quiet --threads \"$GALAXY_SLOTS\" --extract --outdir fastqc_out \"work/\\${SAMPLE}.\\${MODE}.$EXT\"\nln -s \"fastqc_out/\\${SAMPLE}.\\${MODE}_fastqc.html\" report.html\nln -s \"fastqc_out/\\${SAMPLE}.\\${MODE}_fastqc.zip\" report.zip\nunzip -p \"fastqc_out/\\${SAMPLE}.\\${MODE}_fastqc.zip\" '*/fastqc_data.txt' > fastqc_data.txt\n",
+        "inputs": [
+          {
+            "name": "reads",
+            "type": "data",
+            "format": [
+              "bam",
+              "sam",
+              "cram",
+              "fastq",
+              "fastqsanger",
+              "fastq.gz",
+              "fastqsanger.gz"
+            ],
+            "label": "Alignment or FASTQ dataset",
+            "help": "BAM/CRAM input for pre-conversion QC, or converted FASTQ(.gz) input for post-conversion QC."
+          },
+          {
+            "name": "mode",
+            "type": "select",
+            "label": "Conversion stage",
+            "options": [
+              {
+                "label": "Pre-conversion",
+                "value": "pre_conversion",
+                "selected": true
+              },
+              {
+                "label": "Post-conversion",
+                "value": "post_conversion"
+              }
+            ],
+            "help": "Controls the source-compatible basename prefix for reports."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "html_file",
+            "type": "data",
+            "format": "html",
+            "from_work_dir": "report.html",
+            "label": "FastQC HTML report"
+          },
+          {
+            "name": "text_file",
+            "type": "data",
+            "format": "txt",
+            "from_work_dir": "fastqc_data.txt",
+            "label": "Raw FastQC data"
+          },
+          {
+            "name": "zip_file",
+            "type": "data",
+            "format": "zip",
+            "from_work_dir": "report.zip",
+            "label": "Native FastQC ZIP archive"
+          }
+        ],
+        "help": {
+          "format": "markdown",
+          "content": "Runs native FastQC 0.12.1 rather than forcing FASTQ mode. Input identifiers and pre_conversion/post_conversion preserve the source module's report naming conventions. The archive contains fastqc_data.txt for MultiQC aggregation.\n"
+        }
+      },
+      "tool_uuid": null,
+      "input_connections": {
+        "reads": [
+          {
+            "id": 0,
+            "output_name": "output"
+          }
+        ],
+        "when": {
+          "id": 2,
+          "output_name": "output"
+        }
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 140,
+        "left": 140
+      },
+      "when": "$(!inputs.when)",
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "html_file",
+          "label": "pre_conversion_fastqc_html"
+        },
+        {
+          "output_name": "text_file",
+          "label": "pre_conversion_fastqc_data"
+        },
+        {
+          "output_name": "zip_file",
+          "label": "pre_conversion_fastqc_zip"
+        }
+      ]
+    },
+    "16": {
+      "id": 16,
+      "type": "tool",
+      "label": "Alignment flagstat",
+      "name": "toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8",
+      "annotation": "",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8",
+      "tool_version": "2.0.8",
+      "tool_shed_repository": {
+        "name": "samtools_flagstat",
+        "owner": "devteam",
+        "changeset_revision": "a0d8e49a018c",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "__page__": 0,
+        "output_fmt": "txt"
+      },
+      "input_connections": {
+        "input1": [
+          {
+            "id": 0,
+            "output_name": "output"
+          }
+        ],
+        "when": {
+          "id": 3,
+          "output_name": "output"
+        }
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 150,
+        "left": 150
+      },
+      "when": "$(inputs.when != \"skip\")",
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "output1",
+          "label": "alignment_flagstat"
+        }
+      ]
+    },
+    "17": {
+      "id": 17,
+      "type": "tool",
+      "label": "Alignment idxstats",
+      "name": "toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats/2.0.8",
+      "annotation": "",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats/2.0.8",
+      "tool_version": "2.0.8",
+      "tool_shed_repository": {
+        "name": "samtools_idxstats",
+        "owner": "devteam",
+        "changeset_revision": "13aad5cb9be4",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "__page__": 0
+      },
+      "input_connections": {
+        "input": [
+          {
+            "id": 0,
+            "output_name": "output"
+          }
+        ],
+        "when": {
+          "id": 3,
+          "output_name": "output"
+        }
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 160,
+        "left": 160
+      },
+      "when": "$(inputs.when != \"skip\")",
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "output",
+          "label": "alignment_idxstats"
+        }
+      ]
+    },
+    "18": {
+      "id": 18,
+      "type": "tool",
+      "label": "Alignment statistics with reference",
+      "name": "Samtools alignment statistics",
+      "annotation": "",
+      "tool_id": null,
+      "tool_state": {
+        "__page__": 0
+      },
+      "input_connections": {
+        "when": {
+          "id": 3,
+          "output_name": "output"
+        },
+        "alignment": [
+          {
+            "id": 0,
+            "output_name": "output"
+          }
+        ],
+        "fasta": [
+          {
+            "id": 6,
+            "output_name": "output"
+          }
+        ],
+        "fai": [
+          {
+            "id": 13,
+            "output_name": "data_param"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 170,
+        "left": 170
+      },
+      "when": "$(inputs.when == \"with_reference\")",
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [],
+      "tool_uuid": null,
+      "tool_representation": {
+        "class": "GalaxyUserTool",
+        "id": "bamtofastq_samtools_stats",
+        "version": "1.0.0",
+        "name": "Samtools alignment statistics",
+        "description": "Run the source samtools stats command with its pinned runtime and original input basenames.",
+        "container": "community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5",
+        "shell_command": "set -eu\nBAM='$(inputs.alignment.basename)'\nREF='$(inputs.fasta ? inputs.fasta.basename : \"\")'\nFASTA=$(inputs.fasta ? \"'\" + inputs.fasta.path + \"'\" : \"''\")\nFAI=$(inputs.fai ? \"'\" + inputs.fai.path + \"'\" : \"''\")\nln -s '$(inputs.alignment.path)' \"$BAM\"\nif [ -n \"$FASTA\" ]; then\n    ln -s \"$FASTA\" \"$REF\"\n    if [ -n \"$FAI\" ]; then\n        ln -s \"$FAI\" \"$REF.fai\"\n    fi\n    samtools stats --threads 1 --reference \"$REF\" \"$BAM\" > alignment.stats\nelse\n    samtools stats --threads 1 \"$BAM\" > alignment.stats\nfi\n",
+        "inputs": [
+          {
+            "name": "alignment",
+            "type": "data",
+            "format": [
+              "bam",
+              "cram"
+            ],
+            "label": "Indexed alignment"
+          },
+          {
+            "name": "fasta",
+            "type": "data",
+            "format": [
+              "fasta"
+            ],
+            "optional": true,
+            "label": "Reference FASTA"
+          },
+          {
+            "name": "fai",
+            "type": "data",
+            "format": [
+              "fai"
+            ],
+            "optional": true,
+            "label": "Matching reference FAI"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "output",
+            "type": "data",
+            "format": "tabular",
+            "from_work_dir": "alignment.stats",
+            "label": "Samtools statistics"
+          }
+        ],
+        "help": {
+          "format": "markdown",
+          "content": "Reproduces SAMTOOLS_STATS with samtools 1.23.1, one thread (the source process_single resource setting), optional --reference, and original FASTA/alignment basenames. The latter two details are retained because samtools records its version and complete command line in the stats file, and the source nf-test snapshot compares those bytes exactly.\n"
+        }
+      }
+    },
+    "19": {
+      "id": 19,
+      "type": "tool",
+      "label": "Alignment statistics without reference",
+      "name": "Samtools alignment statistics",
+      "annotation": "",
+      "tool_id": null,
+      "tool_state": {
+        "__page__": 0
+      },
+      "input_connections": {
+        "when": {
+          "id": 3,
+          "output_name": "output"
+        },
+        "alignment": [
+          {
+            "id": 0,
+            "output_name": "output"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 180,
+        "left": 180
+      },
+      "when": "$(inputs.when == \"without_reference\")",
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [],
+      "tool_uuid": null,
+      "tool_representation": {
+        "class": "GalaxyUserTool",
+        "id": "bamtofastq_samtools_stats",
+        "version": "1.0.0",
+        "name": "Samtools alignment statistics",
+        "description": "Run the source samtools stats command with its pinned runtime and original input basenames.",
+        "container": "community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5",
+        "shell_command": "set -eu\nBAM='$(inputs.alignment.basename)'\nREF='$(inputs.fasta ? inputs.fasta.basename : \"\")'\nFASTA=$(inputs.fasta ? \"'\" + inputs.fasta.path + \"'\" : \"''\")\nFAI=$(inputs.fai ? \"'\" + inputs.fai.path + \"'\" : \"''\")\nln -s '$(inputs.alignment.path)' \"$BAM\"\nif [ -n \"$FASTA\" ]; then\n    ln -s \"$FASTA\" \"$REF\"\n    if [ -n \"$FAI\" ]; then\n        ln -s \"$FAI\" \"$REF.fai\"\n    fi\n    samtools stats --threads 1 --reference \"$REF\" \"$BAM\" > alignment.stats\nelse\n    samtools stats --threads 1 \"$BAM\" > alignment.stats\nfi\n",
+        "inputs": [
+          {
+            "name": "alignment",
+            "type": "data",
+            "format": [
+              "bam",
+              "cram"
+            ],
+            "label": "Indexed alignment"
+          },
+          {
+            "name": "fasta",
+            "type": "data",
+            "format": [
+              "fasta"
+            ],
+            "optional": true,
+            "label": "Reference FASTA"
+          },
+          {
+            "name": "fai",
+            "type": "data",
+            "format": [
+              "fai"
+            ],
+            "optional": true,
+            "label": "Matching reference FAI"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "output",
+            "type": "data",
+            "format": "tabular",
+            "from_work_dir": "alignment.stats",
+            "label": "Samtools statistics"
+          }
+        ],
+        "help": {
+          "format": "markdown",
+          "content": "Reproduces SAMTOOLS_STATS with samtools 1.23.1, one thread (the source process_single resource setting), optional --reference, and original FASTA/alignment basenames. The latter two details are retained because samtools records its version and complete command line in the stats file, and the source nf-test snapshot compares those bytes exactly.\n"
+        }
+      }
+    },
+    "20": {
+      "id": 20,
+      "type": "tool",
+      "label": "Select reference-mode alignment statistics",
+      "name": "toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0",
+      "annotation": "",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0",
+      "tool_version": "0.2.0",
+      "tool_shed_repository": {
+        "name": "pick_value",
+        "owner": "iuc",
+        "changeset_revision": "b19e21af9c52",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "__page__": 0,
+        "style_cond": {
+          "pick_style": "first",
+          "type_cond": {
+            "param_type": "data",
+            "pick_from": [
+              {},
+              {}
+            ]
+          }
+        }
+      },
+      "input_connections": {
+        "style_cond|type_cond|pick_from_0|value": [
+          {
+            "id": 19,
+            "output_name": "output"
+          }
+        ],
+        "style_cond|type_cond|pick_from_1|value": [
+          {
+            "id": 18,
+            "output_name": "output"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 190,
+        "left": 190
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "data_param",
+          "label": "alignment_stats"
+        }
+      ]
+    },
+    "21": {
+      "id": 21,
+      "type": "tool",
+      "label": "Convert BAM and CRAM to FASTQ",
+      "name": "Convert alignment to FASTQ reads",
+      "annotation": "",
+      "tool_id": null,
+      "tool_state": {
+        "__page__": 0
+      },
+      "tool_representation": {
+        "class": "GalaxyUserTool",
+        "id": "bamtofastq_convert",
+        "version": "1.0.0",
+        "name": "Convert alignment to FASTQ reads",
+        "description": "Reproduce nf-core/bamtofastq single-end and four-flag-class paired conversion with optional region, reference and fast collate settings.",
+        "container": "community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5",
+        "shell_command": "bash convert_alignment.sh",
+        "configfiles": [
+          {
+            "filename": "convert_alignment.sh",
+            "content": "set -euo pipefail\nINPUT='$(inputs.alignment.path)'\nEXT='$(inputs.alignment.format)'\nSAMPLE='$(inputs.alignment.element_identifier)'\nFASTA='$(inputs.fasta ? inputs.fasta.path : \"\")'\nFAI='$(inputs.fai ? inputs.fai.path : \"\")'\nCHR='$(inputs.chr)'\nFAST='$(inputs.fast)'\nREADS_IN_MEMORY='$(inputs.reads_in_memory)'\nTHREADS=\"$GALAXY_SLOTS\"\nmkdir -p reads work\nif [ \"$EXT\" = 'cram' ] && [ -z \"$FASTA\" ]; then\n    echo \"CRAM input requires its reference FASTA\" >&2\n    exit 1\nfi\nln -s \"$INPUT\" \"work/input.$EXT\"\nsamtools index -@ \"$THREADS\" \"work/input.$EXT\"\nLOCAL=\"work/input.$EXT\"\nref_args=()\nif [ -n \"$FASTA\" ]; then\n    ln -s \"$FASTA\" work/reference.fasta\n    if [ -n \"$FAI\" ]; then\n        ln -s \"$FAI\" work/reference.fasta.fai\n    else\n        samtools faidx work/reference.fasta\n    fi\n    ref_args=(--reference \"$PWD/work/reference.fasta\")\nfi\nif [ \"\\$( samtools view \"\\${ref_args[@]}\" \"$LOCAL\" -@\"$THREADS\" | head -n1000 | wc -l)\" -lt \"1000\" ]; then\n    LINES_TO_CHK=\\$( samtools view \"\\${ref_args[@]}\" \"$LOCAL\" -@\"$THREADS\" | wc -l)\nelse\n    LINES_TO_CHK=1000\nfi\nif [ -n \"$CHR\" ]; then\n    samtools view --threads \"$THREADS\" \"\\${ref_args[@]}\" -hb -o \"work/chr.$EXT\" \"$LOCAL\" \"$CHR\"\n    samtools index -@ \"$THREADS\" \"work/chr.$EXT\"\n    LOCAL=\"work/chr.$EXT\"\nfi\ncollate_args=()\nif [ \"$FAST\" = 'true' ]; then\n    collate_args=(-f -r \"$READS_IN_MEMORY\")\nfi\nif [ \"\\$( { samtools view -H \"\\${ref_args[@]}\" \"$LOCAL\" -@\"$THREADS\"; samtools view \"\\${ref_args[@]}\" \"$LOCAL\" -@\"$THREADS\" | head -n\"$LINES_TO_CHK\"; } | samtools view \"\\${ref_args[@]}\" -c -f 1 -@\"$THREADS\" | awk -v lines=\"$LINES_TO_CHK\" '{print $1/lines}')\" = '1' ]; then\n    samtools view --threads \"$THREADS\" \"\\${ref_args[@]}\" -b -f1 -F12 -o work/map_map.$EXT \"$LOCAL\"\n    samtools view --threads \"$THREADS\" \"\\${ref_args[@]}\" -b -f12 -F256 -o work/unmap_unmap.$EXT \"$LOCAL\"\n    samtools view --threads \"$THREADS\" \"\\${ref_args[@]}\" -b -f4 -F264 -o work/unmap_map.$EXT \"$LOCAL\"\n    samtools view --threads \"$THREADS\" \"\\${ref_args[@]}\" -b -f8 -F260 -o work/map_unmap.$EXT \"$LOCAL\"\n    samtools merge --threads \"$THREADS\" \"\\${ref_args[@]}\" -f \"work/unmapped.$EXT\" work/unmap_unmap.$EXT work/unmap_map.$EXT work/map_unmap.$EXT\n    samtools collate \"\\${collate_args[@]}\" --threads \"$THREADS\" \"\\${ref_args[@]}\" -O work/map_map.$EXT . | samtools fastq \"\\${ref_args[@]}\" --threads \"$THREADS\" -N -0 work/mapped_other.fq.gz -1 work/mapped_1.fq.gz -2 work/mapped_2.fq.gz -s work/mapped_singleton.fq.gz\n    samtools collate \"\\${collate_args[@]}\" --threads \"$THREADS\" \"\\${ref_args[@]}\" -O \"work/unmapped.$EXT\" . | samtools fastq \"\\${ref_args[@]}\" --threads \"$THREADS\" -N -0 work/unmapped_other.fq.gz -1 work/unmapped_1.fq.gz -2 work/unmapped_2.fq.gz -s work/unmapped_singleton.fq.gz\n    cat work/mapped_1.fq.gz work/unmapped_1.fq.gz > \"reads/\\${SAMPLE}_1.merged.fastq.gz\"\n    cat work/mapped_2.fq.gz work/unmapped_2.fq.gz > \"reads/\\${SAMPLE}_2.merged.fastq.gz\"\n    ln -s \"\\${SAMPLE}_1.merged.fastq.gz\" \"reads/\\${SAMPLE}_forward.fastq.gz\"\n    ln -s \"\\${SAMPLE}_2.merged.fastq.gz\" \"reads/\\${SAMPLE}_reverse.fastq.gz\"\n    MODE=paired\nelse\n    samtools collate \"\\${collate_args[@]}\" --threads \"$THREADS\" \"\\${ref_args[@]}\" -O \"$LOCAL\" . | samtools fastq \"\\${ref_args[@]}\" --threads \"$THREADS\" -N -0 \"reads/\\${SAMPLE}_other.fq.gz\" -1 work/single_1.fq.gz -s work/single_singleton.fq.gz\n    ln -s \"\\${SAMPLE}_other.fq.gz\" \"reads/\\${SAMPLE}_unpaired.fastq.gz\"\n    MODE=single_end\nfi\nSAMTOOLS_VERSION=\\$( samtools version | sed '1!d;s/.* //')\nCAT_VERSION=\\$( cat --version 2>&1 | head -n 1 | sed 's/^.*coreutils) //; s/ .*//')\n{\n    printf 'conversion_mode: %s\\n' \"$MODE\"\n    printf 'chromosome: %s\\n' \"\\${CHR:-all}\"\n    printf 'fast_collate: %s\\n' \"$FAST\"\n    printf 'CHECKPAIREDEND:\\n  samtools: %s\\n' \"$SAMTOOLS_VERSION\"\n    printf 'SAMTOOLS_COLLATEFASTQ_SINGLE_END:\\n  samtools: %s\\n' \"$SAMTOOLS_VERSION\"\n    printf 'COLLATE_FASTQ_MAP:\\n  samtools: %s\\n' \"$SAMTOOLS_VERSION\"\n    printf 'COLLATE_FASTQ_UNMAP:\\n  samtools: %s\\n' \"$SAMTOOLS_VERSION\"\n    printf 'CAT_FASTQ:\\n  cat: %s\\n' \"$CAT_VERSION\"\n} > conversion_log.yml\n"
+          }
+        ],
+        "inputs": [
+          {
+            "name": "alignment",
+            "type": "data",
+            "format": [
+              "bam",
+              "cram"
+            ],
+            "label": "Indexed BAM or CRAM alignment",
+            "help": "One sample per mapped invocation; the element identifier is preserved as the output sample key."
+          },
+          {
+            "name": "fasta",
+            "type": "data",
+            "format": [
+              "fasta"
+            ],
+            "label": "Reference FASTA",
+            "optional": true,
+            "help": "Required when CRAM decoding needs a reference; optional for BAM."
+          },
+          {
+            "name": "fai",
+            "type": "data",
+            "format": [
+              "fai"
+            ],
+            "label": "Matching reference FAI",
+            "optional": true,
+            "help": "Supplied or workflow-built FASTA index used by samtools where needed."
+          },
+          {
+            "name": "chr",
+            "type": "text",
+            "label": "Chromosome or region",
+            "value": "",
+            "optional": true,
+            "help": "Optional source-compatible chromosome/region expression; empty converts all reads."
+          },
+          {
+            "name": "fast",
+            "type": "boolean",
+            "label": "Use fast samtools collate mode",
+            "value": false,
+            "help": "Enable collate -f -r with reads_in_memory."
+          },
+          {
+            "name": "reads_in_memory",
+            "type": "integer",
+            "label": "Reads in memory for fast collate",
+            "value": 100000,
+            "help": "Number of reads buffered when fast collate is enabled."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "reads",
+            "type": "collection",
+            "collection_type": "paired_or_unpaired",
+            "format": "fastqsanger.gz",
+            "label": "Converted reads",
+            "discover_datasets": [
+              {
+                "discover_via": "pattern",
+                "pattern": ".*_(?P<designation>forward|reverse)\\.fastq\\.gz",
+                "directory": "reads"
+              },
+              {
+                "discover_via": "pattern",
+                "pattern": ".*_(?P<designation>unpaired)\\.fastq\\.gz",
+                "directory": "reads"
+              }
+            ]
+          },
+          {
+            "name": "conversion_log",
+            "type": "data",
+            "format": "yaml",
+            "from_work_dir": "conversion_log.yml",
+            "label": "Conversion mode and software versions"
+          }
+        ],
+        "help": {
+          "format": "markdown",
+          "content": "Groups the tightly coupled nf-core CHECKPAIREDEND, optional SAMTOOLS_CHR/index, SAMTOOLS_VIEW_MAP_MAP, SAMTOOLS_VIEW_UNMAP_UNMAP, SAMTOOLS_VIEW_UNMAP_MAP, SAMTOOLS_VIEW_MAP_UNMAP, SAMTOOLS_MERGE_UNMAP, COLLATE_FASTQ_MAP/UNMAP, SAMTOOLS_COLLATEFASTQ_SINGLE_END and CAT_FASTQ operations. Uses samtools 1.23.1 and preserves paired/unpaired structure and source output basenames. The additional forward/reverse links provide Galaxy-native pair identifiers.\n"
+        }
+      },
+      "tool_uuid": null,
+      "input_connections": {
+        "alignment": [
+          {
+            "id": 0,
+            "output_name": "output"
+          }
+        ],
+        "fasta": [
+          {
+            "id": 6,
+            "output_name": "output"
+          }
+        ],
+        "fai": [
+          {
+            "id": 13,
+            "output_name": "data_param"
+          }
+        ],
+        "chr": [
+          {
+            "id": 1,
+            "output_name": "output"
+          }
+        ],
+        "fast": [
+          {
+            "id": 4,
+            "output_name": "output"
+          }
+        ],
+        "reads_in_memory": [
+          {
+            "id": 5,
+            "output_name": "output"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 200,
+        "left": 200
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "reads",
+          "label": "converted_reads"
+        }
+      ]
+    },
+    "22": {
+      "id": 22,
+      "type": "tool",
+      "label": "Post-conversion FastQC",
+      "name": "FastQC for converted FASTQ samples",
+      "annotation": "",
+      "tool_id": null,
+      "tool_state": {
+        "__page__": 0
+      },
+      "tool_representation": {
+        "class": "GalaxyUserTool",
+        "id": "bamtofastq_fastqc_collection",
+        "version": "1.0.0",
+        "name": "FastQC for converted FASTQ samples",
+        "description": "Run FastQC once per converted single or paired sample and preserve sample and mate identifiers in HTML, ZIP, and raw-data outputs.",
+        "container": "quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0",
+        "shell_command": "set -euo pipefail\nSAMPLE='$(inputs.reads.name)'\nFORWARD='$(inputs.reads.elements.forward ? inputs.reads.elements.forward.path : \"\")'\nREVERSE='$(inputs.reads.elements.reverse ? inputs.reads.elements.reverse.path : \"\")'\nUNPAIRED='$(inputs.reads.elements.unpaired ? inputs.reads.elements.unpaired.path : \"\")'\nmkdir -p fastqc_out work\nif [ -n \"$FORWARD\" ]; then\n    ln -s \"$FORWARD\" \"work/\\${SAMPLE}.post_conversion_1.fastq.gz\"\n    ln -s \"$REVERSE\" \"work/\\${SAMPLE}.post_conversion_2.fastq.gz\"\n    fastqc --quiet --threads \"$GALAXY_SLOTS\" --extract --outdir fastqc_out \"work/\\${SAMPLE}.post_conversion_1.fastq.gz\" \"work/\\${SAMPLE}.post_conversion_2.fastq.gz\"\n    for MATE in 1 2; do\n        if [ \"$MATE\" = '1' ]; then DESIGNATION=forward; else DESIGNATION=reverse; fi\n        ln -s \"fastqc_out/\\${SAMPLE}.post_conversion_\\${MATE}_fastqc.html\" \"report_\\${DESIGNATION}.html\"\n        ln -s \"fastqc_out/\\${SAMPLE}.post_conversion_\\${MATE}_fastqc.zip\" \"report_\\${DESIGNATION}.zip\"\n        unzip -p \"fastqc_out/\\${SAMPLE}.post_conversion_\\${MATE}_fastqc.zip\" '*/fastqc_data.txt' > \"report_\\${DESIGNATION}.txt\"\n    done\nelse\n    ln -s \"$UNPAIRED\" \"work/\\${SAMPLE}.post_conversion.fastq.gz\"\n    fastqc --quiet --threads \"$GALAXY_SLOTS\" --extract --outdir fastqc_out \"work/\\${SAMPLE}.post_conversion.fastq.gz\"\n    ln -s \"fastqc_out/\\${SAMPLE}.post_conversion_fastqc.html\" report_unpaired.html\n    ln -s \"fastqc_out/\\${SAMPLE}.post_conversion_fastqc.zip\" report_unpaired.zip\n    unzip -p \"fastqc_out/\\${SAMPLE}.post_conversion_fastqc.zip\" '*/fastqc_data.txt' > report_unpaired.txt\nfi\n",
+        "inputs": [
+          {
+            "name": "reads",
+            "type": "data_collection",
+            "collection_type": "paired_or_unpaired",
+            "format": [
+              "fastqsanger.gz"
+            ],
+            "label": "Converted reads",
+            "help": "One converted sample; paired members are passed to the same FastQC invocation as in the source module."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "html_file",
+            "type": "collection",
+            "collection_type": "paired_or_unpaired",
+            "format": "html",
+            "label": "Per-sample FastQC HTML reports",
+            "discover_datasets": [
+              {
+                "discover_via": "pattern",
+                "pattern": "report_(?P<designation>forward|reverse)\\.html"
+              },
+              {
+                "discover_via": "pattern",
+                "pattern": "report_(?P<designation>unpaired)\\.html"
+              }
+            ]
+          },
+          {
+            "name": "text_file",
+            "type": "collection",
+            "collection_type": "paired_or_unpaired",
+            "format": "txt",
+            "label": "Per-sample raw FastQC data",
+            "discover_datasets": [
+              {
+                "discover_via": "pattern",
+                "pattern": "report_(?P<designation>forward|reverse)\\.txt"
+              },
+              {
+                "discover_via": "pattern",
+                "pattern": "report_(?P<designation>unpaired)\\.txt"
+              }
+            ]
+          },
+          {
+            "name": "zip_file",
+            "type": "collection",
+            "collection_type": "paired_or_unpaired",
+            "format": "zip",
+            "label": "Per-sample native FastQC ZIP archives",
+            "discover_datasets": [
+              {
+                "discover_via": "pattern",
+                "pattern": "report_(?P<designation>forward|reverse)\\.zip"
+              },
+              {
+                "discover_via": "pattern",
+                "pattern": "report_(?P<designation>unpaired)\\.zip"
+              }
+            ]
+          }
+        ],
+        "help": {
+          "format": "markdown",
+          "content": "Runs FastQC once per sample with both mates for paired data and one input for single-end data, matching the source FASTQC module. Source-compatible names are sample.post_conversion_1/2.fastq.gz for paired reads and sample.post_conversion.fastq.gz for unpaired reads. HTML, ZIP, and raw fastqc_data outputs remain keyed by sample and forward/reverse/unpaired designation.\n"
+        }
+      },
+      "tool_uuid": null,
+      "input_connections": {
+        "reads": [
+          {
+            "id": 21,
+            "output_name": "reads"
+          }
+        ],
+        "when": {
+          "id": 2,
+          "output_name": "output"
+        }
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 210,
+        "left": 210
+      },
+      "when": "$(!inputs.when)",
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "html_file",
+          "label": "post_conversion_fastqc_html"
+        },
+        {
+          "output_name": "text_file",
+          "label": "post_conversion_fastqc_data"
+        },
+        {
+          "output_name": "zip_file",
+          "label": "post_conversion_fastqc_zip"
+        }
+      ]
+    },
+    "24": {
+      "id": 24,
+      "type": "tool",
+      "label": "Aggregate software versions",
+      "name": "Aggregate verified software versions",
+      "annotation": "",
+      "tool_id": null,
+      "tool_state": {
+        "__page__": 0
+      },
+      "tool_representation": {
+        "class": "GalaxyUserTool",
+        "id": "aggregate_software_versions",
+        "version": "1.0.0",
+        "name": "Aggregate verified software versions",
+        "description": "Reduce mapped conversion logs to one manifest and record only evidenced package versions.",
+        "container": "community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5",
+        "shell_command": "set -eu\ncp '$(inputs.conversion_logs.elements[0].path)' software_versions.yml\nprintf '%s\\n' 'FASTQC_PRE_CONVERSION:' '  fastqc: 0.12.1' 'FASTQC_POST_CONVERSION:' '  fastqc: 0.12.1' 'FASTQUTILS_INFO:' '  fastqutils: 0.25.3' 'MULTIQC:' '  multiqc: 1.34' 'SAMTOOLS_FAIDX:' '  samtools: null' 'SAMTOOLS_FLAGSTAT:' '  samtools: null' 'SAMTOOLS_IDXSTATS:' '  samtools: null' 'SAMTOOLS_STATS:' '  samtools: 1.23.1' 'wrapper_resolution:' '  fastqc: native FastQC 0.12.1 UDT' '  samtools_faidx: iuc/samtools_faidx 1.22+galaxy1' '  samtools_flagstat: devteam/samtools_flagstat 2.0.8' '  samtools_idxstats: devteam/samtools_idxstats 2.0.8' '  samtools_stats: native samtools 1.23.1 UDT' '  fastqutils: native fastqutils 0.25.3 UDT' '  multiqc: iuc/multiqc 1.34+galaxy0' >> software_versions.yml\n",
+        "inputs": [
+          {
+            "name": "conversion_logs",
+            "type": "data_collection",
+            "collection_type": "list",
+            "format": [
+              "yaml"
+            ],
+            "label": "Per-sample conversion and version logs",
+            "help": "Mapped logs from bamtofastq_convert; the first log supplies runtime versions shared by every sample in the same pinned container."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "versions",
+            "type": "data",
+            "format": "yaml",
+            "from_work_dir": "software_versions.yml",
+            "label": "Aggregated software versions and wrapper identities"
+          }
+        ],
+        "help": {
+          "format": "markdown",
+          "content": "Reduces all mapped conversion logs to one dataset by using the shared container-version evidence from the first sample. Preserves exact direct-runtime versions and records unresolved wrapper packages as nulls rather than fabricating values.\n"
+        }
+      },
+      "tool_uuid": null,
+      "input_connections": {
+        "conversion_logs": [
+          {
+            "id": 21,
+            "output_name": "conversion_log"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 230,
+        "left": 230
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "versions",
+          "label": "software_versions"
+        }
+      ]
+    },
+    "25": {
+      "id": 25,
+      "type": "tool",
+      "label": "Aggregate QC with MultiQC",
+      "name": "toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.34+galaxy0",
+      "annotation": "",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.34+galaxy0",
+      "tool_version": "1.34+galaxy0",
+      "tool_shed_repository": {
+        "name": "multiqc",
+        "owner": "iuc",
+        "changeset_revision": "371299578b8e",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "__page__": 0,
+        "results": [
+          {
+            "software_cond": {
+              "software": "fastqc",
+              "output": [
+                {
+                  "type": "data"
+                }
+              ]
+            }
+          },
+          {
+            "software_cond": {
+              "software": "fastqc",
+              "output": [
+                {
+                  "type": "data"
+                }
+              ]
+            }
+          },
+          {
+            "software_cond": {
+              "software": "samtools",
+              "output": [
+                {
+                  "type": {
+                    "type": "flagstat"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "software_cond": {
+              "software": "samtools",
+              "output": [
+                {
+                  "type": {
+                    "type": "idxstats"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "software_cond": {
+              "software": "samtools",
+              "output": [
+                {
+                  "type": {
+                    "type": "stats"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "export": true
+      },
+      "input_connections": {
+        "results_0|software_cond|output_0|input": [
+          {
+            "id": 15,
+            "output_name": "text_file"
+          }
+        ],
+        "results_1|software_cond|output_0|input": [
+          {
+            "id": 22,
+            "output_name": "text_file"
+          }
+        ],
+        "image_content_input": [
+          {
+            "id": 9,
+            "output_name": "output"
+          }
+        ],
+        "title": [
+          {
+            "id": 8,
+            "output_name": "output"
+          }
+        ],
+        "results_2|software_cond|output_0|type|input": [
+          {
+            "id": 16,
+            "output_name": "output1"
+          }
+        ],
+        "results_3|software_cond|output_0|type|input": [
+          {
+            "id": 17,
+            "output_name": "output"
+          }
+        ],
+        "results_4|software_cond|output_0|type|input": [
+          {
+            "id": 20,
+            "output_name": "data_param"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 240,
+        "left": 240
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "html_report",
+          "label": "multiqc_report"
+        },
+        {
+          "output_name": "stats",
+          "label": "multiqc_data"
+        }
+      ]
+    },
+    "26": {
+      "id": 26,
+      "type": "tool",
+      "label": "Format FASTQ validation report",
+      "name": "Format FASTQ validation result",
+      "annotation": "",
+      "tool_id": null,
+      "tool_state": {
+        "__page__": 0
+      },
+      "tool_representation": {
+        "class": "GalaxyUserTool",
+        "id": "format_fastq_validation",
+        "version": "1.0.0",
+        "name": "Format FASTQ validation result",
+        "description": "Run fastq_info once per single or paired sample and emit the nf-core FASTQUTILS_INFO success echo only after successful validation.",
+        "container": "quay.io/biocontainers/fastq_utils:0.25.3--ha9dfd29_0",
+        "shell_command": "set -euo pipefail\nSAMPLE='$(inputs.reads.name)'\nFORWARD='$(inputs.reads.elements.forward ? inputs.reads.elements.forward.path : \"\")'\nREVERSE='$(inputs.reads.elements.reverse ? inputs.reads.elements.reverse.path : \"\")'\nUNPAIRED='$(inputs.reads.elements.unpaired ? inputs.reads.elements.unpaired.path : \"\")'\nmkdir -p work\nif [ -n \"$FORWARD\" ]; then\n    ln -s \"$FORWARD\" \"work/\\${SAMPLE}_1.merged.fastq.gz\"\n    ln -s \"$REVERSE\" \"work/\\${SAMPLE}_2.merged.fastq.gz\"\n    fastq_info \"work/\\${SAMPLE}_1.merged.fastq.gz\" \"work/\\${SAMPLE}_2.merged.fastq.gz\"\n    printf \"fastq_utils fastq_info ran and found no issues with \\${SAMPLE}_1.merged.fastq.gz \\${SAMPLE}_2.merged.fastq.gz\\n\" > validation.txt\nelse\n    ln -s \"$UNPAIRED\" \"work/\\${SAMPLE}_other.fq.gz\"\n    fastq_info \"work/\\${SAMPLE}_other.fq.gz\"\n    printf \"fastq_utils fastq_info ran and found no issues with \\${SAMPLE}_other.fq.gz\\n\" > validation.txt\nfi\n",
+        "inputs": [
+          {
+            "name": "reads",
+            "type": "data_collection",
+            "collection_type": "paired_or_unpaired",
+            "format": [
+              "fastqsanger.gz"
+            ],
+            "label": "Converted reads",
+            "help": "Original reads provide sample identifier and single/paired context for source-compatible filenames."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "info",
+            "type": "data",
+            "format": "txt",
+            "from_work_dir": "validation.txt",
+            "label": "Source-compatible FASTQ validation report"
+          }
+        ],
+        "help": {
+          "format": "markdown",
+          "content": "Runs fastq_info without additional arguments, matching FASTQUTILS_INFO. The source success text is written only when validation exits successfully. Paired files are named sample_1.merged.fastq.gz and sample_2.merged.fastq.gz; single-end files are named sample_other.fq.gz. A nonzero validation exit fails the job and suppresses the success text.\n"
+        }
+      },
+      "tool_uuid": null,
+      "input_connections": {
+        "reads": [
+          {
+            "id": 21,
+            "output_name": "reads"
+          }
+        ]
+      },
+      "post_job_actions": {},
+      "position": {
+        "top": 250,
+        "left": 250
+      },
+      "inputs": [],
+      "outputs": [],
+      "workflow_outputs": [
+        {
+          "output_name": "info",
+          "label": "fastq_validation"
+        }
+      ]
+    }
+  }
+}

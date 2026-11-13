@@ -1,0 +1,215 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-bamtofastq-glm53-fixed
+  status: complete
+phases:
+  1: { skill: summarize-nextflow, status: done, feedback_checked: true }
+  2: { skill: nextflow-summary-to-galaxy-reference-data, status: done, feedback_checked: true, iterations: 0 }
+  3: { skill: nextflow-summary-to-galaxy-interface, status: done, feedback_checked: true, iterations: 0 }
+  4: { skill: nextflow-summary-to-galaxy-data-flow, status: done, feedback_checked: true, iterations: 0 }
+  5: { skill: compare-against-iwc-exemplar, status: done, feedback_checked: true, iterations: 0 }
+  6: { skill: nextflow-summary-to-galaxy-template, status: done, feedback_checked: true, iterations: 0 }
+  7: { skill: advance-galaxy-draft-step, status: done, feedback_checked: true, iterations: 18 }
+  8:
+    pattern: test-data-resolution
+    chain: [nextflow-to-test-data, find-test-data, user-supplied]
+    status: done
+    selected: nextflow-to-test-data
+    iterations: 1
+  9: { skill: nextflow-test-to-galaxy-test-plan, status: done, feedback_checked: true, iterations: 0 }
+  10: { skill: implement-galaxy-workflow-test, status: done, feedback_checked: true, iterations: 0 }
+  11: { skill: validate-galaxy-workflow, status: done, feedback_checked: true, iterations: 0 }
+  12: { skill: run-workflow-test, status: done, feedback_checked: true, iterations: 0 }
+  13: { skill: debug-galaxy-workflow-output, status: done, feedback_checked: true, iterations: 0 }
+entries:
+  - id: subworkflow-kind-pipeline-for-process-free-calls
+    raised_by: summarize-nextflow
+    observed_in:
+      mold: summarize-nextflow
+      path: content/molds/summarize-nextflow/index.md
+      revision: 21
+      content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: implementation
+      label: summarize-nextflow CLI subworkflow kind classification
+      locator: package://@galaxy-foundry/summarize-nextflow
+    kind: defect
+    severity: minor
+    what: "The summarize-nextflow CLI emitted kind 'pipeline' for PIPELINE_INITIALISATION and PIPELINE_COMPLETION in nf-core/bamtofastq, although neither invokes a pipeline process (INITIALISATION calls only utility subworkflows and samplesheetToList; COMPLETION calls only free functions)."
+    expected: "Classify a subworkflow as 'utility' when its calls contain no pipeline processes, matching the mold's documented split that cites exactly these two as canonical utilities."
+    evidence: "summary-nextflow.json subworkflows[] rows for PIPELINE_INITIALISATION and PIPELINE_COMPLETION carry kind 'pipeline' with calls UTILS_*/samplesheetToList and completionEmail/completionSummary/paramsSummaryMap respectively."
+    status: open
+    issue: null
+  - id: params-delta-misses-nftest-configfile-override
+    raised_by: summarize-nextflow
+    observed_in:
+      mold: summarize-nextflow
+      path: content/molds/summarize-nextflow/index.md
+      revision: 21
+      content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: implementation
+      label: summarize-nextflow CLI test-candidate params_delta resolution
+      locator: package://@galaxy-foundry/summarize-nextflow
+    kind: gap
+    severity: minor
+    what: "For test candidates, params_delta['input'] keeps the URL resolved from conf/test.config against nextflow.config's pipelines_testdata_base_path, while inputs[] carries the effective URL after nf-test.config's tests/nextflow.config override (refs/heads/bamtofastq form); a consumer keying on params_delta would fetch a stale URL."
+    expected: "Merge the nf-test.config configFile (tests/nextflow.config) param overrides into candidate params_delta, or document that params_delta excludes the nf-test runner's configFile layer."
+    evidence: "Selected candidate 'tests/default.nf.test::-profile test' in nf-core/bamtofastq: params_delta.input is nf-core/test-datasets/bamtofastq/... but inputs[0].url is nf-core/test-datasets/refs/heads/bamtofastq/... because tests/nextflow.config re-sets pipelines_testdata_base_path."
+    status: open
+    issue: null
+  - id: main-nf-getgenomeattribute-fallback-not-in-params
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    observed_in:
+      mold: nextflow-summary-to-galaxy-reference-data
+      path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+      revision: 4
+      content_hash: unknown-not-read
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: implementation
+      label: summarize-nextflow CLI params provenance for main.nf dynamic assignments
+      locator: package://@galaxy-foundry/summarize-nextflow
+    kind: gap
+    severity: minor
+    what: "nf-core/bamtofastq's main.nf carries 'params.fasta = params.fasta ?: getGenomeAttribute(\"fasta\")' fallback assignments, but the emitted params[] for fasta/fasta_fai show source_kind 'nextflow_schema' with no source_expression; the key-expanded-bundle detection signal the reference-data mold keys on is therefore weakened when a param appears both in nextflow_schema.json and as a main.nf dynamic fallback."
+    expected: "Merge main.nf-level 'params.X = params.X ?: <expr>' assignments into the param's source_kind/source_expression (or an additional provenance field) even when the param also has a schema entry."
+    evidence: "summary-nextflow.json params fasta/fasta_fai rows have source_kind nextflow_schema, source_expression null; main.nf line 37-38 has the getGenomeAttribute fallbacks."
+    status: open
+    issue: null
+  - id: sample-sheet-note-silent-on-sidecar-index-column
+    raised_by: nextflow-summary-to-galaxy-interface
+    observed_in:
+      mold: nextflow-summary-to-galaxy-interface
+      path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+      revision: 6
+      content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+      foundry_head: 61da115975d155a36face0e83d5c28f638da7fca
+    subject:
+      kind: research
+      label: galaxy-sample-sheet-collections variant mapping
+      locator: content/research/galaxy-sample-sheet-collections/index.md
+      content_hash: 98736fdcd0c4f4698af4e0cd4c539b33e3d0db872de1e10487556b21033030ec
+    kind: gap
+    severity: minor
+    what: "The sample-sheet variant mapping table covers one path column, two mate path columns, and heterogeneous record columns, but not an optional sidecar-index path column (bamtofastq's 'index' bai/crai column, also common in sarek-style sheets); the interface Mold had to reason the choice (flat list + rebuild) without a rule to cite."
+    expected: "Add a row for optional index/sidecar path columns stating the recommended Galaxy shape (drop the column and rebuild, or record variant) so the decision is rule-backed."
+    evidence: "nf-core/bamtofastq assets/schema_input.json has required 'mapped' (.bam|.cram) plus optional 'index' (.bai|.crai); no table row in galaxy-sample-sheet-collections matches an index sidecar paired with a primary alignment column."
+    status: open
+    issue: null
+  - id: draft-validate-zod-error-blob
+    raised_by: nextflow-summary-to-galaxy-template
+    observed_in:
+      mold: nextflow-summary-to-galaxy-template
+      path: content/molds/nextflow-summary-to-galaxy-template/index.md
+      revision: 5
+      content_hash: unknown-not-read
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: related-project
+      label: gxwf draft-validate structure-error output
+      locator: https://github.com/jmchilton/galaxy-tool-util-ts (packages/cli, draft-validate)
+    kind: friction
+    severity: minor
+    what: "gxwf draft-validate emitted an ~84KB raw zod error blob for a simple scalar-vs-array format mismatch on a workflow input; the human-readable output is not actionable without --json plus manual digging, and the JSON structure_errors[0].message is the same blob."
+    expected: "draft-validate should summarize each failing path concisely (path + expected + actual) instead of dumping the full zod schema in the error message."
+    evidence: "Draft with 'format: fasta' (scalar) on a data input: 1 structure error whose message embeds the entire input-union schema; fix (format as list) found only by splitting the blob."
+    status: open
+    issue: null
+  - id: tool-cache-summarize-no-changeset
+    raised_by: advance-galaxy-draft-step
+    observed_in:
+      mold: advance-galaxy-draft-step
+      path: content/molds/advance-galaxy-draft-step/index.md
+      revision: 6
+      content_hash: unknown-not-read
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: related-project
+      label: galaxy-tool-cache summarize lacks changeset_revision
+      locator: https://github.com/jmchilton/galaxy-tool-util-ts (packages/cli, summarize)
+    kind: gap
+    severity: minor
+    what: "The galaxy-tool-cache summarize manifest exposes tool_id and tool_version but not the wrapper's changeset_revision, which implement-galaxy-tool-step needs for the tool_shed_repository block; changesets had to be recovered by grepping IWC .ga files for the same tool versions."
+    expected: "Include the resolved changeset_revision (and owner/repository) in the summarize output so gxformat2 steps can be fully pinned without corpus archaeology."
+    evidence: "Resolving devteam fastqc 0.74+galaxy1, samtools_stats 2.0.9, samtools_idxstats 2.0.8 and iuc samtools_view 1.22+galaxy2 changesets required IWC .ga greps; flagstat's was guessed from the shed's ordered-installable-revisions tip."
+    status: open
+    issue: null
+  - id: test-data-refs-schema-no-scalar-form
+    raised_by: nextflow-to-test-data
+    observed_in:
+      mold: nextflow-to-test-data
+      path: content/molds/nextflow-to-test-data/index.md
+      revision: 3
+      content_hash: unknown-not-read
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: schema
+      label: test-data-refs Ref has no representation for scalar inputs
+      locator: package://@galaxy-foundry/gxwf-foundry#testDataRefsSchema
+    kind: gap
+    severity: minor
+    what: "The test-data-refs Ref schema requires a resolved entry to carry either a string fixture.location or >=1 elements, so a scalar workflow input satisfied by a plain job value (booleans, ints, unset strings) has no honest form; the run had to encode pseudo-locations like 'job-value: no_stats ...' under storage 'remote-url' to validate."
+    expected: "Add a scalar-input form to Ref (e.g. storage 'job-value' with a value field, or an exemption from the location/elements requirement for non-collection inputs)."
+    evidence: "test-data-refs.json refs 1-5 (chr, no_stats, no_read_qc, samtools_collate_fast, reads_in_memory) carry fabricated location strings to pass the anyOf; validate-test-data-refs rejected the null-location form with 20 errors."
+    status: open
+    issue: null
+  - id: planemo-gxformat2-label-required
+    raised_by: run-workflow-test
+    observed_in:
+      mold: run-workflow-test
+      path: content/molds/run-workflow-test/index.md
+      revision: 2
+      content_hash: unknown-not-read
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: related-project
+      label: gxformat2 format2 step ids vs planemo conversion
+      locator: https://github.com/galaxyproject/gxformat2
+    kind: defect
+    severity: minor
+    what: "A format2 workflow whose steps are dict-keyed without label fields, or with human-readable labels different from the keys, passes gxwf validate (npm CLI) but crashes planemo's bundled gxformat2 with ValueError: invalid literal for int() at _conversion.step_id; _register_labels registers step.label or step.id, and in: source: references resolve against that label map, so display labels that differ from ids break every reference."
+    expected: "gxformat2 should register both the id and the label (and error clearly on ambiguity), or gxwf draft-validate should enforce label==id for dict-keyed steps so drafts that pass the Foundry validator also convert under planemo."
+    evidence: "Attempts 1-2 of the planemo phase: attempt 1 (no labels) and attempt 2 (human labels) both failed int('check_endedness'); setting label equal to each step id fixed conversion."
+    status: open
+    issue: null
+  - id: merge-collection-repeat-state-required
+    raised_by: run-workflow-test
+    observed_in:
+      mold: run-workflow-test
+      path: content/molds/run-workflow-test/index.md
+      revision: 2
+      content_hash: unknown-not-read
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: related-project
+      label: Galaxy __MERGE_COLLECTION__ repeat state in workflow imports
+      locator: https://github.com/galaxyproject/galaxy
+    kind: defect
+    severity: minor
+    what: "A workflow step using __MERGE_COLLECTION__ with input connections inputs_0|input..inputs_2|input but no `inputs` repeat entries in tool_state fails at invocation scheduling with 'Output collection output has type_source inputs_0|input, which does not name a collection input', even though the connections alone should determine the repeat; corpus workflows carry explicit repeat state entries."
+    expected: "Workflow import or scheduling should materialize the repeat from the input connections, or gxformat2/gxwf should require the repeat state when a repeat input is connected."
+    evidence: "Attempt 4 failure (step 30 merge_reads); adding inputs: [{__index__: 0},{__index__: 1},{__index__: 2}] to the state fixed scheduling in attempt 5."
+    status: open
+    issue: null
+  - id: planemo-element-count-only-outputs
+    raised_by: run-workflow-test
+    observed_in:
+      mold: run-workflow-test
+      path: content/molds/run-workflow-test/index.md
+      revision: 2
+      content_hash: unknown-not-read
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: related-project
+      label: planemo runnable.py collection output verification
+      locator: https://github.com/galaxyproject/planemo
+    kind: gap
+    severity: minor
+    what: "planemo's output verification (runnable.py) treats an output entry without element_tests as a dataset expecting a path, so a tests-format collection output carrying only element_count fails with 'No path specified for expected output file' although the tests-format schema and verify_collection support count-only checks."
+    expected: "runnable.py should route collection outputs (class: Collection or element_count present) through the collection verifier without requiring element_tests or a path."
+    evidence: "Attempt 5 failed only on the four fastqc element_count-only outputs; converting them to element_tests with trivial has_size assertions fixed it."
+    status: open
+    issue: null

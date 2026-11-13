@@ -1,0 +1,288 @@
+class: GalaxyWorkflowDraft
+label: nf-core/bamtofastq (Galaxy conversion)
+doc: |
+  Convert aligned reads (BAM/CRAM) back to paired-end FASTQ, with optional QC (samtools flagstat/idxstats/stats,
+  FastQC before and after conversion, FASTQ integrity check) aggregated in a MultiQC report. Converted from
+  nf-core/bamtofastq (commit aa0150e). Paired-end input only: the source's per-sample single-end branch and the
+  --chr region restriction are not carried.
+inputs:
+  alignments:
+    type: collection
+    collection_type: list
+    format:
+    - bam
+    - cram
+    doc: Aligned reads as a collection of BAM or CRAM files; the element identifier is used as sample name.
+  reference_fasta:
+    type: data
+    format: fasta
+    doc: >-
+      Reference genome FASTA. Required so CRAM inputs can be decoded; used for BAM inputs too because the Galaxy samtools
+      wrappers need an explicit reference selection.
+  skip_read_qc:
+    type: boolean
+    default: false
+    doc: Skip FastQC before and after conversion. Corresponds to --no_read_QC.
+  skip_stats:
+    type: boolean
+    default: false
+    doc: Skip samtools flagstat, idxstats and stats. Corresponds to --no_stats.
+outputs:
+  converted_reads:
+    outputSource: pair_reads/output
+  flagstat:
+    outputSource: samtools_flagstat/output1
+  idxstats:
+    outputSource: samtools_idxstats/output
+  alignment_stats:
+    outputSource: samtools_stats/output
+  fastqc_input_html:
+    outputSource: fastqc_input/html_file
+  fastqc_input_data:
+    outputSource: fastqc_input/text_file
+  fastqc_reads_html:
+    outputSource: fastqc_reads/html_file
+  fastqc_reads_data:
+    outputSource: fastqc_reads/text_file
+  fastq_integrity:
+    outputSource: fastq_integrity/output
+  multiqc_report:
+    outputSource: multiqc/html_report
+steps:
+  convert_to_bam:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: alignments
+      addref_cond|ref: reference_fasta
+    out:
+    - id: outputsam
+    state:
+      mode:
+        outtype: all_reads
+        output_options:
+          reads_report_type: retained
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: history
+    doc: Convert alignments to BAM
+  sort_by_name:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_sort/samtools_sort/2.0.8
+    tool_version: 2.0.8
+    tool_shed_repository:
+      changeset_revision: 2ce517eb9af2
+      name: samtools_sort
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input1: convert_to_bam/outputsam
+    out:
+    - id: output1
+    state:
+      prim_key_cond:
+        prim_key_select: -n
+      minhash: false
+    doc: Collate reads by name
+  bam_to_fastq:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx/samtools_fastx/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 4bde991b8037
+      name: samtools_fastx
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: sort_by_name/output1
+    out:
+    - id: forward
+    - id: reverse
+    state:
+      output_fmt_cond:
+        output_fmt_select: fastqsanger.gz
+        output_quality: false
+        ilumina_casava: false
+      outputs:
+      - r1
+      - r2
+      copy_tags: false
+      read_numbering: -N
+      exclusive_filter:
+      - '256'
+      - '2048'
+      idxout_cond:
+        idxout_select: 'no'
+    doc: Convert BAM to FASTQ
+  pair_reads:
+    tool_id: __ZIP_COLLECTION__
+    tool_version: 1.0.0
+    in:
+      input_forward: bam_to_fastq/forward
+      input_reverse: bam_to_fastq/reverse
+    out:
+    - id: output
+    state: {}
+    doc: Pair forward and reverse reads
+  samtools_flagstat:
+    when: $(!inputs.skip_stats)
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8
+    tool_version: 2.0.8
+    tool_shed_repository:
+      changeset_revision: a0d8e49a018c
+      name: samtools_flagstat
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      skip_stats: skip_stats
+      input1: convert_to_bam/outputsam
+    out:
+    - id: output1
+    state:
+      output_fmt: txt
+    doc: samtools flagstat
+  samtools_idxstats:
+    when: $(!inputs.skip_stats)
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats/2.0.8
+    tool_version: 2.0.8
+    tool_shed_repository:
+      changeset_revision: 13aad5cb9be4
+      name: samtools_idxstats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      skip_stats: skip_stats
+      input: convert_to_bam/outputsam
+    out:
+    - id: output
+    state: {}
+    doc: samtools idxstats
+  samtools_stats:
+    when: $(!inputs.skip_stats)
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.9
+    tool_version: 2.0.9
+    tool_shed_repository:
+      changeset_revision: 8fca6e1eac98
+      name: samtools_stats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      skip_stats: skip_stats
+      input: convert_to_bam/outputsam
+    out:
+    - id: output
+    state:
+      coverage_cond:
+        coverage_select: 'no'
+      remove_dups: false
+      split_output_cond:
+        split_output_selector: 'no'
+      filter_by_flags:
+        filter_flags: nofilter
+      addref_cond:
+        addref_select: 'no'
+      cond_region:
+        select_region: 'no'
+      sparse: false
+      remove_overlaps: false
+    doc: samtools stats
+  fastqc_input:
+    when: $(!inputs.skip_read_qc)
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      skip_read_qc: skip_read_qc
+      input_file: convert_to_bam/outputsam
+    out:
+    - id: html_file
+    - id: text_file
+    state:
+      nogroup: false
+      kmers: 7
+    doc: FastQC on input alignments
+  fastqc_reads:
+    when: $(!inputs.skip_read_qc)
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      skip_read_qc: skip_read_qc
+      input_file: pair_reads/output
+    out:
+    - id: html_file
+    - id: text_file
+    state:
+      nogroup: false
+      kmers: 7
+    doc: FastQC on converted reads
+  fastq_integrity:
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/fastq_info/fastq_info/0.25.3+galaxy0
+    tool_version: 0.25.3+galaxy0
+    tool_shed_repository:
+      changeset_revision: 2bca15e630a4
+      name: fastq_info
+      owner: bgruening
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_option|fastq_1: bam_to_fastq/forward
+      input_option|fastq_2: bam_to_fastq/reverse
+    out:
+    - id: output
+    state:
+      input_option:
+        input_type: paired
+      q: true
+      r: false
+    doc: FASTQ integrity check
+  multiqc:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+    tool_version: 1.35+galaxy5
+    tool_shed_repository:
+      changeset_revision: 94b6bea727ae
+      name: multiqc
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      results_0|software_cond|output_0|type|input: samtools_stats/output
+      results_0|software_cond|output_1|type|input: samtools_flagstat/output1
+      results_0|software_cond|output_2|type|input: samtools_idxstats/output
+      results_1|software_cond|output_0|input: fastqc_input/text_file
+      results_2|software_cond|output_0|input: fastqc_reads/text_file
+    out:
+    - id: html_report
+    state:
+      results:
+      - software_cond:
+          software: samtools
+          output:
+          - type:
+              type: stats
+          - type:
+              type: flagstat
+          - type:
+              type: idxstats
+      - software_cond:
+          software: fastqc
+          output:
+          - type: data
+      - software_cond:
+          software: fastqc
+          output:
+          - type: data
+      flat: false
+      export: false
+      png_plots: false
+    doc: MultiQC

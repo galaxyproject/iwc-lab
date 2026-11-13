@@ -1,0 +1,2194 @@
+class: GalaxyWorkflowDraft
+label: nf-core/bamtofastq (Galaxy translation)
+doc: >
+  Galaxy translation draft of nf-core/bamtofastq (commit aa0150e): converts mapped
+  or unmapped BAM/CRAM alignments into single-end and paired-end FASTQ reads
+  (fastqsanger.gz) with optional chromosome subsetting, samtools alignment stats,
+  pre/post FastQC, fastq_info validation, and aggregated MultiQC reporting.
+
+inputs:
+  input_alignments:
+    type: collection
+    collection_type: list
+    format:
+      - bam
+      - cram
+    doc: List collection of input BAM/CRAM alignment files keyed by sample identifier.
+  reference_fasta:
+    type: data
+    format: fasta
+    optional: true
+    doc: Optional reference genome FASTA used for CRAM decoding and samtools stats.
+  chr:
+    type: string
+    optional: true
+    doc: Optional region or chromosome string passed to samtools view -hb before conversion.
+  no_read_qc:
+    type: boolean
+    default: false
+    doc: Skip pre-conversion BAM FastQC and post-conversion FASTQ FastQC when true.
+  no_stats:
+    type: boolean
+    default: false
+    doc: Skip pre-conversion samtools flagstat, idxstats, and stats when true.
+  samtools_collate_fast:
+    type: boolean
+    default: false
+    doc: Enable samtools collate fast mode (-f -r reads_in_memory).
+  reads_in_memory:
+    type: int
+    default: 100000
+    doc: Number of reads buffered in memory when samtools_collate_fast is enabled.
+
+outputs:
+  paired_reads:
+    outputSource: pe_zip_reads/output
+    type: collection
+    collection_type: list:paired
+    doc: Merged paired-end FASTQ reads per paired-end sample (fastqsanger.gz).
+  single_end_reads:
+    outputSource: se_collate_fastq/fastq_other
+    type: collection
+    collection_type: list
+    doc: Extracted single-end FASTQ reads per single-end sample (fastqsanger.gz).
+  fastq_info_reports:
+    outputSource: merge_fastqinfo/output
+    type: collection
+    collection_type: list
+    doc: Per-sample fastq_info validation reports across paired and single-end samples.
+  samtools_flagstat:
+    outputSource: samtools_flagstat/output1
+    type: collection
+    collection_type: list
+    doc: Per-sample samtools flagstat reports (skipped when no_stats=true).
+  samtools_idxstats:
+    outputSource: samtools_idxstats/output
+    type: collection
+    collection_type: list
+    doc: Per-sample samtools idxstats reports (skipped when no_stats=true).
+  samtools_stats:
+    outputSource: pick_samtools_stats/data_param
+    type: collection
+    collection_type: list
+    doc: Per-sample samtools stats reports (skipped when no_stats=true).
+  fastqc_pre_html:
+    outputSource: fastqc_pre/html_file
+    type: collection
+    collection_type: list
+    doc: Pre-conversion FastQC HTML reports for BAM inputs (skipped when no_read_qc=true).
+  fastqc_pre_data:
+    outputSource: fastqc_pre/text_file
+    type: collection
+    collection_type: list
+    doc: Pre-conversion FastQC RawData text reports for BAM inputs (skipped when no_read_qc=true).
+  fastqc_post_html:
+    outputSource: fastqc_post/html_file
+    type: collection
+    collection_type: list
+    doc: Post-conversion FastQC HTML reports for extracted FASTQ reads (skipped when no_read_qc=true).
+  fastqc_post_data:
+    outputSource: fastqc_post/text_file
+    type: collection
+    collection_type: list
+    doc: Post-conversion FastQC RawData text reports for extracted FASTQ reads (skipped when no_read_qc=true).
+  multiqc_report:
+    outputSource: pick_multiqc/data_param
+    type: data
+    doc: MultiQC HTML summary report aggregating samtools stats and FastQC outputs (when stats or read QC enabled).
+
+comments:
+  - type: frame
+    title: Conditional Gates & Pre-Conversion QC
+    color: blue
+    position: [0, 0]
+    size: [1100, 950]
+    contains_steps:
+      - gate_run_stats
+      - gate_run_read_qc
+      - has_reference
+      - no_reference
+      - gate_stats_with_ref
+      - gate_stats_no_ref
+      - samtools_idxstats
+      - samtools_flagstat
+      - samtools_stats_with_ref
+      - samtools_stats_no_ref
+      - pick_samtools_stats
+      - check_bam_filetype
+      - keep_bam_ids
+      - extract_bam_ids
+      - sync_bam_alignments
+      - fastqc_pre
+  - type: frame
+    title: Optional Region Filter & Paired/Single Split
+    color: green
+    position: [1200, 0]
+    size: [1450, 950]
+    contains_steps:
+      - gate_run_chr
+      - gate_chr_with_ref
+      - gate_chr_no_ref
+      - samtools_chr_with_ref
+      - samtools_chr_no_ref
+      - pick_active_alignments
+      - check_paired
+      - keep_paired_ids
+      - extract_paired_ids
+      - sync_paired_alignments
+      - keep_single_ids
+      - extract_single_ids
+      - sync_single_alignments
+  - type: frame
+    title: Single-End FASTQ Conversion
+    color: orange
+    position: [2750, 0]
+    size: [550, 400]
+    contains_steps:
+      - se_collate_fastq
+  - type: frame
+    title: Paired-End Subset Merge & FASTQ Conversion
+    color: turquoise
+    position: [2750, 480]
+    size: [2150, 1200]
+    contains_steps:
+      - pe_view_map_map_with_ref
+      - pe_view_map_map_no_ref
+      - pick_pe_view_map_map
+      - pe_view_map_unmap_with_ref
+      - pe_view_map_unmap_no_ref
+      - pick_pe_view_map_unmap
+      - pe_view_unmap_map_with_ref
+      - pe_view_unmap_map_no_ref
+      - pick_pe_view_unmap_map
+      - pe_view_unmap_unmap_with_ref
+      - pe_view_unmap_unmap_no_ref
+      - pick_pe_view_unmap_unmap
+      - pe_merge_unmap_lists
+      - pe_group_unmap_per_sample
+      - pe_merge_unmap
+      - pe_collate_map
+      - pe_collate_unmap
+      - pe_cat_r1
+      - pe_cat_r2
+      - pe_zip_reads
+  - type: frame
+    title: Post-Conversion QC & MultiQC Reporting
+    color: yellow
+    position: [4800, 0]
+    size: [1450, 950]
+    contains_steps:
+      - fastqutils_paired
+      - fastqutils_single
+      - merge_fastqinfo
+      - flatten_paired_reads
+      - merge_post_reads
+      - fastqc_post
+      - gate_multiqc_all
+      - gate_multiqc_stats_only
+      - gate_multiqc_readqc_only
+      - multiqc_all
+      - multiqc_stats_only
+      - multiqc_readqc_only
+      - pick_multiqc
+
+steps:
+  # --- Frame 1: Conditional Gates & Pre-Conversion QC ---
+  gate_run_stats:
+    label: gate_run_stats
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/map_param_value/map_param_value/0.2.0
+    tool_version: "0.2.0"
+    tool_shed_repository:
+      name: map_param_value
+      owner: iuc
+      changeset_revision: 022a635f2283
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_param_type|input_param: no_stats
+    out:
+      - output_param_boolean
+    state:
+      input_param_type:
+        type: boolean
+        mappings:
+          - from: false
+            to: "true"
+      output_param_type: boolean
+      unmapped:
+        on_unmapped: default
+        default_value: "false"
+    position:
+      top: 60
+      left: 50
+
+  gate_run_read_qc:
+    label: gate_run_read_qc
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/map_param_value/map_param_value/0.2.0
+    tool_version: "0.2.0"
+    tool_shed_repository:
+      name: map_param_value
+      owner: iuc
+      changeset_revision: 022a635f2283
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_param_type|input_param: no_read_qc
+    out:
+      - output_param_boolean
+    state:
+      input_param_type:
+        type: boolean
+        mappings:
+          - from: false
+            to: "true"
+      output_param_type: boolean
+      unmapped:
+        on_unmapped: default
+        default_value: "false"
+    position:
+      top: 260
+      left: 50
+
+  has_reference:
+    label: has_reference
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/map_param_value/map_param_value/0.2.0
+    tool_version: "0.2.0"
+    tool_shed_repository:
+      name: map_param_value
+      owner: iuc
+      changeset_revision: 022a635f2283
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_param_type|input_param: reference_fasta
+    out:
+      - output_param_boolean
+    state:
+      input_param_type:
+        type: data
+        mappings: []
+      output_param_type: boolean
+      unmapped:
+        on_unmapped: input
+    position:
+      top: 460
+      left: 50
+
+  no_reference:
+    label: no_reference
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/map_param_value/map_param_value/0.2.0
+    tool_version: "0.2.0"
+    tool_shed_repository:
+      name: map_param_value
+      owner: iuc
+      changeset_revision: 022a635f2283
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_param_type|input_param: has_reference/output_param_boolean
+    out:
+      - output_param_boolean
+    state:
+      input_param_type:
+        type: boolean
+        mappings:
+          - from: false
+            to: "true"
+      output_param_type: boolean
+      unmapped:
+        on_unmapped: default
+        default_value: "false"
+    position:
+      top: 620
+      left: 50
+
+  gate_stats_with_ref:
+    label: gate_stats_with_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/combine_boolean_params/combine_boolean_params/0.1.0
+    tool_version: "0.1.0"
+    tool_shed_repository:
+      name: combine_boolean_params
+      owner: iuc
+      changeset_revision: 597e0235d263
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      booleans_0|value: gate_run_stats/output_param_boolean
+      booleans_1|value: has_reference/output_param_boolean
+    out:
+      - output
+    state:
+      booleans:
+        - {}
+        - {}
+      operator: "and"
+      null_handling: "false"
+    position:
+      top: 440
+      left: 210
+
+  gate_stats_no_ref:
+    label: gate_stats_no_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/combine_boolean_params/combine_boolean_params/0.1.0
+    tool_version: "0.1.0"
+    tool_shed_repository:
+      name: combine_boolean_params
+      owner: iuc
+      changeset_revision: 597e0235d263
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      booleans_0|value: gate_run_stats/output_param_boolean
+      booleans_1|value: no_reference/output_param_boolean
+    out:
+      - output
+    state:
+      booleans:
+        - {}
+        - {}
+      operator: "and"
+      null_handling: "false"
+    position:
+      top: 600
+      left: 210
+
+  samtools_idxstats:
+    label: samtools_idxstats
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats/2.0.8
+    tool_version: "2.0.8"
+    tool_shed_repository:
+      name: samtools_idxstats
+      owner: devteam
+      changeset_revision: 13aad5cb9be4
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: input_alignments
+      when: gate_run_stats/output_param_boolean
+    when: $(inputs.when)
+    out:
+      - output
+    state: {}
+    position:
+      top: 60
+      left: 380
+
+  samtools_flagstat:
+    label: samtools_flagstat
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8
+    tool_version: "2.0.8"
+    tool_shed_repository:
+      name: samtools_flagstat
+      owner: devteam
+      changeset_revision: a0d8e49a018c
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input1: input_alignments
+      when: gate_run_stats/output_param_boolean
+    when: $(inputs.when)
+    out:
+      - output1
+    state:
+      output_fmt: txt
+    position:
+      top: 280
+      left: 380
+
+  samtools_stats_with_ref:
+    label: samtools_stats_with_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.9
+    tool_version: "2.0.9"
+    tool_shed_repository:
+      name: samtools_stats
+      owner: devteam
+      changeset_revision: 8fca6e1eac98
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: input_alignments
+      addref_cond|ref: reference_fasta
+      when: gate_stats_with_ref/output
+    when: $(inputs.when)
+    out:
+      - output
+    state:
+      coverage_cond:
+        coverage_select: "no"
+      remove_dups: false
+      split_output_cond:
+        split_output_selector: "no"
+      filter_by_flags:
+        filter_flags: nofilter
+      gc_depth: null
+      insert_size: null
+      read_group: null
+      read_length: null
+      most_inserts: null
+      trim_quality: null
+      addref_cond:
+        addref_select: history
+      cond_region:
+        select_region: "no"
+      sparse: false
+      remove_overlaps: false
+      cov_threshold: null
+    position:
+      top: 440
+      left: 380
+
+  samtools_stats_no_ref:
+    label: samtools_stats_no_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.9
+    tool_version: "2.0.9"
+    tool_shed_repository:
+      name: samtools_stats
+      owner: devteam
+      changeset_revision: 8fca6e1eac98
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: input_alignments
+      when: gate_stats_no_ref/output
+    when: $(inputs.when)
+    out:
+      - output
+    state:
+      coverage_cond:
+        coverage_select: "no"
+      remove_dups: false
+      split_output_cond:
+        split_output_selector: "no"
+      filter_by_flags:
+        filter_flags: nofilter
+      gc_depth: null
+      insert_size: null
+      read_group: null
+      read_length: null
+      most_inserts: null
+      trim_quality: null
+      addref_cond:
+        addref_select: "no"
+      cond_region:
+        select_region: "no"
+      sparse: false
+      remove_overlaps: false
+      cov_threshold: null
+    position:
+      top: 580
+      left: 380
+
+  pick_samtools_stats:
+    label: pick_samtools_stats
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: "0.2.0"
+    tool_shed_repository:
+      name: pick_value
+      owner: iuc
+      changeset_revision: b19e21af9c52
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      style_cond|type_cond|pick_from_0|value: samtools_stats_with_ref/output
+      style_cond|type_cond|pick_from_1|value: samtools_stats_no_ref/output
+    out:
+      - data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+          pick_from:
+            - {}
+            - {}
+    position:
+      top: 510
+      left: 620
+
+  check_bam_filetype:
+    label: check_bam_filetype
+    run:
+      class: GalaxyUserTool
+      id: check_bam_filetype
+      version: "1.0.0"
+      name: Check BAM alignment format
+      description: Emit a non-empty marker dataset when an alignment file is BAM, or an empty marker when CRAM.
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      shell_command: |
+        htsfile '$(inputs.alignment.path)' | sed 's/^.*: //' | awk '/^BAM / { print "bam" }' > bam_marker.txt
+      inputs:
+        - name: alignment
+          type: data
+          format:
+            - bam
+            - cram
+          label: Alignment dataset
+          help: Input BAM or CRAM dataset checked before pre-conversion FastQC.
+      outputs:
+        - name: bam_marker
+          type: data
+          format: txt
+          from_work_dir: bam_marker.txt
+          label: BAM format marker
+    in:
+      alignment: input_alignments
+      when: gate_run_read_qc/output_param_boolean
+    when: $(inputs.when)
+    out:
+      - bam_marker
+    position:
+      top: 720
+      left: 380
+
+  keep_bam_ids:
+    label: keep_bam_ids
+    tool_id: __FILTER_EMPTY_DATASETS__
+    tool_version: "1.1.0"
+    in:
+      input: check_bam_filetype/bam_marker
+    out:
+      - output
+    state: {}
+    position:
+      top: 720
+      left: 560
+
+  extract_bam_ids:
+    label: extract_bam_ids
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_element_identifiers/collection_element_identifiers/0.0.3
+    tool_version: "0.0.3"
+    tool_shed_repository:
+      name: collection_element_identifiers
+      owner: iuc
+      changeset_revision: 3e27acfa4830
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_collection: keep_bam_ids/output
+    out:
+      - output
+    state: {}
+    position:
+      top: 720
+      left: 740
+
+  sync_bam_alignments:
+    label: sync_bam_alignments
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: "1.1.0"
+    in:
+      input: input_alignments
+      how|filter_source: extract_bam_ids/output
+    out:
+      - output_filtered
+    state:
+      how:
+        how_filter: remove_if_absent
+    position:
+      top: 720
+      left: 920
+
+  fastqc_pre:
+    label: fastqc_pre
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: "0.74+galaxy1"
+    tool_shed_repository:
+      name: fastqc
+      owner: devteam
+      changeset_revision: 2c64fded1286
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_file: sync_bam_alignments/output_filtered
+      when: gate_run_read_qc/output_param_boolean
+    when: $(inputs.when)
+    out:
+      - html_file
+      - text_file
+    state:
+      nogroup: false
+      min_length: null
+      kmers: 7
+    position:
+      top: 720
+      left: 1100
+
+  # --- Frame 2: Optional Region Filter & Paired/Single Split ---
+  gate_run_chr:
+    label: gate_run_chr
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/map_param_value/map_param_value/0.2.0
+    tool_version: "0.2.0"
+    tool_shed_repository:
+      name: map_param_value
+      owner: iuc
+      changeset_revision: 022a635f2283
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_param_type|input_param: chr
+    out:
+      - output_param_boolean
+    state:
+      input_param_type:
+        type: text
+        mappings:
+          - from: null
+            to: "false"
+          - from: ""
+            to: "false"
+      output_param_type: boolean
+      unmapped:
+        on_unmapped: default
+        default_value: "true"
+    position:
+      top: 60
+      left: 1240
+
+  gate_chr_with_ref:
+    label: gate_chr_with_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/combine_boolean_params/combine_boolean_params/0.1.0
+    tool_version: "0.1.0"
+    tool_shed_repository:
+      name: combine_boolean_params
+      owner: iuc
+      changeset_revision: 597e0235d263
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      booleans_0|value: gate_run_chr/output_param_boolean
+      booleans_1|value: has_reference/output_param_boolean
+    out:
+      - output
+    state:
+      booleans:
+        - {}
+        - {}
+      operator: "and"
+      null_handling: "false"
+    position:
+      top: 60
+      left: 1410
+
+  gate_chr_no_ref:
+    label: gate_chr_no_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/combine_boolean_params/combine_boolean_params/0.1.0
+    tool_version: "0.1.0"
+    tool_shed_repository:
+      name: combine_boolean_params
+      owner: iuc
+      changeset_revision: 597e0235d263
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      booleans_0|value: gate_run_chr/output_param_boolean
+      booleans_1|value: no_reference/output_param_boolean
+    out:
+      - output
+    state:
+      booleans:
+        - {}
+        - {}
+      operator: "and"
+      null_handling: "false"
+    position:
+      top: 220
+      left: 1410
+
+  samtools_chr_with_ref:
+    label: samtools_chr_with_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: "1.22+galaxy2"
+    tool_shed_repository:
+      name: samtools_view
+      owner: iuc
+      changeset_revision: 5cf9fcc93508
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: input_alignments
+      mode|filter_config|cond_region|regions: chr
+      addref_cond|ref: reference_fasta
+      when: gate_chr_with_ref/output
+    when: $(inputs.when)
+    out:
+      - outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: text
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: null
+          library: ""
+          cigarcons: null
+          inclusive_filter: []
+          exclusive_filter: []
+          exclusive_filter_all: []
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1.0
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: history
+    position:
+      top: 60
+      left: 1620
+
+  samtools_chr_no_ref:
+    label: samtools_chr_no_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: "1.22+galaxy2"
+    tool_shed_repository:
+      name: samtools_view
+      owner: iuc
+      changeset_revision: 5cf9fcc93508
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: input_alignments
+      mode|filter_config|cond_region|regions: chr
+      when: gate_chr_no_ref/output
+    when: $(inputs.when)
+    out:
+      - outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: text
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: null
+          library: ""
+          cigarcons: null
+          inclusive_filter: []
+          exclusive_filter: []
+          exclusive_filter_all: []
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1.0
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: "no"
+    position:
+      top: 240
+      left: 1620
+
+  pick_active_alignments:
+    label: pick_active_alignments
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: "0.2.0"
+    tool_shed_repository:
+      name: pick_value
+      owner: iuc
+      changeset_revision: b19e21af9c52
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      style_cond|type_cond|pick_from_0|value: samtools_chr_with_ref/outputsam
+      style_cond|type_cond|pick_from_1|value: samtools_chr_no_ref/outputsam
+      style_cond|type_cond|pick_from_2|value: input_alignments
+    out:
+      - data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+          pick_from:
+            - {}
+            - {}
+            - {}
+    position:
+      top: 420
+      left: 1620
+
+  check_paired:
+    label: check_paired
+    run:
+      class: GalaxyUserTool
+      id: check_paired
+      version: "1.0.0"
+      name: Check paired-end alignment status
+      description: Sample up to 1000 alignment records with samtools view and emit a paired-end or single-end marker file.
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      shell_command: |
+        REF_PATH="$(inputs.reference ? inputs.reference.path : '')"
+        IS_CRAM=0
+        if htsfile '$(inputs.alignment.path)' | sed 's/^.*: //' | grep -q '^CRAM '; then
+          IS_CRAM=1
+        fi
+        run_samtools_view() {
+          if [ "$IS_CRAM" -eq 1 ] && [ -n "$REF_PATH" ]; then
+            samtools view --reference "$REF_PATH" "$@"
+          else
+            samtools view "$@"
+          fi
+        }
+        THREADS="\${GALAXY_SLOTS:-1}"
+        run_samtools_view -H '$(inputs.alignment.path)' > /dev/null
+        run_samtools_view '$(inputs.alignment.path)' -@ "$THREADS" | head -n 1000 > sampled_body.sam
+        LINES_TO_CHK=\$(wc -l < sampled_body.sam | tr -d ' ')
+        if [ "$LINES_TO_CHK" -gt 0 ]; then
+          PAIRED_COUNT=\$({ run_samtools_view -H '$(inputs.alignment.path)' -@ "$THREADS"; cat sampled_body.sam; } | run_samtools_view -c -f 1 -@ "$THREADS")
+        else
+          PAIRED_COUNT=0
+        fi
+        IS_PAIRED=\$(awk -v p="$PAIRED_COUNT" -v l="$LINES_TO_CHK" 'BEGIN { print (l > 0 && p == l) ? "1" : "0" }')
+        if [ "$IS_PAIRED" = "1" ]; then
+          echo 1 > paired_marker.txt
+          : > single_marker.txt
+        else
+          : > paired_marker.txt
+          echo 1 > single_marker.txt
+        fi
+      inputs:
+        - name: alignment
+          type: data
+          format:
+            - bam
+            - cram
+          label: Alignment dataset
+          help: Input BAM or CRAM dataset to classify as paired-end or single-end.
+        - name: reference
+          type: data
+          format:
+            - fasta
+          optional: true
+          label: Reference FASTA
+          help: Optional reference genome FASTA file passed via --reference when decoding CRAM alignments.
+      outputs:
+        - name: paired_marker
+          type: data
+          format: txt
+          from_work_dir: paired_marker.txt
+          label: Paired-end marker
+        - name: single_marker
+          type: data
+          format: txt
+          from_work_dir: single_marker.txt
+          label: Single-end marker
+    in:
+      alignment: pick_active_alignments/data_param
+      reference: reference_fasta
+    out:
+      - paired_marker
+      - single_marker
+    position:
+      top: 260
+      left: 1850
+
+  keep_paired_ids:
+    label: keep_paired_ids
+    tool_id: __FILTER_EMPTY_DATASETS__
+    tool_version: "1.1.0"
+    in:
+      input: check_paired/paired_marker
+    out:
+      - output
+    state: {}
+    position:
+      top: 80
+      left: 2150
+
+  extract_paired_ids:
+    label: extract_paired_ids
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_element_identifiers/collection_element_identifiers/0.0.3
+    tool_version: "0.0.3"
+    tool_shed_repository:
+      name: collection_element_identifiers
+      owner: iuc
+      changeset_revision: 3e27acfa4830
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_collection: keep_paired_ids/output
+    out:
+      - output
+    state: {}
+    position:
+      top: 80
+      left: 2380
+
+  sync_paired_alignments:
+    label: sync_paired_alignments
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: "1.1.0"
+    in:
+      input: pick_active_alignments/data_param
+      how|filter_source: extract_paired_ids/output
+    out:
+      - output_filtered
+    state:
+      how:
+        how_filter: remove_if_absent
+    position:
+      top: 260
+      left: 2380
+
+  keep_single_ids:
+    label: keep_single_ids
+    tool_id: __FILTER_EMPTY_DATASETS__
+    tool_version: "1.1.0"
+    in:
+      input: check_paired/single_marker
+    out:
+      - output
+    state: {}
+    position:
+      top: 520
+      left: 2150
+
+  extract_single_ids:
+    label: extract_single_ids
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_element_identifiers/collection_element_identifiers/0.0.3
+    tool_version: "0.0.3"
+    tool_shed_repository:
+      name: collection_element_identifiers
+      owner: iuc
+      changeset_revision: 3e27acfa4830
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_collection: keep_single_ids/output
+    out:
+      - output
+    state: {}
+    position:
+      top: 520
+      left: 2380
+
+  sync_single_alignments:
+    label: sync_single_alignments
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: "1.1.0"
+    in:
+      input: pick_active_alignments/data_param
+      how|filter_source: extract_single_ids/output
+    out:
+      - output_filtered
+    state:
+      how:
+        how_filter: remove_if_absent
+    position:
+      top: 700
+      left: 2380
+
+  # --- Frame 3: Single-End FASTQ Conversion ---
+  se_collate_fastq:
+    label: se_collate_fastq
+    run:
+      class: GalaxyUserTool
+      id: samtools_collatefastq_single
+      version: "1.0.0"
+      name: Collate and extract single-end FASTQ
+      description: Collate single-end BAM or CRAM alignments by read name and stream unpaired reads into compressed FASTQ.
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      shell_command: |
+        REF_PATH="$(inputs.reference ? inputs.reference.path : '')"
+        FAST_MODE="$(inputs.fast_mode ? 'true' : 'false')"
+        READS_IN_MEM="$(inputs.reads_in_memory)"
+        THREADS="\${GALAXY_SLOTS:-1}"
+        COLLATE_OPTS=""
+        if [ "$FAST_MODE" = "true" ]; then
+          COLLATE_OPTS="-f -r $READS_IN_MEM"
+        fi
+        mkdir -p collate_tmp
+        if [ -n "$REF_PATH" ] && htsfile '$(inputs.alignment.path)' | sed 's/^.*: //' | grep -q '^CRAM '; then
+          samtools collate $COLLATE_OPTS --threads "$THREADS" --reference "$REF_PATH" -O '$(inputs.alignment.path)' collate_tmp/tmp | samtools fastq -N --threads "$THREADS" --reference "$REF_PATH" -0 other.fastq.gz -1 r1_unused.fastq.gz -s s_unused.fastq.gz
+        else
+          samtools collate $COLLATE_OPTS --threads "$THREADS" -O '$(inputs.alignment.path)' collate_tmp/tmp | samtools fastq -N --threads "$THREADS" -0 other.fastq.gz -1 r1_unused.fastq.gz -s s_unused.fastq.gz
+        fi
+      inputs:
+        - name: alignment
+          type: data
+          format:
+            - sam
+            - bam
+            - cram
+          label: Single-end alignment dataset
+          help: Input SAM, BAM, or CRAM alignment file containing single-end reads.
+        - name: reference
+          type: data
+          format:
+            - fasta
+          optional: true
+          label: Reference FASTA
+          help: Optional reference genome FASTA required when decoding CRAM alignments.
+        - name: fast_mode
+          type: boolean
+          value: false
+          label: Use fast samtools collate mode
+          help: Enable -f -r reads_in_memory during samtools collate.
+        - name: reads_in_memory
+          type: integer
+          value: 100000
+          label: Reads in memory
+          help: Number of reads stored in memory (-r) when fast mode is enabled.
+      outputs:
+        - name: fastq_other
+          type: data
+          format: fastqsanger.gz
+          from_work_dir: other.fastq.gz
+          label: Single-end extracted FASTQ reads
+    in:
+      alignment: sync_single_alignments/output_filtered
+      reference: reference_fasta
+      fast_mode: samtools_collate_fast
+      reads_in_memory: reads_in_memory
+    out:
+      - fastq_other
+    position:
+      top: 80
+      left: 2820
+
+  # --- Frame 4: Paired-End Subset Extraction, Merge & Re-Pairing ---
+  pe_view_map_map_with_ref:
+    label: pe_view_map_map_with_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: "1.22+galaxy2"
+    tool_shed_repository:
+      name: samtools_view
+      owner: iuc
+      changeset_revision: 5cf9fcc93508
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: sync_paired_alignments/output_filtered
+      addref_cond|ref: reference_fasta
+      when: has_reference/output_param_boolean
+    when: $(inputs.when)
+    out:
+      - outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: "no"
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: null
+          library: ""
+          cigarcons: null
+          inclusive_filter:
+            - "1"
+          exclusive_filter:
+            - "4"
+            - "8"
+          exclusive_filter_all: []
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1.0
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: history
+    position:
+      top: 500
+      left: 2820
+
+  pe_view_map_map_no_ref:
+    label: pe_view_map_map_no_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: "1.22+galaxy2"
+    tool_shed_repository:
+      name: samtools_view
+      owner: iuc
+      changeset_revision: 5cf9fcc93508
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: sync_paired_alignments/output_filtered
+      when: no_reference/output_param_boolean
+    when: $(inputs.when)
+    out:
+      - outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: "no"
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: null
+          library: ""
+          cigarcons: null
+          inclusive_filter:
+            - "1"
+          exclusive_filter:
+            - "4"
+            - "8"
+          exclusive_filter_all: []
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1.0
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: "no"
+    position:
+      top: 620
+      left: 2820
+
+  pick_pe_view_map_map:
+    label: pick_pe_view_map_map
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: "0.2.0"
+    tool_shed_repository:
+      name: pick_value
+      owner: iuc
+      changeset_revision: b19e21af9c52
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      style_cond|type_cond|pick_from_0|value: pe_view_map_map_with_ref/outputsam
+      style_cond|type_cond|pick_from_1|value: pe_view_map_map_no_ref/outputsam
+    out:
+      - data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+          pick_from:
+            - {}
+            - {}
+    position:
+      top: 560
+      left: 3060
+
+  pe_view_map_unmap_with_ref:
+    label: pe_view_map_unmap_with_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: "1.22+galaxy2"
+    tool_shed_repository:
+      name: samtools_view
+      owner: iuc
+      changeset_revision: 5cf9fcc93508
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: sync_paired_alignments/output_filtered
+      addref_cond|ref: reference_fasta
+      when: has_reference/output_param_boolean
+    when: $(inputs.when)
+    out:
+      - outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: "no"
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: null
+          library: ""
+          cigarcons: null
+          inclusive_filter:
+            - "8"
+          exclusive_filter:
+            - "4"
+            - "256"
+          exclusive_filter_all: []
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1.0
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: history
+    position:
+      top: 760
+      left: 2820
+
+  pe_view_map_unmap_no_ref:
+    label: pe_view_map_unmap_no_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: "1.22+galaxy2"
+    tool_shed_repository:
+      name: samtools_view
+      owner: iuc
+      changeset_revision: 5cf9fcc93508
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: sync_paired_alignments/output_filtered
+      when: no_reference/output_param_boolean
+    when: $(inputs.when)
+    out:
+      - outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: "no"
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: null
+          library: ""
+          cigarcons: null
+          inclusive_filter:
+            - "8"
+          exclusive_filter:
+            - "4"
+            - "256"
+          exclusive_filter_all: []
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1.0
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: "no"
+    position:
+      top: 880
+      left: 2820
+
+  pick_pe_view_map_unmap:
+    label: pick_pe_view_map_unmap
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: "0.2.0"
+    tool_shed_repository:
+      name: pick_value
+      owner: iuc
+      changeset_revision: b19e21af9c52
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      style_cond|type_cond|pick_from_0|value: pe_view_map_unmap_with_ref/outputsam
+      style_cond|type_cond|pick_from_1|value: pe_view_map_unmap_no_ref/outputsam
+    out:
+      - data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+          pick_from:
+            - {}
+            - {}
+    position:
+      top: 820
+      left: 3060
+
+  pe_view_unmap_map_with_ref:
+    label: pe_view_unmap_map_with_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: "1.22+galaxy2"
+    tool_shed_repository:
+      name: samtools_view
+      owner: iuc
+      changeset_revision: 5cf9fcc93508
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: sync_paired_alignments/output_filtered
+      addref_cond|ref: reference_fasta
+      when: has_reference/output_param_boolean
+    when: $(inputs.when)
+    out:
+      - outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: "no"
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: null
+          library: ""
+          cigarcons: null
+          inclusive_filter:
+            - "4"
+          exclusive_filter:
+            - "8"
+            - "256"
+          exclusive_filter_all: []
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1.0
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: history
+    position:
+      top: 1020
+      left: 2820
+
+  pe_view_unmap_map_no_ref:
+    label: pe_view_unmap_map_no_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: "1.22+galaxy2"
+    tool_shed_repository:
+      name: samtools_view
+      owner: iuc
+      changeset_revision: 5cf9fcc93508
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: sync_paired_alignments/output_filtered
+      when: no_reference/output_param_boolean
+    when: $(inputs.when)
+    out:
+      - outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: "no"
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: null
+          library: ""
+          cigarcons: null
+          inclusive_filter:
+            - "4"
+          exclusive_filter:
+            - "8"
+            - "256"
+          exclusive_filter_all: []
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1.0
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: "no"
+    position:
+      top: 1140
+      left: 2820
+
+  pick_pe_view_unmap_map:
+    label: pick_pe_view_unmap_map
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: "0.2.0"
+    tool_shed_repository:
+      name: pick_value
+      owner: iuc
+      changeset_revision: b19e21af9c52
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      style_cond|type_cond|pick_from_0|value: pe_view_unmap_map_with_ref/outputsam
+      style_cond|type_cond|pick_from_1|value: pe_view_unmap_map_no_ref/outputsam
+    out:
+      - data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+          pick_from:
+            - {}
+            - {}
+    position:
+      top: 1080
+      left: 3060
+
+  pe_view_unmap_unmap_with_ref:
+    label: pe_view_unmap_unmap_with_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: "1.22+galaxy2"
+    tool_shed_repository:
+      name: samtools_view
+      owner: iuc
+      changeset_revision: 5cf9fcc93508
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: sync_paired_alignments/output_filtered
+      addref_cond|ref: reference_fasta
+      when: has_reference/output_param_boolean
+    when: $(inputs.when)
+    out:
+      - outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: "no"
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: null
+          library: ""
+          cigarcons: null
+          inclusive_filter:
+            - "4"
+            - "8"
+          exclusive_filter:
+            - "256"
+          exclusive_filter_all: []
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1.0
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: history
+    position:
+      top: 1280
+      left: 2820
+
+  pe_view_unmap_unmap_no_ref:
+    label: pe_view_unmap_unmap_no_ref
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: "1.22+galaxy2"
+    tool_shed_repository:
+      name: samtools_view
+      owner: iuc
+      changeset_revision: 5cf9fcc93508
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input: sync_paired_alignments/output_filtered
+      when: no_reference/output_param_boolean
+    when: $(inputs.when)
+    out:
+      - outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: "no"
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+          quality: null
+          library: ""
+          cigarcons: null
+          inclusive_filter:
+            - "4"
+            - "8"
+          exclusive_filter:
+            - "256"
+          exclusive_filter_all: []
+          tag: null
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1.0
+            seed: null
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: "no"
+    position:
+      top: 1400
+      left: 2820
+
+  pick_pe_view_unmap_unmap:
+    label: pick_pe_view_unmap_unmap
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: "0.2.0"
+    tool_shed_repository:
+      name: pick_value
+      owner: iuc
+      changeset_revision: b19e21af9c52
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      style_cond|type_cond|pick_from_0|value: pe_view_unmap_unmap_with_ref/outputsam
+      style_cond|type_cond|pick_from_1|value: pe_view_unmap_unmap_no_ref/outputsam
+    out:
+      - data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+          pick_from:
+            - {}
+            - {}
+    position:
+      top: 1340
+      left: 3060
+
+  pe_merge_unmap_lists:
+    label: pe_merge_unmap_lists
+    tool_id: __MERGE_COLLECTION__
+    tool_version: "1.0.0"
+    in:
+      inputs_0|input: pick_pe_view_map_unmap/data_param
+      inputs_1|input: pick_pe_view_unmap_map/data_param
+      inputs_2|input: pick_pe_view_unmap_unmap/data_param
+    out:
+      - output
+    state:
+      inputs:
+        - {}
+        - {}
+        - {}
+      advanced:
+        conflict:
+          duplicate_options: suffix_every
+          suffix_pattern: "___#"
+    position:
+      top: 920
+      left: 3150
+
+  pe_group_unmap_per_sample:
+    label: pe_group_unmap_per_sample
+    tool_id: __APPLY_RULES__
+    tool_version: "1.1.0"
+    in:
+      input: pe_merge_unmap_lists/output
+    out:
+      - output
+    state:
+      rules:
+        rules:
+          - type: add_column_metadata
+            value: identifier0
+          - type: add_column_regex
+            target_column: 0
+            expression: "^(.*)___([0-9]+)$"
+            replacement: "\\1"
+          - type: add_column_regex
+            target_column: 0
+            expression: "^(.*)___([0-9]+)$"
+            replacement: "\\2"
+        mapping:
+          - type: list_identifiers
+            columns:
+              - 1
+              - 2
+    position:
+      top: 920
+      left: 3400
+
+  pe_merge_unmap:
+    label: pe_merge_unmap
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_merge/samtools_merge/1.22+galaxy2
+    tool_version: "1.22+galaxy2"
+    tool_shed_repository:
+      name: samtools_merge
+      owner: iuc
+      changeset_revision: 37c8eb55315d
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      bamfiles: pe_group_unmap_per_sample/output
+    out:
+      - output
+    state:
+      region: null
+      idrg: false
+      idpg: false
+      seed: 1
+    position:
+      top: 920
+      left: 3650
+
+  pe_collate_map:
+    label: pe_collate_map
+    run:
+      class: GalaxyUserTool
+      id: samtools_collatefastq_paired
+      version: "1.0.0"
+      name: Collate and extract paired-end FASTQ
+      description: Collate paired-end BAM or CRAM alignments by read name and extract separate R1 and R2 compressed FASTQ datasets.
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      shell_command: |
+        REF_PATH="$(inputs.reference ? inputs.reference.path : '')"
+        FAST_MODE="$(inputs.fast_mode ? 'true' : 'false')"
+        READS_IN_MEM="$(inputs.reads_in_memory)"
+        THREADS="\${GALAXY_SLOTS:-1}"
+        COLLATE_OPTS=""
+        if [ "$FAST_MODE" = "true" ]; then
+          COLLATE_OPTS="-f -r $READS_IN_MEM"
+        fi
+        mkdir -p collate_tmp
+        if [ -n "$REF_PATH" ] && htsfile '$(inputs.alignment.path)' | sed 's/^.*: //' | grep -q '^CRAM '; then
+          samtools collate $COLLATE_OPTS --threads "$THREADS" --reference "$REF_PATH" -O '$(inputs.alignment.path)' collate_tmp/tmp | samtools fastq -N --threads "$THREADS" --reference "$REF_PATH" -0 other_unused.fastq.gz -1 reads_1.fastq.gz -2 reads_2.fastq.gz -s singleton_unused.fastq.gz
+        else
+          samtools collate $COLLATE_OPTS --threads "$THREADS" -O '$(inputs.alignment.path)' collate_tmp/tmp | samtools fastq -N --threads "$THREADS" -0 other_unused.fastq.gz -1 reads_1.fastq.gz -2 reads_2.fastq.gz -s singleton_unused.fastq.gz
+        fi
+      inputs:
+        - name: alignment
+          type: data
+          format:
+            - sam
+            - bam
+            - cram
+          label: Paired-end alignment dataset
+          help: Input SAM, BAM, or CRAM alignment file containing paired-end reads.
+        - name: reference
+          type: data
+          format:
+            - fasta
+          optional: true
+          label: Reference FASTA
+          help: Optional reference genome FASTA required when decoding CRAM alignments.
+        - name: fast_mode
+          type: boolean
+          value: false
+          label: Use fast samtools collate mode
+          help: Enable -f -r reads_in_memory during samtools collate.
+        - name: reads_in_memory
+          type: integer
+          value: 100000
+          label: Reads in memory
+          help: Number of reads stored in memory (-r) when fast mode is enabled.
+      outputs:
+        - name: fastq_1
+          type: data
+          format: fastqsanger.gz
+          from_work_dir: reads_1.fastq.gz
+          label: Forward paired-end FASTQ reads (R1)
+        - name: fastq_2
+          type: data
+          format: fastqsanger.gz
+          from_work_dir: reads_2.fastq.gz
+          label: Reverse paired-end FASTQ reads (R2)
+    in:
+      alignment: pick_pe_view_map_map/data_param
+      reference: reference_fasta
+      fast_mode: samtools_collate_fast
+      reads_in_memory: reads_in_memory
+    out:
+      - fastq_1
+      - fastq_2
+    position:
+      top: 520
+      left: 3650
+
+  pe_collate_unmap:
+    label: pe_collate_unmap
+    run:
+      class: GalaxyUserTool
+      id: samtools_collatefastq_paired
+      version: "1.0.0"
+      name: Collate and extract paired-end FASTQ
+      description: Collate paired-end BAM or CRAM alignments by read name and extract separate R1 and R2 compressed FASTQ datasets.
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      shell_command: |
+        REF_PATH="$(inputs.reference ? inputs.reference.path : '')"
+        FAST_MODE="$(inputs.fast_mode ? 'true' : 'false')"
+        READS_IN_MEM="$(inputs.reads_in_memory)"
+        THREADS="\${GALAXY_SLOTS:-1}"
+        COLLATE_OPTS=""
+        if [ "$FAST_MODE" = "true" ]; then
+          COLLATE_OPTS="-f -r $READS_IN_MEM"
+        fi
+        mkdir -p collate_tmp
+        if [ -n "$REF_PATH" ] && htsfile '$(inputs.alignment.path)' | sed 's/^.*: //' | grep -q '^CRAM '; then
+          samtools collate $COLLATE_OPTS --threads "$THREADS" --reference "$REF_PATH" -O '$(inputs.alignment.path)' collate_tmp/tmp | samtools fastq -N --threads "$THREADS" --reference "$REF_PATH" -0 other_unused.fastq.gz -1 reads_1.fastq.gz -2 reads_2.fastq.gz -s singleton_unused.fastq.gz
+        else
+          samtools collate $COLLATE_OPTS --threads "$THREADS" -O '$(inputs.alignment.path)' collate_tmp/tmp | samtools fastq -N --threads "$THREADS" -0 other_unused.fastq.gz -1 reads_1.fastq.gz -2 reads_2.fastq.gz -s singleton_unused.fastq.gz
+        fi
+      inputs:
+        - name: alignment
+          type: data
+          format:
+            - sam
+            - bam
+            - cram
+          label: Paired-end alignment dataset
+          help: Input SAM, BAM, or CRAM alignment file containing paired-end reads.
+        - name: reference
+          type: data
+          format:
+            - fasta
+          optional: true
+          label: Reference FASTA
+          help: Optional reference genome FASTA required when decoding CRAM alignments.
+        - name: fast_mode
+          type: boolean
+          value: false
+          label: Use fast samtools collate mode
+          help: Enable -f -r reads_in_memory during samtools collate.
+        - name: reads_in_memory
+          type: integer
+          value: 100000
+          label: Reads in memory
+          help: Number of reads stored in memory (-r) when fast mode is enabled.
+      outputs:
+        - name: fastq_1
+          type: data
+          format: fastqsanger.gz
+          from_work_dir: reads_1.fastq.gz
+          label: Forward paired-end FASTQ reads (R1)
+        - name: fastq_2
+          type: data
+          format: fastqsanger.gz
+          from_work_dir: reads_2.fastq.gz
+          label: Reverse paired-end FASTQ reads (R2)
+    in:
+      alignment: pe_merge_unmap/output
+      reference: reference_fasta
+      fast_mode: samtools_collate_fast
+      reads_in_memory: reads_in_memory
+    out:
+      - fastq_1
+      - fastq_2
+    position:
+      top: 920
+      left: 3900
+
+  pe_cat_r1:
+    label: pe_cat_r1
+    tool_id: cat1
+    tool_version: "1.0.0"
+    in:
+      input1: pe_collate_map/fastq_1
+      queries_0|input2: pe_collate_unmap/fastq_1
+    out:
+      - out_file1
+    state:
+      queries:
+        - {}
+    position:
+      top: 620
+      left: 4350
+
+  pe_cat_r2:
+    label: pe_cat_r2
+    tool_id: cat1
+    tool_version: "1.0.0"
+    in:
+      input1: pe_collate_map/fastq_2
+      queries_0|input2: pe_collate_unmap/fastq_2
+    out:
+      - out_file1
+    state:
+      queries:
+        - {}
+    position:
+      top: 840
+      left: 4350
+
+  pe_zip_reads:
+    label: pe_zip_reads
+    tool_id: __ZIP_COLLECTION__
+    tool_version: "1.0.0"
+    in:
+      input_forward: pe_cat_r1/out_file1
+      input_reverse: pe_cat_r2/out_file1
+    out:
+      - output
+    state: {}
+    position:
+      top: 720
+      left: 4580
+
+  # --- Frame 5: Post-Conversion QC & MultiQC Reporting ---
+  fastqutils_paired:
+    label: fastqutils_paired
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/fastq_info/fastq_info/0.25.3+galaxy0
+    tool_version: "0.25.3+galaxy0"
+    tool_shed_repository:
+      name: fastq_info
+      owner: bgruening
+      changeset_revision: 2bca15e630a4
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_option|fastq_1: pe_cat_r1/out_file1
+      input_option|fastq_2: pe_cat_r2/out_file1
+    out:
+      - output
+    state:
+      input_option:
+        input_type: paired
+      q: true
+      r: false
+    position:
+      top: 500
+      left: 4880
+
+  fastqutils_single:
+    label: fastqutils_single
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/fastq_info/fastq_info/0.25.3+galaxy0
+    tool_version: "0.25.3+galaxy0"
+    tool_shed_repository:
+      name: fastq_info
+      owner: bgruening
+      changeset_revision: 2bca15e630a4
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_option|fastq_1: se_collate_fastq/fastq_other
+    out:
+      - output
+    state:
+      input_option:
+        input_type: single
+      q: true
+      r: false
+    position:
+      top: 120
+      left: 4880
+
+  merge_fastqinfo:
+    label: merge_fastqinfo
+    tool_id: __MERGE_COLLECTION__
+    tool_version: "1.0.0"
+    in:
+      inputs_0|input: fastqutils_paired/output
+      inputs_1|input: fastqutils_single/output
+    out:
+      - output
+    state:
+      inputs:
+        - {}
+        - {}
+      advanced:
+        conflict:
+          duplicate_options: keep_first
+    position:
+      top: 300
+      left: 5200
+
+  flatten_paired_reads:
+    label: flatten_paired_reads
+    tool_id: __FLATTEN__
+    tool_version: "1.0.0"
+    in:
+      input: pe_zip_reads/output
+    out:
+      - output
+    state:
+      join_identifier: "_"
+    position:
+      top: 720
+      left: 4880
+
+  merge_post_reads:
+    label: merge_post_reads
+    tool_id: __MERGE_COLLECTION__
+    tool_version: "1.0.0"
+    in:
+      inputs_0|input: flatten_paired_reads/output
+      inputs_1|input: se_collate_fastq/fastq_other
+    out:
+      - output
+    state:
+      inputs:
+        - {}
+        - {}
+      advanced:
+        conflict:
+          duplicate_options: keep_first
+    position:
+      top: 520
+      left: 5200
+
+  fastqc_post:
+    label: fastqc_post
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: "0.74+galaxy1"
+    tool_shed_repository:
+      name: fastqc
+      owner: devteam
+      changeset_revision: 2c64fded1286
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_file: merge_post_reads/output
+      when: gate_run_read_qc/output_param_boolean
+    when: $(inputs.when)
+    out:
+      - html_file
+      - text_file
+    state:
+      nogroup: false
+      min_length: null
+      kmers: 7
+    position:
+      top: 520
+      left: 5480
+
+  gate_multiqc_all:
+    label: gate_multiqc_all
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/combine_boolean_params/combine_boolean_params/0.1.0
+    tool_version: "0.1.0"
+    tool_shed_repository:
+      name: combine_boolean_params
+      owner: iuc
+      changeset_revision: 597e0235d263
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      booleans_0|value: gate_run_stats/output_param_boolean
+      booleans_1|value: gate_run_read_qc/output_param_boolean
+    out:
+      - output
+    state:
+      booleans:
+        - {}
+        - {}
+      operator: "and"
+      null_handling: "false"
+    position:
+      top: 120
+      left: 5480
+
+  gate_multiqc_stats_only:
+    label: gate_multiqc_stats_only
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/combine_boolean_params/combine_boolean_params/0.1.0
+    tool_version: "0.1.0"
+    tool_shed_repository:
+      name: combine_boolean_params
+      owner: iuc
+      changeset_revision: 597e0235d263
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      booleans_0|value: gate_run_stats/output_param_boolean
+      booleans_1|value: no_read_qc
+    out:
+      - output
+    state:
+      booleans:
+        - {}
+        - {}
+      operator: "and"
+      null_handling: "false"
+    position:
+      top: 260
+      left: 5480
+
+  gate_multiqc_readqc_only:
+    label: gate_multiqc_readqc_only
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/combine_boolean_params/combine_boolean_params/0.1.0
+    tool_version: "0.1.0"
+    tool_shed_repository:
+      name: combine_boolean_params
+      owner: iuc
+      changeset_revision: 597e0235d263
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      booleans_0|value: no_stats
+      booleans_1|value: gate_run_read_qc/output_param_boolean
+    out:
+      - output
+    state:
+      booleans:
+        - {}
+        - {}
+      operator: "and"
+      null_handling: "false"
+    position:
+      top: 400
+      left: 5480
+
+  multiqc_all:
+    label: multiqc_all
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+    tool_version: "1.35+galaxy5"
+    tool_shed_repository:
+      name: multiqc
+      owner: iuc
+      changeset_revision: 94b6bea727ae
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      results_0|software_cond|output_0|type|input: pick_samtools_stats/data_param
+      results_0|software_cond|output_1|type|input: samtools_flagstat/output1
+      results_0|software_cond|output_2|type|input: samtools_idxstats/output
+      results_1|software_cond|output_0|input: fastqc_pre/text_file
+      results_1|software_cond|output_1|input: fastqc_post/text_file
+      when: gate_multiqc_all/output
+    when: $(inputs.when)
+    out:
+      - html_report
+    state:
+      results:
+        - software_cond:
+            software: samtools
+            output:
+              - type:
+                  type: stats
+              - type:
+                  type: flagstat
+              - type:
+                  type: idxstats
+        - software_cond:
+            software: fastqc
+            output:
+              - type: data
+              - type: data
+      title: null
+      comment: null
+      flat: false
+      export: false
+      png_plots: false
+    position:
+      top: 120
+      left: 5780
+
+  multiqc_stats_only:
+    label: multiqc_stats_only
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+    tool_version: "1.35+galaxy5"
+    tool_shed_repository:
+      name: multiqc
+      owner: iuc
+      changeset_revision: 94b6bea727ae
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      results_0|software_cond|output_0|type|input: pick_samtools_stats/data_param
+      results_0|software_cond|output_1|type|input: samtools_flagstat/output1
+      results_0|software_cond|output_2|type|input: samtools_idxstats/output
+      when: gate_multiqc_stats_only/output
+    when: $(inputs.when)
+    out:
+      - html_report
+    state:
+      results:
+        - software_cond:
+            software: samtools
+            output:
+              - type:
+                  type: stats
+              - type:
+                  type: flagstat
+              - type:
+                  type: idxstats
+      title: null
+      comment: null
+      flat: false
+      export: false
+      png_plots: false
+    position:
+      top: 320
+      left: 5780
+
+  multiqc_readqc_only:
+    label: multiqc_readqc_only
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+    tool_version: "1.35+galaxy5"
+    tool_shed_repository:
+      name: multiqc
+      owner: iuc
+      changeset_revision: 94b6bea727ae
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      results_0|software_cond|output_0|input: fastqc_pre/text_file
+      results_0|software_cond|output_1|input: fastqc_post/text_file
+      when: gate_multiqc_readqc_only/output
+    when: $(inputs.when)
+    out:
+      - html_report
+    state:
+      results:
+        - software_cond:
+            software: fastqc
+            output:
+              - type: data
+              - type: data
+      title: null
+      comment: null
+      flat: false
+      export: false
+      png_plots: false
+    position:
+      top: 520
+      left: 5780
+
+  pick_multiqc:
+    label: pick_multiqc
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: "0.2.0"
+    tool_shed_repository:
+      name: pick_value
+      owner: iuc
+      changeset_revision: b19e21af9c52
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      style_cond|type_cond|pick_from_0|value: multiqc_all/html_report
+      style_cond|type_cond|pick_from_1|value: multiqc_stats_only/html_report
+      style_cond|type_cond|pick_from_2|value: multiqc_readqc_only/html_report
+    out:
+      - data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+          pick_from:
+            - {}
+            - {}
+            - {}
+    position:
+      top: 320
+      left: 6020

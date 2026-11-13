@@ -1,0 +1,713 @@
+class: GalaxyWorkflowDraft
+label: "nf-core/bamtofastq \u2014 BAM/CRAM to FASTQ"
+doc: 'Convert aligned BAM/CRAM files back to FASTQ with samtools, in the layout
+
+  (paired or single end) selected by the `layout` input, and run pre/post
+
+  conversion QC plus MultiQC. Translated from nf-core/bamtofastq @ aa0150e.
+
+  '
+inputs:
+  input:
+    type: collection
+    collection_type: list
+    optional: false
+    doc: 'Alignments to convert, one dataset per sample; the element identifier is
+
+      the sample id. Elements may be BAM or CRAM. CRAM elements require `fasta`.
+
+      '
+  fasta:
+    type: data
+    format: fasta
+    optional: true
+    doc: Reference FASTA. Required when any input element is CRAM.
+  layout:
+    type: string
+    default: paired
+    optional: false
+    restrictions:
+    - paired
+    - single
+    doc: Read layout of every sample in `input`. Use `single` only when all samples
+      are single end.
+  no_read_QC:
+    type: boolean
+    default: false
+    optional: true
+    doc: Skip both FastQC steps.
+  no_stats:
+    type: boolean
+    default: false
+    optional: true
+    doc: Skip samtools flagstat, idxstats and stats.
+  samtools_collate_fast:
+    type: boolean
+    default: false
+    optional: true
+    doc: Pass `-f -r 100000` to samtools collate.
+  multiqc_title:
+    type: string
+    optional: true
+    doc: Optional MultiQC report title.
+outputs:
+  reads_paired:
+    outputSource: zip_reads_paired/output
+    doc: Merged R1/R2 FASTQ per sample (paired-end runs).
+  reads_single:
+    outputSource: fastq_single/other
+    doc: Converted FASTQ per sample (single-end runs).
+  fastqc_pre_conversion:
+    outputSource: fastqc_pre/html_file
+    doc: FastQC report on the input BAM files.
+  fastqc_post_conversion_paired:
+    outputSource: fastqc_post_paired/html_file
+    doc: FastQC reports on the converted paired reads.
+  fastqc_post_conversion_single:
+    outputSource: fastqc_post_single/html_file
+    doc: FastQC reports on the converted single-end reads.
+  samtools_flagstat:
+    outputSource: flagstat/output1
+  samtools_idxstats:
+    outputSource: idxstats/output
+  samtools_stats:
+    outputSource: stats/output
+  multiqc_report:
+    outputSource: multiqc/html_report
+steps:
+- id: flagstat
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8
+  tool_version: 2.0.8
+  when: $(inputs.when == false)
+  in:
+  - id: input1
+    source: input
+  - id: when
+    source: no_stats
+  out:
+  - id: output1
+  state:
+    input1: &id001
+      __class__: ConnectedValue
+    output_fmt: txt
+  tool_shed_repository:
+    changeset_revision: a0d8e49a018c
+    name: samtools_flagstat
+    owner: devteam
+    tool_shed: toolshed.g2.bx.psu.edu
+- id: idxstats
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats/2.0.8
+  tool_version: 2.0.8
+  when: $(inputs.when == false)
+  in:
+  - id: input
+    source: input
+  - id: when
+    source: no_stats
+  out:
+  - id: output
+  state:
+    input: *id001
+  tool_shed_repository:
+    changeset_revision: 13aad5cb9be4
+    name: samtools_idxstats
+    owner: devteam
+    tool_shed: toolshed.g2.bx.psu.edu
+- id: stats
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.9
+  tool_version: 2.0.9
+  when: $(inputs.when == false)
+  in:
+  - id: input
+    source: input
+  - id: when
+    source: no_stats
+  out:
+  - id: output
+  state:
+    addref_cond:
+      addref_select: 'no'
+      __current_case__: 0
+    cond_region:
+      select_region: 'no'
+      __current_case__: 0
+    cov_threshold: null
+    coverage_cond:
+      coverage_select: 'no'
+      __current_case__: 0
+    filter_by_flags:
+      filter_flags: nofilter
+      __current_case__: 1
+    gc_depth: null
+    input: *id001
+    insert_size: null
+    most_inserts: null
+    read_group: null
+    read_length: null
+    remove_dups: false
+    remove_overlaps: false
+    sparse: false
+    split_output_cond:
+      split_output_selector: 'no'
+      __current_case__: 0
+    trim_quality: null
+  tool_shed_repository:
+    changeset_revision: 8fca6e1eac98
+    name: samtools_stats
+    owner: devteam
+    tool_shed: toolshed.g2.bx.psu.edu
+- id: fastqc_pre
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+  tool_version: 0.74+galaxy1
+  when: $(inputs.when == false)
+  in:
+  - id: input_file
+    source: input
+  - id: when
+    source: no_read_QC
+  out:
+  - id: html_file
+  - id: text_file
+  state:
+    input_file:
+      __class__: ConnectedValue
+    kmers: 7
+    min_length: null
+    nogroup: false
+  tool_shed_repository:
+    changeset_revision: 2c64fded1286
+    name: fastqc
+    owner: devteam
+    tool_shed: toolshed.g2.bx.psu.edu
+- id: view_map_map
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+  tool_version: 1.22+galaxy2
+  when: $(inputs.when == 'paired')
+  in:
+  - id: input
+    source: input
+  - id: when
+    source: layout
+  out:
+  - id: outputsam
+  state:
+    addref_cond:
+      addref_select: 'no'
+      __current_case__: 0
+    input:
+      __class__: ConnectedValue
+    mode:
+      outtype: selected_reads
+      filter_config:
+        cond_region:
+          select_region: 'no'
+          __current_case__: 0
+        cond_rg:
+          select_rg: 'no'
+          __current_case__: 0
+        cond_expr:
+          select_expr: 'no'
+          __current_case__: 0
+        quality: null
+        library: null
+        cigarcons: null
+        inclusive_filter:
+        - '1'
+        exclusive_filter:
+        - '4'
+        - '8'
+        exclusive_filter_all: null
+        tag: null
+      output_options:
+        reads_report_type: retained
+        complementary_output: false
+        adv_output:
+          readtags: []
+          collapsecigar: false
+        output_format:
+          oformat: bam
+          __current_case__: 2
+  tool_shed_repository:
+    changeset_revision: 5cf9fcc93508
+    name: samtools_view
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+- id: view_unmap_unmap
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+  tool_version: 1.22+galaxy2
+  when: $(inputs.when == 'paired')
+  in:
+  - id: input
+    source: input
+  - id: when
+    source: layout
+  out:
+  - id: outputsam
+  state:
+    addref_cond:
+      addref_select: 'no'
+      __current_case__: 0
+    input:
+      __class__: ConnectedValue
+    mode:
+      outtype: selected_reads
+      filter_config:
+        cond_region:
+          select_region: 'no'
+          __current_case__: 0
+        cond_rg:
+          select_rg: 'no'
+          __current_case__: 0
+        cond_expr:
+          select_expr: 'no'
+          __current_case__: 0
+        quality: null
+        library: null
+        cigarcons: null
+        inclusive_filter:
+        - '4'
+        - '8'
+        exclusive_filter:
+        - '256'
+        exclusive_filter_all: null
+        tag: null
+      output_options:
+        reads_report_type: retained
+        complementary_output: false
+        adv_output:
+          readtags: []
+          collapsecigar: false
+        output_format:
+          oformat: bam
+          __current_case__: 2
+  tool_shed_repository:
+    changeset_revision: 5cf9fcc93508
+    name: samtools_view
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+- id: view_unmap_map
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+  tool_version: 1.22+galaxy2
+  when: $(inputs.when == 'paired')
+  in:
+  - id: input
+    source: input
+  - id: when
+    source: layout
+  out:
+  - id: outputsam
+  state:
+    addref_cond:
+      addref_select: 'no'
+      __current_case__: 0
+    input:
+      __class__: ConnectedValue
+    mode:
+      outtype: selected_reads
+      filter_config:
+        cond_region:
+          select_region: 'no'
+          __current_case__: 0
+        cond_rg:
+          select_rg: 'no'
+          __current_case__: 0
+        cond_expr:
+          select_expr: 'no'
+          __current_case__: 0
+        quality: null
+        library: null
+        cigarcons: null
+        inclusive_filter:
+        - '4'
+        exclusive_filter:
+        - '8'
+        - '256'
+        exclusive_filter_all: null
+        tag: null
+      output_options:
+        reads_report_type: retained
+        complementary_output: false
+        adv_output:
+          readtags: []
+          collapsecigar: false
+        output_format:
+          oformat: bam
+          __current_case__: 2
+  tool_shed_repository:
+    changeset_revision: 5cf9fcc93508
+    name: samtools_view
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+- id: view_map_unmap
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+  tool_version: 1.22+galaxy2
+  when: $(inputs.when == 'paired')
+  in:
+  - id: input
+    source: input
+  - id: when
+    source: layout
+  out:
+  - id: outputsam
+  state:
+    addref_cond:
+      addref_select: 'no'
+      __current_case__: 0
+    input:
+      __class__: ConnectedValue
+    mode:
+      outtype: selected_reads
+      filter_config:
+        cond_region:
+          select_region: 'no'
+          __current_case__: 0
+        cond_rg:
+          select_rg: 'no'
+          __current_case__: 0
+        cond_expr:
+          select_expr: 'no'
+          __current_case__: 0
+        quality: null
+        library: null
+        cigarcons: null
+        inclusive_filter:
+        - '8'
+        exclusive_filter:
+        - '4'
+        - '256'
+        exclusive_filter_all: null
+        tag: null
+      output_options:
+        reads_report_type: retained
+        complementary_output: false
+        adv_output:
+          readtags: []
+          collapsecigar: false
+        output_format:
+          oformat: bam
+          __current_case__: 2
+  tool_shed_repository:
+    changeset_revision: 5cf9fcc93508
+    name: samtools_view
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+- id: merge_unmapped
+  run:
+    class: GalaxyUserTool
+    id: samtools_merge_three
+    version: 1.23.1
+    name: samtools merge three alignments
+    description: Merge three per-sample BAM/CRAM subsets into one alignment with samtools
+      merge.
+    container: quay.io/biocontainers/samtools:1.23.1--ha83d96e_0
+    license: MIT
+    help:
+      format: markdown
+      content: "Reproduces the nf-core `SAMTOOLS_MERGE` module call used by\n`ALIGNMENT_TO_FASTQ`\
+        \ to merge the three unmapped subsets of one sample:\n\n    samtools merge\
+        \ --threads N [--reference FASTA] -f out.bam FIRST SECOND THIRD\n\nThree real\
+        \ data inputs make Galaxy run one job per sample, which the\nTool Shed `samtools_merge`\
+        \ wrapper's multiple-data input does not do (it\nreduces the whole collection\
+        \ into one job).\n"
+    configfiles:
+    - filename: run_merge.sh
+      content: "set -o pipefail\nset -e\nREF=\"$(inputs.reference ? \"--reference\
+        \ '\" + inputs.reference.path + \"'\" : \"\")\"\nsamtools merge --threads\
+        \ \"$GALAXY_SLOTS\" $REF -f out.bam \\\n    '$(inputs.first.path)' '$(inputs.second.path)'\
+        \ '$(inputs.third.path)'\n"
+    shell_command: bash run_merge.sh
+    inputs:
+    - name: first
+      type: data
+      format:
+      - bam
+      - cram
+      label: First alignment subset
+    - name: second
+      type: data
+      format:
+      - bam
+      - cram
+      label: Second alignment subset
+    - name: third
+      type: data
+      format:
+      - bam
+      - cram
+      label: Third alignment subset
+    - name: reference
+      type: data
+      format:
+      - fasta
+      optional: true
+      label: Reference FASTA (required for CRAM)
+    outputs:
+    - name: output
+      type: data
+      format: bam
+      from_work_dir: out.bam
+      label: Merged unmapped alignments
+  when: $(inputs.when == 'paired')
+  in:
+  - id: first
+    source: view_unmap_unmap/outputsam
+  - id: second
+    source: view_unmap_map/outputsam
+  - id: third
+    source: view_map_unmap/outputsam
+  - id: reference
+    source: fasta
+  - id: when
+    source: layout
+  out:
+  - id: output
+- id: fastq_unmapped
+  in:
+  - id: input
+    source: merge_unmapped/output
+  - id: reference
+    source: fasta
+  - id: collate_fast
+    source: samtools_collate_fast
+  - id: when
+    source: layout
+  when: $(inputs.when == 'paired')
+  out:
+  - id: forward
+  - id: reverse
+  run: &id002
+    class: GalaxyUserTool
+    id: samtools_collate_fastq
+    version: 1.23.1
+    name: samtools collate and fastq
+    description: Convert BAM/CRAM to FASTQ with samtools collate piped into samtools
+      fastq.
+    container: quay.io/biocontainers/samtools:1.23.1--ha83d96e_0
+    license: MIT
+    help:
+      format: markdown
+      content: "Reproduces the nf-core `SAMTOOLS_COLLATEFASTQ` module shell block:\n\
+        \n    samtools collate [-f -r 100000] --threads N [--reference FASTA] -O INPUT\
+        \ . |\n    samtools fastq -N --threads N [--reference FASTA] \\\n        -0\
+        \ out_other.fq.gz -1 out_1.fq.gz -2 out_2.fq.gz -s out_singleton.fq.gz\n\n\
+        The collate stage fixes the read order, so the converted FASTQ is\nbyte-comparable\
+        \ with the nf-core pipeline output. Reads are split into the\nmate files (-1/-2),\
+        \ the \"other\" file (-0, which also receives single-end\nreads) and singletons\
+        \ (-s).\n"
+    configfiles:
+    - filename: run_collate_fastq.sh
+      content: "set -o pipefail\nset -e\nREF=\"$(inputs.reference ? \"--reference\
+        \ '\" + inputs.reference.path + \"'\" : \"\")\"\nCOLLATE_FAST=\"$(inputs.collate_fast\
+        \ ? \"-f -r 100000\" : \"\")\"\nsamtools collate $COLLATE_FAST --threads \"\
+        $GALAXY_SLOTS\" $REF \\\n    -O '$(inputs.input.path)' . |\nsamtools fastq\
+        \ -N --threads \"$GALAXY_SLOTS\" $REF \\\n    -0 out_other.fq.gz -1 out_1.fq.gz\
+        \ -2 out_2.fq.gz -s out_singleton.fq.gz\n"
+    shell_command: bash run_collate_fastq.sh
+    inputs:
+    - name: input
+      type: data
+      format:
+      - bam
+      - cram
+      label: Alignments to convert
+    - name: reference
+      type: data
+      format:
+      - fasta
+      optional: true
+      label: Reference FASTA (required for CRAM)
+    - name: collate_fast
+      type: boolean
+      value: false
+      label: Use samtools collate -f -r 100000
+    outputs:
+    - name: forward
+      type: data
+      format: fastqsanger.gz
+      from_work_dir: out_1.fq.gz
+      label: Mate 1 FASTQ
+    - name: reverse
+      type: data
+      format: fastqsanger.gz
+      from_work_dir: out_2.fq.gz
+      label: Mate 2 FASTQ
+    - name: other
+      type: data
+      format: fastqsanger.gz
+      from_work_dir: out_other.fq.gz
+      label: Other reads (single-end reads land here)
+    - name: singleton
+      type: data
+      format: fastqsanger.gz
+      from_work_dir: out_singleton.fq.gz
+      label: Singleton reads
+- id: fastq_mapped
+  in:
+  - id: input
+    source: view_map_map/outputsam
+  - id: reference
+    source: fasta
+  - id: collate_fast
+    source: samtools_collate_fast
+  - id: when
+    source: layout
+  when: $(inputs.when == 'paired')
+  out:
+  - id: forward
+  - id: reverse
+  run: *id002
+- id: cat_r1
+  tool_id: cat1
+  when: $(inputs.when == 'paired')
+  in:
+  - id: input1
+    source: fastq_mapped/forward
+  - id: queries_0|input2
+    source: fastq_unmapped/forward
+  - id: when
+    source: layout
+  out:
+  - id: out_file1
+  state:
+    input1:
+      __class__: ConnectedValue
+    queries:
+    - __index__: 0
+      input2:
+        __class__: ConnectedValue
+- id: cat_r2
+  tool_id: cat1
+  when: $(inputs.when == 'paired')
+  in:
+  - id: input1
+    source: fastq_mapped/reverse
+  - id: queries_0|input2
+    source: fastq_unmapped/reverse
+  - id: when
+    source: layout
+  out:
+  - id: out_file1
+  state:
+    input1:
+      __class__: ConnectedValue
+    queries:
+    - __index__: 0
+      input2:
+        __class__: ConnectedValue
+- id: zip_reads_paired
+  tool_id: __ZIP_COLLECTION__
+  when: $(inputs.when == 'paired')
+  in:
+  - id: input_forward
+    source: cat_r1/out_file1
+  - id: input_reverse
+    source: cat_r2/out_file1
+  - id: when
+    source: layout
+  out:
+  - id: output
+  state:
+    input_forward:
+      __class__: ConnectedValue
+    input_reverse:
+      __class__: ConnectedValue
+- id: fastq_single
+  in:
+  - id: input
+    source: input
+  - id: reference
+    source: fasta
+  - id: collate_fast
+    source: samtools_collate_fast
+  - id: when
+    source: layout
+  when: $(inputs.when == 'single')
+  out:
+  - id: other
+  run: *id002
+- id: fastqc_post_paired
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+  tool_version: 0.74+galaxy1
+  when: $(inputs.when == false && inputs.when_layout == 'paired')
+  in:
+  - id: input_file
+    source: zip_reads_paired/output
+  - id: when
+    source: no_read_QC
+  - id: when_layout
+    source: layout
+  out:
+  - id: html_file
+  - id: text_file
+  state:
+    input_file:
+      __class__: ConnectedValue
+    kmers: 7
+    min_length: null
+    nogroup: false
+  tool_shed_repository:
+    changeset_revision: 2c64fded1286
+    name: fastqc
+    owner: devteam
+    tool_shed: toolshed.g2.bx.psu.edu
+- id: fastqc_post_single
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+  tool_version: 0.74+galaxy1
+  when: $(inputs.when == false && inputs.when_layout == 'single')
+  in:
+  - id: input_file
+    source: fastq_single/other
+  - id: when
+    source: no_read_QC
+  - id: when_layout
+    source: layout
+  out:
+  - id: html_file
+  - id: text_file
+  state:
+    input_file:
+      __class__: ConnectedValue
+    kmers: 7
+    min_length: null
+    nogroup: false
+  tool_shed_repository:
+    changeset_revision: 2c64fded1286
+    name: fastqc
+    owner: devteam
+    tool_shed: toolshed.g2.bx.psu.edu
+- id: multiqc
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+  tool_version: 1.35+galaxy5
+  in:
+  - id: results_0|software_cond|output_0|input
+    source: fastqc_pre/text_file
+  - id: title
+    source: multiqc_title
+  out:
+  - id: html_report
+  state:
+    results:
+    - __index__: 0
+      software_cond:
+        software: fastqc
+        __current_case__: 9
+        output:
+        - __index__: 0
+          type: data
+    title:
+      __class__: ConnectedValue
+    comment: ''
+    flat: false
+    export: false
+    png_plots: false
+  tool_shed_repository:
+    changeset_revision: 94b6bea727ae
+    name: multiqc
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+tags:
+- bam
+- fastq
+- samtools
+- qc
+- nf-core

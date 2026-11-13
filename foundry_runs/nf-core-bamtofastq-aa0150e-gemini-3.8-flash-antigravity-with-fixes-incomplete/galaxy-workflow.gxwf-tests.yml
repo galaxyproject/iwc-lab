@@ -1,0 +1,79 @@
+- doc: Test paired-end BAM to FASTQ conversion with quality control
+  job:
+    input_bams:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: test
+          location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam
+          filetype: bam
+        - class: File
+          identifier: test2
+          location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam
+          filetype: bam
+    reference_fasta:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      filetype: fasta
+  outputs:
+    extracted_fastqs_r1:
+      class: Collection
+      element_tests:
+        test:
+          checksum: md5$9b0c08862a5e47e842a485ddad31b871
+        test2:
+          checksum: md5$a4984fb5a60f80ccbfbfcf1cef9daaf3
+    extracted_fastqs_r2:
+      class: Collection
+      element_tests:
+        test:
+          checksum: md5$40e17982d1231e561d6420234ae29357
+        test2:
+          checksum: md5$bde23801e2d60604afb3bd0b0ab014ab
+    samtools_stats:
+      class: Collection
+      element_tests:
+        test:
+          checksum: md5$3c3f8fa56674fa987fd912b530f49c3c
+        test2:
+          checksum: md5$7e6537bde51ee4bb4a50562014ae2cd4
+    samtools_flagstat:
+      class: Collection
+      element_tests:
+        test:
+          checksum: md5$a53f3d26e2e9851f7d528442bbfe9781
+        test2:
+          checksum: md5$acbd95030a362a7e6491faa87d1b9c2c
+    samtools_idxstats:
+      class: Collection
+      element_tests:
+        test:
+          checksum: md5$e179601fa7b8ebce81ac3765206f6c15
+        test2:
+          checksum: md5$90f01313bc89c7fd096aad051cd71b66
+    fastqutils_info:
+      class: Collection
+      element_tests:
+        test:
+          checksum: md5$db31682c36cde02f1e8567d130537cac
+        test2:
+          checksum: md5$0222a414a69c92608af1580f3c6ce996
+    multiqc_report:
+      asserts:
+        has_text:
+          text: MultiQC
+    pre_conversion_fastqc_html:
+      class: Collection
+      element_tests:
+        test:
+          asserts:
+            has_text:
+              text: FastQC
+    post_conversion_fastqc_html:
+      class: Collection
+      element_tests:
+        test:
+          asserts:
+            has_text:
+              text: FastQC

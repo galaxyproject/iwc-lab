@@ -1,0 +1,342 @@
+plan_version: '1'
+source:
+  kind: nextflow
+  name: nf-core/bamtofastq
+  derived_from: test-evidence
+  notes: 'Translated from tests/default.nf.test (-profile test), the candidate selected by summarize-nextflow.
+    The nf-test snapshot (tests/default.nf.test.snap) carries per-file md5 tokens for the merged FASTQs,
+    samtools flagstat/idxstats/stats, fastqutils info reports and multiqc_citations.txt; FastQC html/zip
+    and the multiqc report appear only in the stable_name capture (paths, no content). The chr.nf.test
+    candidate additionally exercises the single-end conversion path, which the Galaxy translation dropped
+    (ledger single-end-path-dropped); it is recorded as out-of-scope rather than translated.
+
+    '
+workflow:
+  title: BAM/CRAM to FASTQ conversion (nf-core/bamtofastq)
+  label_source: draft
+  notes: 'Labels read from the concrete galaxy-workflow.gxwf.yml draft (23 steps, extracted at loop endstate);
+    labels are verifiable.
+
+    '
+test_cases:
+- id: default_test_profile
+  doc: 'Whole-pipeline conversion of two paired-end sorted BAMs (test, test2) with reference FASTA, read
+    QC and stats enabled. Asserts the md5 of every converted FASTQ, the samtools flagstat/idxstats/stats
+    reports and the fastq-utils info reports, plus collection shapes and existence of the FastQC and MultiQC
+    outputs.
+
+    '
+  derived_from: test-evidence
+  provenance: tests/default.nf.test::-profile test (nf-test snapshot tests/default.nf.test.snap)
+  job_inputs:
+  - workflow_label: alignments
+    label_status: resolved
+    description: 'Two-element list collection of sorted paired-end BAMs, element ids test and test2. Element
+      fixtures (remote-url, SHA-1 verified 2026-11-12): test -> https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam
+      (SHA-1:0799f89638bddd570439115c606f425c22d189b1); test2 -> https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam
+      (SHA-1:522fb037cea05b9d41dd69647f27a644838bf507). Source: test_bam_samplesheet.csv rows; the published
+      samplesheet names test2.paired_end.recalibrated.bam which 404s — sorted variant is the live row
+      content.'
+    collection_shape: list
+    datatype: bam
+    fixture:
+      storage: remote-url
+      location: null
+      checksum: null
+      provenance: test-data-refs.json alignments ref (test_bam_samplesheet.csv rows; element fixtures
+        carry their own URLs+SHA-1)
+  - workflow_label: fasta
+    label_status: resolved
+    description: Reference FASTA (chr22 toy genome) from the source test params.
+    collection_shape: null
+    datatype: fasta
+    fixture:
+      storage: remote-url
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      checksum: SHA-1:56e7a0c035e2fce8ebe497d3704431d7586fd444
+      provenance: params.fasta of tests/default.nf.test
+  - workflow_label: read_qc
+    label_status: resolved
+    description: Boolean control; the test case runs read QC — workflow default true covers it.
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: workflow default true matches the source test
+  - workflow_label: stats
+    label_status: resolved
+    description: Boolean control; the test case runs stats — workflow default true covers it.
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: workflow default true matches the source test
+  - workflow_label: chr
+    label_status: resolved
+    description: Region string left unset (chr branch off in the selected test case).
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: unset in tests/default.nf.test
+  - workflow_label: multiqc_title
+    label_status: resolved
+    description: MultiQC report title; left at workflow default.
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: no upstream declaration; workflow default
+  - workflow_label: multiqc_config
+    label_status: resolved
+    description: Optional MultiQC config; unset in the selected test case.
+    collection_shape: null
+    datatype: yaml
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: unset in tests/default.nf.test
+  expected_outputs:
+  - workflow_label: paired_reads
+    label_status: resolved
+    description: list:paired collection of merged converted FASTQs (mapped + unmapped concatenated per
+      mate), one pair per sample.
+    output_kind: collection
+    collection_shape: list:paired
+    assertion_intent:
+    - family: element_count
+      intent: Collection has one pair per sample (test, test2).
+      expected_value: 2
+      tolerance: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: high
+    - family: checksum
+      intent: md5 of merged mate-1 FASTQ for sample test (source reads/test_1.merged.fastq.gz).
+      expected_value: md5:9b0c08862a5e47e842a485ddad31b871
+      tolerance: null
+      element_identifier: test/forward
+      evidence: test-evidence
+      confidence: high
+    - family: checksum
+      intent: md5 of merged mate-2 FASTQ for sample test (source reads/test_2.merged.fastq.gz).
+      expected_value: md5:40e17982d1231e561d6420234ae29357
+      tolerance: null
+      element_identifier: test/reverse
+      evidence: test-evidence
+      confidence: high
+    - family: checksum
+      intent: md5 of merged mate-1 FASTQ for sample test2 (source reads/test2_1.merged.fastq.gz).
+      expected_value: md5:a4984fb5a60f80ccbfbfcf1cef9daaf3
+      tolerance: null
+      element_identifier: test2/forward
+      evidence: test-evidence
+      confidence: high
+    - family: checksum
+      intent: md5 of merged mate-2 FASTQ for sample test2 (source reads/test2_2.merged.fastq.gz).
+      expected_value: md5:bde23801e2d60604afb3bd0b0ab014ab
+      tolerance: null
+      element_identifier: test2/reverse
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: flagstat
+    label_status: resolved
+    description: samtools flagstat tabular report per alignment.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: md5 of flagstat for sample test (source samtools/test.flagstat).
+      expected_value: md5:a53f3d26e2e9851f7d528442bbfe9781
+      tolerance: null
+      element_identifier: test
+      evidence: test-evidence
+      confidence: high
+    - family: checksum
+      intent: md5 of flagstat for sample test2 (source samtools/test2.flagstat).
+      expected_value: md5:acbd95030a362a7e6491faa87d1b9c2c
+      tolerance: null
+      element_identifier: test2
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: idxstats
+    label_status: resolved
+    description: samtools idxstats tabular report per alignment.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: md5 of idxstats for sample test (source samtools/test.idxstats).
+      expected_value: md5:e179601fa7b8ebce81ac3765206f6c15
+      tolerance: null
+      element_identifier: test
+      evidence: test-evidence
+      confidence: high
+    - family: checksum
+      intent: md5 of idxstats for sample test2 (source samtools/test2.idxstats).
+      expected_value: md5:90f01313bc89c7fd096aad051cd71b66
+      tolerance: null
+      element_identifier: test2
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: stats
+    label_status: resolved
+    description: samtools stats report per alignment.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: md5 of stats for sample test (source samtools/test.stats).
+      expected_value: md5:3c3f8fa56674fa987fd912b530f49c3c
+      tolerance: null
+      element_identifier: test
+      evidence: test-evidence
+      confidence: high
+    - family: checksum
+      intent: md5 of stats for sample test2 (source samtools/test2.stats).
+      expected_value: md5:7e6537bde51ee4bb4a50562014ae2cd4
+      tolerance: null
+      element_identifier: test2
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: fastq_info
+    label_status: resolved
+    description: fastq-utils info validation report per sample (fastq_info runs per pair over the unzipped
+      mates).
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: md5 of info report for sample test (source fastqutils/test.txt).
+      expected_value: md5:db31682c36cde02f1e8567d130537cac
+      tolerance: null
+      element_identifier: test
+      evidence: test-evidence
+      confidence: medium
+    - family: checksum
+      intent: md5 of info report for sample test2 (source fastqutils/test2.txt).
+      expected_value: md5:0222a414a69c92608af1580f3c6ce996
+      tolerance: null
+      element_identifier: test2
+      evidence: test-evidence
+      confidence: medium
+  - workflow_label: fastqc_post_zip
+    label_status: resolved
+    description: Post-conversion FastQC raw-data zips (one per mate dataset — 4 for two pairs, matching
+      the source's 4 post_conversion zip files).
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: element_count
+      intent: One FastQC zip per converted mate dataset.
+      expected_value: 4
+      tolerance: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: medium
+  - workflow_label: fastqc_post_html
+    label_status: resolved
+    description: Post-conversion FastQC HTML reports (one per mate dataset).
+    output_kind: collection
+    collection_shape: list
+    assertion_intent: []
+  - workflow_label: fastqc_pre_html
+    label_status: resolved
+    description: Pre-conversion FastQC HTML reports over the input alignments.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent: []
+  - workflow_label: fastqc_pre_zip
+    label_status: resolved
+    description: Pre-conversion FastQC zips over the input alignments.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent: []
+  - workflow_label: multiqc_report
+    label_status: resolved
+    description: Aggregated MultiQC HTML report over the post-conversion FastQC zips.
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent: []
+unresolved:
+- kind: assertion
+  description: 'fastq_info md5s are upstream test-evidence, but the Galaxy fastq_info wrapper writes its
+    report per pair over an unzipped list:paired input; whether the element identifiers arrive as the
+    pair ids (test/test2) and whether the report bytes match the source''s per-sample txt (wrapper may
+    emit per-mate or combined format) is unverified until planemo.
+
+    '
+  blocking: false
+  suggested_resolution: 'Run planemo first with the element-level md5 assertions; if the wrapper output
+    shape differs, downgrade to has_text on a stable marker line and record the delta in the debug ledger.
+
+    '
+- kind: assertion
+  description: 'Galaxy collection element identifiers for paired_reads come from __ZIP_COLLECTION__ (forward
+    id of each pair). Expected test/test2 assumes zip forwards input1 ids; verify at planemo before trusting
+    element-addressed checksums.
+
+    '
+  blocking: false
+  suggested_resolution: Assert element_count first; add element-addressed checksums once ids confirmed.
+omissions:
+- target: multiqc_report content
+  reason: 'The upstream snapshot checks only the path name (stable_name) of multiqc/multiqc_report.html
+    — no content checksum; the HTML embeds timestamps and is not byte-stable. Existence only.
+
+    '
+  category: nondeterministic
+- target: fastqc_pre_html / fastqc_pre_zip / fastqc_post_html / fastqc_post_zip content
+  reason: 'Upstream snapshot lists these only by name (stable_name capture, no md5); FastQC HTML/zip embed
+    run metadata. Asserted as existence/count only.
+
+    '
+  category: nondeterministic
+- target: multiqc_data/ auxiliary files (log, parquet, citations, json)
+  reason: 'The Galaxy MultiQC wrapper exposes only html_report (and stats); the auxiliary multiqc_data/*
+    files are internal to the source pipeline''s published directory and are not workflow outputs. multiqc_citations.txt
+    has an upstream md5 but no Galaxy output to bind it to.
+
+    '
+  category: no-stable-checkpoint
+- target: pipeline_info/ software versions yml
+  reason: Source-pipeline bookkeeping artifact (Nextflow-side versions.yml); no Galaxy counterpart.
+  category: out-of-scope
+- target: chr test case (tests/chr.nf.test)
+  reason: 'The chr variant exercises region subsetting AND the single-end conversion path (test3.single_end
+    BAM, SAMTOOLS_COLLATEFASTQ_SINGLE_END), which the Galaxy translation dropped (ledger single-end-path-dropped).
+    Its input samplesheet uses a single-end BAM that cannot run through the list:paired build. Deferred:
+    a paired-input chr case could be authored later if the single-end path is restored.
+
+    '
+  category: out-of-scope
+warnings:
+- code: no-upstream-expected-outputs
+  message: 'fastqc_post_html and fastqc_pre_html carry no assertions: the upstream snapshot has no content
+    checksums for FastQC outputs. The test case still has checksum-bearing outputs (paired_reads, flagstat,
+    idxstats, stats, fastq_info), so the case is not assertion-free.
+
+    '
+  path: tests/default.nf.test.snap stable_name capture
+- code: untranslatable-snapshot
+  message: 'The snapshot''s versions.yml capture (per-process tool versions) and workflow.trace.succeeded().size()
+    have no Galaxy workflow-test counterpart; tool versions are pinned by the workflow''s tool_shed_repository
+    entries instead.
+
+    '
+  path: tests/default.nf.test content[0], content[1]
+- code: untranslatable-snapshot
+  message: 'The chr.nf.test candidate is not translated: it runs the single-end conversion path that the
+    Galaxy workflow dropped. Recorded as an omission (out-of-scope) rather than an assertion.
+
+    '
+  path: tests/chr.nf.test::-profile test --input test_chr_samplesheet.csv

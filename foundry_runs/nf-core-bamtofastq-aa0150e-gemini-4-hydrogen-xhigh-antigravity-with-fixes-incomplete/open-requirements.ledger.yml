@@ -1,0 +1,165 @@
+topology_repair:
+  escalations: 4
+  cap: 5
+  open_history: [0, 0, 0, 0]
+
+discoveries:
+  - id: prepare-indices-branch-rebuild-pattern
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    evidence: "summary-nextflow.json has reference_rebuilds: [], while subworkflows/local/prepare_indices/main.nf builds missing fasta_fai via .branch { is_fasta_indexed: meta.index == true; to_index: meta.index == false } -> SAMTOOLS_FAIDX (and similarly builds missing alignment .bai/.crai via SAMTOOLS_INDEX)."
+    impact: "fasta_fai is optional compute-if-missing in the source pipeline; Galaxy v1 prefers in-tool/Galaxy-managed FASTA indexing unless a wrapper requires an explicit fai port."
+  - id: multiqc-upstream-qc-unwired
+    raised_by: nextflow-summary-to-galaxy-interface
+    evidence: "summary-nextflow.json workflow.edges shows MULTIQC only receiving ch_collated_versions, ch_workflow_summary, and ch_methods_description (ALIGNMENT_TO_FASTQ.out.zip is commented out in workflows/bamtofastq.nf and PRE_CONVERSION_QC / FASTQC_POST_CONVERSION outputs are not wired into ch_multiqc_files)."
+    impact: "Without nf-core version/summary YAML scaffolding in Galaxy, MultiQC would receive no tool logs unless wired directly to samtools and FastQC QC outputs in data-flow."
+  - id: samtools-collate-pipeline-idiom
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    evidence: "summary-nextflow.json SAMTOOLS_COLLATEFASTQ script_excerpt pipes `samtools collate ... -O <in> . | samtools fastq -N -0 <prefix>_other.fq.gz ...`, and workflows/bamtofastq.nf consumes fastq_other (-0) for single-end and fastq (-1/-2) for paired-end."
+    impact: "Selected Galaxy samtools wrapper or UDT must support collate + fastq -N with -0 for single-end and -1/-2 for paired-end."
+  - id: fastqutils-paired-vs-single-invocation
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    evidence: "summary-nextflow.json FASTQUTILS_INFO passes `reads` (`[R1, R2]` for paired-end vs single file for single-end) to a single `fastq_info ${reads}` command emitting `${prefix}.txt`."
+    impact: "Paired reads must reach FASTQUTILS_INFO as a paired element (list:paired) rather than flattened R1/R2 datasets, whereas FASTQC_POST_CONVERSION can consume the flattened FASTQ list."
+  - id: iwc-no-domain-exemplar
+    raised_by: compare-against-iwc-exemplar
+    evidence: "Local IWC corpus (commit c07557f) has no BAM/CRAM-to-FASTQ conversion workflow. Only `epigenetics/correlation-of-samples-on-peaks` accepts `list[cram|bam]` and `microbiome/pathogen-identification/nanopore-pre-processing` uses `samtools_fastx` (`outputs: ['other']`, `fastqsanger.gz`)."
+    impact: "No High/Medium domain exemplar is available for template pattern-matching; downstream template relies on Low-confidence cross-domain pattern matches."
+  - id: iwc-sync-collections-by-identifier-recipe
+    raised_by: compare-against-iwc-exemplar
+    evidence: "`amplicon/amplicon-mgnify/mgnify-amplicon-pipeline-v5-its` (`_unlabeled_step_2..4`) implements identifier synchronization via `__FILTER_EMPTY_DATASETS__` -> `collection_element_identifiers` -> `__FILTER_FROM_FILE__` (`how_filter: remove_if_absent`)."
+    impact: "Settles the concrete Galaxy 3-step recipe for `n_keep_*_ids` + `n_sync_*` in Phase 6 template authoring."
+  - id: iwc-samtools-stats-direct-fasta
+    raised_by: compare-against-iwc-exemplar
+    evidence: "`VGP-assembly-v2/Scaffolding-HiC-VGP8` (`steps 21, 53`) wires an explicit FASTA `data` input directly to `samtools_stats` (`addref_cond.addref_select: history`) without an explicit `.fai` port."
+    impact: "Supports omitting explicit `fasta_fai` for `samtools_stats`; remaining samtools tools still require Phase 7 wrapper inspection."
+
+decisions:
+  - id: drop-igenomes-genome-key-for-explicit-fasta
+    decided_by: nextflow-summary-to-galaxy-reference-data
+    decision: "Expose explicit optional reference_fasta (format: fasta) instead of params.genome / iGenomes data-table lookup."
+    rationale: "Galaxy v1 portability posture avoids admin-managed .loc / dbkey tables; conf/igenomes.config only resolves fasta for this pipeline."
+    evidence:
+      - prepare-indices-branch-rebuild-pattern
+  - id: input-list-over-samplesheet-record
+    decided_by: nextflow-summary-to-galaxy-interface
+    decision: "Map params.input samplesheet (sample_id, mapped, index, file_type) to a flat Galaxy list collection (collection_type: list, format: [bam, cram]) named input_alignments."
+    rationale: "Galaxy collection element_identifiers preserve sample_id, dataset extensions carry bam vs cram directly, and Galaxy auto-manages bam_index/cram_index metadata without breaking allow_implicit_mapping (which sample_sheet:record disables)."
+    evidence: []
+  - id: split-paired-and-single-end-read-outputs
+    decided_by: nextflow-summary-to-galaxy-interface
+    decision: "Expose separate paired_reads (list:paired) and single_end_reads (list) workflow outputs instead of a single heterogeneous mixed FASTQ collection."
+    rationale: "Galaxy collections enforce homogeneous structure (list:paired for R1/R2 vs flat list for single-end reads)."
+    evidence: []
+  - id: absorb-samtools-chr-index-into-galaxy-metadata
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    decision: "Omit explicit SAMTOOLS_CHR_INDEX workflow step; rely on Galaxy BAM metadata indexing on SAMTOOLS_CHR output."
+    rationale: "Galaxy automatically indexes BAM outputs via metadata converters; matches Phase 2 indexing posture."
+    evidence: []
+  - id: inline-when-over-subworkflows
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    decision: "Represent params.chr, !no_stats, and !no_read_qc as inline `when:` gates (plus pick_value for params.chr) and keep ALIGNMENT_TO_FASTQ flat in the main workflow."
+    rationale: "Optional gates touch 1 to 3 independent leaf/filter steps without wide cascades, and keeping ALIGNMENT_TO_FASTQ top-level simplifies template review and Planemo execution."
+    evidence: []
+  - id: emit-empty-markers-plus-sync-for-checkpairedend
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    decision: "Translate CHECKPAIREDEND optional branch outputs into non-empty vs 0-byte marker pairs, filtered by __FILTER_EMPTY_DATASETS__ and synchronized against active_alignments."
+    rationale: "Supports mixed paired-end and single-end collections concurrently in Galaxy without failing jobs."
+    evidence: []
+  - id: wire-real-qc-into-galaxy-multiqc
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    decision: "Wire samtools stats (flagstat, idxstats, stats) and FastQC (pre/post ZIP) into MultiQC guarded by `when: !(no_stats && no_read_qc)` instead of passing nf-core version/summary YAML boilerplate."
+    rationale: "Upstream nf-core left QC files unwired from MULTIQC; Galaxy removes nf-core boilerplate YAMLs and runs MultiQC on actual pipeline QC outputs."
+    evidence:
+      - multiqc-upstream-qc-unwired
+  - id: unmap-three-list-merge-via-suffix-apply-rules
+    decided_by: nextflow-summary-to-galaxy-template
+    decision: "Bundle the 3 sibling unmapped alignment lists (map_unmap, unmap_map, unmap_unmap) into list:list via __MERGE_COLLECTION__ (duplicate_options: suffix_every, suffix_pattern: '___#') followed by __APPLY_RULES__ (add_column_regex '^(.*)___([0-9]+)$')."
+    rationale: "Replaces the 3-way Nextflow .join(remainder: true) into SAMTOOLS_MERGE_UNMAP with built-in deterministic Galaxy collection primitives without relying on __ZIP_COLLECTION__ only handling pairs."
+    evidence: []
+  - id: defer-all-shed-and-udt-steps-to-phase7
+    decided_by: nextflow-summary-to-galaxy-template
+    decision: "Mark all 7 built-in collection steps Resolved in galaxy-workflow-draft.gxwf.yml while leaving all Tool Shed tools (including map_param_value, pick_value, collection_element_identifiers) and local UDT candidates Identity-pinned or Deferred for Phase 7 advance-galaxy-draft-step."
+    rationale: "Ensures every Tool Shed tool goes through discover-shed-tool / summarize-galaxy-tool changeset pinning and schema verification in Phase 7 rather than hardcoding metadata early."
+    evidence: []
+
+entries:
+  - id: reference-fasta-fai-rebuild-unverified
+    status: resolved
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    unmet: "Verify whether selected Galaxy samtools wrappers consume optional fasta directly without an explicit fasta_fai input or SAMTOOLS_FAIDX workflow step."
+    missing: "Wrapper-level confirmation from discover-shed-tool / summarize-galaxy-tool (or authored UDT) for samtools view, stats, merge, and collate+fastq."
+    resolved_by: implement-galaxy-tool-step
+    supersedes: null
+    note: "Verified across samtools_view 1.22+galaxy2 (addref_cond=history), samtools_stats 2.0.9 (addref_cond=history), samtools_merge 1.22+galaxy2, and samtools_collatefastq_{single,paired} UDTs; all accept FASTA directly without a separate fasta_fai port (CRAM+FASTA runtime verified in Phase 12)."
+  - id: cram-mixed-list-preqc-filtering
+    status: resolved
+    raised_by: nextflow-summary-to-galaxy-interface
+    unmet: "Verify how Galaxy data-flow splits bam vs cram elements inside input_alignments before FASTQC_PRE_CONVERSION (which skips CRAM) and confirms automatic bam_index/cram_index metadata across selected tools."
+    missing: "Galaxy collection filtering pattern in data-flow and wrapper datatype/index checks during step realization."
+    resolved_by: implement-galaxy-tool-step
+    supersedes: null
+    note: "Realized BAM-only pre-QC filtering via check_bam_filetype UDT + keep_bam_ids + extract_bam_ids + sync_bam_alignments -> fastqc_pre; samtools wrappers manage BAM/CRAM indexes implicitly."
+  - id: multiqc-galaxy-qc-wiring
+    status: resolved
+    raised_by: nextflow-summary-to-galaxy-interface
+    unmet: "Decide exact MultiQC inputs in data-flow given upstream nf-core only wired versions/summary YAMLs while omitting FastQC/samtools outputs."
+    missing: "Concrete MultiQC data-flow design and MultiQC wrapper input specification."
+    resolved_by: wire-real-qc-into-galaxy-multiqc
+    supersedes: null
+    note: "Resolved to wire actual samtools stats and FastQC ZIP collections into MultiQC; partial-skip tolerance carried as multiqc-partial-skip-safety."
+  - id: multiqc-partial-skip-safety
+    status: resolved
+    blocking: true
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    step: multiqc
+    unmet: "Verify whether the selected MultiQC wrapper repeat input slots tolerate NO_REPLACEMENT when only one of `no_stats` or `no_read_qc` is true."
+    missing: "Concrete MultiQC XML optionality check during wrapper discovery / template step implementation."
+    resolved_by: repair-galaxy-draft-topology
+    supersedes: multiqc-galaxy-qc-wiring
+    note: "split-conditional + add-step + rewire: replaced single multiqc + gate_run_multiqc with mutually exclusive gate_multiqc_{all,stats_only,readqc_only} (combine_boolean_params and), multiqc_{all,stats_only,readqc_only} (iuc/multiqc 1.35+galaxy5), and pick_multiqc (pick_value 0.2.0 first, param_type=data) so partial skips never feed NO_REPLACEMENT into an enabled MultiQC step."
+  - id: samtools-collate-fastq-wrapper-gap
+    status: resolved
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: "Verify whether Tool Shed has a wrapper performing `samtools collate ... -O | samtools fastq -N` with -0 (single-end) and -1/-2 (paired-end) plus optional `-f -r reads_in_memory`, or author a UDT."
+    missing: "Wrapper inspection via discover-shed-tool / summarize-galaxy-tool (or UDT via author-galaxy-tool-wrapper)."
+    resolved_by: author-galaxy-tool-wrapper
+    supersedes: null
+    note: "Resolved by authoring samtools_collatefastq_single and samtools_collatefastq_paired GalaxyUserTools using community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5 after confirming iuc/samtools_collate lacks CRAM/--reference/-r and iuc/samtools_fastx does not collate."
+  - id: cat-fastq-gzip-parity
+    status: open
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: "Verify whether selected Galaxy concatenation tool preserves valid multi-member `.fastqsanger.gz` when concatenating paired R1/R2 streams from mapped and unmapped subsets."
+    missing: "Wrapper schema inspection during Phase 7 step realization."
+    resolved_by: null
+    supersedes: null
+    note: "Selected built-in cat1 1.0.0 (`format_source: input1` -> fastqsanger.gz); runtime gzip concatenation integrity to be confirmed by Planemo in Phase 12 because cached schema omits raw XML command body."
+  - id: filter-bam-collection-shape-gap
+    status: resolved
+    blocking: true
+    raised_by: implement-galaxy-tool-step
+    step: filter_bam_pre_qc
+    unmet: "Filtered BAM-only collection output (list[bam]) from mixed list[bam|cram]"
+    missing: "Tool Shed search missed and GalaxyUserTool per-element outputs cannot directly filter a dataset collection."
+    resolved_by: repair-galaxy-draft-topology
+    supersedes: null
+    note: "replace-tool + add-step x3 + rewire: replaced filter_bam_pre_qc with check_bam_filetype (draft marker UDT) -> keep_bam_ids (__FILTER_EMPTY_DATASETS__) -> extract_bam_ids (collection_element_identifiers) -> sync_bam_alignments (__FILTER_FROM_FILE__) -> fastqc_pre."
+  - id: optional-reference-conditional-branching
+    status: resolved
+    blocking: true
+    raised_by: implement-galaxy-tool-step
+    step: samtools_chr
+    unmet: "Optional workflow data input reference_fasta cannot directly wire addref_cond|ref (optional: false) on samtools_view/samtools_stats without causing NO_REPLACEMENT skips when reference_fasta is omitted, nor can addref_select be fixed to 'no' without breaking CRAM inputs."
+    missing: "Split conditional with_ref / no_ref branches gated by has_reference (map_param_value type=data -> boolean), no_reference, combine_boolean_params (and), and pick_value (first, param_type=data)."
+    resolved_by: repair-galaxy-draft-topology
+    supersedes: null
+    note: "add-step + split-conditional + rewire: added has_reference/no_reference and split samtools_chr (concretized samtools_view 1.22+galaxy2), twin steps pe_view_{map_map,map_unmap,unmap_map,unmap_unmap}, and samtools_stats into _with_ref/_no_ref + pick_value branches."
+  - id: pe-paired-fastq-split-shape-gap
+    status: resolved
+    blocking: true
+    raised_by: implement-galaxy-tool-step
+    step: pe_collate_map
+    unmet: "Emit split paired-end R1/R2 FASTQ streams cleanly into pe_cat_r1/pe_cat_r2 and bgruening/fastq_info paired mode without GalaxyUserTool discover_datasets collection_type: paired ambiguity or paired-collection port mismatch."
+    missing: "Explicit fastq_1 and fastq_2 data outputs on samtools_collatefastq_paired, removal of redundant pe_unzip_map/pe_unzip_unmap, and direct R1/R2 wiring from pe_cat_r1/pe_cat_r2 into fastqutils_paired."
+    resolved_by: repair-galaxy-draft-topology
+    supersedes: null
+    note: "replace-tool + remove-step x2 + rewire: authored samtools_collatefastq_paired emitting fastq_1 and fastq_2, dropped pe_unzip_map and pe_unzip_unmap, rewired pe_cat_r1/pe_cat_r2 directly, and rewired fastqutils_paired to merged R1/R2 list collections."

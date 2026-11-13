@@ -1,0 +1,309 @@
+- doc: 'Two paired-end BAM files (nf-core default test): conversion to paired FASTQ, QC before and after, empty single-end branch.'
+  job:
+    Alignments:
+      class: Collection
+      collection_type: list
+      elements:
+      - class: File
+        identifier: test
+        location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam
+        filetype: bam
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 0799f89638bddd570439115c606f425c22d189b1
+      - class: File
+        identifier: test2
+        location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam
+        filetype: bam
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 522fb037cea05b9d41dd69647f27a644838bf507
+  outputs:
+    Paired-end reads:
+      class: Collection
+      collection_type: list:paired
+      element_tests:
+        test:
+          class: Collection
+          elements:
+            forward:
+              file: test-data/expected/test_1.fastq.gz
+              compare: diff
+              sort: true
+              decompress: true
+            reverse:
+              file: test-data/expected/test_2.fastq.gz
+              compare: diff
+              sort: true
+              decompress: true
+        test2:
+          class: Collection
+          elements:
+            forward:
+              file: test-data/expected/test2_1.fastq.gz
+              compare: diff
+              sort: true
+              decompress: true
+            reverse:
+              file: test-data/expected/test2_2.fastq.gz
+              compare: diff
+              sort: true
+              decompress: true
+      element_count: 2
+    Single-end reads:
+      class: Collection
+      collection_type: list
+      element_tests: {}
+      element_count: 0
+    Samtools flagstat:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test:
+          checksum: md5$a53f3d26e2e9851f7d528442bbfe9781
+        test2:
+          checksum: md5$acbd95030a362a7e6491faa87d1b9c2c
+    Samtools idxstats:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test:
+          checksum: md5$e179601fa7b8ebce81ac3765206f6c15
+        test2:
+          checksum: md5$90f01313bc89c7fd096aad051cd71b66
+    Samtools stats:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test:
+          asserts:
+          - has_text:
+              text: "raw total sequences:\t5642"
+        test2:
+          asserts:
+          - has_text:
+              text: "raw total sequences:\t5436"
+    FastQC pre-conversion data:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test:
+          asserts:
+          - has_text:
+              text: "Total Sequences\t5644"
+        test2:
+          asserts:
+          - has_text:
+              text: "Total Sequences\t5436"
+    FastQC post-conversion data:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test_forward:
+          asserts:
+          - has_text:
+              text: "Total Sequences\t2821"
+        test_reverse:
+          asserts:
+          - has_text:
+              text: "Total Sequences\t2821"
+        test2_forward:
+          asserts:
+          - has_text:
+              text: "Total Sequences\t2718"
+        test2_reverse:
+          asserts:
+          - has_text:
+              text: "Total Sequences\t2718"
+      element_count: 4
+    FASTQ validation (paired-end):
+      class: Collection
+      collection_type: list
+      element_tests:
+        test:
+          asserts:
+          - has_line:
+              line: OK
+          - has_text:
+              text: 'Number of reads: 2821'
+        test2:
+          asserts:
+          - has_line:
+              line: OK
+          - has_text:
+              text: 'Number of reads: 2718'
+    FASTQ validation (single-end):
+      class: Collection
+      collection_type: list
+      element_tests: {}
+      element_count: 0
+    Pairedness per sample:
+      asserts:
+      - has_n_lines:
+          n: 2
+      - has_line:
+          line: "test\tpaired"
+      - has_line:
+          line: "test2\tpaired"
+    MultiQC report:
+      asserts:
+      - has_text:
+          text: bamtofastq
+      - has_text:
+          text: test2
+    FastQC pre-conversion report:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test:
+          asserts:
+          - has_text:
+              text: FastQC Report
+      element_count: 2
+    FastQC post-conversion report:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test_forward:
+          asserts:
+          - has_text:
+              text: FastQC Report
+        test_reverse:
+          asserts:
+          - has_text:
+              text: FastQC Report
+        test2_forward:
+          asserts:
+          - has_text:
+              text: FastQC Report
+        test2_reverse:
+          asserts:
+          - has_text:
+              text: FastQC Report
+      element_count: 4
+- doc: 'Two paired-end and one single-end BAM (nf-core no_bai test): per-sample routing, single-end conversion.'
+  job:
+    Alignments:
+      class: Collection
+      collection_type: list
+      elements:
+      - class: File
+        identifier: test
+        location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam
+        filetype: bam
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 0799f89638bddd570439115c606f425c22d189b1
+      - class: File
+        identifier: test2
+        location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam
+        filetype: bam
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 522fb037cea05b9d41dd69647f27a644838bf507
+      - class: File
+        identifier: test3
+        location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test3.single_end.markduplicates.sorted.bam
+        filetype: bam
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 072c537f5a850f0ae036fd0ef6906f767e9f28c1
+  outputs:
+    Paired-end reads:
+      class: Collection
+      collection_type: list:paired
+      element_tests:
+        test:
+          class: Collection
+          elements:
+            forward:
+              file: test-data/expected/test_1.fastq.gz
+              compare: diff
+              sort: true
+              decompress: true
+            reverse:
+              file: test-data/expected/test_2.fastq.gz
+              compare: diff
+              sort: true
+              decompress: true
+        test2:
+          class: Collection
+          elements:
+            forward:
+              file: test-data/expected/test2_1.fastq.gz
+              compare: diff
+              sort: true
+              decompress: true
+            reverse:
+              file: test-data/expected/test2_2.fastq.gz
+              compare: diff
+              sort: true
+              decompress: true
+      element_count: 2
+    Single-end reads:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test3:
+          file: test-data/expected/test3_other.fastq.gz
+          compare: diff
+          sort: true
+          decompress: true
+      element_count: 1
+    Pairedness per sample:
+      asserts:
+      - has_n_lines:
+          n: 3
+      - has_line:
+          line: "test\tpaired"
+      - has_line:
+          line: "test2\tpaired"
+      - has_line:
+          line: "test3\tsingle"
+    Samtools flagstat:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test3:
+          checksum: md5$7b43b975b0a395040bf1ee3c48f058e7
+    Samtools idxstats:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test3:
+          checksum: md5$094096b6f303cc18892e1e027c87f273
+    FASTQ validation (single-end):
+      class: Collection
+      collection_type: list
+      element_tests:
+        test3:
+          asserts:
+          - has_line:
+              line: OK
+          - has_text:
+              text: 'Number of reads: 12473'
+    FastQC post-conversion data:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test_forward:
+          asserts:
+          - has_text:
+              text: "Total Sequences\t2821"
+        test_reverse:
+          asserts:
+          - has_text:
+              text: "Total Sequences\t2821"
+        test2_forward:
+          asserts:
+          - has_text:
+              text: "Total Sequences\t2718"
+        test2_reverse:
+          asserts:
+          - has_text:
+              text: "Total Sequences\t2718"
+        test3:
+          asserts:
+          - has_text:
+              text: "Total Sequences\t12473"
+      element_count: 5

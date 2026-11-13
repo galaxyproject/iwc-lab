@@ -1,0 +1,3155 @@
+{
+ "source": {
+  "ecosystem": "nf-core",
+  "workflow": "bamtofastq",
+  "url": "https://github.com/nf-core/bamtofastq",
+  "version": "aa0150e",
+  "license": "MIT",
+  "slug": "nf-core-bamtofastq"
+ },
+ "params": [
+  {
+   "name": "input",
+   "type": "string",
+   "required": true,
+   "schema_group": "Input/output options",
+   "description": "Path to comma-separated file containing information about the samples in the experiment.",
+   "format": "file-path",
+   "mimetype": "text/csv",
+   "fa_icon": "fas fa-file-csv",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "outdir",
+   "type": "string",
+   "required": true,
+   "schema_group": "Input/output options",
+   "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
+   "format": "directory-path",
+   "fa_icon": "fas fa-folder-open",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "chr",
+   "type": "string",
+   "required": false,
+   "schema_group": "Main options",
+   "description": "Only use reads mapping to a specific chromosome/region. Has to be specified as in bam: i.e chr1, chr{1..22} (gets all reads mapping to chr1 to 22), 1, \"X Y\", incorrect naming will lead to a potentially silent error.",
+   "fa_icon": "fas fa-clock",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "no_read_QC",
+   "type": "boolean",
+   "required": false,
+   "schema_group": "Main options",
+   "description": "If specified, no quality control will be performed on extracted reads. Useful, if this is done anyways in the subsequent workflow.",
+   "fa_icon": "fas fa-clock",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "no_stats",
+   "type": "boolean",
+   "required": false,
+   "schema_group": "Main options",
+   "description": "If specified, skips all quality control and stats computation, including `FastQC` on both input bam and output reads, `samtools flagstat`, `samtools idxstats`, and `samtools stats`.",
+   "fa_icon": "fas fa-clock",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "reads_in_memory",
+   "type": "integer",
+   "required": false,
+   "schema_group": "Main options",
+   "default": 100000,
+   "description": "Reads to store in memory [default = '100000']. Only relevant for use with `--samtools_collate_fast`.",
+   "fa_icon": "fas fa-clock",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "samtools_collate_fast",
+   "type": "boolean",
+   "required": false,
+   "schema_group": "Main options",
+   "description": "Uses fast mode for samtools collate in `sortExtractMapped`, `sortExtractUnmapped` and `sortExtractSingleEnd`.",
+   "fa_icon": "fas fa-clock",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "genome",
+   "type": "string",
+   "required": false,
+   "schema_group": "Reference genome options",
+   "description": "Name of iGenomes reference.",
+   "fa_icon": "fas fa-book",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "fasta",
+   "type": "string",
+   "required": false,
+   "schema_group": "Reference genome options",
+   "description": "Path to FASTA genome file.",
+   "format": "file-path",
+   "mimetype": "text/plain",
+   "fa_icon": "far fa-file-code",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "fasta_fai",
+   "type": "string",
+   "required": false,
+   "schema_group": "Reference genome options",
+   "description": "Path to FASTA FAI genome index file.",
+   "format": "file-path",
+   "mimetype": "text/plain",
+   "fa_icon": "far fa-file-code",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "igenomes_ignore",
+   "type": "boolean",
+   "required": false,
+   "schema_group": "Reference genome options",
+   "description": "Do not load the iGenomes reference config.",
+   "hidden": true,
+   "fa_icon": "fas fa-ban",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "igenomes_base",
+   "type": "string",
+   "required": false,
+   "schema_group": "Reference genome options",
+   "default": "s3://ngi-igenomes/igenomes/",
+   "description": "The base path to the igenomes reference files",
+   "hidden": true,
+   "fa_icon": "fas fa-ban",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "custom_config_version",
+   "type": "string",
+   "required": false,
+   "schema_group": "Institutional config options",
+   "default": "master",
+   "description": "Git commit id for Institutional configs.",
+   "hidden": true,
+   "fa_icon": "fas fa-users-cog",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "custom_config_base",
+   "type": "string",
+   "required": false,
+   "schema_group": "Institutional config options",
+   "default": "https://raw.githubusercontent.com/nf-core/configs/master",
+   "description": "Base directory for Institutional configs.",
+   "hidden": true,
+   "fa_icon": "fas fa-users-cog",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "config_profile_name",
+   "type": "string",
+   "required": false,
+   "schema_group": "Institutional config options",
+   "description": "Institutional config name.",
+   "hidden": true,
+   "fa_icon": "fas fa-users-cog",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "config_profile_description",
+   "type": "string",
+   "required": false,
+   "schema_group": "Institutional config options",
+   "description": "Institutional config description.",
+   "hidden": true,
+   "fa_icon": "fas fa-users-cog",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "config_profile_contact",
+   "type": "string",
+   "required": false,
+   "schema_group": "Institutional config options",
+   "description": "Institutional config contact information.",
+   "hidden": true,
+   "fa_icon": "fas fa-users-cog",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "config_profile_url",
+   "type": "string",
+   "required": false,
+   "schema_group": "Institutional config options",
+   "description": "Institutional config URL link.",
+   "hidden": true,
+   "fa_icon": "fas fa-users-cog",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "version",
+   "type": "boolean",
+   "required": false,
+   "schema_group": "Generic options",
+   "description": "Display version and exit.",
+   "hidden": true,
+   "fa_icon": "fas fa-question-circle",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "publish_dir_mode",
+   "type": "string",
+   "required": false,
+   "schema_group": "Generic options",
+   "default": "copy",
+   "description": "Method used to save pipeline results to output directory.",
+   "enum": [
+    "symlink",
+    "rellink",
+    "link",
+    "copy",
+    "copyNoFollow",
+    "move"
+   ],
+   "hidden": true,
+   "fa_icon": "fas fa-copy",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "email",
+   "type": "string",
+   "required": false,
+   "schema_group": "Generic options",
+   "description": "Email address for completion summary.",
+   "fa_icon": "fas fa-envelope",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "email_on_fail",
+   "type": "string",
+   "required": false,
+   "schema_group": "Generic options",
+   "description": "Email address for completion summary, only when pipeline fails.",
+   "hidden": true,
+   "fa_icon": "fas fa-exclamation-triangle",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "plaintext_email",
+   "type": "boolean",
+   "required": false,
+   "schema_group": "Generic options",
+   "description": "Send plain-text email instead of HTML.",
+   "hidden": true,
+   "fa_icon": "fas fa-remove-format",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "max_multiqc_email_size",
+   "type": "string",
+   "required": false,
+   "schema_group": "Generic options",
+   "default": "25.MB",
+   "description": "File size limit when attaching MultiQC reports to summary emails.",
+   "hidden": true,
+   "fa_icon": "fas fa-file-upload",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "monochrome_logs",
+   "type": "boolean",
+   "required": false,
+   "schema_group": "Generic options",
+   "description": "Do not use coloured log outputs.",
+   "hidden": true,
+   "fa_icon": "fas fa-palette",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "multiqc_title",
+   "type": "string",
+   "required": false,
+   "schema_group": "Generic options",
+   "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
+   "fa_icon": "fas fa-file-signature",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "multiqc_config",
+   "type": "string",
+   "required": false,
+   "schema_group": "Generic options",
+   "description": "Custom config file to supply to MultiQC.",
+   "format": "file-path",
+   "hidden": true,
+   "fa_icon": "fas fa-cog",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "multiqc_logo",
+   "type": "string",
+   "required": false,
+   "schema_group": "Generic options",
+   "description": "Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file",
+   "hidden": true,
+   "fa_icon": "fas fa-image",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "multiqc_methods_description",
+   "type": "string",
+   "required": false,
+   "schema_group": "Generic options",
+   "description": "Custom MultiQC yaml file containing HTML including a methods description.",
+   "fa_icon": "fas fa-cog",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "validate_params",
+   "type": "boolean",
+   "required": false,
+   "schema_group": "Generic options",
+   "default": true,
+   "description": "Boolean whether to validate parameters against the schema at runtime",
+   "hidden": true,
+   "fa_icon": "fas fa-check-square",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "pipelines_testdata_base_path",
+   "type": "string",
+   "required": false,
+   "schema_group": "Generic options",
+   "default": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/",
+   "description": "Base URL or local path to location of pipeline test dataset files",
+   "hidden": true,
+   "fa_icon": "far fa-check-circle",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "trace_report_suffix",
+   "type": "string",
+   "required": false,
+   "schema_group": "Generic options",
+   "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
+   "hidden": true,
+   "fa_icon": "far calendar",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "help",
+   "type": "string",
+   "required": false,
+   "schema_group": "Generic options",
+   "description": "Display the help message.",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "help_full",
+   "type": "boolean",
+   "required": false,
+   "schema_group": "Generic options",
+   "description": "Display the full detailed help message.",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "show_hidden",
+   "type": "boolean",
+   "required": false,
+   "schema_group": "Generic options",
+   "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided).",
+   "source_kind": "nextflow_schema"
+  },
+  {
+   "name": "fasta",
+   "type": "string",
+   "required": false,
+   "description": "Path to FASTA genome file (dynamic: params.fasta = params.fasta ?: getGenomeAttribute('fasta') in main.nf; mandatory for CRAM input when --genome is not given).",
+   "format": "file-path",
+   "hidden": null,
+   "mimetype": "text/plain",
+   "schema_group": "Reference genome options",
+   "fa_icon": "far fa-file-code",
+   "source_kind": "getGenomeAttribute",
+   "source_expression": "params.fasta ?: getGenomeAttribute('fasta')",
+   "source_path": "main.nf"
+  },
+  {
+   "name": "fasta_fai",
+   "type": "string",
+   "required": false,
+   "description": "Path to FASTA FAI genome index file (dynamic: params.fasta_fai = params.fasta_fai ?: getGenomeAttribute('fasta_fai') in main.nf).",
+   "format": "file-path",
+   "hidden": null,
+   "mimetype": "text/plain",
+   "schema_group": "Reference genome options",
+   "fa_icon": "far fa-file-code",
+   "source_kind": "getGenomeAttribute",
+   "source_expression": "params.fasta_fai ?: getGenomeAttribute('fasta_fai')",
+   "source_path": "main.nf"
+  }
+ ],
+ "sample_sheets": [
+  {
+   "param": "input",
+   "schema_path": "assets/schema_input.json",
+   "discovered_via": "nf-schema",
+   "format": "csv",
+   "header": true,
+   "columns": [
+    {
+     "name": "sample_id",
+     "type": "string",
+     "kind": "meta",
+     "required": true,
+     "pattern": "^\\S+$",
+     "description": "Sample identifier; annotated meta: [id] in assets/schema_input.json."
+    },
+    {
+     "name": "mapped",
+     "type": "string",
+     "kind": "data",
+     "required": true,
+     "format": "file-path",
+     "exists": true,
+     "pattern": "^\\S+\\.(bam|cram)$",
+     "description": "BAM or CRAM alignment file to convert."
+    },
+    {
+     "name": "index",
+     "type": "string",
+     "kind": "data",
+     "required": false,
+     "format": "file-path",
+     "exists": true,
+     "pattern": "^\\S+\\.(bai|crai)$",
+     "description": "Optional alignment index (.bai or .crai); when absent the pipeline builds it with SAMTOOLS_INDEX."
+    },
+    {
+     "name": "file_type",
+     "type": "string",
+     "kind": "meta",
+     "required": true,
+     "enum": [
+      "bam",
+      "cram"
+     ],
+     "description": "Input file type; annotated meta: [filetype]; validated against the file extension at runtime."
+    }
+   ]
+  }
+ ],
+ "profiles": [
+  {
+   "name": "debug",
+   "kinds": [
+    "dev"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [],
+   "signals": [
+    "dev-profile-name"
+   ]
+  },
+  {
+   "name": "conda",
+   "kinds": [
+    "container"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [],
+   "signals": [
+    "container-keys"
+   ]
+  },
+  {
+   "name": "mamba",
+   "kinds": [
+    "container"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [],
+   "signals": [
+    "container-keys"
+   ]
+  },
+  {
+   "name": "docker",
+   "kinds": [
+    "container"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [],
+   "signals": [
+    "container-keys"
+   ]
+  },
+  {
+   "name": "arm64",
+   "kinds": [
+    "container"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [],
+   "signals": [
+    "container-keys",
+    "params-assignment"
+   ]
+  },
+  {
+   "name": "emulate_amd64",
+   "kinds": [
+    "container"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [],
+   "signals": [
+    "container-keys"
+   ]
+  },
+  {
+   "name": "singularity",
+   "kinds": [
+    "container"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [],
+   "signals": [
+    "container-keys"
+   ]
+  },
+  {
+   "name": "podman",
+   "kinds": [
+    "container"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [],
+   "signals": [
+    "container-keys"
+   ]
+  },
+  {
+   "name": "shifter",
+   "kinds": [
+    "container"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [],
+   "signals": [
+    "container-keys"
+   ]
+  },
+  {
+   "name": "charliecloud",
+   "kinds": [
+    "container"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [],
+   "signals": [
+    "container-keys"
+   ]
+  },
+  {
+   "name": "apptainer",
+   "kinds": [
+    "container"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [],
+   "signals": [
+    "container-keys"
+   ]
+  },
+  {
+   "name": "wave",
+   "kinds": [
+    "container"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [],
+   "signals": [
+    "container-keys"
+   ]
+  },
+  {
+   "name": "gpu",
+   "kinds": [
+    "container"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [],
+   "signals": [
+    "container-keys"
+   ]
+  },
+  {
+   "name": "test",
+   "kinds": [
+    "test"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [
+    "conf/test.config"
+   ],
+   "signals": [
+    "include:test-config",
+    "sets-input-data",
+    "params-assignment"
+   ]
+  },
+  {
+   "name": "test_full",
+   "kinds": [
+    "test"
+   ],
+   "source_path": "nextflow.config",
+   "includes": [
+    "conf/test_full.config"
+   ],
+   "signals": [
+    "include:test-config",
+    "sets-input-data",
+    "params-assignment"
+   ]
+  }
+ ],
+ "tools": [
+  {
+   "name": "fastqc",
+   "version": "0.12.1",
+   "biocontainer": "quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0",
+   "bioconda": "bioconda::fastqc=0.12.1",
+   "docker": null,
+   "singularity": "https://depot.galaxyproject.org/singularity/fastqc:0.12.1--hdfd78af_0",
+   "wave": null
+  },
+  {
+   "name": "fastq_utils",
+   "version": "0.25.3",
+   "biocontainer": "quay.io/biocontainers/fastq_utils:0.25.3--ha9dfd29_0",
+   "bioconda": "bioconda::fastq_utils=0.25.3",
+   "docker": null,
+   "singularity": "https://depot.galaxyproject.org/singularity/fastq_utils:0.25.3--ha9dfd29_0",
+   "wave": null
+  },
+  {
+   "name": "multiqc",
+   "version": "1.34",
+   "biocontainer": null,
+   "bioconda": "bioconda::multiqc=1.34",
+   "docker": null,
+   "singularity": null,
+   "wave": "community.wave.seqera.io/library/multiqc:1.34--db7c73dae76bc9e6"
+  },
+  {
+   "name": "samtools",
+   "version": "1.23.1",
+   "biocontainer": null,
+   "bioconda": "bioconda::samtools=1.23.1",
+   "docker": null,
+   "singularity": null,
+   "wave": "community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5"
+  },
+  {
+   "name": "htslib",
+   "version": "1.23.1",
+   "biocontainer": null,
+   "bioconda": "bioconda::htslib=1.23.1",
+   "docker": null,
+   "singularity": null,
+   "wave": "community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5"
+  },
+  {
+   "name": "coreutils",
+   "version": "9.5",
+   "biocontainer": null,
+   "bioconda": null,
+   "docker": null,
+   "singularity": null,
+   "wave": "community.wave.seqera.io/library/coreutils_grep_gzip_lbzip2_pruned:838ba80435a629f8"
+  },
+  {
+   "name": "grep",
+   "version": "3.11",
+   "biocontainer": null,
+   "bioconda": null,
+   "docker": null,
+   "singularity": null,
+   "wave": "community.wave.seqera.io/library/coreutils_grep_gzip_lbzip2_pruned:838ba80435a629f8"
+  },
+  {
+   "name": "gzip",
+   "version": "1.13",
+   "biocontainer": null,
+   "bioconda": null,
+   "docker": null,
+   "singularity": null,
+   "wave": "community.wave.seqera.io/library/coreutils_grep_gzip_lbzip2_pruned:838ba80435a629f8"
+  },
+  {
+   "name": "lbzip2",
+   "version": "2.5",
+   "biocontainer": null,
+   "bioconda": null,
+   "docker": null,
+   "singularity": null,
+   "wave": "community.wave.seqera.io/library/coreutils_grep_gzip_lbzip2_pruned:838ba80435a629f8"
+  },
+  {
+   "name": "sed",
+   "version": "4.8",
+   "biocontainer": null,
+   "bioconda": null,
+   "docker": null,
+   "singularity": null,
+   "wave": "community.wave.seqera.io/library/coreutils_grep_gzip_lbzip2_pruned:838ba80435a629f8"
+  },
+  {
+   "name": "tar",
+   "version": "1.34",
+   "biocontainer": null,
+   "bioconda": null,
+   "docker": null,
+   "singularity": null,
+   "wave": "community.wave.seqera.io/library/coreutils_grep_gzip_lbzip2_pruned:838ba80435a629f8"
+  }
+ ],
+ "processes": [
+  {
+   "name": "CAT_FASTQ",
+   "aliases": [],
+   "module_path": "modules/nf-core/cat/fastq/main.nf",
+   "meta": {
+    "keywords": [
+     "cat",
+     "fastq",
+     "concatenate",
+     "compress"
+    ],
+    "authors": [
+     "@joseespinosa",
+     "@drpatelh"
+    ],
+    "maintainers": [
+     "@joseespinosa",
+     "@drpatelh"
+    ],
+    "tools": [
+     {
+      "name": "cat",
+      "description": "The cat utility reads files sequentially, writing them to the standard output.\n",
+      "documentation": "https://www.gnu.org/software/coreutils/manual/html_node/cat-invocation.html",
+      "licence": [
+       "GPL-3.0-or-later"
+      ]
+     }
+    ],
+    "input": [],
+    "output": [],
+    "description": "Concatenates fastq files. Supports both compressed (.gz) and uncompressed inputs; uncompressed files are automatically gzip-compressed during concatenation."
+   },
+   "module_tests": [],
+   "tool": null,
+   "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container\n        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/52/52ccce28d2ab928ab862e25aae26314d69c8e38bd41ca9431c67ef05221348aa/data'\n        : 'community.wave.seqera.io/library/coreutils_grep_gzip_lbzip2_pruned:838ba80435a629f8'}",
+   "conda": "\"${moduleDir}/environment.yml\"",
+   "inputs": [
+    {
+     "name": "meta",
+     "shape": "tuple(val(meta), path(reads, stageAs: \"input*/*\"))"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "reads",
+     "shape": "tuple(val(meta), path(\"*.merged.fastq.gz\"))"
+    },
+    {
+     "name": "versions_cat",
+     "shape": "tuple(val(\"${task.process}\"), val(\"cat\"), val(\"cat --version 2>&1 | head -n 1 | sed 's/^.*coreutils))",
+     "topic": "versions"
+    }
+   ],
+   "when": "task.ext.when == null || task.ext.when",
+   "script_summary": "Concatenates FASTQ read files (R1s into _1.merged.fastq.gz, R2s into _2.merged.fastq.gz; single file for single-end), gzip-compressing uncompressed inputs.",
+   "script_excerpt": null,
+   "publish_dir": "[ path: { \"${params.outdir}/reads\" }, mode: params.publish_dir_mode, pattern: '*.fastq.gz', saveAs: { filename -> filename.indexOf(\".fastq.gz\") > 0 ? filename : null }, enabled: true ]",
+   "publish_dir_matches": [
+    {
+     "expression": "[ path: { \"${params.outdir}/reads\" }, mode: params.publish_dir_mode, pattern: '*.fastq.gz', saveAs: { filename -> filename.indexOf(\".fastq.gz\") > 0 ? filename : null }, enabled: true ]",
+     "selector": "withName:CAT_FASTQ",
+     "config": "conf/modules.config"
+    }
+   ],
+   "resolved_args": [],
+   "template": null,
+   "in_subworkflows": [
+    "ALIGNMENT_TO_FASTQ"
+   ]
+  },
+  {
+   "name": "CHECKPAIREDEND",
+   "aliases": [],
+   "module_path": "modules/local/checkpairedend/main.nf",
+   "meta": null,
+   "module_tests": [],
+   "tool": "samtools",
+   "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container\n        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8c/8c5d2818c8b9f58e1fba77ce219fdaf32087ae53e857c4a496402978af26e78c/data'\n        : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}",
+   "conda": "\"${moduleDir}/environment.yml\"",
+   "inputs": [
+    {
+     "name": "meta",
+     "shape": "tuple(val(meta), path(input), path(index))"
+    },
+    {
+     "name": "meta2",
+     "shape": "tuple(val(meta2), path(fasta), path(fai))"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "single_end",
+     "shape": "tuple(val(meta), path(\"*single.txt\")) optional"
+    },
+    {
+     "name": "paired_end",
+     "shape": "tuple(val(meta), path(\"*paired.txt\")) optional"
+    },
+    {
+     "name": "versions_samtools",
+     "shape": "tuple(val(\"${task.process}\"), val('samtools'), val(\"samtools version | sed '1!d;s/.* //'\"))",
+     "topic": "versions"
+    }
+   ],
+   "when": "task.ext.when == null || task.ext.when",
+   "script_summary": "Determines whether a BAM/CRAM is paired-end or single-end by counting properly-paired reads in the first 1000 records and writes 1 into <prefix>.paired.txt or <prefix>.single.txt.",
+   "script_excerpt": null,
+   "publish_dir": "[ enabled: false ]",
+   "publish_dir_matches": [
+    {
+     "expression": "[ enabled: false ]",
+     "selector": "withName:CHECKPAIREDEND",
+     "config": "conf/modules.config"
+    }
+   ],
+   "resolved_args": [],
+   "template": null,
+   "in_subworkflows": []
+  },
+  {
+   "name": "FASTQC",
+   "aliases": [
+    "FASTQC_POST_CONVERSION",
+    "FASTQC_PRE_CONVERSION"
+   ],
+   "module_path": "modules/nf-core/fastqc/main.nf",
+   "meta": {
+    "keywords": [
+     "quality control",
+     "qc",
+     "adapters",
+     "fastq"
+    ],
+    "authors": [
+     "@drpatelh",
+     "@grst",
+     "@ewels",
+     "@FelixKrueger"
+    ],
+    "maintainers": [
+     "@drpatelh",
+     "@grst",
+     "@ewels",
+     "@FelixKrueger"
+    ],
+    "tools": [
+     {
+      "name": "fastqc",
+      "description": "FastQC gives general quality metrics about your reads.\nIt provides information about the quality score distribution\nacross your reads, the per base sequence content (%A/C/G/T).\n\nYou get information about adapter contamination and other\noverrepresented sequences.\n",
+      "homepage": "https://www.bioinformatics.babraham.ac.uk/projects/fastqc/",
+      "documentation": "https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/",
+      "identifier": "biotools:fastqc",
+      "licence": [
+       "GPL-2.0-only"
+      ]
+     }
+    ],
+    "input": [],
+    "output": [],
+    "description": "Run FastQC on sequenced reads"
+   },
+   "module_tests": [],
+   "tool": "fastqc",
+   "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container\n        ? 'https://depot.galaxyproject.org/singularity/fastqc:0.12.1--hdfd78af_0'\n        : 'quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0'}",
+   "conda": "\"${moduleDir}/environment.yml\"",
+   "inputs": [
+    {
+     "name": "meta",
+     "shape": "tuple(val(meta), path(reads, stageAs: '?/*'))"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "html",
+     "shape": "tuple(val(meta), path(\"*.html\"))"
+    },
+    {
+     "name": "zip",
+     "shape": "tuple(val(meta), path(\"*.zip\"))"
+    },
+    {
+     "name": "versions_fastqc",
+     "shape": "tuple(val(\"${task.process}\"), val('fastqc'), val('fastqc --version | sed \"/FastQC v/!d; s/.*v//\"'))",
+     "topic": "versions"
+    }
+   ],
+   "when": "task.ext.when == null || task.ext.when",
+   "script_summary": "Runs FastQC on the input reads, emitting per-file HTML and ZIP reports with configurable prefix.",
+   "script_excerpt": null,
+   "publish_dir": "[ path: { \"${params.outdir}/${task.process.tokenize(':')[-1].tokenize('_')[0].toLowerCase()}\" }, mode: params.publish_dir_mode ]",
+   "publish_dir_matches": [
+    {
+     "expression": "[ path: { \"${params.outdir}/${task.process.tokenize(':')[-1].tokenize('_')[0].toLowerCase()}\" }, mode: params.publish_dir_mode ]",
+     "selector": "process (global default)",
+     "config": "conf/modules.config"
+    }
+   ],
+   "resolved_args": [
+    {
+     "key": "args",
+     "expression": "'--quiet'",
+     "selector": "withName:FASTQC_PRE_CONVERSION",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "prefix",
+     "expression": "{ \"${meta.id}.pre_conversion\" }",
+     "selector": "withName:FASTQC_PRE_CONVERSION",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "args",
+     "expression": "'--quiet'",
+     "selector": "withName:FASTQC_POST_CONVERSION",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "prefix",
+     "expression": "{ \"${meta.id}.post_conversion\" }",
+     "selector": "withName:FASTQC_POST_CONVERSION",
+     "config": "conf/modules.config"
+    }
+   ],
+   "template": null,
+   "in_subworkflows": [
+    "PRE_CONVERSION_QC"
+   ]
+  },
+  {
+   "name": "FASTQUTILS_INFO",
+   "aliases": [],
+   "module_path": "modules/nf-core/fastqutils/info/main.nf",
+   "meta": {
+    "keywords": [
+     "fastq",
+     "qualitycontrol",
+     "genomics",
+     "sequencing"
+    ],
+    "authors": [
+     "@famosab"
+    ],
+    "maintainers": [
+     "@famosab"
+    ],
+    "tools": [
+     {
+      "name": "fastqutils",
+      "description": "Validation and manipulation of FASTQ files, scRNA-seq barcode pre-processing and UMI quantification.",
+      "homepage": "https://github.com/nunofonseca/fastq_utils",
+      "documentation": "https://github.com/nunofonseca/fastq_utils",
+      "tool_dev_url": "https://github.com/nunofonseca/fastq_utils",
+      "licence": [
+       "GPL v3"
+      ]
+     }
+    ],
+    "input": [],
+    "output": [],
+    "description": "Performs quality control of FASTQ files"
+   },
+   "module_tests": [],
+   "tool": "fastq_utils",
+   "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container\n        ? 'https://depot.galaxyproject.org/singularity/fastq_utils:0.25.3--ha9dfd29_0'\n        : 'quay.io/biocontainers/fastq_utils:0.25.3--ha9dfd29_0'}",
+   "conda": "\"${moduleDir}/environment.yml\"",
+   "inputs": [
+    {
+     "name": "meta",
+     "shape": "tuple(val(meta), path(reads))"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "info",
+     "shape": "tuple(val(meta), path(\"*.txt\"))"
+    },
+    {
+     "name": "versions_fastqutils",
+     "shape": "tuple(val(\"${task.process}\"), val(\"fastqutils\"), val(\"fastq_info -h 2>&1 | head -n 1 | sed 's/^fastq_utils //'\"))",
+     "topic": "versions"
+    }
+   ],
+   "when": "task.ext.when == null || task.ext.when",
+   "script_summary": "Runs fastq_info from fastq_utils as a post-conversion sanity check of the extracted FASTQ files, and writes a marker txt reporting no issues.",
+   "script_excerpt": null,
+   "publish_dir": "[ path: { \"${params.outdir}/${task.process.tokenize(':')[-1].tokenize('_')[0].toLowerCase()}\" }, mode: params.publish_dir_mode ]",
+   "publish_dir_matches": [
+    {
+     "expression": "[ path: { \"${params.outdir}/${task.process.tokenize(':')[-1].tokenize('_')[0].toLowerCase()}\" }, mode: params.publish_dir_mode ]",
+     "selector": "process (global default)",
+     "config": "conf/modules.config"
+    }
+   ],
+   "resolved_args": [],
+   "template": null,
+   "in_subworkflows": []
+  },
+  {
+   "name": "MULTIQC",
+   "aliases": [],
+   "module_path": "modules/nf-core/multiqc/main.nf",
+   "meta": {
+    "keywords": [
+     "QC",
+     "bioinformatics tools",
+     "Beautiful stand-alone HTML report"
+    ],
+    "authors": [
+     "@abhi18av",
+     "@bunop",
+     "@drpatelh",
+     "@jfy133"
+    ],
+    "maintainers": [
+     "@abhi18av",
+     "@bunop",
+     "@drpatelh",
+     "@jfy133"
+    ],
+    "tools": [
+     {
+      "name": "multiqc",
+      "description": "MultiQC searches a given directory for analysis logs and compiles a HTML report.\nIt's a general use tool, perfect for summarising the output from numerous bioinformatics tools.\n",
+      "homepage": "https://multiqc.info/",
+      "documentation": "https://multiqc.info/docs/",
+      "identifier": "biotools:multiqc",
+      "licence": [
+       "GPL-3.0-or-later"
+      ]
+     }
+    ],
+    "input": [],
+    "output": [],
+    "description": "Aggregate results from bioinformatics analyses across many samples into a single report"
+   },
+   "module_tests": [],
+   "tool": "multiqc",
+   "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container\n        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/1b/1bef8af6be88c5733461959c46ac8ef73d18f65277f62a1695d0e1633054f9c2/data'\n        : 'community.wave.seqera.io/library/multiqc:1.34--db7c73dae76bc9e6'}",
+   "conda": "\"${moduleDir}/environment.yml\"",
+   "inputs": [
+    {
+     "name": "meta",
+     "shape": "tuple(val(meta), path(multiqc_files, stageAs: \"?/*\"), path(multiqc_config, stageAs: \"?/*\"), path(multiqc_logo), path(replace_names), path(sample_names))"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "report",
+     "shape": "tuple(val(meta), path(\"*.html\"))"
+    },
+    {
+     "name": "data",
+     "shape": "tuple(val(meta), path(\"*_data\"))"
+    },
+    {
+     "name": "plots",
+     "shape": "tuple(val(meta), path(\"*_plots\")) optional"
+    },
+    {
+     "name": "versions",
+     "shape": "tuple(val(\"${task.process}\"), val('multiqc'), val('multiqc --version | sed \"s/.* //g\"'))"
+    }
+   ],
+   "when": "task.ext.when == null || task.ext.when",
+   "script_summary": "Aggregates all collected QC outputs (FastQC reports, samtools stats, versions YAML, workflow summary, methods description) into a single MultiQC HTML report.",
+   "script_excerpt": null,
+   "publish_dir": "[ path: { \"${params.outdir}/multiqc\" }, mode: params.publish_dir_mode ]",
+   "publish_dir_matches": [
+    {
+     "expression": "[ path: { \"${params.outdir}/multiqc\" }, mode: params.publish_dir_mode ]",
+     "selector": "withName:MULTIQC",
+     "config": "conf/modules.config"
+    }
+   ],
+   "resolved_args": [
+    {
+     "key": "args",
+     "expression": "{ params.multiqc_title ? \"--title \\\"${params.multiqc_title}\\\"\" : '' }",
+     "selector": "withName:MULTIQC",
+     "config": "conf/modules.config"
+    }
+   ],
+   "template": null,
+   "in_subworkflows": []
+  },
+  {
+   "name": "SAMTOOLS_COLLATEFASTQ",
+   "aliases": [
+    "SAMTOOLS_COLLATEFASTQ_SINGLE_END",
+    "COLLATE_FASTQ_UNMAP",
+    "COLLATE_FASTQ_MAP"
+   ],
+   "module_path": "modules/nf-core/samtools/collatefastq/main.nf",
+   "meta": {
+    "keywords": [
+     "bam2fq",
+     "samtools",
+     "fastq"
+    ],
+    "authors": [
+     "@lescai",
+     "@maxulysse",
+     "@matthdsm"
+    ],
+    "maintainers": [],
+    "tools": [
+     {
+      "name": "samtools",
+      "description": "Tools for dealing with SAM, BAM and CRAM files",
+      "homepage": "http://www.htslib.org",
+      "documentation": "https://www.htslib.org/doc/samtools.html",
+      "tool_dev_url": "https://github.com/samtools/samtools",
+      "doi": "10.1093/bioinformatics/btp352",
+      "identifier": "biotools:samtools",
+      "licence": [
+       "MIT"
+      ]
+     }
+    ],
+    "input": [
+     {
+      "name": "interleave",
+      "description": "If true, the output is a single interleaved paired-end FASTQ\nIf false, the output split paired-end FASTQ\n",
+      "type": "boolean"
+     }
+    ],
+    "output": [],
+    "description": "The module uses collate and then fastq methods from samtools to\nconvert a SAM, BAM or CRAM file to FASTQ format\n"
+   },
+   "module_tests": [],
+   "tool": "samtools",
+   "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container\n        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8c/8c5d2818c8b9f58e1fba77ce219fdaf32087ae53e857c4a496402978af26e78c/data'\n        : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}",
+   "conda": "\"${moduleDir}/environment.yml\"",
+   "inputs": [
+    {
+     "name": "meta",
+     "shape": "tuple(val(meta), path(input))"
+    },
+    {
+     "name": "meta2",
+     "shape": "tuple(val(meta2), path(fasta), path(fai))"
+    },
+    {
+     "name": "interleave",
+     "shape": "val(interleave)"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "fastq",
+     "shape": "tuple(val(meta), path(\"*_{1,2}.fq.gz\")) optional"
+    },
+    {
+     "name": "fastq_interleaved",
+     "shape": "tuple(val(meta), path(\"*_interleaved.fq\")) optional"
+    },
+    {
+     "name": "fastq_other",
+     "shape": "tuple(val(meta), path(\"*_other.fq.gz\"))"
+    },
+    {
+     "name": "fastq_singleton",
+     "shape": "tuple(val(meta), path(\"*_singleton.fq.gz\")) optional"
+    },
+    {
+     "name": "versions_samtools",
+     "shape": "tuple(val(\"${task.process}\"), val('samtools'), val(\"samtools version | sed '1!d;s/.* //'\"))",
+     "topic": "versions"
+    }
+   ],
+   "when": "task.ext.when == null || task.ext.when",
+   "script_summary": "Runs samtools collate followed by samtools fastq to convert a BAM/CRAM to FASTQ, emitting read1/read2 (or interleaved), singleton, and 'other' (unassigned/unmapped) FASTQ files.",
+   "script_excerpt": null,
+   "publish_dir": "[ path: { \"${params.outdir}/reads\" }, mode: params.publish_dir_mode, pattern: '*{other.fq.gz}' ]\n[ enabled: false ]\n[ enabled: false ]",
+   "publish_dir_matches": [
+    {
+     "expression": "[ path: { \"${params.outdir}/reads\" }, mode: params.publish_dir_mode, pattern: '*{other.fq.gz}' ]",
+     "selector": "withName:SAMTOOLS_COLLATEFASTQ_SINGLE_END",
+     "config": "conf/modules.config"
+    },
+    {
+     "expression": "[ enabled: false ]",
+     "selector": "withName:COLLATE_FASTQ_MAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "expression": "[ enabled: false ]",
+     "selector": "withName:COLLATE_FASTQ_UNMAP",
+     "config": "conf/modules.config"
+    }
+   ],
+   "resolved_args": [
+    {
+     "key": "args",
+     "expression": "{ params.samtools_collate_fast ? \"-f -r \" + params.reads_in_memory : \"\" }",
+     "selector": "withName:SAMTOOLS_COLLATEFASTQ_SINGLE_END",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "args2",
+     "expression": "'-N'",
+     "selector": "withName:SAMTOOLS_COLLATEFASTQ_SINGLE_END",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "args",
+     "expression": "{ params.samtools_collate_fast ? \"-f -r \" + params.reads_in_memory : \"\" }",
+     "selector": "withName:COLLATE_FASTQ_MAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "args2",
+     "expression": "'-N'",
+     "selector": "withName:COLLATE_FASTQ_MAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "prefix",
+     "expression": "{ \"${meta.id}.mapped\" }",
+     "selector": "withName:COLLATE_FASTQ_MAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "args",
+     "expression": "{ params.samtools_collate_fast ? \"-f -r \" + params.reads_in_memory : \"\" }",
+     "selector": "withName:COLLATE_FASTQ_UNMAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "args2",
+     "expression": "'-N'",
+     "selector": "withName:COLLATE_FASTQ_UNMAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "prefix",
+     "expression": "{ \"${meta.id}.unmapped\" }",
+     "selector": "withName:COLLATE_FASTQ_UNMAP",
+     "config": "conf/modules.config"
+    }
+   ],
+   "template": null,
+   "in_subworkflows": [
+    "ALIGNMENT_TO_FASTQ"
+   ]
+  },
+  {
+   "name": "SAMTOOLS_FAIDX",
+   "aliases": [],
+   "module_path": "modules/nf-core/samtools/faidx/main.nf",
+   "meta": {
+    "keywords": [
+     "index",
+     "fasta",
+     "faidx",
+     "chromosome"
+    ],
+    "authors": [
+     "@drpatelh",
+     "@ewels",
+     "@phue"
+    ],
+    "maintainers": [
+     "@maxulysse",
+     "@phue",
+     "@matthdsm"
+    ],
+    "tools": [
+     {
+      "name": "samtools",
+      "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.\n",
+      "homepage": "http://www.htslib.org/",
+      "documentation": "http://www.htslib.org/doc/samtools.html",
+      "doi": "10.1093/bioinformatics/btp352",
+      "identifier": "biotools:samtools",
+      "licence": [
+       "MIT"
+      ]
+     }
+    ],
+    "input": [
+     {
+      "name": "get_sizes",
+      "description": "use cut to get the sizes of the index (true) or not (false)",
+      "type": "boolean"
+     }
+    ],
+    "output": [],
+    "description": "Index FASTA file, and optionally generate a file of chromosome sizes"
+   },
+   "module_tests": [],
+   "tool": "samtools",
+   "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container\n        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8c/8c5d2818c8b9f58e1fba77ce219fdaf32087ae53e857c4a496402978af26e78c/data'\n        : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}",
+   "conda": "\"${moduleDir}/environment.yml\"",
+   "inputs": [
+    {
+     "name": "meta",
+     "shape": "tuple(val(meta), path(fasta), path(fai))"
+    },
+    {
+     "name": "get_sizes",
+     "shape": "val(get_sizes)"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "fa",
+     "shape": "tuple(val(meta), path(\"*.{fa,fasta}\")) optional"
+    },
+    {
+     "name": "sizes",
+     "shape": "tuple(val(meta), path(\"*.sizes\")) optional"
+    },
+    {
+     "name": "fai",
+     "shape": "tuple(val(meta), path(\"*.fai\")) optional"
+    },
+    {
+     "name": "gzi",
+     "shape": "tuple(val(meta), path(\"*.gzi\")) optional"
+    },
+    {
+     "name": "versions_samtools",
+     "shape": "tuple(val(\"${task.process}\"), val('samtools'), val(\"samtools version | sed '1!d;s/.* //'\"))",
+     "topic": "versions"
+    }
+   ],
+   "when": "task.ext.when == null || task.ext.when",
+   "script_summary": "Indexes a FASTA reference with samtools faidx, producing a .fai (and optionally chromosome sizes).",
+   "script_excerpt": null,
+   "publish_dir": "[ enabled: false ]",
+   "publish_dir_matches": [
+    {
+     "expression": "[ enabled: false ]",
+     "selector": "withName:SAMTOOLS_FAIDX",
+     "config": "conf/modules.config"
+    }
+   ],
+   "resolved_args": [],
+   "template": null,
+   "in_subworkflows": [
+    "PREPARE_INDICES"
+   ]
+  },
+  {
+   "name": "SAMTOOLS_FLAGSTAT",
+   "aliases": [],
+   "module_path": "modules/nf-core/samtools/flagstat/main.nf",
+   "meta": {
+    "keywords": [
+     "stats",
+     "mapping",
+     "counts",
+     "bam",
+     "sam",
+     "cram"
+    ],
+    "authors": [
+     "@drpatelh"
+    ],
+    "maintainers": [
+     "@drpatelh",
+     "@matthdsm"
+    ],
+    "tools": [
+     {
+      "name": "samtools",
+      "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.\n",
+      "homepage": "http://www.htslib.org/",
+      "documentation": "http://www.htslib.org/doc/samtools.html",
+      "doi": "10.1093/bioinformatics/btp352",
+      "identifier": "biotools:samtools",
+      "licence": [
+       "MIT"
+      ]
+     }
+    ],
+    "input": [],
+    "output": [],
+    "description": "Counts the number of alignments in a BAM/CRAM/SAM file for each FLAG type"
+   },
+   "module_tests": [],
+   "tool": "samtools",
+   "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container\n        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8c/8c5d2818c8b9f58e1fba77ce219fdaf32087ae53e857c4a496402978af26e78c/data'\n        : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}",
+   "conda": "\"${moduleDir}/environment.yml\"",
+   "inputs": [
+    {
+     "name": "meta",
+     "shape": "tuple(val(meta), path(bam), path(bai))"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "flagstat",
+     "shape": "tuple(val(meta), path(\"*.flagstat\"))"
+    },
+    {
+     "name": "versions_samtools",
+     "shape": "tuple(val(\"${task.process}\"), val('samtools'), val(\"samtools version | sed '1!d;s/.* //'\"))",
+     "topic": "versions"
+    }
+   ],
+   "when": "task.ext.when == null || task.ext.when",
+   "script_summary": "Runs samtools flagstat to count alignments per FLAG category for a BAM/CRAM.",
+   "script_excerpt": null,
+   "publish_dir": "[ path: { \"${params.outdir}/samtools\" }, mode: params.publish_dir_mode, pattern: '*.flagstat' ]",
+   "publish_dir_matches": [
+    {
+     "expression": "[ path: { \"${params.outdir}/samtools\" }, mode: params.publish_dir_mode, pattern: '*.flagstat' ]",
+     "selector": "withName:SAMTOOLS_FLAGSTAT",
+     "config": "conf/modules.config"
+    }
+   ],
+   "resolved_args": [],
+   "template": null,
+   "in_subworkflows": [
+    "PRE_CONVERSION_QC"
+   ]
+  },
+  {
+   "name": "SAMTOOLS_IDXSTATS",
+   "aliases": [],
+   "module_path": "modules/nf-core/samtools/idxstats/main.nf",
+   "meta": {
+    "keywords": [
+     "stats",
+     "mapping",
+     "counts",
+     "chromosome",
+     "bam",
+     "sam",
+     "cram"
+    ],
+    "authors": [
+     "@drpatelh"
+    ],
+    "maintainers": [
+     "@drpatelh",
+     "@matthdsm"
+    ],
+    "tools": [
+     {
+      "name": "samtools",
+      "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.\n",
+      "homepage": "http://www.htslib.org/",
+      "documentation": "http://www.htslib.org/doc/samtools.html",
+      "doi": "10.1093/bioinformatics/btp352",
+      "identifier": "biotools:samtools",
+      "licence": [
+       "MIT"
+      ]
+     }
+    ],
+    "input": [],
+    "output": [],
+    "description": "Reports alignment summary statistics for a BAM/CRAM/SAM file"
+   },
+   "module_tests": [],
+   "tool": "samtools",
+   "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container\n        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8c/8c5d2818c8b9f58e1fba77ce219fdaf32087ae53e857c4a496402978af26e78c/data'\n        : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}",
+   "conda": "\"${moduleDir}/environment.yml\"",
+   "inputs": [
+    {
+     "name": "meta",
+     "shape": "tuple(val(meta), path(bam), path(bai))"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "idxstats",
+     "shape": "tuple(val(meta), path(\"*.idxstats\"))"
+    },
+    {
+     "name": "versions_samtools",
+     "shape": "tuple(val(\"${task.process}\"), val('samtools'), val(\"samtools version | sed '1!d;s/.* //'\"))",
+     "topic": "versions"
+    }
+   ],
+   "when": "task.ext.when == null || task.ext.when",
+   "script_summary": "Runs samtools idxstats to report per-reference alignment counts using the alignment index.",
+   "script_excerpt": null,
+   "publish_dir": "[ path: { \"${params.outdir}/samtools\" }, mode: params.publish_dir_mode, pattern: '*.idxstats' ]",
+   "publish_dir_matches": [
+    {
+     "expression": "[ path: { \"${params.outdir}/samtools\" }, mode: params.publish_dir_mode, pattern: '*.idxstats' ]",
+     "selector": "withName:SAMTOOLS_IDXSTATS",
+     "config": "conf/modules.config"
+    }
+   ],
+   "resolved_args": [],
+   "template": null,
+   "in_subworkflows": [
+    "PRE_CONVERSION_QC"
+   ]
+  },
+  {
+   "name": "SAMTOOLS_INDEX",
+   "aliases": [
+    "SAMTOOLS_CHR_INDEX"
+   ],
+   "module_path": "modules/nf-core/samtools/index/main.nf",
+   "meta": {
+    "keywords": [
+     "index",
+     "bam",
+     "sam",
+     "cram"
+    ],
+    "authors": [
+     "@drpatelh",
+     "@ewels",
+     "@maxulysse"
+    ],
+    "maintainers": [
+     "@ewels",
+     "@maxulysse",
+     "@matthdsm"
+    ],
+    "tools": [
+     {
+      "name": "samtools",
+      "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.\n",
+      "homepage": "http://www.htslib.org/",
+      "documentation": "http://www.htslib.org/doc/samtools.html",
+      "doi": "10.1093/bioinformatics/btp352",
+      "identifier": "biotools:samtools",
+      "licence": [
+       "MIT"
+      ]
+     }
+    ],
+    "input": [],
+    "output": [],
+    "description": "Index SAM/BAM/CRAM file"
+   },
+   "module_tests": [],
+   "tool": "samtools",
+   "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container\n        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8c/8c5d2818c8b9f58e1fba77ce219fdaf32087ae53e857c4a496402978af26e78c/data'\n        : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}",
+   "conda": "\"${moduleDir}/environment.yml\"",
+   "inputs": [
+    {
+     "name": "meta",
+     "shape": "tuple(val(meta), path(input))"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "index",
+     "shape": "tuple(val(meta), path(\"*.{bai,csi,crai}\"))"
+    },
+    {
+     "name": "versions_samtools",
+     "shape": "tuple(val(\"${task.process}\"), val('samtools'), val(\"samtools version | sed '1!d;s/.* //'\"))",
+     "topic": "versions"
+    }
+   ],
+   "when": "task.ext.when == null || task.ext.when",
+   "script_summary": "Indexes a BAM/CRAM file with samtools index, producing .bai/.csi/.crai depending on input format and args.",
+   "script_excerpt": null,
+   "publish_dir": "[ enabled: false ]",
+   "publish_dir_matches": [
+    {
+     "expression": "[ enabled: false ]",
+     "selector": "withName:SAMTOOLS_INDEX",
+     "config": "conf/modules.config"
+    }
+   ],
+   "resolved_args": [],
+   "template": null,
+   "in_subworkflows": [
+    "PREPARE_INDICES"
+   ]
+  },
+  {
+   "name": "SAMTOOLS_MERGE",
+   "aliases": [
+    "SAMTOOLS_MERGE_UNMAP"
+   ],
+   "module_path": "modules/nf-core/samtools/merge/main.nf",
+   "meta": {
+    "keywords": [
+     "merge",
+     "bam",
+     "sam",
+     "cram"
+    ],
+    "authors": [
+     "@yuukiiwa",
+     "@maxulysse",
+     "@FriederikeHanssen",
+     "@ramprasadn"
+    ],
+    "maintainers": [
+     "@yuukiiwa",
+     "@maxulysse",
+     "@FriederikeHanssen",
+     "@ramprasadn",
+     "@matthdsm"
+    ],
+    "tools": [
+     {
+      "name": "samtools",
+      "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.\n",
+      "homepage": "http://www.htslib.org/",
+      "documentation": "http://www.htslib.org/doc/samtools.html",
+      "doi": "10.1093/bioinformatics/btp352",
+      "identifier": "biotools:samtools",
+      "licence": [
+       "MIT"
+      ]
+     }
+    ],
+    "input": [],
+    "output": [],
+    "description": "Merge BAM or CRAM file"
+   },
+   "module_tests": [],
+   "tool": "samtools",
+   "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container\n        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8c/8c5d2818c8b9f58e1fba77ce219fdaf32087ae53e857c4a496402978af26e78c/data'\n        : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}",
+   "conda": "\"${moduleDir}/environment.yml\"",
+   "inputs": [
+    {
+     "name": "meta",
+     "shape": "tuple(val(meta), path(input_files, stageAs: \"?/*\"), path(index_files, stageAs: \"?/*\"))"
+    },
+    {
+     "name": "meta2",
+     "shape": "tuple(val(meta2), path(fasta), path(fai), path(gzi))"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "bam",
+     "shape": "tuple(val(meta), path(\"${prefix}.bam\")) optional"
+    },
+    {
+     "name": "cram",
+     "shape": "tuple(val(meta), path(\"${prefix}.cram\")) optional"
+    },
+    {
+     "name": "index",
+     "shape": "tuple(val(meta), path(\"*.{bai,crai,csi}\")) optional"
+    },
+    {
+     "name": "versions_samtools",
+     "shape": "tuple(val(\"${task.process}\"), val('samtools'), val(\"samtools version | sed '1!d;s/.* //'\"))",
+     "topic": "versions"
+    }
+   ],
+   "when": "task.ext.when == null || task.ext.when",
+   "script_summary": "Merges multiple BAM/CRAM files into one, using the reference when merging CRAM.",
+   "script_excerpt": null,
+   "publish_dir": "[ enabled: false ]",
+   "publish_dir_matches": [
+    {
+     "expression": "[ enabled: false ]",
+     "selector": "withName:SAMTOOLS_MERGE_UNMAP",
+     "config": "conf/modules.config"
+    }
+   ],
+   "resolved_args": [
+    {
+     "key": "prefix",
+     "expression": "{ \"${meta.id}.merged_unmap\" }",
+     "selector": "withName:SAMTOOLS_MERGE_UNMAP",
+     "config": "conf/modules.config"
+    }
+   ],
+   "template": null,
+   "in_subworkflows": [
+    "ALIGNMENT_TO_FASTQ"
+   ]
+  },
+  {
+   "name": "SAMTOOLS_STATS",
+   "aliases": [],
+   "module_path": "modules/nf-core/samtools/stats/main.nf",
+   "meta": {
+    "keywords": [
+     "statistics",
+     "counts",
+     "bam",
+     "sam",
+     "cram"
+    ],
+    "authors": [
+     "@drpatelh",
+     "@FriederikeHanssen",
+     "@ramprasadn"
+    ],
+    "maintainers": [
+     "@drpatelh",
+     "@FriederikeHanssen",
+     "@ramprasadn",
+     "@matthdsm"
+    ],
+    "tools": [
+     {
+      "name": "samtools",
+      "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.\n",
+      "homepage": "http://www.htslib.org/",
+      "documentation": "http://www.htslib.org/doc/samtools.html",
+      "doi": "10.1093/bioinformatics/btp352",
+      "identifier": "biotools:samtools",
+      "licence": [
+       "MIT"
+      ]
+     }
+    ],
+    "input": [],
+    "output": [],
+    "description": "Produces comprehensive statistics from SAM/BAM/CRAM file"
+   },
+   "module_tests": [],
+   "tool": "samtools",
+   "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container\n        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8c/8c5d2818c8b9f58e1fba77ce219fdaf32087ae53e857c4a496402978af26e78c/data'\n        : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}",
+   "conda": "\"${moduleDir}/environment.yml\"",
+   "inputs": [
+    {
+     "name": "meta",
+     "shape": "tuple(val(meta), path(input), path(input_index))"
+    },
+    {
+     "name": "meta2",
+     "shape": "tuple(val(meta2), path(fasta), path(fai))"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "stats",
+     "shape": "tuple(val(meta), path(\"*.stats\"))"
+    },
+    {
+     "name": "versions_samtools",
+     "shape": "tuple(val(\"${task.process}\"), val('samtools'), val('samtools version | sed \"1!d;s/.* //\"'))",
+     "topic": "versions"
+    }
+   ],
+   "when": "task.ext.when == null || task.ext.when",
+   "script_summary": "Runs samtools stats to produce comprehensive alignment statistics for a BAM/CRAM.",
+   "script_excerpt": null,
+   "publish_dir": "[ path: { \"${params.outdir}/samtools\" }, mode: params.publish_dir_mode, pattern: '*.stats' ]",
+   "publish_dir_matches": [
+    {
+     "expression": "[ path: { \"${params.outdir}/samtools\" }, mode: params.publish_dir_mode, pattern: '*.stats' ]",
+     "selector": "withName:SAMTOOLS_STATS",
+     "config": "conf/modules.config"
+    }
+   ],
+   "resolved_args": [],
+   "template": null,
+   "in_subworkflows": [
+    "PRE_CONVERSION_QC"
+   ]
+  },
+  {
+   "name": "SAMTOOLS_VIEW",
+   "aliases": [
+    "SAMTOOLS_CHR",
+    "SAMTOOLS_VIEW_MAP_MAP",
+    "SAMTOOLS_VIEW_UNMAP_UNMAP",
+    "SAMTOOLS_VIEW_UNMAP_MAP",
+    "SAMTOOLS_VIEW_MAP_UNMAP"
+   ],
+   "module_path": "modules/nf-core/samtools/view/main.nf",
+   "meta": {
+    "keywords": [
+     "view",
+     "bam",
+     "sam",
+     "cram"
+    ],
+    "authors": [
+     "@drpatelh",
+     "@joseespinosa",
+     "@FriederikeHanssen",
+     "@priyanka-surana"
+    ],
+    "maintainers": [
+     "@drpatelh",
+     "@joseespinosa",
+     "@FriederikeHanssen",
+     "@priyanka-surana",
+     "@matthdsm"
+    ],
+    "tools": [
+     {
+      "name": "samtools",
+      "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.\n",
+      "homepage": "http://www.htslib.org/",
+      "documentation": "http://www.htslib.org/doc/samtools.html",
+      "doi": "10.1093/bioinformatics/btp352",
+      "identifier": "biotools:samtools",
+      "licence": [
+       "MIT"
+      ]
+     }
+    ],
+    "input": [
+     {
+      "name": "index_format",
+      "description": "Index format, used together with ext.args = '--write-index'",
+      "type": "string",
+      "pattern": "bai|csi|crai"
+     }
+    ],
+    "output": [],
+    "description": "filter/convert SAM/BAM/CRAM file"
+   },
+   "module_tests": [],
+   "tool": "samtools",
+   "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container\n        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8c/8c5d2818c8b9f58e1fba77ce219fdaf32087ae53e857c4a496402978af26e78c/data'\n        : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}",
+   "conda": "\"${moduleDir}/environment.yml\"",
+   "inputs": [
+    {
+     "name": "meta",
+     "shape": "tuple(val(meta), path(input), path(index))"
+    },
+    {
+     "name": "meta2",
+     "shape": "tuple(val(meta2), path(fasta), path(fai))"
+    },
+    {
+     "name": "meta3",
+     "shape": "tuple(val(meta3), path(qname))"
+    },
+    {
+     "name": "meta4",
+     "shape": "tuple(val(meta4), path(bed))"
+    },
+    {
+     "name": "index_format",
+     "shape": "val(index_format)"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "bam",
+     "shape": "tuple(val(meta), path(\"${prefix}.bam\")) optional"
+    },
+    {
+     "name": "cram",
+     "shape": "tuple(val(meta), path(\"${prefix}.cram\")) optional"
+    },
+    {
+     "name": "sam",
+     "shape": "tuple(val(meta), path(\"${prefix}.sam\")) optional"
+    },
+    {
+     "name": "bai",
+     "shape": "tuple(val(meta), path(\"${prefix}.${file_type}.bai\")) optional"
+    },
+    {
+     "name": "csi",
+     "shape": "tuple(val(meta), path(\"${prefix}.${file_type}.csi\")) optional"
+    },
+    {
+     "name": "crai",
+     "shape": "tuple(val(meta), path(\"${prefix}.${file_type}.crai\")) optional"
+    },
+    {
+     "name": "unselected",
+     "shape": "tuple(val(meta), path(\"${prefix}.unselected.${file_type}\")) optional"
+    },
+    {
+     "name": "unselected_index",
+     "shape": "tuple(val(meta), path(\"${prefix}.unselected.${file_type}.{csi,crai}\")) optional"
+    },
+    {
+     "name": "versions_samtools",
+     "shape": "tuple(val(\"${task.process}\"), val('samtools'), val('samtools version | sed \"1!d;s/.* //\"'))",
+     "topic": "versions"
+    }
+   ],
+   "when": "task.ext.when == null || task.ext.when",
+   "script_summary": "Filters/converts a BAM/CRAM with samtools view according to ext.args (e.g. -b -f1 -F12 selects mapped pairs), optionally writing an index; used to split reads into mapped-pair / unmapped-only categories.",
+   "script_excerpt": null,
+   "publish_dir": "[ enabled: false ]\n[ enabled: false ]\n[ enabled: false ]\n[ enabled: false ]",
+   "publish_dir_matches": [
+    {
+     "expression": "[ enabled: false ]",
+     "selector": "withName:SAMTOOLS_VIEW_MAP_MAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "expression": "[ enabled: false ]",
+     "selector": "withName:SAMTOOLS_VIEW_MAP_UNMAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "expression": "[ enabled: false ]",
+     "selector": "withName:SAMTOOLS_VIEW_UNMAP_MAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "expression": "[ enabled: false ]",
+     "selector": "withName:SAMTOOLS_VIEW_UNMAP_UNMAP",
+     "config": "conf/modules.config"
+    }
+   ],
+   "resolved_args": [
+    {
+     "key": "args",
+     "expression": "'-b -f1 -F12'",
+     "selector": "withName:SAMTOOLS_VIEW_MAP_MAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "prefix",
+     "expression": "{ \"${meta.id}.map_map\" }",
+     "selector": "withName:SAMTOOLS_VIEW_MAP_MAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "args",
+     "expression": "'-b -f8 -F260'",
+     "selector": "withName:SAMTOOLS_VIEW_MAP_UNMAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "prefix",
+     "expression": "{ \"${meta.id}.map_unmap\" }",
+     "selector": "withName:SAMTOOLS_VIEW_MAP_UNMAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "args",
+     "expression": "'-b -f4 -F264'",
+     "selector": "withName:SAMTOOLS_VIEW_UNMAP_MAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "prefix",
+     "expression": "{ \"${meta.id}.unmap_map\" }",
+     "selector": "withName:SAMTOOLS_VIEW_UNMAP_MAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "args",
+     "expression": "'-b -f12 -F256'",
+     "selector": "withName:SAMTOOLS_VIEW_UNMAP_UNMAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "prefix",
+     "expression": "{ \"${meta.id}.unmap_unmap\" }",
+     "selector": "withName:SAMTOOLS_VIEW_UNMAP_UNMAP",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "args",
+     "expression": "\"-hb\"",
+     "selector": "withName:SAMTOOLS_CHR",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "args2",
+     "expression": "\"${params.chr}\"",
+     "selector": "withName:SAMTOOLS_CHR",
+     "config": "conf/modules.config"
+    },
+    {
+     "key": "prefix",
+     "expression": "{ params.chr.split(' |-|:').size() > 1 ? \"${meta.id}.\" + (params.chr.split(' |-|:').join('_')) : \"${meta.id}.\" + params.chr }",
+     "selector": "withName:SAMTOOLS_CHR",
+     "config": "conf/modules.config"
+    }
+   ],
+   "template": null,
+   "in_subworkflows": [
+    "ALIGNMENT_TO_FASTQ"
+   ]
+  }
+ ],
+ "subworkflows": [
+  {
+   "name": "MAIN_ENTRYPOINT",
+   "path": "main.nf",
+   "kind": "utility",
+   "aliases": [],
+   "calls": [
+    "PIPELINE_INITIALISATION",
+    "NFCORE_BAMTOFASTQ",
+    "PIPELINE_COMPLETION"
+   ],
+   "inputs": [],
+   "outputs": [],
+   "invocations": [],
+   "tests": []
+  },
+  {
+   "name": "NFCORE_BAMTOFASTQ",
+   "path": "main.nf",
+   "kind": "pipeline",
+   "aliases": [],
+   "calls": [
+    "BAMTOFASTQ"
+   ],
+   "inputs": [
+    {
+     "name": "samplesheet",
+     "shape": "tuple(meta, path, path)",
+     "description": "channel: samplesheet read in from --input"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "multiqc_report",
+     "shape": "path",
+     "description": "channel: /path/to/multiqc_report.html"
+    }
+   ],
+   "invocations": [],
+   "tests": []
+  },
+  {
+   "name": "PIPELINE_INITIALISATION",
+   "path": "subworkflows/local/utils_nfcore_bamtofastq_pipeline/main.nf",
+   "kind": "utility",
+   "aliases": [],
+   "calls": [],
+   "inputs": [
+    {
+     "name": "version",
+     "shape": "val(boolean)",
+     "description": "boolean: Display version and exit"
+    },
+    {
+     "name": "validate_params",
+     "shape": "val(boolean)",
+     "description": "boolean: validate parameters against the schema at runtime"
+    },
+    {
+     "name": "nextflow_cli_args",
+     "shape": "val(array)",
+     "description": "array: List of positional nextflow CLI args"
+    },
+    {
+     "name": "outdir",
+     "shape": "val(string)",
+     "description": "string: output directory"
+    },
+    {
+     "name": "input",
+     "shape": "val(string)",
+     "description": "string: path to input samplesheet"
+    },
+    {
+     "name": "help",
+     "shape": "val(boolean)",
+     "description": "boolean: display help"
+    },
+    {
+     "name": "help_full",
+     "shape": "val(boolean)",
+     "description": "boolean: full help"
+    },
+    {
+     "name": "show_hidden",
+     "shape": "val(boolean)",
+     "description": "boolean: show hidden params"
+    },
+    {
+     "name": "monochrome_logs",
+     "shape": "val(boolean)",
+     "description": "boolean: disable ANSI colours"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "samplesheet",
+     "shape": "tuple(meta, path, path)",
+     "description": "validated samplesheet rows: [meta(id,filetype,index), mapped bam/cram, index-or-empty]"
+    },
+    {
+     "name": "versions",
+     "shape": "path",
+     "description": "versions channel (empty in this pipeline)"
+    }
+   ],
+   "invocations": [],
+   "tests": []
+  },
+  {
+   "name": "PIPELINE_COMPLETION",
+   "path": "subworkflows/local/utils_nfcore_bamtofastq_pipeline/main.nf",
+   "kind": "utility",
+   "aliases": [],
+   "calls": [],
+   "inputs": [
+    {
+     "name": "email",
+     "shape": "val(string)",
+     "description": "email address"
+    },
+    {
+     "name": "email_on_fail",
+     "shape": "val(string)",
+     "description": "email address on failure"
+    },
+    {
+     "name": "plaintext_email",
+     "shape": "val(boolean)",
+     "description": "send plain-text email"
+    },
+    {
+     "name": "outdir",
+     "shape": "val(string)",
+     "description": "output directory"
+    },
+    {
+     "name": "monochrome_logs",
+     "shape": "val(boolean)",
+     "description": "disable ANSI colours"
+    },
+    {
+     "name": "multiqc_report",
+     "shape": "path",
+     "description": "MultiQC report path"
+    }
+   ],
+   "outputs": [],
+   "invocations": [],
+   "tests": []
+  },
+  {
+   "name": "PREPARE_INDICES",
+   "path": "subworkflows/local/prepare_indices/main.nf",
+   "kind": "pipeline",
+   "aliases": [],
+   "calls": [
+    "SAMTOOLS_INDEX",
+    "SAMTOOLS_FAIDX"
+   ],
+   "inputs": [
+    {
+     "name": "input",
+     "shape": "tuple(meta, path, path)",
+     "description": "channel: [meta, alignment (BAM or CRAM), index (optional)]"
+    },
+    {
+     "name": "fasta_fai",
+     "shape": "tuple(meta, path, path)",
+     "description": "optional: reference file if CRAM format and reference not in header"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "ch_input_indexed",
+     "shape": "tuple(meta, path, path)",
+     "description": "input rows with index guaranteed present"
+    },
+    {
+     "name": "ch_fasta_fai",
+     "shape": "tuple(meta, path, path)",
+     "description": "[meta, fasta, fai]"
+    }
+   ],
+   "invocations": [],
+   "tests": [
+    {
+     "name": "PREPARE_INDICES",
+     "path": "subworkflows/local/prepare_indices/tests/main.nf.test",
+     "profiles": [
+      "test"
+     ],
+     "params_overrides": {},
+     "execution_mode": "real",
+     "assert_workflow_success": true,
+     "snapshot": {
+      "captures": [],
+      "helpers": [
+       "getAllFilesFromDir",
+       "removeFromYamlMap"
+      ],
+      "ignore_files": [],
+      "ignore_globs": [],
+      "snap_path": "subworkflows/local/prepare_indices/tests/main.nf.test.snap"
+     },
+     "prose_assertions": []
+    }
+   ]
+  },
+  {
+   "name": "PRE_CONVERSION_QC",
+   "path": "subworkflows/local/pre_conversion_qc/main.nf",
+   "kind": "pipeline",
+   "aliases": [],
+   "calls": [
+    "SAMTOOLS_IDXSTATS",
+    "SAMTOOLS_FLAGSTAT",
+    "SAMTOOLS_STATS",
+    "FASTQC"
+   ],
+   "inputs": [
+    {
+     "name": "input",
+     "shape": "tuple(meta, path, path)",
+     "description": "channel: [meta, alignment (BAM or CRAM), index (optional)]"
+    },
+    {
+     "name": "fasta_fai",
+     "shape": "tuple(meta, path, path)",
+     "description": "[meta, fasta, fai]"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "flagstat",
+     "shape": "tuple(meta, path)",
+     "description": "samtools flagstat output"
+    },
+    {
+     "name": "idxstats",
+     "shape": "tuple(meta, path)",
+     "description": "samtools idxstats output"
+    },
+    {
+     "name": "stats",
+     "shape": "tuple(meta, path)",
+     "description": "samtools stats output"
+    },
+    {
+     "name": "zip",
+     "shape": "tuple(meta, path)",
+     "description": "FastQC zip on the pre-conversion BAM"
+    },
+    {
+     "name": "html",
+     "shape": "tuple(meta, path)",
+     "description": "FastQC html on the pre-conversion BAM"
+    }
+   ],
+   "invocations": [],
+   "tests": [
+    {
+     "name": "PRE_CONVERSION_QC",
+     "path": "subworkflows/local/pre_conversion_qc/tests/main.nf.test",
+     "profiles": [
+      "test"
+     ],
+     "params_overrides": {},
+     "execution_mode": "real",
+     "assert_workflow_success": true,
+     "snapshot": {
+      "captures": [],
+      "helpers": [
+       "getAllFilesFromDir",
+       "removeFromYamlMap"
+      ],
+      "ignore_files": [],
+      "ignore_globs": [],
+      "snap_path": "subworkflows/local/pre_conversion_qc/tests/main.nf.test.snap"
+     },
+     "prose_assertions": []
+    }
+   ]
+  },
+  {
+   "name": "ALIGNMENT_TO_FASTQ",
+   "path": "subworkflows/local/alignment_to_fastq/main.nf",
+   "kind": "pipeline",
+   "aliases": [],
+   "calls": [
+    "SAMTOOLS_VIEW",
+    "SAMTOOLS_MERGE",
+    "SAMTOOLS_COLLATEFASTQ",
+    "CAT_FASTQ"
+   ],
+   "inputs": [
+    {
+     "name": "input",
+     "shape": "tuple(meta, path, path)",
+     "description": "channel: [meta, alignment (BAM or CRAM), index (optional)]"
+    },
+    {
+     "name": "fasta_fai",
+     "shape": "tuple(meta, path, path)",
+     "description": "[meta, fasta, fai]"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "reads",
+     "shape": "tuple(meta, path)",
+     "description": "channel emitting [meta, reads] where reads is a list of concatenated FASTQ files (R1 and R2) produced by CAT_FASTQ"
+    }
+   ],
+   "invocations": [],
+   "tests": [
+    {
+     "name": "ALIGNMENT_TO_FASTQ",
+     "path": "subworkflows/local/alignment_to_fastq/tests/main.nf.test",
+     "profiles": [
+      "test"
+     ],
+     "params_overrides": {},
+     "execution_mode": "real",
+     "assert_workflow_success": true,
+     "snapshot": {
+      "captures": [],
+      "helpers": [
+       "getAllFilesFromDir",
+       "removeFromYamlMap"
+      ],
+      "ignore_files": [],
+      "ignore_globs": [],
+      "snap_path": "subworkflows/local/alignment_to_fastq/tests/main.nf.test.snap"
+     },
+     "prose_assertions": []
+    }
+   ]
+  }
+ ],
+ "workflow": {
+  "name": "BAMTOFASTQ",
+  "channels": [
+   {
+    "name": "ch_samplesheet",
+    "source": "channel.fromList(samplesheetToList(input, \"${projectDir}/assets/schema_input.json\")).map { meta, mapped, index -> ... }.set { ch_samplesheet }",
+    "shape": "tuple(meta, path, path)",
+    "construct": "samplesheetToList",
+    "from_param": "input",
+    "required_runtime": false
+   },
+   {
+    "name": "fasta_fai",
+    "source": "params.fasta ? channel.fromPath(params.fasta).map { fasta_file -> ... [ [id: fasta_file.baseName, index: has_fai], fasta_file, fai_file ] }.collect() : channel.value([ [id:'none', index:false], [], [] ])",
+    "shape": "tuple(meta, path, path)",
+    "construct": "fromPath",
+    "from_param": "fasta",
+    "required_runtime": false
+   },
+   {
+    "name": "ch_multiqc_files",
+    "source": "channel.empty() ... .mix(ch_collated_versions, ch_workflow_summary.collectFile(...), ch_methods_description.collectFile(...))",
+    "shape": "path",
+    "construct": "empty",
+    "from_param": null,
+    "required_runtime": false
+   },
+   {
+    "name": "ch_reads_post_qc",
+    "source": "channel.empty().mix(SAMTOOLS_COLLATEFASTQ_SINGLE_END.out.fastq_other, ALIGNMENT_TO_FASTQ.out.reads)",
+    "shape": "tuple(meta, path)",
+    "construct": "other",
+    "from_param": null,
+    "required_runtime": false
+   }
+  ],
+  "edges": [
+   {
+    "from": "PREPARE_INDICES.out.ch_input_indexed",
+    "to": "PRE_CONVERSION_QC",
+    "via": []
+   },
+   {
+    "from": "PREPARE_INDICES.out.ch_fasta_fai",
+    "to": "PRE_CONVERSION_QC",
+    "via": []
+   },
+   {
+    "from": "PREPARE_INDICES.out.ch_input_indexed",
+    "to": "CHECKPAIREDEND",
+    "via": [
+     "join"
+    ]
+   },
+   {
+    "from": "PREPARE_INDICES.out.ch_fasta_fai",
+    "to": "CHECKPAIREDEND",
+    "via": []
+   },
+   {
+    "from": "PREPARE_INDICES.out.ch_input_indexed",
+    "to": "ALIGNMENT_TO_FASTQ",
+    "via": [
+     "join",
+     "map",
+     "mix",
+     "branch"
+    ],
+    "notes": "ch_input joined with CHECKPAIREDEND.out.paired_end/single_end, meta rewritten to add single_end flag, branch on single_end routes to conversion_input.ch_paired"
+   },
+   {
+    "from": "PREPARE_INDICES.out.ch_fasta_fai",
+    "to": "ALIGNMENT_TO_FASTQ",
+    "via": []
+   },
+   {
+    "from": "PREPARE_INDICES.out.ch_input_indexed",
+    "to": "SAMTOOLS_COLLATEFASTQ",
+    "via": [
+     "join",
+     "map",
+     "mix",
+     "branch",
+     "map"
+    ],
+    "notes": "single-end branch (conversion_input.ch_single) feeds SAMTOOLS_COLLATEFASTQ_SINGLE_END; alias of SAMTOOLS_COLLATEFASTQ"
+   },
+   {
+    "from": "PREPARE_INDICES.out.ch_fasta_fai",
+    "to": "SAMTOOLS_COLLATEFASTQ",
+    "via": []
+   },
+   {
+    "from": "SAMTOOLS_COLLATEFASTQ.out.fastq_other",
+    "to": "FASTQC",
+    "via": [
+     "mix"
+    ],
+    "notes": "ch_reads_post_qc feeds FASTQC_POST_CONVERSION (alias) and FASTQUTILS_INFO"
+   },
+   {
+    "from": "ALIGNMENT_TO_FASTQ.out.reads",
+    "to": "FASTQC",
+    "via": [
+     "mix"
+    ]
+   },
+   {
+    "from": "SAMTOOLS_COLLATEFASTQ.out.fastq_other",
+    "to": "FASTQUTILS_INFO",
+    "via": [
+     "mix"
+    ]
+   },
+   {
+    "from": "ALIGNMENT_TO_FASTQ.out.reads",
+    "to": "FASTQUTILS_INFO",
+    "via": [
+     "mix"
+    ]
+   },
+   {
+    "from": "topic_versions",
+    "to": "MULTIQC",
+    "via": [
+     "topic",
+     "distinct",
+     "branch",
+     "softwareVersionsToYAML",
+     "collectFile",
+     "mix"
+    ],
+    "notes": "software versions YAML collected into ch_collated_versions and mixed into ch_multiqc_files"
+   },
+   {
+    "from": "MULTIQC.out.report",
+    "to": "BAMTOFASTQ.emit.multiqc_report",
+    "via": [
+     "map",
+     "toList"
+    ]
+   }
+  ],
+  "conditionals": [
+   {
+    "guard": "params.chr",
+    "branch": "default",
+    "affects": [
+     "SAMTOOLS_CHR",
+     "SAMTOOLS_CHR_INDEX"
+    ]
+   }
+  ]
+ },
+ "reference_assets": [
+  {
+   "param": "fasta",
+   "asset_kind": "fasta",
+   "format_hint": "file-path",
+   "required": false,
+   "source_kind": "getGenomeAttribute",
+   "source_expression": "params.fasta ?: getGenomeAttribute('fasta')",
+   "schema_group": "Reference genome options",
+   "used_by": [
+    "PREPARE_INDICES",
+    "PRE_CONVERSION_QC",
+    "CHECKPAIREDEND",
+    "ALIGNMENT_TO_FASTQ",
+    "SAMTOOLS_COLLATEFASTQ"
+   ],
+   "evidence": {
+    "source_path": "conf/modules.config",
+    "confidence": "high",
+    "evidence": [
+     "fasta_fai channel built from params.fasta / params.fasta_fai in workflows/bamtofastq.nf",
+     "SAMTOOLS_FAIDX indexes the FASTA when meta.index == false"
+    ]
+   }
+  },
+  {
+   "param": "fasta_fai",
+   "asset_kind": "fasta_index",
+   "format_hint": "file-path",
+   "required": false,
+   "source_kind": "getGenomeAttribute",
+   "source_expression": "params.fasta_fai ?: getGenomeAttribute('fasta_fai')",
+   "schema_group": "Reference genome options",
+   "used_by": [
+    "PREPARE_INDICES",
+    "PRE_CONVERSION_QC",
+    "CHECKPAIREDEND",
+    "ALIGNMENT_TO_FASTQ",
+    "SAMTOOLS_COLLATEFASTQ"
+   ],
+   "evidence": {
+    "source_path": "conf/modules.config",
+    "confidence": "high",
+    "evidence": [
+     "fasta_fai channel built from params.fasta / params.fasta_fai in workflows/bamtofastq.nf",
+     "SAMTOOLS_FAIDX indexes the FASTA when meta.index == false"
+    ]
+   }
+  }
+ ],
+ "reference_rebuilds": [
+  {
+   "asset_param": "fasta_fai",
+   "guard": "meta.index == false (fasta provided without an .fai)",
+   "guard_params": [],
+   "builder": "SAMTOOLS_FAIDX",
+   "builder_outputs": [
+    "fai"
+   ],
+   "fallback_for": "fasta_fai",
+   "evidence": {
+    "source_path": "conf/modules.config",
+    "confidence": "high",
+    "evidence": [
+     "fasta_fai channel built from params.fasta / params.fasta_fai in workflows/bamtofastq.nf",
+     "SAMTOOLS_FAIDX indexes the FASTA when meta.index == false"
+    ]
+   }
+  },
+  {
+   "asset_param": "index",
+   "guard": "files[0].index == false (samplesheet index column empty)",
+   "guard_params": [],
+   "builder": "SAMTOOLS_INDEX",
+   "builder_outputs": [
+    "index"
+   ],
+   "fallback_for": null,
+   "evidence": {
+    "source_path": "subworkflows/local/prepare_indices/main.nf",
+    "confidence": "high",
+    "evidence": [
+     "input.branch { files -> is_indexed: files[0].index == true; to_index: files[0].index == false }",
+     "SAMTOOLS_INDEX builds the missing index"
+    ]
+   }
+  }
+ ],
+ "test_candidates": [
+  {
+   "id": "tests/default.nf.test::-profile test",
+   "kind": "nf-test",
+   "name": "-profile test",
+   "path": "tests/default.nf.test",
+   "effective_profiles": [
+    "test"
+   ],
+   "params_delta": {
+    "outdir": "$outputDir",
+    "fasta": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+    "input": null,
+    "note": "input comes from conf/test.config: params.pipelines_testdata_base_path + 'samplesheet/test_bam_samplesheet.csv' (https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_bam_samplesheet.csv); igenomes_ignore = true"
+   },
+   "inputs": [
+    {
+     "role": "samplesheet",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_bam_samplesheet.csv",
+     "filetype": "csv",
+     "description": "BAM samplesheet: test + test2 paired-end sorted BAM with .bai"
+    },
+    {
+     "role": "reference_fasta",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+     "filetype": "fasta",
+     "description": "Homo sapiens genome FASTA used as reference (also fetched implicitly via test_full)"
+    }
+   ],
+   "outputs": [],
+   "execution_mode": "real",
+   "scope": "primary",
+   "disposition": "selected",
+   "rationale": "Default whole-pipeline nf-test case in tests/default.nf.test; required launch params (input via test profile, fasta) resolve. Selected as primary.",
+   "assert_workflow_success": true,
+   "snapshot": {
+    "captures": [
+     "succeeded_task_count",
+     "versions_yml",
+     "stable_names",
+     "stable_paths",
+     "bam_files_md5",
+     "cram_files_md5"
+    ],
+    "helpers": [
+     "getAllFilesFromDir",
+     "removeFromYamlMap",
+     "bam",
+     "cram"
+    ],
+    "ignore_files": [
+     "tests/.nftignore"
+    ],
+    "ignore_globs": [
+     "pipeline_info/*.{html,json,txt}"
+    ],
+    "snap_path": "tests/default.nf.test.snap",
+    "parsed_content": []
+   },
+   "prose_assertions": []
+  },
+  {
+   "id": "tests/chr.nf.test::-profile test --input test_chr_samplesheet.csv",
+   "kind": "nf-test",
+   "name": "-profile test --input test_chr_samplesheet.csv",
+   "path": "tests/chr.nf.test",
+   "effective_profiles": [
+    "test"
+   ],
+   "params_delta": {
+    "outdir": "$outputDir",
+    "input": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_chr_samplesheet.csv",
+    "fasta": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+    "genome": null,
+    "igenomes_ignore": true,
+    "chr": "chrX chrY X Y"
+   },
+   "inputs": [
+    {
+     "role": "samplesheet",
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_chr_samplesheet.csv",
+     "filetype": "csv"
+    },
+    {
+     "role": "reference_fasta",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+     "filetype": "fasta",
+     "description": "Homo sapiens genome FASTA used as reference (also fetched implicitly via test_full)"
+    }
+   ],
+   "outputs": [],
+   "execution_mode": "real",
+   "scope": "primary",
+   "disposition": "eligible",
+   "rationale": "Exercises the params.chr region-subsetting branch (SAMTOOLS_CHR + SAMTOOLS_CHR_INDEX).",
+   "assert_workflow_success": true,
+   "snapshot": {
+    "captures": [
+     "succeeded_task_count",
+     "versions_yml",
+     "stable_names",
+     "stable_paths",
+     "bam_files_md5",
+     "cram_files_md5"
+    ],
+    "helpers": [
+     "getAllFilesFromDir",
+     "removeFromYamlMap",
+     "bam",
+     "cram"
+    ],
+    "ignore_files": [
+     "tests/.nftignore"
+    ],
+    "ignore_globs": [
+     "pipeline_info/*.{html,json,txt}"
+    ],
+    "snap_path": "tests/chr.nf.test.snap",
+    "parsed_content": []
+   },
+   "prose_assertions": []
+  },
+  {
+   "id": "tests/collate_fast.nf.test::-profile test --samtools_collate_fast",
+   "kind": "nf-test",
+   "name": "-profile test --samtools_collate_fast",
+   "path": "tests/collate_fast.nf.test",
+   "effective_profiles": [
+    "test"
+   ],
+   "params_delta": {
+    "outdir": "$outputDir",
+    "input": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_bam_samplesheet.csv",
+    "fasta": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+    "genome": null,
+    "igenomes_ignore": true,
+    "samtools_collate_fast": true
+   },
+   "inputs": [
+    {
+     "role": "samplesheet",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_bam_samplesheet.csv",
+     "filetype": "csv",
+     "description": "BAM samplesheet: test + test2 paired-end sorted BAM with .bai"
+    },
+    {
+     "role": "reference_fasta",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+     "filetype": "fasta",
+     "description": "Homo sapiens genome FASTA used as reference (also fetched implicitly via test_full)"
+    }
+   ],
+   "outputs": [],
+   "execution_mode": "real",
+   "scope": "primary",
+   "disposition": "eligible",
+   "rationale": "Exercises the samtools_collate_fast mode (ext.args -f -r params.reads_in_memory).",
+   "assert_workflow_success": true,
+   "snapshot": {
+    "captures": [
+     "succeeded_task_count",
+     "versions_yml",
+     "stable_names",
+     "stable_paths",
+     "bam_files_md5",
+     "cram_files_md5"
+    ],
+    "helpers": [
+     "getAllFilesFromDir",
+     "removeFromYamlMap",
+     "bam",
+     "cram"
+    ],
+    "ignore_files": [
+     "tests/.nftignore"
+    ],
+    "ignore_globs": [
+     "pipeline_info/*.{html,json,txt}"
+    ],
+    "snap_path": "tests/collate_fast.nf.test.snap",
+    "parsed_content": []
+   },
+   "prose_assertions": []
+  },
+  {
+   "id": "tests/cram.nf.test::-profile test --input test_cram_samplesheet.csv",
+   "kind": "nf-test",
+   "name": "-profile test --input test_cram_samplesheet.csv",
+   "path": "tests/cram.nf.test",
+   "effective_profiles": [
+    "test"
+   ],
+   "params_delta": {
+    "outdir": "$outputDir",
+    "input": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_cram_samplesheet.csv",
+    "fasta": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+    "genome": null,
+    "igenomes_ignore": true
+   },
+   "inputs": [
+    {
+     "role": "samplesheet",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_cram_samplesheet.csv",
+     "filetype": "csv",
+     "description": "CRAM samplesheet: test + test2 paired-end sorted CRAM with .crai"
+    },
+    {
+     "role": "reference_fasta",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+     "filetype": "fasta",
+     "description": "Homo sapiens genome FASTA used as reference (also fetched implicitly via test_full)"
+    }
+   ],
+   "outputs": [],
+   "execution_mode": "real",
+   "scope": "primary",
+   "disposition": "eligible",
+   "rationale": "Exercises the CRAM input path.",
+   "assert_workflow_success": true,
+   "snapshot": {
+    "captures": [
+     "succeeded_task_count",
+     "versions_yml",
+     "stable_names",
+     "stable_paths",
+     "bam_files_md5",
+     "cram_files_md5"
+    ],
+    "helpers": [
+     "getAllFilesFromDir",
+     "removeFromYamlMap",
+     "bam",
+     "cram"
+    ],
+    "ignore_files": [
+     "tests/.nftignore"
+    ],
+    "ignore_globs": [
+     "pipeline_info/*.{html,json,txt}"
+    ],
+    "snap_path": "tests/cram.nf.test.snap",
+    "parsed_content": []
+   },
+   "prose_assertions": []
+  },
+  {
+   "id": "tests/fai.nf.test::-profile test | with fasta and fasta_fai",
+   "kind": "nf-test",
+   "name": "-profile test | with fasta and fasta_fai",
+   "path": "tests/fai.nf.test",
+   "effective_profiles": [
+    "test"
+   ],
+   "params_delta": {
+    "outdir": "$outputDir",
+    "fasta": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+    "fasta_fai": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta.fai"
+   },
+   "inputs": [
+    {
+     "role": "reference_fasta",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+     "filetype": "fasta",
+     "description": "Homo sapiens genome FASTA used as reference (also fetched implicitly via test_full)"
+    },
+    {
+     "role": "reference_fasta_index",
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta.fai",
+     "filetype": "fai"
+    }
+   ],
+   "outputs": [],
+   "execution_mode": "real",
+   "scope": "primary",
+   "disposition": "eligible",
+   "rationale": "Exercises the provided-fai path (skips SAMTOOLS_FAIDX rebuild).",
+   "assert_workflow_success": true,
+   "snapshot": {
+    "captures": [
+     "succeeded_task_count",
+     "versions_yml",
+     "stable_names",
+     "stable_paths",
+     "bam_files_md5",
+     "cram_files_md5"
+    ],
+    "helpers": [
+     "getAllFilesFromDir",
+     "removeFromYamlMap",
+     "bam",
+     "cram"
+    ],
+    "ignore_files": [
+     "tests/.nftignore"
+    ],
+    "ignore_globs": [
+     "pipeline_info/*.{html,json,txt}"
+    ],
+    "snap_path": "tests/fai.nf.test.snap",
+    "parsed_content": []
+   },
+   "prose_assertions": []
+  },
+  {
+   "id": "tests/no_bai.nf.test::-profile test --input test_bam_samplesheet_no_bai.csv",
+   "kind": "nf-test",
+   "name": "-profile test --input test_bam_samplesheet_no_bai.csv",
+   "path": "tests/no_bai.nf.test",
+   "effective_profiles": [
+    "test"
+   ],
+   "params_delta": {
+    "outdir": "$outputDir",
+    "input": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_bam_samplesheet_no_bai.csv",
+    "fasta": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+    "genome": null,
+    "igenomes_ignore": true
+   },
+   "inputs": [
+    {
+     "role": "samplesheet",
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_bam_samplesheet_no_bai.csv",
+     "filetype": "csv"
+    },
+    {
+     "role": "reference_fasta",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+     "filetype": "fasta",
+     "description": "Homo sapiens genome FASTA used as reference (also fetched implicitly via test_full)"
+    }
+   ],
+   "outputs": [],
+   "execution_mode": "real",
+   "scope": "primary",
+   "disposition": "eligible",
+   "rationale": "Exercises BAM input without a .bai (SAMTOOLS_INDEX rebuild branch).",
+   "assert_workflow_success": true,
+   "snapshot": {
+    "captures": [
+     "succeeded_task_count",
+     "versions_yml",
+     "stable_names",
+     "stable_paths",
+     "bam_files_md5",
+     "cram_files_md5"
+    ],
+    "helpers": [
+     "getAllFilesFromDir",
+     "removeFromYamlMap",
+     "bam",
+     "cram"
+    ],
+    "ignore_files": [
+     "tests/.nftignore"
+    ],
+    "ignore_globs": [
+     "pipeline_info/*.{html,json,txt}"
+    ],
+    "snap_path": "tests/no_bai.nf.test.snap",
+    "parsed_content": []
+   },
+   "prose_assertions": []
+  },
+  {
+   "id": "tests/no_crai.nf.test::-profile test --input test_cram_samplesheet_no_crai.csv",
+   "kind": "nf-test",
+   "name": "-profile test --input test_cram_samplesheet_no_crai.csv",
+   "path": "tests/no_crai.nf.test",
+   "effective_profiles": [
+    "test"
+   ],
+   "params_delta": {
+    "outdir": "$outputDir",
+    "input": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_cram_samplesheet_no_crai.csv",
+    "fasta": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+    "genome": null,
+    "igenomes_ignore": true
+   },
+   "inputs": [
+    {
+     "role": "samplesheet",
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_cram_samplesheet_no_crai.csv",
+     "filetype": "csv"
+    },
+    {
+     "role": "reference_fasta",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+     "filetype": "fasta",
+     "description": "Homo sapiens genome FASTA used as reference (also fetched implicitly via test_full)"
+    }
+   ],
+   "outputs": [],
+   "execution_mode": "real",
+   "scope": "primary",
+   "disposition": "eligible",
+   "rationale": "Exercises CRAM input without a .crai (SAMTOOLS_INDEX rebuild branch).",
+   "assert_workflow_success": true,
+   "snapshot": {
+    "captures": [
+     "succeeded_task_count",
+     "versions_yml",
+     "stable_names",
+     "stable_paths",
+     "bam_files_md5",
+     "cram_files_md5"
+    ],
+    "helpers": [
+     "getAllFilesFromDir",
+     "removeFromYamlMap",
+     "bam",
+     "cram"
+    ],
+    "ignore_files": [
+     "tests/.nftignore"
+    ],
+    "ignore_globs": [
+     "pipeline_info/*.{html,json,txt}"
+    ],
+    "snap_path": "tests/no_crai.nf.test.snap",
+    "parsed_content": []
+   },
+   "prose_assertions": []
+  },
+  {
+   "id": "tests/no_qc.nf.test::-profile test --no_read_qc",
+   "kind": "nf-test",
+   "name": "-profile test --no_read_qc",
+   "path": "tests/no_qc.nf.test",
+   "effective_profiles": [
+    "test"
+   ],
+   "params_delta": {
+    "outdir": "$outputDir",
+    "input": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_bam_samplesheet.csv",
+    "fasta": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+    "genome": null,
+    "igenomes_ignore": true,
+    "no_read_qc": true
+   },
+   "inputs": [
+    {
+     "role": "samplesheet",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_bam_samplesheet.csv",
+     "filetype": "csv",
+     "description": "BAM samplesheet: test + test2 paired-end sorted BAM with .bai"
+    },
+    {
+     "role": "reference_fasta",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+     "filetype": "fasta",
+     "description": "Homo sapiens genome FASTA used as reference (also fetched implicitly via test_full)"
+    }
+   ],
+   "outputs": [],
+   "execution_mode": "real",
+   "scope": "primary",
+   "disposition": "eligible",
+   "rationale": "Exercises no_read_QC mode: FASTQC_PRE/POST_CONVERSION ext.when gates skip FastQC.",
+   "assert_workflow_success": true,
+   "snapshot": {
+    "captures": [
+     "succeeded_task_count",
+     "versions_yml",
+     "stable_names",
+     "stable_paths",
+     "bam_files_md5",
+     "cram_files_md5"
+    ],
+    "helpers": [
+     "getAllFilesFromDir",
+     "removeFromYamlMap",
+     "bam",
+     "cram"
+    ],
+    "ignore_files": [
+     "tests/.nftignore"
+    ],
+    "ignore_globs": [
+     "pipeline_info/*.{html,json,txt}"
+    ],
+    "snap_path": "tests/no_qc.nf.test.snap",
+    "parsed_content": []
+   },
+   "prose_assertions": []
+  },
+  {
+   "id": "tests/no_stats.nf.test::-profile test --no_stats",
+   "kind": "nf-test",
+   "name": "-profile test --no_stats",
+   "path": "tests/no_stats.nf.test",
+   "effective_profiles": [
+    "test"
+   ],
+   "params_delta": {
+    "outdir": "$outputDir",
+    "input": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_bam_samplesheet.csv",
+    "fasta": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+    "genome": null,
+    "igenomes_ignore": true,
+    "no_stats": true
+   },
+   "inputs": [
+    {
+     "role": "samplesheet",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_bam_samplesheet.csv",
+     "filetype": "csv",
+     "description": "BAM samplesheet: test + test2 paired-end sorted BAM with .bai"
+    },
+    {
+     "role": "reference_fasta",
+     "path": null,
+     "url": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta",
+     "filetype": "fasta",
+     "description": "Homo sapiens genome FASTA used as reference (also fetched implicitly via test_full)"
+    }
+   ],
+   "outputs": [],
+   "execution_mode": "real",
+   "scope": "primary",
+   "disposition": "eligible",
+   "rationale": "Exercises no_stats mode: SAMTOOLS_FLAGSTAT/IDXSTATS/STATS ext.when gates skip stats.",
+   "assert_workflow_success": true,
+   "snapshot": {
+    "captures": [
+     "succeeded_task_count",
+     "versions_yml",
+     "stable_names",
+     "stable_paths",
+     "bam_files_md5",
+     "cram_files_md5"
+    ],
+    "helpers": [
+     "getAllFilesFromDir",
+     "removeFromYamlMap",
+     "bam",
+     "cram"
+    ],
+    "ignore_files": [
+     "tests/.nftignore"
+    ],
+    "ignore_globs": [
+     "pipeline_info/*.{html,json,txt}"
+    ],
+    "snap_path": "tests/no_stats.nf.test.snap",
+    "parsed_content": []
+   },
+   "prose_assertions": []
+  }
+ ],
+ "test_selection": {
+  "status": "selected",
+  "selected_candidate_id": "tests/default.nf.test::-profile test",
+  "rationale": "Single primary candidate in tests/default.nf.test; all nine candidates are primary-coverage whole-pipeline cases but default.nf.test is the canonical minimal entry point and its required launch parameters resolve from conf/test.config."
+ },
+ "warnings": [
+  "FASTQC_PRE_CONVERSION.out.zip/html are emitted by PRE_CONVERSION_QC but BAMTOFASTQ does not pass them into MULTIQC's ch_multiqc_files (the mixing line is commented out in workflows/bamtofastq.nf); pre-conversion FastQC outputs are published but not aggregated.",
+  "conf/modules.config declares a global default publishDir with a dynamic path expression; recorded as selector 'process (global default)' for processes without a withName publishDir.",
+  "The anonymous workflow {} entrypoint in main.nf has no declared name; recorded as subworkflow MAIN_ENTRYPOINT (kind: utility).",
+  "test param no_read_qc is written 'no_read_QC' in nextflow.config but 'no_read_qc' in tests/no_qc.nf.test and nextflow_schema.json uses no_read_QC; case differs between sources.",
+  "Snapshot .parsed_content omitted from candidates: snap files are large; captures/helpers/ignore lists carry the assertion structure, and md5 expectations for the selected candidate are listed in outputs of the test plan phase instead.",
+  "PREPARE_INDICES.out.ch_fasta_fai uses .first() after mixing; multi-FASTA scenarios are not exercised by any test."
+ ]
+}

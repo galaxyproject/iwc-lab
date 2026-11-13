@@ -1,0 +1,909 @@
+class: GalaxyWorkflow
+label: nf-core/bamtofastq (Galaxy translation)
+doc: 'Galaxy translation of nf-core/bamtofastq 2.2.1 @ aa0150e: convert BAM alignments to FASTQ reads. Per-sample work maps over the `alignments` list collection; endedness (single-end vs paired-end) is
+  detected per element at runtime and routes each sample to the matching conversion subgraph via per-element `when:` gates. CRAM input and the reference FASTA input are not carried (see run ledger: cram-support-dropped).
+  MultiQC is not carried: at this source commit it aggregates only nf-core boilerplate. BAM indexes are not rebuilt: Galaxy auto-indexes BAM datasets on upload.'
+inputs:
+- id: alignments
+  type: collection
+  collection_type: list
+  optional: false
+  format:
+  - bam
+  doc: 'One BAM per sample; element identifier is the sample id. CRAM input is not supported by this Galaxy translation (see run ledger: cram-support-dropped).'
+- id: chr
+  type: string
+  optional: true
+  doc: Optional region filter (e.g. 'chrX chrY X Y'), as in samtools view -L. Empty or unset skips the region-filter branch.
+- id: no_stats
+  type: boolean
+  optional: false
+  default: false
+  doc: If true, skip samtools flagstat/idxstats/stats.
+- id: no_read_qc
+  type: boolean
+  optional: false
+  default: false
+  doc: If true, skip FastQC on input alignments and converted reads.
+- id: samtools_collate_fast
+  type: boolean
+  optional: false
+  default: false
+  doc: Use fast mode for samtools collate (-f -r).
+- id: reads_in_memory
+  type: int
+  optional: false
+  default: 100000
+  doc: Reads to store in memory; only relevant with samtools_collate_fast.
+outputs:
+- id: reads
+  outputSource: merge_reads/output
+  doc: Converted reads (flat list; paired samples contribute {sample}_1 and {sample}_2, single-end samples one {sample} element; fastqsanger.gz).
+- id: flagstat
+  outputSource: samtools_flagstat/output1
+- id: idxstats
+  outputSource: samtools_idxstats/output
+- id: stats
+  outputSource: samtools_stats/output
+- id: fastqc_pre_html
+  outputSource: fastqc_pre/html_file
+- id: fastqc_pre_data
+  outputSource: fastqc_pre/text_file
+- id: fastqc_post_html
+  outputSource: fastqc_post/html_file
+- id: fastqc_post_data
+  outputSource: fastqc_post/text_file
+- id: fastqutils_info
+  outputSource: fastq_utils_info/info
+steps:
+  invert_no_stats:
+    label: invert_no_stats
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/map_param_value/map_param_value/0.2.0
+    tool_version: 0.2.0
+    tool_shed_repository:
+      changeset_revision: 022a635f2283
+      name: map_param_value
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: input_param_type|input_param
+      source: no_stats
+    out:
+    - id: output_param_boolean
+      hide: true
+    state:
+      input_param_type:
+        type: boolean
+        mappings:
+        - from: false
+          to: 'true'
+        - from: true
+          to: 'false'
+      output_param_type: boolean
+      unmapped:
+        on_unmapped: input
+  invert_no_read_qc:
+    label: invert_no_read_qc
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/map_param_value/map_param_value/0.2.0
+    tool_version: 0.2.0
+    tool_shed_repository:
+      changeset_revision: 022a635f2283
+      name: map_param_value
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: input_param_type|input_param
+      source: no_read_qc
+    out:
+    - id: output_param_boolean
+      hide: true
+    state:
+      input_param_type:
+        type: boolean
+        mappings:
+        - from: false
+          to: 'true'
+        - from: true
+          to: 'false'
+      output_param_type: boolean
+      unmapped:
+        on_unmapped: input
+  check_endedness:
+    label: check_endedness
+    in:
+    - id: alignment
+      source: alignments
+    out:
+    - id: paired_flag
+      hide: true
+    - id: single_flag
+      hide: true
+    run:
+      class: GalaxyUserTool
+      id: bamtofastq_check_endedness
+      version: 1.0.0
+      name: Check alignment endedness
+      description: Samples reads with samtools and reports whether the alignment file contains paired-end or single-end reads
+      license: MIT
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      help:
+        format: markdown
+        content: 'Reproduces the CHECKPAIREDEND step of nf-core/bamtofastq: sample up to 1000
+
+          records, check the fraction of reads carrying the paired flag, and emit
+
+          per-sample marker files. The `paired_flag` output contains `true` for
+
+          paired-end samples, `false` for single-end; `single_flag` is the inverse.
+
+          '
+      configfiles:
+      - filename: check_endedness.sh
+        content: "#!/bin/sh\nin=\"$1\"\nlines=\\$(samtools view \"$in\" | head -n 1000 | wc -l)\nif [ \"$lines\" -lt 1000 ]; then\n  LINES_TO_CHK=\\$(samtools view \"$in\" | wc -l)\nelse\n  LINES_TO_CHK=1000\n\
+          fi\nfrac=\\$({ samtools view -H \"$in\"; samtools view \"$in\" | head -n \"$LINES_TO_CHK\"; } | samtools view -c -f 1 | awk -v lines=\"$LINES_TO_CHK\" '{print $1/lines}')\nif [ \"$frac\" = \"\
+          1\" ]; then\n  echo true > paired_flag.txt\n  echo false > single_flag.txt\nelse\n  echo false > paired_flag.txt\n  echo true > single_flag.txt\nfi\n"
+      shell_command: sh check_endedness.sh '$(inputs.alignment.path)'
+      inputs:
+      - name: alignment
+        type: data
+        format:
+        - bam
+        - cram
+        label: Alignment file
+      outputs:
+      - name: paired_flag
+        type: data
+        format: txt
+        from_work_dir: paired_flag.txt
+        label: Paired-end marker
+      - name: single_flag
+        type: data
+        format: txt
+        from_work_dir: single_flag.txt
+        label: Single-end marker
+  pvf_is_paired:
+    label: pvf_is_paired
+    tool_id: param_value_from_file
+    tool_version: 0.1.0
+    in:
+    - id: input1
+      source: check_endedness/paired_flag
+    out:
+    - id: boolean_param
+      hide: true
+    state:
+      param_type: boolean
+      remove_newlines: true
+  pvf_is_single:
+    label: pvf_is_single
+    tool_id: param_value_from_file
+    tool_version: 0.1.0
+    in:
+    - id: input1
+      source: check_endedness/single_flag
+    out:
+    - id: boolean_param
+      hide: true
+    state:
+      param_type: boolean
+      remove_newlines: true
+  samtools_flagstat:
+    label: samtools_flagstat
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8
+    tool_version: 2.0.8
+    in:
+    - id: input1
+      source: alignments
+    - id: when
+      source: invert_no_stats/output_param_boolean
+    out:
+    - id: output1
+    when: $(inputs.when)
+    tool_shed_repository:
+      changeset_revision: a0d8e49a018c
+      name: samtools_flagstat
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+  samtools_idxstats:
+    label: samtools_idxstats
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats/2.0.8
+    tool_version: 2.0.8
+    in:
+    - id: input
+      source: alignments
+    - id: when
+      source: invert_no_stats/output_param_boolean
+    out:
+    - id: output
+    when: $(inputs.when)
+    tool_shed_repository:
+      changeset_revision: 13aad5cb9be4
+      name: samtools_idxstats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+  samtools_stats:
+    label: samtools_stats
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.9
+    tool_version: 2.0.9
+    in:
+    - id: input
+      source: alignments
+    - id: when
+      source: invert_no_stats/output_param_boolean
+    out:
+    - id: output
+    when: $(inputs.when)
+    tool_shed_repository:
+      changeset_revision: 8fca6e1eac98
+      name: samtools_stats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      addref_cond:
+        addref_select: 'no'
+  fastqc_pre:
+    label: fastqc_pre
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    in:
+    - id: input_file
+      source: alignments
+    - id: when
+      source: invert_no_read_qc/output_param_boolean
+    out:
+    - id: html_file
+    - id: text_file
+    when: $(inputs.when)
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+  samtools_chr_view:
+    label: samtools_chr_view
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    in:
+    - id: input
+      source: alignments
+    - id: mode|filter_config|cond_region|regions
+      source: chr
+    - id: chr_gate
+      source: chr
+    out:
+    - id: outputsam
+      hide: true
+    when: $(inputs.chr_gate != null && inputs.chr_gate != "")
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: text
+        output_options:
+          reads_report_type: retained
+          output_format:
+            oformat: bam
+  chr_pick:
+    label: chr_pick
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: 0.2.0
+    tool_shed_repository:
+      changeset_revision: b19e21af9c52
+      name: pick_value
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: style_cond|type_cond|pick_from_0|value
+      source: samtools_chr_view/outputsam
+    - id: style_cond|type_cond|default_value
+      source: alignments
+    out:
+    - id: data_param
+      hide: true
+    state:
+      style_cond:
+        pick_style: first_or_default
+        type_cond:
+          param_type: data
+  samtools_view_map_map:
+    label: samtools_view_map_map
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    in:
+    - id: input
+      source: chr_pick/data_param
+    - id: when
+      source: pvf_is_paired/boolean_param
+    out:
+    - id: outputsam
+      hide: true
+    when: $(inputs.when)
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          inclusive_filter:
+          - '1'
+          exclusive_filter:
+          - '4'
+          - '8'
+        output_options:
+          reads_report_type: retained
+          output_format:
+            oformat: bam
+  samtools_view_unmap_unmap:
+    label: samtools_view_unmap_unmap
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    in:
+    - id: input
+      source: chr_pick/data_param
+    - id: when
+      source: pvf_is_paired/boolean_param
+    out:
+    - id: outputsam
+      hide: true
+    when: $(inputs.when)
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          inclusive_filter:
+          - '4'
+          - '8'
+          exclusive_filter:
+          - '256'
+        output_options:
+          reads_report_type: retained
+          output_format:
+            oformat: bam
+  samtools_view_unmap_map:
+    label: samtools_view_unmap_map
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    in:
+    - id: input
+      source: chr_pick/data_param
+    - id: when
+      source: pvf_is_paired/boolean_param
+    out:
+    - id: outputsam
+      hide: true
+    when: $(inputs.when)
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          inclusive_filter:
+          - '4'
+          exclusive_filter:
+          - '8'
+          - '256'
+        output_options:
+          reads_report_type: retained
+          output_format:
+            oformat: bam
+  samtools_view_map_unmap:
+    label: samtools_view_map_unmap
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    in:
+    - id: input
+      source: chr_pick/data_param
+    - id: when
+      source: pvf_is_paired/boolean_param
+    out:
+    - id: outputsam
+      hide: true
+    when: $(inputs.when)
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          inclusive_filter:
+          - '8'
+          exclusive_filter:
+          - '4'
+          - '256'
+        output_options:
+          reads_report_type: retained
+          output_format:
+            oformat: bam
+  samtools_merge_unmap:
+    label: samtools_merge_unmap
+    in:
+    - id: unmap_unmap
+      source: samtools_view_unmap_unmap/outputsam
+    - id: unmap_map
+      source: samtools_view_unmap_map/outputsam
+    - id: map_unmap
+      source: samtools_view_map_unmap/outputsam
+    - id: when
+      source: pvf_is_paired/boolean_param
+    out:
+    - id: merged
+      hide: true
+    when: $(inputs.when)
+    run:
+      class: GalaxyUserTool
+      id: bamtofastq_samtools_merge
+      version: 1.0.0
+      name: Merge three unmapped read subsets
+      description: samtools merge of the unmapped-unmapped, unmapped-mapped and mapped-unmapped subsets per sample
+      license: MIT
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      help:
+        format: markdown
+        content: 'Reproduces the SAMTOOLS_MERGE_UNMAP invocation of nf-core/bamtofastq:
+
+          merges the unmapped-unmapped, unmapped-mapped and mapped-unmapped
+
+          BAM subsets into one file per sample with `samtools merge`.
+
+          '
+      shell_command: samtools merge merged_alignment.bam '$(inputs.unmap_unmap.path)' '$(inputs.unmap_map.path)' '$(inputs.map_unmap.path)'
+      inputs:
+      - name: unmap_unmap
+        type: data
+        format:
+        - bam
+        - cram
+        label: Unmapped-unmapped reads
+      - name: unmap_map
+        type: data
+        format:
+        - bam
+        - cram
+        label: Unmapped-mapped reads
+      - name: map_unmap
+        type: data
+        format:
+        - bam
+        - cram
+        label: Mapped-unmapped reads
+      outputs:
+      - name: merged
+        type: data
+        format: bam
+        from_work_dir: merged_alignment.bam
+        label: Merged unmapped reads
+  collate_fastq_map:
+    label: collate_fastq_map
+    in:
+    - id: alignment
+      source: samtools_view_map_map/outputsam
+    - id: collate_fast
+      source: samtools_collate_fast
+    - id: reads_in_memory
+      source: reads_in_memory
+    - id: when
+      source: pvf_is_paired/boolean_param
+    out:
+    - id: r1
+      hide: true
+    - id: r2
+      hide: true
+    when: $(inputs.when)
+    run:
+      class: GalaxyUserTool
+      id: bamtofastq_collate_fastq
+      version: 1.0.0
+      name: Collate and convert paired alignments to FASTQ
+      description: samtools collate followed by samtools fastq, emitting paired R1/R2 reads
+      license: MIT
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      help:
+        format: markdown
+        content: 'Reproduces the paired-end SAMTOOLS_COLLATEFASTQ invocation of
+
+          nf-core/bamtofastq: `samtools collate -O input . | samtools fastq -N
+
+          -1 R1 -2 R2 -s singleton -0 other`. Optional fast collate mode passes
+
+          `-f -r <reads_in_memory>` to samtools collate.
+
+          '
+      configfiles:
+      - filename: collate.sh
+        content: '#!/bin/sh
+
+          in="$1"; fast="$2"; rim="$3"
+
+          COLLATE_ARGS=""
+
+          if [ "$fast" = "true" ]; then COLLATE_ARGS="-f -r $rim"; fi
+
+          samtools collate $COLLATE_ARGS -O "$in" . | samtools fastq -N -0 other_reads.fq.gz -1 reads_1.fq.gz -2 reads_2.fq.gz -s singletons.fq.gz
+
+          '
+      shell_command: sh collate.sh '$(inputs.alignment.path)' '$(inputs.collate_fast)' '$(inputs.reads_in_memory)'
+      inputs:
+      - name: alignment
+        type: data
+        format:
+        - bam
+        - cram
+        label: Alignment file
+      - name: collate_fast
+        type: boolean
+        value: false
+        label: Fast collate mode (-f -r)
+      - name: reads_in_memory
+        type: integer
+        value: 100000
+        label: Reads to store in memory for fast mode
+      outputs:
+      - name: r1
+        type: data
+        format: fastqsanger.gz
+        from_work_dir: reads_1.fq.gz
+        label: Paired R1 reads
+      - name: r2
+        type: data
+        format: fastqsanger.gz
+        from_work_dir: reads_2.fq.gz
+        label: Paired R2 reads
+  collate_fastq_unmap:
+    label: collate_fastq_unmap
+    in:
+    - id: alignment
+      source: samtools_merge_unmap/merged
+    - id: collate_fast
+      source: samtools_collate_fast
+    - id: reads_in_memory
+      source: reads_in_memory
+    - id: when
+      source: pvf_is_paired/boolean_param
+    out:
+    - id: r1
+      hide: true
+    - id: r2
+      hide: true
+    when: $(inputs.when)
+    run:
+      class: GalaxyUserTool
+      id: bamtofastq_collate_fastq
+      version: 1.0.0
+      name: Collate and convert paired alignments to FASTQ
+      description: samtools collate followed by samtools fastq, emitting paired R1/R2 reads
+      license: MIT
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      help:
+        format: markdown
+        content: 'Reproduces the paired-end SAMTOOLS_COLLATEFASTQ invocation of
+
+          nf-core/bamtofastq: `samtools collate -O input . | samtools fastq -N
+
+          -1 R1 -2 R2 -s singleton -0 other`. Optional fast collate mode passes
+
+          `-f -r <reads_in_memory>` to samtools collate.
+
+          '
+      configfiles:
+      - filename: collate.sh
+        content: '#!/bin/sh
+
+          in="$1"; fast="$2"; rim="$3"
+
+          COLLATE_ARGS=""
+
+          if [ "$fast" = "true" ]; then COLLATE_ARGS="-f -r $rim"; fi
+
+          samtools collate $COLLATE_ARGS -O "$in" . | samtools fastq -N -0 other_reads.fq.gz -1 reads_1.fq.gz -2 reads_2.fq.gz -s singletons.fq.gz
+
+          '
+      shell_command: sh collate.sh '$(inputs.alignment.path)' '$(inputs.collate_fast)' '$(inputs.reads_in_memory)'
+      inputs:
+      - name: alignment
+        type: data
+        format:
+        - bam
+        - cram
+        label: Alignment file
+      - name: collate_fast
+        type: boolean
+        value: false
+        label: Fast collate mode (-f -r)
+      - name: reads_in_memory
+        type: integer
+        value: 100000
+        label: Reads to store in memory for fast mode
+      outputs:
+      - name: r1
+        type: data
+        format: fastqsanger.gz
+        from_work_dir: reads_1.fq.gz
+        label: Paired R1 reads
+      - name: r2
+        type: data
+        format: fastqsanger.gz
+        from_work_dir: reads_2.fq.gz
+        label: Paired R2 reads
+  cat_fastq:
+    label: cat_fastq
+    in:
+    - id: mapped_r1
+      source: collate_fastq_map/r1
+    - id: unmapped_r1
+      source: collate_fastq_unmap/r1
+    - id: mapped_r2
+      source: collate_fastq_map/r2
+    - id: unmapped_r2
+      source: collate_fastq_unmap/r2
+    - id: when
+      source: pvf_is_paired/boolean_param
+    out:
+    - id: r1_merged
+      hide: true
+    - id: r2_merged
+      hide: true
+    when: $(inputs.when)
+    run:
+      class: GalaxyUserTool
+      id: bamtofastq_cat_fastq
+      version: 1.0.0
+      name: Concatenate mapped and unmapped FASTQ pairs
+      description: Concatenates mapped R1 with unmapped R1 and mapped R2 with unmapped R2 into merged read pairs
+      license: MIT
+      container: community.wave.seqera.io/library/coreutils_grep_gzip_lbzip2_pruned:838ba80435a629f8
+      help:
+        format: markdown
+        content: 'Reproduces the CAT_FASTQ step of nf-core/bamtofastq for paired-end
+
+          samples: the collated mapped and unmapped R1 files are concatenated
+
+          into one R1 FASTQ, likewise R2. Inputs are already gzip-compressed
+
+          by samtools fastq, so a plain concatenation preserves them.
+
+          '
+      shell_command: sh -c "cat '$(inputs.mapped_r1.path)' '$(inputs.unmapped_r1.path)' > reads_1.merged.fastq.gz && cat '$(inputs.mapped_r2.path)' '$(inputs.unmapped_r2.path)' > reads_2.merged.fastq.gz"
+      inputs:
+      - name: mapped_r1
+        type: data
+        format:
+        - fastqsanger.gz
+        - fastq.gz
+        label: Mapped R1 reads
+      - name: unmapped_r1
+        type: data
+        format:
+        - fastqsanger.gz
+        - fastq.gz
+        label: Unmapped R1 reads
+      - name: mapped_r2
+        type: data
+        format:
+        - fastqsanger.gz
+        - fastq.gz
+        label: Mapped R2 reads
+      - name: unmapped_r2
+        type: data
+        format:
+        - fastqsanger.gz
+        - fastq.gz
+        label: Unmapped R2 reads
+      outputs:
+      - name: r1_merged
+        type: data
+        format: fastqsanger.gz
+        from_work_dir: reads_1.merged.fastq.gz
+        label: Merged R1 reads
+      - name: r2_merged
+        type: data
+        format: fastqsanger.gz
+        from_work_dir: reads_2.merged.fastq.gz
+        label: Merged R2 reads
+  collate_fastq_single:
+    label: collate_fastq_single
+    in:
+    - id: alignment
+      source: chr_pick/data_param
+    - id: collate_fast
+      source: samtools_collate_fast
+    - id: reads_in_memory
+      source: reads_in_memory
+    - id: when
+      source: pvf_is_single/boolean_param
+    out:
+    - id: other
+      hide: true
+    when: $(inputs.when)
+    run:
+      class: GalaxyUserTool
+      id: bamtofastq_collate_fastq_single
+      version: 1.0.0
+      name: Collate and convert single-end alignments to FASTQ
+      description: samtools collate followed by samtools fastq in single-end mode, emitting the other-reads output
+      license: MIT
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      help:
+        format: markdown
+        content: 'Reproduces the single-end SAMTOOLS_COLLATEFASTQ invocation of
+
+          nf-core/bamtofastq: `samtools collate -O input . | samtools fastq -N
+
+          -1 R1 -s singleton -0 other`. nf-core/bamtofastq publishes the
+
+          `other` output for single-end samples (the singleton output is empty
+
+          for these).
+
+          '
+      configfiles:
+      - filename: collate_single.sh
+        content: '#!/bin/sh
+
+          in="$1"; fast="$2"; rim="$3"
+
+          COLLATE_ARGS=""
+
+          if [ "$fast" = "true" ]; then COLLATE_ARGS="-f -r $rim"; fi
+
+          samtools collate $COLLATE_ARGS -O "$in" . | samtools fastq -N -0 other_reads.fq.gz -1 reads_1.fq.gz -s singletons.fq.gz
+
+          '
+      shell_command: sh collate_single.sh '$(inputs.alignment.path)' '$(inputs.collate_fast)' '$(inputs.reads_in_memory)'
+      inputs:
+      - name: alignment
+        type: data
+        format:
+        - bam
+        - cram
+        label: Alignment file
+      - name: collate_fast
+        type: boolean
+        value: false
+        label: Fast collate mode (-f -r)
+      - name: reads_in_memory
+        type: integer
+        value: 100000
+        label: Reads to store in memory for fast mode
+      outputs:
+      - name: other
+        type: data
+        format: fastqsanger.gz
+        from_work_dir: other_reads.fq.gz
+        label: Converted single-end reads
+  filter_r1:
+    label: filter_r1
+    tool_id: __FILTER_NULL__
+    tool_version: 1.0.0
+    in:
+    - id: input
+      source: cat_fastq/r1_merged
+    out:
+    - id: output
+      hide: true
+  filter_r2:
+    label: filter_r2
+    tool_id: __FILTER_NULL__
+    tool_version: 1.0.0
+    in:
+    - id: input
+      source: cat_fastq/r2_merged
+    out:
+    - id: output
+      hide: true
+  filter_single:
+    label: filter_single
+    tool_id: __FILTER_NULL__
+    tool_version: 1.0.0
+    in:
+    - id: input
+      source: collate_fastq_single/other
+    out:
+    - id: output
+      hide: true
+  merge_reads:
+    label: merge_reads
+    tool_id: __MERGE_COLLECTION__
+    tool_version: 1.0.0
+    in:
+    - id: inputs_0|input
+      source: filter_r1/output
+    - id: inputs_1|input
+      source: filter_r2/output
+    - id: inputs_2|input
+      source: filter_single/output
+    out:
+    - id: output
+    state:
+      advanced:
+        conflict:
+          duplicate_options: suffix_conflict
+          suffix_pattern: _#
+      inputs:
+      - __index__: 0
+      - __index__: 1
+      - __index__: 2
+  fastqc_post:
+    label: fastqc_post
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    in:
+    - id: input_file
+      source: merge_reads/output
+    out:
+    - id: html_file
+    - id: text_file
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+  fastq_utils_info:
+    label: fastq_utils_info
+    in:
+    - id: reads
+      source: merge_reads/output
+    out:
+    - id: info
+    run:
+      class: GalaxyUserTool
+      id: bamtofastq_fastq_utils_info
+      version: 1.0.0
+      name: Check FASTQ files with fastq_utils
+      description: Runs fastq_info from fastq_utils on converted reads and writes a per-read confirmation
+      license: MIT
+      container: quay.io/biocontainers/fastq_utils:0.25.3--ha9dfd29_0
+      help:
+        format: markdown
+        content: 'Reproduces the FASTQUTILS_INFO step of nf-core/bamtofastq: run
+
+          `fastq_info` on each converted read file; if it reports no issues,
+
+          write a confirmation text file for the read.
+
+          '
+      configfiles:
+      - filename: fastq_info_check.sh
+        content: '#!/bin/sh
+
+          reads="$1"
+
+          fastq_info "$reads"
+
+          echo "fastq_utils fastq_info ran and found no issues with \$(basename "$reads")" > fastq_info.txt
+
+          '
+      shell_command: sh fastq_info_check.sh '$(inputs.reads.path)'
+      inputs:
+      - name: reads
+        type: data
+        format:
+        - fastqsanger.gz
+        - fastq.gz
+        label: Converted reads
+      outputs:
+      - name: info
+        type: data
+        format: txt
+        from_work_dir: fastq_info.txt
+        label: fastq_utils check result

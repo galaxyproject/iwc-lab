@@ -1,0 +1,213 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-bamtofastq-claude-fixed
+  status: complete
+  phases:
+    - { n: 1, kind: mold, skill: summarize-nextflow, status: done, feedback_checked: true }
+    - { n: 2, kind: mold, skill: nextflow-summary-to-galaxy-reference-data, status: done, feedback_checked: true }
+    - { n: 3, kind: mold, skill: nextflow-summary-to-galaxy-interface, status: done, feedback_checked: true }
+    - { n: 4, kind: mold, skill: nextflow-summary-to-galaxy-data-flow, status: done, feedback_checked: true }
+    - { n: 5, kind: mold, skill: compare-against-iwc-exemplar, status: done, feedback_checked: true }
+    - { n: 6, kind: mold, skill: nextflow-summary-to-galaxy-template, status: done, feedback_checked: true }
+    - { n: 7, kind: mold, skill: advance-galaxy-draft-step, status: done, iterations: 26, feedback_checked: true }
+    - { n: 8, kind: branch, pattern: test-data-resolution, status: done, feedback_checked: true, selected: nextflow-to-test-data }
+    - { n: 9, kind: mold, skill: nextflow-test-to-galaxy-test-plan, status: done, feedback_checked: true }
+    - { n: 10, kind: mold, skill: implement-galaxy-workflow-test, status: done, feedback_checked: true }
+    - { n: 11, kind: mold, skill: validate-galaxy-workflow, status: done, feedback_checked: true }
+    - { n: 12, kind: mold, skill: run-workflow-test, status: done, feedback_checked: true }
+    - { n: 13, kind: mold, skill: debug-galaxy-workflow-output, status: done, feedback_checked: true }
+entries:
+  - id: summarize-nextflow-edges-split-multiline-call-args
+    raised_by: summarize-nextflow
+    observed_in:
+      mold: summarize-nextflow
+      path: content/molds/summarize-nextflow/index.md
+      revision: 21
+      content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: implementation
+      label: summarize-nextflow workflow edge extractor
+      locator: packages/summarize-nextflow
+    kind: defect
+    severity: minor
+    what: 'The deterministic edge extractor splits multi-line / literal call arguments into separate bogus edges: e.g. from "[[:]", "[]]", "[]" to SAMTOOLS_CHR and 14 fragment edges ("[", "}", ": file(...)") to MULTIQC; also misses every edge inside local subworkflows (ALIGNMENT_TO_FASTQ, PREPARE_INDICES).'
+    expected: Parse call argument lists with bracket/closure depth tracking so literal placeholders are not edges, and emit (or explicitly warn about) subworkflow-internal edges.
+    evidence: 'nf-core/bamtofastq@aa0150e workflows/bamtofastq.nf: SAMTOOLS_CHR(ch_input_new, ch_fasta_fai, [[:], []], [[:], []], []) and a multi-line MULTIQC(ch_multiqc_files...map{...}) call; edges had to be rewritten by hand in the LLM pass.'
+    status: open
+    issue: null
+  - id: getgenomeattribute-in-main-nf-not-surfaced
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    observed_in:
+      mold: nextflow-summary-to-galaxy-reference-data
+      path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+      revision: 5
+      content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: implementation
+      label: summarize-nextflow param source_kind detection
+      locator: packages/summarize-nextflow
+    kind: gap
+    severity: minor
+    what: 'params.fasta / params.fasta_fai are assigned via `params.fasta ?: getGenomeAttribute("fasta")` in main.nf, but summary params[] and reference_assets[] report source_kind nextflow_schema, so the key-expanded-bundle signal the reference-data Mold keys on is absent.'
+    expected: Detect getGenomeAttribute fallbacks in main.nf (not only conf/igenomes.config) and record source_kind getGenomeAttribute with source_expression.
+    evidence: nf-core/bamtofastq@aa0150e main.nf:37-38; summary reference_assets[].source_kind == nextflow_schema.
+    status: open
+    issue: null
+  - id: sample-sheet-index-sidecar-columns-unaddressed
+    raised_by: nextflow-summary-to-galaxy-interface
+    observed_in:
+      mold: nextflow-summary-to-galaxy-interface
+      path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+      revision: 6
+      content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+      foundry_head: 61da115975d155a36face0e83d5c28f638da7fca
+    subject:
+      kind: research
+      label: galaxy-sample-sheet-collections
+      locator: content/research/galaxy-sample-sheet-collections/index.md
+      content_hash: 98736fdcd0c4f4698af4e0cd4c539b33e3d0db872de1e10487556b21033030ec
+    kind: gap
+    severity: minor
+    what: 'The mapping table sends every samplesheetToList param to a sample_sheet* variant and every extra path column to sample_sheet:record, but says nothing about index sidecar columns (bai/crai/tbi) that Galaxy carries as datatype metadata, nor about enum columns that duplicate the element datatype (file_type: bam|cram).'
+    expected: 'Add a row: index sidecar path columns for bam/cram/vcf_bgzip map to datatype metadata, not a record slot; a column equal to the datatype extension can be dropped; if no metadata column remains, a plain list is sufficient.'
+    evidence: nf-core/bamtofastq assets/schema_input.json (sample_id, mapped, index, file_type); I had to decide list vs sample_sheet:record without guidance.
+    status: open
+    issue: null
+  - id: per-element-branch-recipe-missing
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    observed_in:
+      mold: nextflow-summary-to-galaxy-data-flow
+      path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+      revision: 8
+      content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+      foundry_head: 61da115975d155a36face0e83d5c28f638da7fca
+    subject:
+      kind: research
+      label: nextflow-operators-to-galaxy-collection-recipes
+      locator: content/research/nextflow-operators-to-galaxy-collection-recipes/index.md
+      content_hash: 59d97f05e7839f78cb7f42e17299fe6bc373bde8a32eca506238633a3dff9282
+    kind: gap
+    severity: minor
+    what: The branch row says per-element routing 'usually needs explicit filters/classifiers' and the TODOs list 'consider a dedicated pattern for per-element branch', but no recipe is given; the channel-shape note offers per-element when + pick_value instead. The two notes point different ways for a classifier-driven branch whose branches have different collection shapes.
+    expected: 'Add a concrete per-element branch recipe: classifier mapped step -> collapse with identifiers -> id list per class -> __FILTER_FROM_FILE__ (kept/discarded), and state when to prefer it over per-element when/pick_value (branches that end in different collection shapes).'
+    evidence: nf-core/bamtofastq CHECKPAIREDEND + branch{single_end} routing; I designed the filter recipe without a packaged pattern.
+    status: open
+    issue: null
+  - id: tool-summary-lacks-command-template
+    raised_by: summarize-galaxy-tool
+    observed_in:
+      mold: summarize-galaxy-tool
+      path: content/molds/summarize-galaxy-tool/index.md
+      revision: 8
+      content_hash: a53a303bff1d7ace3b44fb12af329b12695bfcd165933634b8fb6484c0c306f7
+      foundry_head: f0515353aec7d57e89f60cac678c80907cf91e4c
+    subject:
+      kind: related-project
+      label: galaxy-tool-util galaxy-tool-cache summarize / ParsedTool
+      locator: https://github.com/jmchilton/galaxy-tool-util-ts
+    kind: gap
+    severity: major
+    what: 'The summarize-galaxy-tool procedure says to preserve the command template, strict-shell and stdio behaviour, but the emitted manifest parsed_tool has no command/requirements/stdio fields, so binding-relevant behaviour is invisible: iuc samtools_fastx silently runs `samtools sort -n` first (no collate options), and bgruening fastq_info passes exit codes 1/3 as success.'
+    expected: Expose the wrapper command template (or at least requirements, stdio/detect_errors and command text) in the summary manifest, or have the Mold state that raw XML must be fetched and how.
+    evidence: 'summaries/fastx and fastq_info manifests: parsed_tool keys = id, version, name, description, inputs, outputs, citations, license, profile, edam_*, xrefs, help. Behaviour only learned from an installed copy of the XML; Tool Shed raw-file returned 403.'
+    status: open
+    issue: null
+  - id: per-step-pin-and-summary-filenames-collide
+    raised_by: advance-galaxy-draft-step
+    observed_in:
+      mold: advance-galaxy-draft-step
+      path: content/molds/advance-galaxy-draft-step/index.md
+      revision: 12
+      content_hash: 12f242ddbbfee7d9fe4ef8b6a2d701beceb71e4885cd19872c51041b04e08b27
+      foundry_head: db8801f2f0a31746e35cf399dd96cdbb8aa36dcf
+    subject:
+      kind: mold
+      label: advance-galaxy-draft-step
+      locator: content/molds/advance-galaxy-draft-step/index.md
+    kind: friction
+    severity: minor
+    what: The loop runs discover-shed-tool / summarize-galaxy-tool / author-galaxy-tool-wrapper once per step, but each declares a single fixed artifact filename (galaxy-tool-pin.json, galaxy-tool-summary.json, galaxy-user-tool.yml) in the run directory, so iteration k overwrites iteration k-1 and the run record cannot list per-step artifacts.
+    expected: Specify a per-step naming convention (e.g. pins/<step>.galaxy-tool-pin.json, summaries/<step>.galaxy-tool-summary.json) in the loop Mold and the harness run-record rules.
+    evidence: 26-step bamtofastq loop; I had to invent pins/ and summaries/ subdirectories.
+    status: open
+    issue: null
+  - id: optional-reference-vs-required-wrapper-param
+    raised_by: advance-galaxy-draft-step
+    observed_in:
+      mold: advance-galaxy-draft-step
+      path: content/molds/advance-galaxy-draft-step/index.md
+      revision: 12
+      content_hash: 12f242ddbbfee7d9fe4ef8b6a2d701beceb71e4885cd19872c51041b04e08b27
+      foundry_head: db8801f2f0a31746e35cf399dd96cdbb8aa36dcf
+    subject:
+      kind: research
+      label: nextflow-to-galaxy-reference-data-mapping
+      locator: content/research/nextflow-to-galaxy-reference-data-mapping/index.md
+      content_hash: 4676cdf3de4bcec6161b6102c9e842efa7b3c953f9c2f2787b4debea48e4a7eb
+    kind: gap
+    severity: minor
+    what: The v1 posture says 'explicit optional inputs' for reference assets, but common wrappers (iuc samtools_view, devteam samtools_stats) only accept a history reference as a required data param inside an addref_cond conditional, so an optional workflow input cannot be wired without failing when absent. The note gives no fallback.
+    expected: 'State the fallback: make the input required when every consuming wrapper needs it under a conditional, or gate the reference-using variant with when/pick_value; and flag it at reference-data design time.'
+    evidence: bamtofastq reference_fasta had to become required in phase 7.
+    status: open
+    issue: null
+  - id: snapshot-note-says-snap-unparsed
+    raised_by: nextflow-test-to-galaxy-test-plan
+    observed_in:
+      mold: nextflow-test-to-galaxy-test-plan
+      path: content/molds/nextflow-test-to-galaxy-test-plan/index.md
+      revision: 8
+      content_hash: fa769216f621ef25470c9fb907df1278635c0a1e022b647b9462ff7b92469291
+      foundry_head: 161947ef7cd5c61b647aa3f49397ae2c04183009
+    subject:
+      kind: research
+      label: nextflow-snapshot-to-galaxy-assertions
+      locator: content/research/nextflow-snapshot-to-galaxy-assertions/index.md
+      content_hash: 491c751e1f6466a1fc5daf879bd840163bb80b9c27e886f3c611c15b6546164f
+    kind: defect
+    severity: minor
+    what: Section 7 says SnapshotFixture does not parse the .snap JSON and a Mold must re-read the sidecar, but the summary emitted by the current summarize-nextflow carries snapshot.parsed_content with per-file basename+md5 tokens.
+    expected: Update section 7 to point at snapshot.parsed_content and say when the sidecar still needs reading.
+    evidence: summary-nextflow.json test_candidates[default].snapshot.parsed_content lists test.flagstat md5 a53f3d26...; I read it there and only opened the .snap to confirm.
+    status: open
+    issue: null
+  - id: test-authoring-run-green-duplicates-run-phase
+    raised_by: implement-galaxy-workflow-test
+    observed_in:
+      mold: implement-galaxy-workflow-test
+      path: content/molds/implement-galaxy-workflow-test/index.md
+      revision: 11
+      content_hash: 34855691581889d36265e00178088b8a52a51ee72119329261bca186f7cb480e
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: pipeline
+      label: nextflow-to-galaxy pipeline ordering
+      locator: content/pipelines/nextflow-to-galaxy/index.md
+    kind: friction
+    severity: minor
+    what: implement-galaxy-workflow-test says to bootstrap the test from a real invocation (workflow_test_init --from_invocation) and to run planemo green, but in this pipeline it runs at phase 10, before validate-galaxy-workflow (11) and run-workflow-test (12); no invocation exists yet, and running planemo here duplicates phase 12.
+    expected: State in the pipeline (or the Mold) that inside nextflow-to-galaxy phase 10 authors from the plan and stops at the static gates, leaving planemo execution and invocation-based iteration to phases 12-13.
+    evidence: 'bamtofastq run: authored from galaxy-test-plan.yml, static gates only; planemo deferred to phase 12.'
+    status: open
+    issue: null
+  - id: multiple-data-input-reduces-mapped-list
+    raised_by: implement-galaxy-tool-step
+    observed_in:
+      mold: implement-galaxy-tool-step
+      path: content/molds/implement-galaxy-tool-step/index.md
+      revision: 15
+      content_hash: 2009d579cf2a68f8b31d1a69dd751f3f4d80fe3f19f3606f8cac2dda37aa343b
+      foundry_head: 61da115975d155a36face0e83d5c28f638da7fca
+    subject:
+      kind: mold
+      label: implement-galaxy-tool-step
+      locator: content/molds/implement-galaxy-tool-step/index.md
+    kind: gap
+    severity: major
+    what: 'Step 3 says to preserve collection mapping and reduction semantics, but neither the Mold nor its checks flag connecting a mapped list to a wrapper input declared multiple="true": it silently reduces instead of mapping. draft-validate --concrete --strict-state and gxwf validate both passed; the bug showed only at runtime (cat_r1 ran 1 job instead of 2).'
+    expected: 'Add an explicit check: when the plan says per-element (map-over) and the chosen port is multiple=true, either pick a single-data-input wrapper or bundle per element (list:list) first; ideally have gxwf report reduction vs map-over per connection.'
+    evidence: bamtofastq tp_cat 9.11+galaxy0 `inputs` multiple=true; planemo attempt 1 output_problems; fixed by switching to cat1.
+    status: open
+    issue: null

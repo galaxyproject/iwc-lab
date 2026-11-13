@@ -1,0 +1,58 @@
+class: GalaxyUserTool
+id: samtools_collatefastq_paired
+version: "1.0.0"
+name: Collate and extract paired-end FASTQ
+description: Collate paired-end BAM or CRAM alignments by read name and extract separate R1 and R2 compressed FASTQ datasets.
+container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+shell_command: |
+  REF_PATH="$(inputs.reference ? inputs.reference.path : '')"
+  FAST_MODE="$(inputs.fast_mode ? 'true' : 'false')"
+  READS_IN_MEM="$(inputs.reads_in_memory)"
+  THREADS="\${GALAXY_SLOTS:-1}"
+  COLLATE_OPTS=""
+  if [ "$FAST_MODE" = "true" ]; then
+    COLLATE_OPTS="-f -r $READS_IN_MEM"
+  fi
+  mkdir -p collate_tmp
+  if [ -n "$REF_PATH" ] && htsfile '$(inputs.alignment.path)' | sed 's/^.*: //' | grep -q '^CRAM '; then
+    samtools collate $COLLATE_OPTS --threads "$THREADS" --reference "$REF_PATH" -O '$(inputs.alignment.path)' collate_tmp/tmp | samtools fastq -N --threads "$THREADS" --reference "$REF_PATH" -0 other_unused.fastq.gz -1 reads_1.fastq.gz -2 reads_2.fastq.gz -s singleton_unused.fastq.gz
+  else
+    samtools collate $COLLATE_OPTS --threads "$THREADS" -O '$(inputs.alignment.path)' collate_tmp/tmp | samtools fastq -N --threads "$THREADS" -0 other_unused.fastq.gz -1 reads_1.fastq.gz -2 reads_2.fastq.gz -s singleton_unused.fastq.gz
+  fi
+inputs:
+  - name: alignment
+    type: data
+    format:
+      - sam
+      - bam
+      - cram
+    label: Paired-end alignment dataset
+    help: Input SAM, BAM, or CRAM alignment file containing paired-end reads.
+  - name: reference
+    type: data
+    format:
+      - fasta
+    optional: true
+    label: Reference FASTA
+    help: Optional reference genome FASTA required when decoding CRAM alignments.
+  - name: fast_mode
+    type: boolean
+    value: false
+    label: Use fast samtools collate mode
+    help: Enable -f -r reads_in_memory during samtools collate.
+  - name: reads_in_memory
+    type: integer
+    value: 100000
+    label: Reads in memory
+    help: Number of reads stored in memory (-r) when fast mode is enabled.
+outputs:
+  - name: fastq_1
+    type: data
+    format: fastqsanger.gz
+    from_work_dir: reads_1.fastq.gz
+    label: Forward paired-end FASTQ reads (R1)
+  - name: fastq_2
+    type: data
+    format: fastqsanger.gz
+    from_work_dir: reads_2.fastq.gz
+    label: Reverse paired-end FASTQ reads (R2)

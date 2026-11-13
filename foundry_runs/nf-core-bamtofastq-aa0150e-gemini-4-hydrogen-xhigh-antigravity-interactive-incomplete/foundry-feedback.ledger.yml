@@ -1,0 +1,99 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-bamtofastq-gemini4-hydrogen-xhigh-manual
+  status: running
+  phases:
+    - { n: 1, kind: mold, skill: summarize-nextflow, status: done, feedback_checked: true }
+    - { n: 2, kind: mold, skill: nextflow-summary-to-galaxy-reference-data, status: done, feedback_checked: true }
+    - { n: 3, kind: mold, skill: nextflow-summary-to-galaxy-interface, status: done, feedback_checked: true }
+    - { n: 4, kind: mold, skill: nextflow-summary-to-galaxy-data-flow, status: done, feedback_checked: true }
+    - { n: 5, kind: mold, skill: compare-against-iwc-exemplar, status: done, feedback_checked: true }
+    - { n: 6, kind: mold, skill: nextflow-summary-to-galaxy-template, status: done, feedback_checked: true }
+    - { n: 7, kind: mold, skill: advance-galaxy-draft-step, status: running, iterations: 20 }
+    - { n: 8, kind: branch, pattern: test-data-resolution, status: pending }
+    - { n: 9, kind: mold, skill: nextflow-test-to-galaxy-test-plan, status: pending }
+    - { n: 10, kind: mold, skill: implement-galaxy-workflow-test, status: pending }
+    - { n: 11, kind: mold, skill: validate-galaxy-workflow, status: pending }
+    - { n: 12, kind: mold, skill: run-workflow-test, status: pending }
+    - { n: 13, kind: mold, skill: debug-galaxy-workflow-output, status: pending }
+entries:
+  - id: summarize-nextflow-cli-edge-splitting-and-utility-kind
+    raised_by: summarize-nextflow
+    observed_in:
+      mold: summarize-nextflow
+      path: content/molds/summarize-nextflow/index.md
+      revision: 21
+      content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: cli-command
+      label: foundry summarize-nextflow
+      locator: content/cli/foundry/index.md
+      content_hash: 85505b02785fea8bfb0429ac78224dfef0dce63c933140f087f7257a04e52a86
+    kind: defect
+    severity: minor
+    what: "foundry summarize-nextflow split multi-line Groovy list/closure call arguments into malformed workflow.edges entries ('[[:]', '[]]', '[', '}') and marked PIPELINE_INITIALISATION, PIPELINE_COMPLETION, and UTILS_NFSCHEMA_PLUGIN as kind: pipeline instead of utility."
+    expected: "Balance brackets/closures when extracting call arguments into workflow.edges, and classify helper-only nf-core initialization/completion/schema subworkflows as kind: utility."
+    evidence: "Observed on <run>/source (nf-core/bamtofastq aa0150e) in SAMTOOLS_CHR and MULTIQC calls; required manual LLM cleanup before downstream phases."
+    status: open
+    issue: null
+  - id: template-pattern-moc-recipe-pages-not-bundled
+    raised_by: nextflow-summary-to-galaxy-template
+    observed_in:
+      mold: nextflow-summary-to-galaxy-template
+      path: content/molds/nextflow-summary-to-galaxy-template/index.md
+      revision: 10
+      content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+      foundry_head: "77425ce07f69da2bdda1de21faea3abc4600ae00"
+    subject:
+      kind: pattern
+      label: galaxy-collection-patterns
+      locator: content/patterns/galaxy-collection-patterns.md
+      content_hash: 2dbb4b7520ba30d3e9fdf68e6133fb35c597e7e8482478b4dee2abe9f415d6ef
+    kind: gap
+    severity: minor
+    what: "SKILL.md instructs reaching Resolved on pattern-covered steps (copying tool_id, parameters, and port names from worked pattern examples), but the skill bundle includes only the 4 top-level pattern MOCs (galaxy-collection-patterns.md, galaxy-conditionals-patterns.md, galaxy-interval-patterns.md, galaxy-tabular-patterns.md) without the linked child recipe pages (e.g. collection-cleanup-after-mapover-failure, sync-collections-by-identifier, conditional-transform-or-pass-through, collection-flatten-after-fanout)."
+    expected: "Either bundle the referenced leaf pattern recipe pages or state clearly that built-in collection/conditional recipes stay Identity-pinned with TODO port names and tool_version: TODO until implement-galaxy-tool-step inspects tool schemas."
+    evidence: "Listed <skill>/references/patterns/ during Phase 6 while wiring __FILTER_EMPTY__, __FILTER_FROM_FILE__, __FLATTEN__, __MERGE_COLLECTION__, and pick_value steps; only 4 MOC markdown files were present, leaving parameter and port names to Phase 7 tool-cache inspection."
+    status: open
+    issue: null
+  - id: summarize-nextflow-cli-missed-branch-reference-rebuild
+    raised_by: summarize-nextflow
+    observed_in:
+      mold: summarize-nextflow
+      path: content/molds/summarize-nextflow/index.md
+      revision: 21
+      content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: cli-command
+      label: foundry summarize-nextflow
+      locator: content/cli/foundry/index.md
+      content_hash: 85505b02785fea8bfb0429ac78224dfef0dce63c933140f087f7257a04e52a86
+    kind: gap
+    severity: minor
+    what: "foundry summarize-nextflow emitted reference_rebuilds: [] when a subworkflow used channel .branch { to_index: meta.index == false } -> SAMTOOLS_FAIDX instead of an if (!params.fasta_fai) block."
+    expected: "Recognize channel .branch-based index-rebuild patterns on fasta_fai / reference channels in reference_rebuilds."
+    evidence: "Observed on <run>/source/subworkflows/local/prepare_indices/main.nf; added SAMTOOLS_FAIDX rebuild rule manually during LLM pass."
+    status: open
+    issue: null
+  - id: template-pattern-moc-recipe-pages-not-bundled
+    raised_by: nextflow-summary-to-galaxy-template
+    observed_in:
+      mold: nextflow-summary-to-galaxy-template
+      path: content/molds/nextflow-summary-to-galaxy-template/index.md
+      revision: 10
+      content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+      foundry_head: "77425ce07f69da2bdda1de21faea3abc4600ae00"
+    subject:
+      kind: pattern
+      label: galaxy-collection-patterns
+      locator: content/patterns/galaxy-collection-patterns.md
+      content_hash: 2dbb4b7520ba30d3e9fdf68e6133fb35c597e7e8482478b4dee2abe9f415d6ef
+    kind: gap
+    severity: minor
+    what: "SKILL.md instructs reaching Resolved on pattern-covered steps (copying tool_id, parameters, and port names from worked pattern examples), but the skill bundle includes only the 4 top-level pattern MOCs (galaxy-collection-patterns.md, galaxy-conditionals-patterns.md, galaxy-interval-patterns.md, galaxy-tabular-patterns.md) without the linked child recipe pages (e.g. collection-cleanup-after-mapover-failure, sync-collections-by-identifier, conditional-transform-or-pass-through, collection-flatten-after-fanout)."
+    expected: "Either bundle the referenced leaf pattern recipe pages or state clearly that built-in collection/conditional recipes stay Identity-pinned with TODO port names and tool_version: TODO until implement-galaxy-tool-step inspects tool schemas."
+    evidence: "Listed <skill>/references/patterns/ during Phase 6 while wiring __FILTER_EMPTY__, __FILTER_FROM_FILE__, __FLATTEN__, __MERGE_COLLECTION__, and pick_value steps; only 4 MOC markdown files were present, leaving parameter and port names to Phase 7 tool-cache inspection."
+    status: open
+    issue: null

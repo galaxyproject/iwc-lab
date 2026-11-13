@@ -1,0 +1,648 @@
+plan_version: "1"
+
+source:
+  kind: nextflow
+  name: "nf-core/bamtofastq @ aa0150e"
+  derived_from: test-evidence
+  notes: >-
+    Translated from the pinned nf-test snapshots in source/tests/. The selected candidate
+    (summary-nextflow test_selection) is tests/default.nf.test::-profile test, and it stays the
+    primary case. tests/no_bai.nf.test::-profile test --input test_bam_samplesheet_no_bai.csv is a
+    second, supplementary case: it is the only pinned case with a single-end sample (test3) and no
+    index column, which matches the v1 interface (no index input). Snapshot md5 tokens are upstream
+    expectations; no value comes from a Galaxy run. Values marked fixture-derived are counted from
+    the fixture BAM bytes in test-data/, not from nf-core outputs.
+
+workflow:
+  title: "nf-core-bamtofastq (aa0150e) draft"
+  label_source: draft
+  notes: >-
+    galaxy-workflow.gxwf.yml: class GalaxyWorkflow, 20 tool steps, no subworkflows. Four steps carry
+    per-sample when gates (see warnings). Inputs: alignments (list of BAM, element identifier =
+    sample id) and multiqc_title (optional text). Outputs asserted: reads_paired, reads_single,
+    multiqc_report, fastqc_pre_conversion_html, fastqc_post_conversion_html, samtools_flagstat,
+    samtools_idxstats, samtools_stats, fastqutils_info.
+
+test_cases:
+  - id: default-paired
+    doc: >-
+      Selected candidate tests/default.nf.test::-profile test (primary). Samples test and test2 are
+      both fully paired-end by the fixture bytes: test has 2821 complete pairs (its 2 secondary
+      records are excluded by the 256 filter), test2 has 2718. Expected: reads_paired has two sample
+      elements, each with forward and reverse sub-elements of equal size; reads_single is empty.
+      Assertions: flagstat and idxstats checksums (test-evidence); has_n_lines on reads and a raw
+      total sequences check for test2 (fixture-derived); presence and count checks (intent).
+      Type or count only, logged: element-count 2 on reads_paired; element-count 0 on reads_single;
+      output-present on multiqc_report (existence only); element-present on every collection element
+      (identity only). The stable_name directory entries (fastqc/, reads/, samtools/, fastqutils/,
+      multiqc/) are not assertions.
+    provenance: "tests/default.nf.test::-profile test; source/tests/default.nf.test.snap; fixtures from test-data-refs.json elements test and test2"
+    derived_from: mixed
+    job_inputs:
+      - workflow_label: alignments
+        label_status: resolved
+        description: "list of 2 paired-end BAM elements, identifier = sample id: test, test2"
+        collection_shape: list
+        datatype: bam
+        fixture:
+          storage: remote-url
+          location: "test-data-refs.json: alignments elements test, test2"
+          checksum: null
+          provenance: "SHA-1 per element, computed by nextflow-to-test-data (the source publishes none): test SHA-1:0799f89638bddd570439115c606f425c22d189b1; test2 SHA-1:522fb037cea05b9d41dd69647f27a644838bf507. The samplesheet's bai column is not carried (v1)."
+      - workflow_label: multiqc_title
+        label_status: resolved
+        description: "optional text parameter, left unset (no candidate sets a title)"
+        collection_shape: null
+        datatype: null
+        fixture:
+          storage: null
+          location: null
+          checksum: null
+          provenance: "not set in this case"
+    expected_outputs:
+      - workflow_label: reads_paired
+        label_status: resolved
+        description: "list:paired; forward and reverse sub-elements per sample; upstream reads/test_1, test_2, test2_1, test2_2 (merged, gzip)"
+        output_kind: collection
+        collection_shape: list:paired
+        assertion_intent:
+          - family: element-count
+            intent: "2 sample elements (count only)"
+            expected_value: 2
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: high
+          - family: element-present
+            intent: "sample test present; upstream names reads/test_1 and reads/test_2 (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test
+            evidence: intent
+            confidence: high
+          - family: element-present
+            intent: "sample test2 present; upstream names reads/test2_1 and reads/test2_2 (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test2
+            evidence: intent
+            confidence: high
+          - family: content-lines
+            intent: "has_n_lines with decompress: true, on both forward and reverse sub-elements: 4 x 2821 complete pairs (primary records with READ1 and READ2; 256 and 2048 excluded)"
+            expected_value: 11284
+            tolerance: null
+            element_identifier: test
+            evidence: fixture-derived
+            confidence: medium
+          - family: content-lines
+            intent: "has_n_lines with decompress: true, on both forward and reverse sub-elements: 4 x 2718 complete pairs"
+            expected_value: 10872
+            tolerance: null
+            element_identifier: test2
+            evidence: fixture-derived
+            confidence: medium
+      - workflow_label: reads_single
+        label_status: resolved
+        description: "list; no single-end sample in this case"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element-count
+            intent: "0 elements (count only); the upstream snapshot has no reads/*_other file"
+            expected_value: 0
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: high
+      - workflow_label: multiqc_report
+        label_status: resolved
+        description: "MultiQC HTML report"
+        output_kind: dataset
+        collection_shape: null
+        assertion_intent:
+          - family: output-present
+            intent: "report exists: upstream name multiqc/multiqc_report.html (existence only, weak)"
+            expected_value: null
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: medium
+      - workflow_label: fastqc_pre_conversion_html
+        label_status: resolved
+        description: "FastQC HTML per sample, before conversion"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element-present
+            intent: "sample test; upstream fastqc/test.pre_conversion_fastqc.html (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test
+            evidence: intent
+            confidence: high
+          - family: element-present
+            intent: "sample test2; upstream fastqc/test2.pre_conversion_fastqc.html (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test2
+            evidence: intent
+            confidence: high
+      - workflow_label: fastqc_post_conversion_html
+        label_status: resolved
+        description: "FastQC HTML per read file, after conversion; read elements are <sample>_forward and <sample>_reverse"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element-present
+            intent: "test_forward; upstream fastqc/test.post_conversion_1_fastqc.html (identity only; read-number mapping, see warnings)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test_forward
+            evidence: intent
+            confidence: medium
+          - family: element-present
+            intent: "test_reverse; upstream fastqc/test.post_conversion_2_fastqc.html (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test_reverse
+            evidence: intent
+            confidence: medium
+          - family: element-present
+            intent: "test2_forward; upstream fastqc/test2.post_conversion_1_fastqc.html (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test2_forward
+            evidence: intent
+            confidence: medium
+          - family: element-present
+            intent: "test2_reverse; upstream fastqc/test2.post_conversion_2_fastqc.html (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test2_reverse
+            evidence: intent
+            confidence: medium
+      - workflow_label: samtools_flagstat
+        label_status: resolved
+        description: "flagstat text per sample"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: checksum
+            intent: "flagstat text of sample test equals the upstream token samtools/test.flagstat:md5 (direct translation; uncompressed text)"
+            expected_value: "md5$a53f3d26e2e9851f7d528442bbfe9781"
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: medium
+          - family: checksum
+            intent: "flagstat text of sample test2 equals the upstream token samtools/test2.flagstat:md5"
+            expected_value: "md5$acbd95030a362a7e6491faa87d1b9c2c"
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: medium
+      - workflow_label: samtools_idxstats
+        label_status: resolved
+        description: "idxstats text per sample"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: checksum
+            intent: "idxstats text of sample test equals the upstream token samtools/test.idxstats:md5; depends on the BAM index, which is not staged (see unresolved)"
+            expected_value: "md5$e179601fa7b8ebce81ac3765206f6c15"
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: low
+          - family: checksum
+            intent: "idxstats text of sample test2 equals the upstream token samtools/test2.idxstats:md5; index dependence as above"
+            expected_value: "md5$90f01313bc89c7fd096aad051cd71b66"
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: low
+      - workflow_label: samtools_stats
+        label_status: resolved
+        description: "stats text per sample"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element-present
+            intent: "sample test present (identity only). No content check: its raw total sequences is 5644 if all records count or 5642 if primary only (2 secondary records); see unresolved"
+            expected_value: null
+            tolerance: null
+            element_identifier: test
+            evidence: intent
+            confidence: high
+          - family: content-text
+            intent: "has_text on the SN raw total sequences line for test2; 5436 records, none secondary, supplementary, duplicate or QC-fail, so every reading of the count agrees. Key as printed by samtools stats (colon after the key; verify at phase 12); decompress not needed"
+            expected_value: "raw total sequences:\t5436"
+            tolerance: null
+            element_identifier: test2
+            evidence: fixture-derived
+            confidence: medium
+      - workflow_label: fastqutils_info
+        label_status: resolved
+        description: "fastq_info text per read file; the source writes one text per sample"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element-present
+            intent: "sample test: its forward element carries the fastq_info text (identity only; granularity differs, see warnings)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test_forward
+            evidence: intent
+            confidence: low
+          - family: element-present
+            intent: "sample test2: its forward element carries the fastq_info text (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test2_forward
+            evidence: intent
+            confidence: low
+
+  - id: no_bai-mixed
+    doc: >-
+      Supplementary case from tests/no_bai.nf.test::-profile test --input test_bam_samplesheet_no_bai.csv.
+      Not the selected candidate. Added because it is the only pinned case with a single-end sample
+      (test3: 12473 non-paired primary records) and no index column, which matches the v1 interface.
+      The fixture bytes confirm the layout split: test and test2 have no non-paired records, and test3
+      has no paired-flag records, so the flagstat-based layout rule matches the source's per-file
+      classification for these fixtures. The mixed-file case (one sample with both kinds of reads) is
+      not covered by any fixture. Assertions: flagstat checksums for all three samples (test-evidence,
+      test3 from the no_bai snapshot) and idxstats checksums (test-evidence, low confidence); has_n_lines
+      for all reads elements and raw total sequences for test2 and test3 (fixture-derived); presence
+      checks for the rest. Type or count only, logged: element-count 2 on reads_paired and 1 on
+      reads_single; output-present on multiqc_report; element-present on every collection element
+      (identity only).
+    provenance: "tests/no_bai.nf.test::-profile test --input test_bam_samplesheet_no_bai.csv; source/tests/no_bai.nf.test.snap; test3 from test-data-refs.json element test3 (not in the selected candidate)"
+    derived_from: mixed
+    job_inputs:
+      - workflow_label: alignments
+        label_status: resolved
+        description: "list of 3 BAM elements, identifier = sample id: test, test2 (paired-end) and test3 (single-end)"
+        collection_shape: list
+        datatype: bam
+        fixture:
+          storage: remote-url
+          location: "test-data-refs.json: alignments elements test, test2, test3"
+          checksum: null
+          provenance: "SHA-1 per element, computed by nextflow-to-test-data (the source publishes none): test SHA-1:0799f89638bddd570439115c606f425c22d189b1; test2 SHA-1:522fb037cea05b9d41dd69647f27a644838bf507; test3 SHA-1:072c537f5a850f0ae036fd0ef6906f767e9f28c1 (tests/no_bai)."
+      - workflow_label: multiqc_title
+        label_status: resolved
+        description: "optional text parameter, left unset"
+        collection_shape: null
+        datatype: null
+        fixture:
+          storage: null
+          location: null
+          checksum: null
+          provenance: "not set in this case"
+    expected_outputs:
+      - workflow_label: reads_paired
+        label_status: resolved
+        description: "list:paired for test and test2; upstream reads/test_1, test_2, test2_1, test2_2 (merged, gzip)"
+        output_kind: collection
+        collection_shape: list:paired
+        assertion_intent:
+          - family: element-count
+            intent: "2 paired sample elements (count only)"
+            expected_value: 2
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: high
+          - family: element-present
+            intent: "sample test present (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test
+            evidence: intent
+            confidence: high
+          - family: element-present
+            intent: "sample test2 present (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test2
+            evidence: intent
+            confidence: high
+          - family: content-lines
+            intent: "has_n_lines with decompress: true, on both forward and reverse sub-elements: 4 x 2821 complete pairs"
+            expected_value: 11284
+            tolerance: null
+            element_identifier: test
+            evidence: fixture-derived
+            confidence: medium
+          - family: content-lines
+            intent: "has_n_lines with decompress: true, on both forward and reverse sub-elements: 4 x 2718 complete pairs"
+            expected_value: 10872
+            tolerance: null
+            element_identifier: test2
+            evidence: fixture-derived
+            confidence: medium
+      - workflow_label: reads_single
+        label_status: resolved
+        description: "list; one single-end sample"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element-count
+            intent: "1 element (count only)"
+            expected_value: 1
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: high
+          - family: element-present
+            intent: "sample test3 present (identity only); upstream reads/test3_other.fq.gz"
+            expected_value: null
+            tolerance: null
+            element_identifier: test3
+            evidence: intent
+            confidence: medium
+          - family: content-lines
+            intent: "has_n_lines with decompress: true: 4 x 12473 non-paired primary records (the 'other' output of samtools_fastx)"
+            expected_value: 49892
+            tolerance: null
+            element_identifier: test3
+            evidence: fixture-derived
+            confidence: medium
+      - workflow_label: multiqc_report
+        label_status: resolved
+        description: "MultiQC HTML report"
+        output_kind: dataset
+        collection_shape: null
+        assertion_intent:
+          - family: output-present
+            intent: "report exists: upstream name multiqc/multiqc_report.html (existence only, weak)"
+            expected_value: null
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: medium
+      - workflow_label: fastqc_pre_conversion_html
+        label_status: resolved
+        description: "FastQC HTML per sample, before conversion"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element-present
+            intent: "sample test (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test
+            evidence: intent
+            confidence: high
+          - family: element-present
+            intent: "sample test2 (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test2
+            evidence: intent
+            confidence: high
+          - family: element-present
+            intent: "sample test3; upstream fastqc/test3.pre_conversion_fastqc.html (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test3
+            evidence: intent
+            confidence: high
+      - workflow_label: fastqc_post_conversion_html
+        label_status: resolved
+        description: "FastQC HTML per read file, after conversion; paired elements are <sample>_forward and <sample>_reverse, the single-end element is the sample id"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element-present
+            intent: "test_forward; upstream fastqc/test.post_conversion_1_fastqc.html (identity only; see warnings)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test_forward
+            evidence: intent
+            confidence: medium
+          - family: element-present
+            intent: "test_reverse; upstream fastqc/test.post_conversion_2_fastqc.html (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test_reverse
+            evidence: intent
+            confidence: medium
+          - family: element-present
+            intent: "test2_forward; upstream fastqc/test2.post_conversion_1_fastqc.html (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test2_forward
+            evidence: intent
+            confidence: medium
+          - family: element-present
+            intent: "test2_reverse; upstream fastqc/test2.post_conversion_2_fastqc.html (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test2_reverse
+            evidence: intent
+            confidence: medium
+          - family: element-present
+            intent: "test3 (single-end); upstream fastqc/test3.post_conversion_fastqc.html (identity only; the single-end identifier is unverified)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test3
+            evidence: intent
+            confidence: low
+      - workflow_label: samtools_flagstat
+        label_status: resolved
+        description: "flagstat text per sample"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: checksum
+            intent: "flagstat of sample test equals upstream samtools/test.flagstat:md5"
+            expected_value: "md5$a53f3d26e2e9851f7d528442bbfe9781"
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: medium
+          - family: checksum
+            intent: "flagstat of sample test2 equals upstream samtools/test2.flagstat:md5"
+            expected_value: "md5$acbd95030a362a7e6491faa87d1b9c2c"
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: medium
+          - family: checksum
+            intent: "flagstat of sample test3 equals upstream no_bai samtools/test3.flagstat:md5"
+            expected_value: "md5$7b43b975b0a395040bf1ee3c48f058e7"
+            tolerance: null
+            element_identifier: test3
+            evidence: test-evidence
+            confidence: medium
+      - workflow_label: samtools_idxstats
+        label_status: resolved
+        description: "idxstats text per sample"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: checksum
+            intent: "idxstats of sample test equals upstream samtools/test.idxstats:md5; depends on the BAM index, not staged (see unresolved)"
+            expected_value: "md5$e179601fa7b8ebce81ac3765206f6c15"
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: low
+          - family: checksum
+            intent: "idxstats of sample test2 equals upstream samtools/test2.idxstats:md5; index dependence as above"
+            expected_value: "md5$90f01313bc89c7fd096aad051cd71b66"
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: low
+          - family: checksum
+            intent: "idxstats of sample test3 equals upstream no_bai samtools/test3.idxstats:md5; index dependence as above"
+            expected_value: "md5$094096b6f303cc18892e1e027c87f273"
+            tolerance: null
+            element_identifier: test3
+            evidence: test-evidence
+            confidence: low
+      - workflow_label: samtools_stats
+        label_status: resolved
+        description: "stats text per sample"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element-present
+            intent: "sample test present (identity only); no content check, its raw total is ambiguous (5644 or 5642; see unresolved)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test
+            evidence: intent
+            confidence: high
+          - family: content-text
+            intent: "has_text on the SN raw total sequences line for test2 (5436 records, none secondary, supplementary, duplicate or QC-fail); decompress not needed; key format to verify at phase 12"
+            expected_value: "raw total sequences:\t5436"
+            tolerance: null
+            element_identifier: test2
+            evidence: fixture-derived
+            confidence: medium
+          - family: content-text
+            intent: "has_text on the SN raw total sequences line for test3 (12473 records, none secondary, supplementary, duplicate or QC-fail)"
+            expected_value: "raw total sequences:\t12473"
+            tolerance: null
+            element_identifier: test3
+            evidence: fixture-derived
+            confidence: medium
+      - workflow_label: fastqutils_info
+        label_status: resolved
+        description: "fastq_info text per read file; the source writes one text per sample"
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element-present
+            intent: "sample test: forward element carries the fastq_info text (identity only; granularity differs, see warnings)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test_forward
+            evidence: intent
+            confidence: low
+          - family: element-present
+            intent: "sample test2: forward element (identity only)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test2_forward
+            evidence: intent
+            confidence: low
+          - family: element-present
+            intent: "sample test3: single-end element (identity only; upstream fastqutils/test3.txt)"
+            expected_value: null
+            tolerance: null
+            element_identifier: test3
+            evidence: intent
+            confidence: low
+
+unresolved:
+  - kind: fixture
+    description: "No BAM index is staged for any element. The default candidate's .bai files are not carried in v1, and the no_bai candidate has none. samtools_idxstats depends on the wrapper indexing internally, which is untested."
+    blocking: false
+    suggested_resolution: "Decide at phase 12 from the run result. Do not pre-drop samtools_idxstats. If it fails for a missing index, record the failure as a finding. Staging per-sample .bai files would be a v1 scope change."
+  - kind: assertion
+    description: "samtools_stats for sample test has no content check. The fixture has 5644 records, 2 of them secondary, so raw total sequences is 5644 if it counts all records or 5642 if it counts primary records only. samtools is not installed locally, so this cannot be checked here."
+    blocking: false
+    suggested_resolution: "Settle the samtools stats semantics from its documentation, not from a Galaxy run. Add the raw total check for test then. Presence only until then."
+  - kind: assertion
+    description: "Failure rule. A snapshot checksum (flagstat or idxstats) that fails at phase 12 is a finding. The expected value stays the upstream token and is never changed to match Galaxy output."
+    blocking: false
+    suggested_resolution: "Phase 13 classifies the cause (tool, wrapper, template or assertion) and records it. This plan is not edited to match output."
+  - kind: assertion
+    description: "Per-sample gating. paired_name_sort and paired_fastx run when paired_count > 0; single_collate and single_fastx run when paired_count === 0. The expectations assume reads_paired holds test and test2 and reads_single holds test3 (no_bai-mixed). Whether Galaxy applies these collection-valued gates per element is unverified."
+    blocking: false
+    suggested_resolution: "A missing or extra element in reads_paired or reads_single at phase 12 is a finding against the expectations above. It is not a reason to change them."
+  - kind: assertion
+    description: "No pinned case has only single-end samples, so the zero-paired-element path (paired chain empty for every sample) is not covered by any test."
+    blocking: false
+    suggested_resolution: "Add a job with only test3, from the same fixture, if the mixed case cannot show that the paired chain is skipped cleanly. Not added here: no upstream evidence."
+
+omissions:
+  - target: "workflow.trace.succeeded().size(): 32 (default), 43 (no_bai)"
+    reason: "Nextflow task count is an engine measure. The Galaxy job graph differs by design (no collate, merge or per-chromosome tasks), so the count has no Galaxy equivalent."
+    category: out-of-scope
+  - target: "pipeline_info versions map (removeFromYamlMap of nf_core_bamtofastq_software_mqc_versions.yml) and the methods text"
+    reason: "Software versions and methods text are not workflow outputs in v1 (ledger software-versions-yaml-not-exposed, software-versions-and-methods-text-dropped-v1). The source tool versions (samtools 1.23.1, fastqc 0.12.1, fastqutils 0.25.3) are not the pinned Galaxy wrapper versions, so the map is not asserted."
+    category: out-of-scope
+  - target: "multiqc/multiqc_data/* (multiqc_citations.txt checksum, multiqc_data.json, multiqc.parquet, multiqc.log, multiqc_sources.txt, multiqc_software_versions.txt, llms-full.txt)"
+    reason: "MultiQC data directory not exposed (ledger multiqc-data-directory-not-exposed). The Galaxy multiqc step exposes the HTML report and stats only."
+    category: out-of-scope
+  - target: "reads/*.merged.fastq.gz checksum tokens (test_1, test_2, test2_1, test2_2 in both snapshots; test3_other.fq.gz in no_bai)"
+    reason: "Each token hashes decompressed FASTQ, and Galaxy stores fastqsanger.gz, so no checksum can match. Replaced by has_n_lines from the fixture BAMs, which checks record counts (size), not content. Decompressed content is not compared."
+    category: weak-output
+  - target: "samtools/*.stats checksum tokens (test, test2 in default; test, test2, test3 in no_bai)"
+    reason: "The source runs SAMTOOLS_STATS with a reference (source/subworkflows/local/pre_conversion_qc/main.nf:23) and samtools 1.23.1. The stats header records that command line and version, and the Galaxy step has no reference input (v1), so the token cannot match. Replaced by raw total sequences content for test2 and test3; test is presence only (ambiguous count)."
+    category: other
+  - target: "fastqutils/*.txt checksum tokens (test.txt, test2.txt, test3.txt)"
+    reason: "The source writes one text per sample; Galaxy fastq_info runs per read file (ledger fastq-info-per-file-granularity). No Galaxy element is the same artifact, so no checksum is emitted. Identity only."
+    category: other
+  - target: "No BAM files / No CRAM files captures"
+    reason: "The Galaxy workflow declares no BAM or CRAM output, so the property holds by construction. tests-format has no absence assertion."
+    category: other
+  - target: "CRAM input and reference (tests/cram, tests/no_crai candidates; genome.fasta in every candidate)"
+    reason: "cram-input-not-supported-v1 and reference-dropped-with-cram: v1 takes BAM only, with no reference input."
+    category: out-of-scope
+  - target: "chr extraction (tests/chr candidate; chr_alignments, chr_alignments_index)"
+    reason: "chr-extraction-not-built-v1: not built in v1, not on the test path."
+    category: out-of-scope
+  - target: "user-supplied BAM index (samplesheet bai column) and index steps (default candidate's bai rows)"
+    reason: "user-index-column-not-carried and index-dropped-wrappers-index-internally: v1 takes no index input. The idxstats dependence is an unresolved item, not an assertion."
+    category: out-of-scope
+  - target: "collate options (samtools_collate_fast, reads_in_memory) and the collate path (tests/collate_fast candidate)"
+    reason: "collate-options-not-carried. Name-order sort (samtools_sort -n) replaces collate (decision samtools-sort-name-order-replaces-collate)."
+    category: out-of-scope
+  - target: "no_read_QC and no_stats switches (tests/no_qc, tests/no_stats candidates)"
+    reason: "no-read-qc-and-no-stats-switches-not-carried. flagstat also feeds layout detection, so it cannot be gated."
+    category: out-of-scope
+  - target: "multiqc_config and multiqc_logo inputs"
+    reason: "multiqc-config-logo-not-carried: the pinned MultiQC wrapper (1.35+galaxy5) has no port for them."
+    category: out-of-scope
+  - target: "genome key, iGenomes loader controls and fasta_fai (tests/fai candidate)"
+    reason: "genome-key-expansion-not-carried, igenomes-loader-controls-not-carried, reference-dropped-with-cram. The pinned wrappers take no index port (fai-ports-absent-on-pinned-wrappers)."
+    category: out-of-scope
+  - target: "tests/chr, tests/cram, tests/no_crai, tests/collate_fast, tests/fai, tests/no_qc, tests/no_stats candidates (not translated)"
+    reason: "Each depends on a dropped feature listed above. They are not translated or run."
+    category: out-of-scope
+
+warnings:
+  - code: untranslatable-snapshot
+    message: "md5 tokens of reads/*.merged.fastq.gz hash decompressed content. Galaxy stores fastqsanger.gz, so the checksum cannot match. Replaced by has_n_lines counted from the fixture BAMs; that tests size and count, not content."
+    path: "source/tests/default.nf.test.snap:101-104; source/tests/no_bai.nf.test.snap:117-121"
+  - code: untranslatable-snapshot
+    message: "md5 tokens of samtools/*.stats record the samtools version and the command line, which includes the reference the source passes (source/subworkflows/local/pre_conversion_qc/main.nf:23). The Galaxy step has no reference input, so the checksum cannot match. Replaced by raw total sequences content for test2 and test3."
+    path: "source/tests/default.nf.test.snap:107,110; source/tests/no_bai.nf.test.snap:124,127,130"
+  - code: untranslatable-snapshot
+    message: "md5 tokens of fastqutils/*.txt: the source writes one text per sample, Galaxy fastq_info runs per read file (ledger fastq-info-per-file-granularity). Identity-only assertions map each sample to its forward element. No checksum is emitted."
+    path: "source/tests/default.nf.test.snap:98,99; source/tests/no_bai.nf.test.snap:113-115"
+  - code: snapshot-token-transfer-risk
+    message: "idxstats checksums are translated as test-evidence with low confidence. They assume the wrapper's table matches without a staged .bai. Whether samtools_idxstats indexes internally is untested (phase 12)."
+    path: "source/tests/default.nf.test.snap:106,109; source/tests/no_bai.nf.test.snap:123,126,129"
+  - code: element-identifier-divergence
+    message: "Galaxy identifiers differ from source names. Read elements are forward and reverse sub-elements of reads_paired and <sample>_forward and <sample>_reverse after __FLATTEN__ (join_identifier _). Source names are _1 and _2 for reads and post_conversion_1 and _2 for FastQC. The single-end element is named by sample id (test3), against test3_other. Element assertions use the Galaxy identifiers."
+    path: "fastqc_post_conversion_html; reads_paired; reads_single"
+  - code: gating-semantics-unverified
+    message: "paired_name_sort and paired_fastx run when paired_count > 0; single_collate and single_fastx when paired_count === 0. paired_count is a per-sample integer, a collection-valued when input. Whether Galaxy evaluates that per element is unverified (ledger draft-when-null-semantics-unverified, per-element-classifier-gating-no-corpus-precedent)."
+    path: "galaxy-workflow.gxwf.yml steps paired_name_sort, paired_fastx, single_collate, single_fastx"

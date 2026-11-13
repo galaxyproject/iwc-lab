@@ -1,0 +1,160 @@
+entries:
+- id: fai-rebuild-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: FASTA index (.fai) for CRAM decoding / samtools stats with reference
+  missing: Rely on in-tool indexing by Galaxy samtools wrappers when reference FASTA comes from history; not yet verified per wrapper
+  resolved_by: advance-galaxy-draft-step
+  note: samtools_view/samtools_stats addref_cond=history take a FASTA dataset; wrappers index it themselves
+- id: genome-igenomes-key-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  units: params.genome / getGenomeAttribute('fasta'|'fasta_fai') iGenomes lookup
+  because: "v1 reference posture discourages data tables (nextflow-to-galaxy-reference-data-mapping \xA7Recommendations); the user supplies the FASTA directly"
+  unmet: iGenomes key-based reference selection
+  missing: no Galaxy input for --genome
+  note: 'Surrendered at run end (2026-11-12): written into final summary as a labelled gap/drop.'
+- id: fasta-fai-input-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  units: params.fasta_fai
+  because: 'Index is only consumed internally; Galaxy wrappers index history FASTA themselves (mapping note: prefer in-tool rebuild)'
+  unmet: user-supplied pre-built .fai
+  missing: no Galaxy input
+  note: 'tests/fai.nf.test exercises this path; not carried Surrendered at run end (2026-11-12): written into final summary as a labelled gap/drop.'
+- id: multiqc-report-not-carried
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: MULTIQC step and multiqc_title/config/logo/methods_description params
+  because: workflows/bamtofastq.nf feeds MULTIQC only softwareVersionsToYAML(topic versions) + paramsSummaryMultiqc + methodsDescriptionText; the QC mix is commented out ("TEMPORARILY DISABLED BY ASP"). Nextflow topic channels / params summary have no Galaxy counterpart.
+  unmet: MultiQC HTML report
+  missing: no analysis content to aggregate
+  note: 'Surrendered at run end (2026-11-12): written into final summary as a labelled gap/drop.'
+- id: chr-region-filter-not-carried
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: params.chr; SAMTOOLS_CHR, SAMTOOLS_CHR_INDEX; tests/chr.nf.test
+  because: 'confirmed at template tier: carrying it needs (a) a gate on an optional text input (params.chr) feeding both a samtools view region step and an un-filtered pass-through, (b) a collection-level pick_value rejoin in front of the classifier, and (c) an identifier relabel step (source renames ids to file.baseName = <id>.<chr list joined by _>). tests/chr.nf.test is not the selected test; tests/default.nf.test does not exercise it.'
+  unmet: extract reads on selected chromosomes before conversion
+  missing: no Galaxy input/step
+  note: 'Surrendered at run end (2026-11-12): written into final summary as a labelled gap/drop.'
+- id: versions-yml-not-carried
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: pipeline_info/nf_core_bamtofastq_software_mqc_versions.yml
+  because: built from Nextflow channel.topic("versions"); Galaxy records tool versions in job metadata
+  unmet: software versions YAML
+  missing: no output
+  note: 'Surrendered at run end (2026-11-12): written into final summary as a labelled gap/drop.'
+- id: single-paired-routing
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  blocking: false
+  unmet: per-sample routing of single-end vs paired-end alignments (CHECKPAIREDEND)
+  missing: Galaxy mechanism to choose per element
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+  note: classifier step + collapse-with-identifiers + id filter + filter-collection-from-file splits alignments into paired/single lists
+- id: collate-fast-wrapper-exposure
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: samtools collate -f -r <reads_in_memory> (params.samtools_collate_fast)
+  missing: unknown whether Galaxy collate/fastx wrapper exposes fast mode
+  resolved_by: advance-galaxy-draft-step
+  note: iuc samtools_fastx 1.22+galaxy2 name-sorts internally (samtools sort -n) and exposes no collate options; setting dropped (see collate-fast-dropped)
+- id: classifier-tool-needed
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: classify_alignment
+  unmet: per-element paired/single + bam/cram classification (CHECKPAIREDEND logic)
+  missing: no known Galaxy wrapper; likely user-defined tool
+  resolved_by: advance-galaxy-draft-step
+  note: 'authored GalaxyUserTool bamtofastq_check_paired_end (udt/galaxy-user-tool.yml), embedded under run: of classify_alignment'
+- id: fastqc-pre-bam-only
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: bam_only
+  unmet: FASTQC_PRE_CONVERSION only on bam rows
+  missing: membership filter by filetype from classifier
+  resolved_by: advance-galaxy-draft-step
+  note: bam_ids (awk) + bam_only (__FILTER_FROM_FILE__) feed fastqc_pre
+- id: no-domain-exemplar
+  status: surrendered
+  raised_by: compare-against-iwc-exemplar
+  unmet: IWC domain exemplar for BAM/CRAM to FASTQ conversion
+  missing: only low-confidence cross-domain pattern matches (host removal)
+  resolved_by: null
+  note: 'surrender at terminal; not blocking Surrendered at run end (2026-11-12): written into final summary as a labelled gap/drop.'
+- id: collate-fast-dropped
+  status: surrendered
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: params.samtools_collate_fast, params.reads_in_memory (tests/collate_fast.nf.test)
+  because: iuc samtools_fastx 1.22+galaxy2 command runs `samtools sort -n` then `samtools fastq`; it has no collate/fast-mode parameter (summaries/fastx.galaxy-tool-summary.json). iuc samtools_collate exposes fast_mode but not -r, and its unsorted.bam output would be re-sorted by samtools_fastx anyway.
+  unmet: collate fast mode
+  missing: no Galaxy input
+  note: 'consequence: FASTQ read order is query-name sorted instead of collate order; read content per file unchanged Surrendered at run end (2026-11-12): written into final summary as a labelled gap/drop.'
+- id: reference-fasta-required
+  status: surrendered
+  raised_by: advance-galaxy-draft-step
+  unmet: optional reference FASTA (source --fasta is optional for BAM input)
+  missing: samtools_view/samtools_stats expose the reference only as addref_cond|ref (required data in the history branch); an optional workflow input cannot feed it
+  resolved_by: null
+  note: 'workflow input made required; BAM-only users must still supply a FASTA Surrendered at run end (2026-11-12): written into final summary as a labelled gap/drop.'
+- id: single-end-cram-unsupported
+  status: surrendered
+  raised_by: advance-galaxy-draft-step
+  step: collate_fastq_single
+  unmet: single-end CRAM conversion
+  missing: samtools_fastx has no reference parameter; a CRAM whose header reference is not reachable cannot be decoded. Paired path is safe (views emit BAM).
+  resolved_by: null
+  note: 'no source test covers single-end CRAM Surrendered at run end (2026-11-12): written into final summary as a labelled gap/drop.'
+- id: fastqc-zip-is-text
+  status: surrendered
+  raised_by: advance-galaxy-draft-step
+  unmet: FastQC *_fastqc.zip outputs
+  missing: devteam fastqc 0.74+galaxy1 emits html_file + text_file (raw data txt), not the zip; outputs relabelled *_raw
+  resolved_by: null
+  note: 'Surrendered at run end (2026-11-12): written into final summary as a labelled gap/drop.'
+discoveries:
+- id: fasta-only-needed-for-cram
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: CHECKPAIREDEND/samtools collate add --reference only when fasta given / meta.filetype == cram; default test is BAM-only
+  impact: reference FASTA can be an optional workflow input
+- id: iwc-uses-samtools-fastx
+  raised_by: compare-against-iwc-exemplar
+  evidence: 'iwc host-contamination-removal-long-reads and nanopore-pre-processing use iuc samtools_fastx 1.22+galaxy2 with outputs: [other]'
+  impact: samtools_fastx is the corpus-backed wrapper candidate for collate|fastq steps; collate behaviour to verify
+decisions:
+- id: input-as-list-not-sample-sheet
+  decided_by: nextflow-summary-to-galaxy-interface
+  basis: agent
+  decision: Model --input as a list collection of bam/cram datasets keyed by sample_id
+  rationale: index column becomes Galaxy bam/cram metadata, file_type equals datatype; no other row metadata is consumed
+  evidence:
+  - assets/schema_input.json columns
+- id: qc-gates-positive-polarity
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  basis: agent
+  decision: expose run_read_qc / run_stats (default true) instead of skip_read_qc / skip_stats
+  rationale: plain $(inputs.when) gating matches IWC-observed when form; semantics identical
+- id: keep-four-way-split-for-paired
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  basis: agent
+  decision: replicate ALIGNMENT_TO_FASTQ (4 views, merge unmapped, 2 collates, concatenate) rather than one collate|fastq over the whole BAM
+  rationale: preserves source read order/content of <id>_{1,2}.merged.fastq.gz
+- id: template-tiers
+  decided_by: nextflow-summary-to-galaxy-template
+  basis: agent
+  decision: Identity-pin samtools_fastx (IWC exemplar), collapse_dataset 5.1.0 (IWC), built-ins __FILTER_FROM_FILE__/__BUILD_LIST__/__ZIP_COLLECTION__; defer all other wrappers to discovery
+  rationale: pin only on exemplar or built-in evidence
+- id: reference-fasta-required
+  decided_by: advance-galaxy-draft-step
+  basis: agent
+  decision: 'reference_fasta optional: false'
+  rationale: only way to wire it into samtools_view/samtools_stats addref history branch; every nf-test supplies --fasta
+brief_change_recommendations: []

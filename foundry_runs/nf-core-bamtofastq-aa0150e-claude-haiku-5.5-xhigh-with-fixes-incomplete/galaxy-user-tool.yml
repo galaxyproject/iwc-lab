@@ -1,0 +1,55 @@
+class: GalaxyUserTool
+id: samtools_paired_layout_check
+version: 1.0.0
+name: Paired-end layout check (samtools)
+description: Decides whether a BAM or CRAM holds paired-end or single-end reads, from its first 1000 records.
+container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+help:
+  format: markdown
+  content: |
+    Samples the first 1000 records of a SAM, BAM or CRAM file and counts the records with the paired flag (0x1).
+    The file counts as paired-end when every sampled record has that flag; otherwise it is single-end.
+    Two text outputs hold `true` or `false`: `is_single` and `is_paired`.
+    CRAM input needs the reference FASTA. This reproduces the CHECKPAIREDEND rule of nf-core/bamtofastq at aa0150e.
+configfiles:
+  - filename: classify_layout.sh
+    content: |
+      #!/bin/sh
+      set -e
+      IN="$1"
+      REF="$2"
+      REF_ARGS=""
+      if [ -n "$REF" ]; then
+          REF_ARGS="--reference $REF"
+      fi
+      samtools view $REF_ARGS "$IN" > all.sam
+      head -n 1000 all.sam > sample.sam
+      samtools view -c sample.sam > total.txt
+      samtools view -c -f 1 sample.sam > paired.txt
+      awk 'NR==1{p=$1} NR==2{t=$1} END { if (t>0 && p==t) { ip="true"; isg="false" } else { ip="false"; isg="true" }; print isg > "is_single.txt"; print ip > "is_paired.txt" }' paired.txt total.txt
+      rm -f all.sam sample.sam
+shell_command: |
+  sh classify_layout.sh '$(inputs.input.path)' '$(inputs.reference ? inputs.reference.path : "")'
+inputs:
+  - name: input
+    type: data
+    format: [sam, bam, cram]
+    label: Alignment file
+    help: One SAM, BAM or CRAM file (one sample).
+  - name: reference
+    type: data
+    format: [fasta]
+    optional: true
+    label: Reference FASTA (CRAM only)
+    help: Needed to decode CRAM. Leave empty for SAM or BAM input.
+outputs:
+  - name: is_single
+    type: data
+    format: txt
+    from_work_dir: is_single.txt
+    label: Single-end (true or false)
+  - name: is_paired
+    type: data
+    format: txt
+    from_work_dir: is_paired.txt
+    label: Paired-end (true or false)

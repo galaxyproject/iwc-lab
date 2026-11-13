@@ -1,0 +1,182 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-bamtofastq-sonnet-fixed
+  status: complete
+phases:
+- n: 1
+  kind: mold
+  skill: summarize-nextflow
+  status: done
+  feedback_checked: true
+  artifacts: []
+- n: 2
+  kind: mold
+  skill: nextflow-summary-to-galaxy-reference-data
+  status: done
+  feedback_checked: true
+  artifacts: []
+- n: 3
+  kind: mold
+  skill: nextflow-summary-to-galaxy-interface
+  status: done
+  feedback_checked: true
+  artifacts: []
+- n: 4
+  kind: mold
+  skill: nextflow-summary-to-galaxy-data-flow
+  status: done
+  feedback_checked: true
+  artifacts: []
+- n: 5
+  kind: mold
+  skill: compare-against-iwc-exemplar
+  status: done
+  feedback_checked: true
+  artifacts: []
+- n: 6
+  kind: mold
+  skill: nextflow-summary-to-galaxy-template
+  status: done
+  feedback_checked: true
+  artifacts: []
+- n: 7
+  kind: mold
+  skill: advance-galaxy-draft-step
+  status: done
+  iterations: 11
+  feedback_checked: true
+  artifacts: []
+- n: 8
+  kind: branch
+  pattern: test-data-resolution
+  status: done
+  selected: nextflow-to-test-data
+  feedback_checked: true
+  artifacts: []
+- n: 9
+  kind: mold
+  skill: nextflow-test-to-galaxy-test-plan
+  status: done
+  feedback_checked: true
+  artifacts: []
+- n: 10
+  kind: mold
+  skill: implement-galaxy-workflow-test
+  status: done
+  feedback_checked: true
+  artifacts: []
+- n: 11
+  kind: mold
+  skill: validate-galaxy-workflow
+  status: done
+  feedback_checked: true
+  artifacts: []
+- n: 12
+  kind: mold
+  skill: run-workflow-test
+  status: done
+  feedback_checked: true
+  artifacts: []
+- n: 13
+  kind: mold
+  skill: debug-galaxy-workflow-output
+  status: done
+  artifacts: []
+  feedback_checked: true
+entries:
+- id: summarize-nextflow-workflow-edges-contain-parse-junk
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 21
+    content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+    foundry_head: df991d0
+  subject:
+    kind: cli-command
+    label: foundry summarize-nextflow (workflow.edges extraction)
+    locator: package://gxwf-foundry#summarize-nextflow
+  kind: defect
+  severity: minor
+  what: >-
+    On nf-core/bamtofastq the deterministic summary's workflow.edges[] contain parser fragments as endpoints (e.g. from '[[:]',
+    ']]', '}', '? file(multiqc_config, ...)'), and wrongly attribute the main data flow (e.g. conversion_input -> ALIGNMENT_TO_FASTQ
+    lacks the BAM input edge). The tool warns 'workflow graph extraction is intentionally partial in resolver v1'. The Mold
+    procedure (step 6) says an LLM pass reconciles edges, but gives no instruction for what to do with the junk edges when
+    the CLI is the producer and the schema forbids extra fields.
+  expected: >-
+    Either filter edges whose endpoints are not channel/process identifiers in the CLI, or state in the Mold that the agent
+    must repair workflow.edges[] after the CLI run (and re-validate) and downstream Molds should treat edges as hints only.
+  evidence: >-
+    summary-nextflow.json workflow.edges: 33 entries, ~12 with non-identifier endpoints; validator still reports 'valid'.
+  status: open
+  issue: null
+- id: summary-nextflow-fasta-source-kind-misses-getgenomeattribute
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in:
+    mold: nextflow-summary-to-galaxy-reference-data
+    path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+    revision: null
+    content_hash: null
+    foundry_head: null
+  subject:
+    kind: cli-command
+    label: foundry summarize-nextflow (params[].source_kind)
+    locator: package://gxwf-foundry#summarize-nextflow
+  kind: defect
+  severity: minor
+  what: >-
+    For nf-core/bamtofastq main.nf has `params.fasta = params.fasta ?: getGenomeAttribute('fasta')` (and same for fasta_fai),
+    but summary params[fasta/fasta_fai].source_kind is `nextflow_schema` with source_expression null; the reference-data Mold
+    tells agents to use source_kind == getGenomeAttribute as the key-expanded-bundle signal.
+  expected: >-
+    Detect getGenomeAttribute backfills in main.nf even when the param also appears in nextflow_schema.json (set source_kind/source_expression).
+  evidence: summary-nextflow.json params fasta/fasta_fai; source/main.nf lines 37-38.
+  status: open
+  issue: null
+- raised_by: run-workflow-test
+  observed_in: &id001
+    mold: run-workflow-test
+    path: content/molds/run-workflow-test/index.md
+    revision: null
+    content_hash: null
+    foundry_head: null
+  status: open
+  issue: null
+  id: gxwf-validate-passes-but-planemo-gxformat2-conversion-fails-on-step-labels
+  subject:
+    kind: related-project
+    label: gxwf validate / draft-extract vs gxformat2 bundled with planemo 0.75.48
+    locator: https://github.com/galaxyproject/gxformat2
+  kind: defect
+  severity: major
+  what: >-
+    A workflow whose map-form steps carry a descriptive `label` while connections reference the map key passed gxwf draft-validate
+    --concrete --strict-state, gxwf validate and validate-tests, but planemo test died in 2s: gxformat2 normalized/_conversion.py
+    step_id() int(label_or_id) ValueError: invalid literal for int() with base 10 (key name).
+  expected: >-
+    Template/implement Molds (or gxwf validate) should enforce that the step part of a source is the label when a label is
+    present (the gxformat2-schema note says so but nothing checks it), or the draft Molds should not emit `label` on map-form
+    steps.
+  evidence: planemo attempt 1 log; fixed by moving labels to doc.
+- raised_by: run-workflow-test
+  observed_in: *id001
+  status: open
+  issue: null
+  id: nf-core-snapshot-md5-for-module-written-text-and-version-stamped-stats
+  subject:
+    kind: mold
+    label: nextflow-test-to-galaxy-test-plan / nextflow-snapshot-to-galaxy-assertions note
+    locator: content/research/nextflow-snapshot-to-galaxy-assertions/index.md
+  kind: gap
+  severity: minor
+  what: >-
+    The note tells agents to translate snapshot md5 tokens of plain-text outputs to checksum assertions (test-evidence). Two
+    classes did not reproduce on Galaxy: samtools stats (header has version + command line) and nf-core module-authored files
+    (fastqutils/*.txt is an echo written by the module, not tool output). Planemo attempt 2 failed on them; flagstat/idxstats
+    md5 tokens did match.
+  expected: >-
+    Add a caveat: check the nf-core module script for module-written text and version/command-stamped headers before emitting
+    checksum; use fixture-derived content assertions for those.
+  evidence: >-
+    planemo attempt 2: md5 53fc83... vs token 3c3f8f... (stats); source modules/nf-core/fastqutils/info/main.nf line 28 echo.

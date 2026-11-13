@@ -1,0 +1,153 @@
+- doc: 'Whole-pipeline default test translated from nf-core/bamtofastq tests/default.nf.test
+
+    (-profile test): two paired-end BAM samples (test, test2) run through samtools
+
+    flagstat/idxstats/stats, pre-conversion FastQC, runtime endedness detection, the
+
+    paired-end conversion path (view x4, merge, collate x2, cat), reads assembly,
+
+    post-conversion FastQC and fastq_utils. Expected content comes from the upstream
+
+    nf-test snapshot (tests/default.nf.test.snap): flagstat/idxstats md5s are snapshot
+
+    parity; reads are compared against files materialized by running the source
+
+    pipeline''s own commands on the fixtures (decompressed-content md5s verified equal
+
+    to the snapshot tokens); stats SN lines carry the same values as the snapshot
+
+    run (byte-equality unreachable: samtools stats embeds the command line).'
+  job:
+    alignments:
+      class: Collection
+      collection_type: list
+      elements:
+      - identifier: test
+        class: File
+        path: test-data/test.paired_end.sorted.bam
+        filetype: bam
+      - identifier: test2
+        class: File
+        path: test-data/test2.paired_end.sorted.bam
+        filetype: bam
+    chr: ''
+    no_stats: false
+    no_read_qc: false
+    samtools_collate_fast: false
+    reads_in_memory: 100000
+  outputs:
+    flagstat:
+      element_tests:
+        test:
+          checksum: md5$a53f3d26e2e9851f7d528442bbfe9781
+        test2:
+          checksum: md5$acbd95030a362a7e6491faa87d1b9c2c
+      class: Collection
+      collection_type: list
+    idxstats:
+      element_tests:
+        test:
+          checksum: md5$e179601fa7b8ebce81ac3765206f6c15
+        test2:
+          checksum: md5$90f01313bc89c7fd096aad051cd71b66
+      class: Collection
+      collection_type: list
+    stats:
+      element_tests:
+        test:
+          asserts:
+          - that: has_text
+            text: "SN\traw total sequences:\t5642"
+          - that: has_text
+            text: "SN\treads mapped:\t5640"
+        test2:
+          asserts:
+          - that: has_text
+            text: "SN\traw total sequences:\t5436"
+          - that: has_text
+            text: "SN\treads mapped:\t5436"
+      class: Collection
+      collection_type: list
+    reads:
+      element_tests:
+        test_1:
+          file: test-data/test_1.merged.fastq.gz
+          compare: diff
+          decompress: true
+        test_2:
+          file: test-data/test_2.merged.fastq.gz
+          compare: diff
+          decompress: true
+        test2_1:
+          file: test-data/test2_1.merged.fastq.gz
+          compare: diff
+          decompress: true
+        test2_2:
+          file: test-data/test2_2.merged.fastq.gz
+          compare: diff
+          decompress: true
+      class: Collection
+      collection_type: list
+    fastqc_pre_html:
+      element_count: 2
+      class: Collection
+      collection_type: list
+      element_tests:
+        test: &id002
+          asserts: &id001
+          - that: has_size
+            min: 1
+        test2:
+          asserts: *id001
+    fastqc_pre_data:
+      element_count: 2
+      class: Collection
+      collection_type: list
+      element_tests:
+        test: *id002
+        test2:
+          asserts: *id001
+    fastqc_post_html:
+      element_count: 4
+      class: Collection
+      collection_type: list
+      element_tests:
+        test_1: *id002
+        test_2:
+          asserts: *id001
+        test2_1:
+          asserts: *id001
+        test2_2:
+          asserts: *id001
+    fastqc_post_data:
+      element_count: 4
+      class: Collection
+      collection_type: list
+      element_tests:
+        test_1: *id002
+        test_2:
+          asserts: *id001
+        test2_1:
+          asserts: *id001
+        test2_2:
+          asserts: *id001
+    fastqutils_info:
+      element_tests:
+        test_1:
+          asserts:
+          - that: has_text
+            text: ran and found no issues
+        test_2:
+          asserts:
+          - that: has_text
+            text: ran and found no issues
+        test2_1:
+          asserts:
+          - that: has_text
+            text: ran and found no issues
+        test2_2:
+          asserts:
+          - that: has_text
+            text: ran and found no issues
+      class: Collection
+      collection_type: list

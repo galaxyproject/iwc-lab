@@ -1,0 +1,64 @@
+class: GalaxyWorkflow
+label: "EXTRACT of IWC microbiome/host-contamination-removal/host-contamination-removal-long-reads \u2014 samtools_fastx +\
+  \ MultiQC steps only"
+inputs: []
+outputs: []
+steps:
+- id: _unlabeled_step_7
+  doc: Extractions of FastQ from the unmapped reads
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx/samtools_fastx/1.22+galaxy2
+  tool_version: 1.22+galaxy2
+  tool_shed_repository:
+    changeset_revision: 4bde991b8037
+    name: samtools_fastx
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input
+    source: Split BAM/unmapped
+  out:
+  - id: output
+    rename: Reads without host or contamination reads
+  state:
+    output_fmt_cond:
+      output_fmt_select: fastqsanger
+      output_quality: false
+      ilumina_casava: false
+    outputs:
+    - other
+    copy_tags: false
+    read_numbering: ''
+    exclusive_filter:
+    - '256'
+    - '2048'
+    idxout_cond:
+      idxout_select: 'no'
+  tool_state: null
+- id: MultiQC
+  label: MultiQC
+  doc: Aggregation of the mapping statistics for all samples
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy1
+  tool_version: 1.35+galaxy1
+  tool_shed_repository:
+    changeset_revision: fac2260bc88a
+    name: multiqc
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: results_0|software_cond|input
+    source: Flatten collection
+  out:
+  - id: stats
+    hide: true
+  - id: html_report
+    rename: MultiQC HTML report
+  state:
+    results:
+    - software_cond:
+        software: qualimap
+    title: Host/Contamination Removal
+    comment: ''
+    flat: false
+    export: false
+    png_plots: false
+  tool_state: null

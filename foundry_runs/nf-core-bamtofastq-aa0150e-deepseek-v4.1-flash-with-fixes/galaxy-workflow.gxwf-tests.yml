@@ -1,0 +1,106 @@
+- doc: 'nf-core/bamtofastq -profile test: two paired-end BAMs (test, test2) converted
+    to merged FASTQ pairs against genome.fasta, with pre/post conversion QC and MultiQC.
+    Expected values carried from tests/default.nf.test.snap.'
+  job:
+    input:
+      class: Collection
+      collection_type: list
+      elements:
+      - identifier: test
+        class: File
+        location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam
+        filetype: bam
+      - identifier: test2
+        class: File
+        location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam
+        filetype: bam
+    fasta:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      filetype: fasta
+    layout: paired
+    no_read_QC: false
+    no_stats: false
+    samtools_collate_fast: false
+  outputs:
+    reads_paired:
+      class: Collection
+      collection_type: list:paired
+      element_count: 2
+      element_tests:
+        test:
+          element_tests:
+            forward:
+              decompress: true
+              asserts:
+              - that: has_text_matching
+                expression: ^@
+              - that: has_n_lines
+                min: 4
+              class: File
+            reverse:
+              decompress: true
+              asserts:
+              - that: has_text_matching
+                expression: ^@
+              - that: has_n_lines
+                min: 4
+              class: File
+          class: Collection
+        test2:
+          element_tests:
+            forward:
+              decompress: true
+              asserts:
+              - that: has_text_matching
+                expression: ^@
+              - that: has_n_lines
+                min: 4
+              class: File
+            reverse:
+              decompress: true
+              asserts:
+              - that: has_text_matching
+                expression: ^@
+              - that: has_n_lines
+                min: 4
+              class: File
+          class: Collection
+    samtools_flagstat:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test:
+          checksum: md5$a53f3d26e2e9851f7d528442bbfe9781
+          class: File
+        test2:
+          checksum: md5$acbd95030a362a7e6491faa87d1b9c2c
+          class: File
+    samtools_idxstats:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test:
+          checksum: md5$e179601fa7b8ebce81ac3765206f6c15
+          class: File
+        test2:
+          checksum: md5$90f01313bc89c7fd096aad051cd71b66
+          class: File
+    samtools_stats:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test:
+          asserts:
+          - that: has_text
+            text: 'raw total sequences:'
+          class: File
+        test2:
+          asserts:
+          - that: has_text
+            text: 'raw total sequences:'
+          class: File
+    multiqc_report:
+      asserts:
+      - that: has_text
+        text: FastQC

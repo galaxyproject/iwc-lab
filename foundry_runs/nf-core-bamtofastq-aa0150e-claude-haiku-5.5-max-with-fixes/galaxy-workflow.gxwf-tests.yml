@@ -1,0 +1,245 @@
+# Companion tests for galaxy-workflow.gxwf.yml, translated from galaxy-test-plan.yml (phase 9).
+# Evidence labels are comments on each assertion:
+#   [test-evidence]  upstream nf-test md5 token, copied as a checksum (never taken from a Galaxy run)
+#   [fixture-derived] counted from the fixture BAM bytes in test-data/ (see test-data-refs.json)
+#   [intent]         identity, count, existence or type only (weak); see galaxy-test-plan.yml omissions
+# Inputs are fetched from their remote URLs at upload time; hashes are the SHA-1 values computed by
+# nextflow-to-test-data from those same files (the source publishes none).
+
+- doc: >-
+    default-paired: tests/default.nf.test::-profile test (selected candidate, primary). Samples test
+    and test2, both paired-end. Plan case default-paired, derived_from mixed.
+  job:
+    alignments:
+      class: Collection
+      collection_type: list
+      elements:
+        - identifier: test
+          class: File
+          location: "https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam"
+          filetype: bam
+          hashes:
+            - hash_function: SHA-1
+              hash_value: "0799f89638bddd570439115c606f425c22d189b1"
+        - identifier: test2
+          class: File
+          location: "https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam"
+          filetype: bam
+          hashes:
+            - hash_function: SHA-1
+              hash_value: "522fb037cea05b9d41dd69647f27a644838bf507"
+  outputs:
+    reads_paired:
+      class: Collection
+      collection_type: list:paired                  # [intent] type only
+      element_count: 2                              # [intent] count only
+      element_tests:
+        test:
+          class: Collection
+          element_tests:
+            forward:
+              decompress: true
+              asserts:
+                - has_n_lines:                      # [fixture-derived] 4 x 2821 complete pairs
+                    n: 11284
+            reverse:
+              decompress: true
+              asserts:
+                - has_n_lines:                      # [fixture-derived] 4 x 2821 complete pairs
+                    n: 11284
+        test2:
+          class: Collection
+          element_tests:
+            forward:
+              decompress: true
+              asserts:
+                - has_n_lines:                      # [fixture-derived] 4 x 2718 complete pairs
+                    n: 10872
+            reverse:
+              decompress: true
+              asserts:
+                - has_n_lines:                      # [fixture-derived] 4 x 2718 complete pairs
+                    n: 10872
+    reads_single:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_count: 0                              # [intent] count only; planemo 0.75.48 does not enforce a zero count (falsy check)
+      element_tests: {}                             # [intent] needed so planemo checks this as a collection, not a file
+    multiqc_report:
+      class: File                                   # [intent] existence and type only (weak)
+    fastqc_pre_conversion_html:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_tests:
+        test: {}                                    # [intent] identity only
+        test2: {}                                   # [intent] identity only
+    fastqc_post_conversion_html:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_tests:
+        test_forward: {}                            # [intent] identity only
+        test_reverse: {}                            # [intent] identity only
+        test2_forward: {}                           # [intent] identity only
+        test2_reverse: {}                           # [intent] identity only
+    samtools_flagstat:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_tests:
+        test:
+          checksum: "md5$a53f3d26e2e9851f7d528442bbfe9781"    # [test-evidence] samtools/test.flagstat:md5
+        test2:
+          checksum: "md5$acbd95030a362a7e6491faa87d1b9c2c"    # [test-evidence] samtools/test2.flagstat:md5
+    samtools_idxstats:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_tests:
+        test:
+          checksum: "md5$e179601fa7b8ebce81ac3765206f6c15"    # [test-evidence] low confidence: no .bai staged
+        test2:
+          checksum: "md5$90f01313bc89c7fd096aad051cd71b66"    # [test-evidence] low confidence: no .bai staged
+    samtools_stats:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_tests:
+        test: {}                                    # [intent] identity only; raw total ambiguous (5644 or 5642)
+        test2:
+          asserts:
+            - has_text:                             # [fixture-derived] 5436 records, none secondary/supp/dup/QC-fail
+                text: "raw total sequences:\t5436"
+    fastqutils_info:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_tests:
+        test_forward: {}                            # [intent] identity only; granularity differs (warning)
+        test2_forward: {}                           # [intent] identity only; granularity differs (warning)
+
+- doc: >-
+    no_bai-mixed: tests/no_bai.nf.test::-profile test --input test_bam_samplesheet_no_bai.csv
+    (supplementary; not the selected candidate). Samples test and test2 (paired-end) and test3
+    (single-end). Plan case no_bai-mixed, derived_from mixed.
+  job:
+    alignments:
+      class: Collection
+      collection_type: list
+      elements:
+        - identifier: test
+          class: File
+          location: "https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam"
+          filetype: bam
+          hashes:
+            - hash_function: SHA-1
+              hash_value: "0799f89638bddd570439115c606f425c22d189b1"
+        - identifier: test2
+          class: File
+          location: "https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam"
+          filetype: bam
+          hashes:
+            - hash_function: SHA-1
+              hash_value: "522fb037cea05b9d41dd69647f27a644838bf507"
+        - identifier: test3
+          class: File
+          location: "https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test3.single_end.markduplicates.sorted.bam"
+          filetype: bam
+          hashes:
+            - hash_function: SHA-1
+              hash_value: "072c537f5a850f0ae036fd0ef6906f767e9f28c1"
+  outputs:
+    reads_paired:
+      class: Collection
+      collection_type: list:paired                  # [intent] type only
+      element_count: 2                              # [intent] count only
+      element_tests:
+        test:
+          class: Collection
+          element_tests:
+            forward:
+              decompress: true
+              asserts:
+                - has_n_lines:                      # [fixture-derived] 4 x 2821 complete pairs
+                    n: 11284
+            reverse:
+              decompress: true
+              asserts:
+                - has_n_lines:                      # [fixture-derived] 4 x 2821 complete pairs
+                    n: 11284
+        test2:
+          class: Collection
+          element_tests:
+            forward:
+              decompress: true
+              asserts:
+                - has_n_lines:                      # [fixture-derived] 4 x 2718 complete pairs
+                    n: 10872
+            reverse:
+              decompress: true
+              asserts:
+                - has_n_lines:                      # [fixture-derived] 4 x 2718 complete pairs
+                    n: 10872
+    reads_single:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_count: 1                              # [intent] count only
+      element_tests:
+        test3:
+          decompress: true
+          asserts:
+            - has_n_lines:                          # [fixture-derived] 4 x 12473 non-paired primary records
+                n: 49892
+    multiqc_report:
+      class: File                                   # [intent] existence and type only (weak)
+    fastqc_pre_conversion_html:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_tests:
+        test: {}                                    # [intent] identity only
+        test2: {}                                   # [intent] identity only
+        test3: {}                                   # [intent] identity only
+    fastqc_post_conversion_html:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_tests:
+        test_forward: {}                            # [intent] identity only
+        test_reverse: {}                            # [intent] identity only
+        test2_forward: {}                           # [intent] identity only
+        test2_reverse: {}                           # [intent] identity only
+        test3: {}                                   # [intent] identity only; single-end identifier unverified
+    samtools_flagstat:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_tests:
+        test:
+          checksum: "md5$a53f3d26e2e9851f7d528442bbfe9781"    # [test-evidence] samtools/test.flagstat:md5
+        test2:
+          checksum: "md5$acbd95030a362a7e6491faa87d1b9c2c"    # [test-evidence] samtools/test2.flagstat:md5
+        test3:
+          checksum: "md5$7b43b975b0a395040bf1ee3c48f058e7"    # [test-evidence] no_bai samtools/test3.flagstat:md5
+    samtools_idxstats:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_tests:
+        test:
+          checksum: "md5$e179601fa7b8ebce81ac3765206f6c15"    # [test-evidence] low confidence: no .bai staged
+        test2:
+          checksum: "md5$90f01313bc89c7fd096aad051cd71b66"    # [test-evidence] low confidence: no .bai staged
+        test3:
+          checksum: "md5$094096b6f303cc18892e1e027c87f273"    # [test-evidence] low confidence: no .bai staged
+    samtools_stats:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_tests:
+        test: {}                                    # [intent] identity only; raw total ambiguous (5644 or 5642)
+        test2:
+          asserts:
+            - has_text:                             # [fixture-derived] 5436 records
+                text: "raw total sequences:\t5436"
+        test3:
+          asserts:
+            - has_text:                             # [fixture-derived] 12473 records
+                text: "raw total sequences:\t12473"
+    fastqutils_info:
+      class: Collection
+      collection_type: list                         # [intent] type only
+      element_tests:
+        test_forward: {}                            # [intent] identity only; granularity differs (warning)
+        test2_forward: {}                           # [intent] identity only; granularity differs (warning)
+        test3: {}                                   # [intent] identity only; granularity differs (warning)

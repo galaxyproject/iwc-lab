@@ -1,0 +1,51 @@
+class: GalaxyUserTool
+id: samtools_merge_three
+version: 1.23.1
+name: samtools merge three alignments
+description: Merge three per-sample BAM/CRAM subsets into one alignment with samtools merge.
+container: quay.io/biocontainers/samtools:1.23.1--ha83d96e_0
+license: MIT
+help:
+  format: markdown
+  content: |
+    Reproduces the nf-core `SAMTOOLS_MERGE` module call used by
+    `ALIGNMENT_TO_FASTQ` to merge the three unmapped subsets of one sample:
+
+        samtools merge --threads N [--reference FASTA] -f out.bam FIRST SECOND THIRD
+
+    Three real data inputs make Galaxy run one job per sample, which the
+    Tool Shed `samtools_merge` wrapper's multiple-data input does not do (it
+    reduces the whole collection into one job).
+configfiles:
+  - filename: run_merge.sh
+    content: |
+      set -o pipefail
+      set -e
+      REF="$(inputs.reference ? "--reference '" + inputs.reference.path + "'" : "")"
+      samtools merge --threads "$GALAXY_SLOTS" $REF -f out.bam \
+          '$(inputs.first.path)' '$(inputs.second.path)' '$(inputs.third.path)'
+shell_command: bash run_merge.sh
+inputs:
+  - name: first
+    type: data
+    format: [bam, cram]
+    label: First alignment subset
+  - name: second
+    type: data
+    format: [bam, cram]
+    label: Second alignment subset
+  - name: third
+    type: data
+    format: [bam, cram]
+    label: Third alignment subset
+  - name: reference
+    type: data
+    format: [fasta]
+    optional: true
+    label: Reference FASTA (required for CRAM)
+outputs:
+  - name: output
+    type: data
+    format: bam
+    from_work_dir: out.bam
+    label: Merged unmapped alignments

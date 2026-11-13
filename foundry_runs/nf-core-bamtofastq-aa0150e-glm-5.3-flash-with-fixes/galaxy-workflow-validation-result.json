@@ -1,0 +1,48 @@
+{
+  "command": "gxwf validate galaxy-workflow.gxwf.yml --json --cache-dir .tool-cache",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "last_run": "2026-11-13T01:41:30+01:00",
+  "summary": {
+    "ok": 23,
+    "fail": 5,
+    "skip": 0
+  },
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "message": "samtools_view (steps 9.0-9.3) and samtools_merge (9.7) state-shape diagnostics: 'Expected undefined/never, actual null/...' for optional conditional leaves (qname_file, filter_config, bed_file) and default-vs-actual outtype wording. Pre-existing since attempt 9; runtime recover_state accepts these states (attempt 10 ran all four view steps and the merge green). Not routed back to authoring.",
+      "step": "9.0-9.3, 9.7",
+      "routes_to": "none (accepted runtime shape; re-validated after each attempt)"
+    }
+  ],
+  "encoding_errors": [],
+  "structure_errors": [],
+  "note": "Re-validated after the attempt-13 UDT pivot edits: samtools_fastx steps replaced by embedded GalaxyUserTool samtools_fastq_stream steps (run: carries the authored definition), collate change_datatype PJAs removed, fastq -F 2304 filter dropped (source has no fastq-level filter), stats has_line comment fixed in the test file. Same 5 pre-existing samtools_view/merge state-shape diagnostics (steps 9.0-9.3, 9.7), 23 ok, no failure names the new UDT steps. gxwf validate-tests --workflow: OK. Attempt 13 proved the two runtime risks below (UDT end-to-end execution; converter suppression) are NOT risks: the UDT jobs ran (mapped_over=True, state=validated) and zero CONVERTER_* jobs executed.",
+  "residual_runtime_risks": [
+    {
+      "risk": "decompress: true with compare: diff on a list:paired collection element assertion (test_1/test_2/test2_1/test2_2): whether planemo's collection-element test path honors decompress for element-level file comparisons is not statically checkable.",
+      "proven_or_disproven_by": "attempt-14 planemo test: the four paired_reads element assertions must diff-decompress against the staged test-data files."
+    },
+    {
+      "risk": "Inline when: $(inputs.X) gating directly on workflow boolean inputs (read_qc, stats) and string input (chr) is not exercised by any IWC exemplar; the runtime may reject the gating or treat skipped steps' outputs differently than the typed-null sentinel assumed by pick_value(first).",
+      "proven_or_disproven_by": "planemo test invocation of the workflow \u2014 FastQC/stats/MultiQC outputs must be present (gating passes) and pick_bam/pick_index must fall through to the original alignments (chr unset)."
+    },
+    {
+      "risk": "pick_value 'first' with a when-gated producer: when the chr branch is skipped, samtools_view_chr/output is a null sentinel; whether pick_value treats the collection-level null as all-null (returning null, skip semantics) vs an empty collection is a runtime behavior.",
+      "proven_or_disproven_by": "the same planemo invocation: pick_bam must return the original alignments when chr is unset."
+    },
+    {
+      "risk": "__BUILD_LIST__ repeat-instance state (datasets: [{},{}...]) + datasets_N|input connection keys inside a mapped inline subworkflow: pattern proven for shed tools (queries_0|input2 precedent, pick_value keys in this workflow) but the builtin's runtime resolution (progress.replacement_for_input for repeat-prefixed leaves) is unverified until an invocation runs it.",
+      "proven_or_disproven_by": "attempt 11 invocation: merge_unmapped must run once per sample over exactly 3 BAMs, cat jobs once per sample over 2 FASTQs."
+    },
+    {
+      "risk": "tp_cat (text_processing concatenate) on fastqsanger.gz inputs: wrapper extension list includes fastq.gz; the multi-member gzip concatenation must be byte-identical to the source's gzip concatenation for the md5 assertions to pass (gzip header bytes could differ between the source's gzip and Galaxy's).",
+      "proven_or_disproven_by": "planemo test paired_reads checksums \u2014 first place the byte-identity assumption meets reality."
+    },
+    {
+      "risk": "multiqc title connection (workflow string input \u2192 optional text param) was validated by the static state validator only as a connection; runtime substitution is unproven.",
+      "proven_or_disproven_by": "planemo test multiqc_report output generation without a state-value error."
+    }
+  ]
+}

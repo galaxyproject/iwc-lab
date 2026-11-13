@@ -1,0 +1,55 @@
+class: GalaxyUserTool
+id: samtools_fastq_stream
+version: 1.0.0
+name: Samtools fastq (stream, order-preserving)
+description: Convert a collated BAM to FASTQ without re-sorting, preserving input record order.
+container: quay.io/biocontainers/samtools:1.22--h96c455f_0
+shell_command: samtools fastq -N -1 forward.fastqsanger.gz -2 reverse.fastqsanger.gz -s singletons.fastqsanger.gz '$(inputs.input.path)'
+license: MIT
+help:
+  format: markdown
+  content: |
+    Runs `samtools fastq` exactly once over the input BAM, with no preparatory
+    sort and no read filters. The record order of the input is preserved in the
+    outputs, so pairing a `samtools collate -O` output with this tool reproduces
+    the collated (queryname-grouped) read order in the FASTQ.
+
+    `-N` keeps read names unmodified (no `/1` `/2` suffixes). Reads with the
+    READ1 flag go to the forward file, READ2 to the reverse file, unpaired
+    reads to the singleton file. Reads with neither READ1 nor READ2 are
+    discarded (they would land in samtools' `-0` stream, which this tool does
+    not emit).
+
+    Input formats deliberately include the BAM datatypes that Galaxy does not
+    treat as subtypes of `bam` (`unsorted.bam`, `qname_input_sorted.bam`,
+    `qname_sorted.bam`): declaring them prevents Galaxy from inserting an
+    automatic `CONVERTER_bam_to_coodinate_sorted_bam` step, whose coordinate
+    sort would destroy the collated order this tool exists to preserve.
+inputs:
+- name: input
+  type: data
+  label: Collated BAM or SAM file
+  format:
+  - bam
+  - unsorted.bam
+  - qname_input_sorted.bam
+  - qname_sorted.bam
+  - sam
+  - cram
+  help: Input alignments; use the unsorted or queryname-collated output of samtools collate to keep read order.
+outputs:
+- name: forward
+  type: data
+  format: fastqsanger.gz
+  from_work_dir: forward.fastqsanger.gz
+  label: Forward reads (READ1)
+- name: reverse
+  type: data
+  format: fastqsanger.gz
+  from_work_dir: reverse.fastqsanger.gz
+  label: Reverse reads (READ2)
+- name: singletons
+  type: data
+  format: fastqsanger.gz
+  from_work_dir: singletons.fastqsanger.gz
+  label: Singleton reads

@@ -1,0 +1,65 @@
+{
+  "command": "gxwf validate galaxy-workflow.gxwf.yml --json --cache-dir tool-cache --connections --strict",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "not_run_reason": null,
+  "exit_code": 0,
+  "checked_at": "2026-11-13T10:07:17+01:00",
+  "summary": {
+    "tool_state": {
+      "ok": 23,
+      "fail": 0,
+      "skip": 0
+    },
+    "connections": {
+      "ok": 33,
+      "invalid": 0,
+      "skip": 0
+    },
+    "structure_errors": 0,
+    "encoding_errors": 0
+  },
+  "diagnostics": [],
+  "residual_runtime_risks": [
+    {
+      "risk": "Step 'Classify pairedness' embeds a GalaxyUserTool under run:. Import needs a Galaxy with enable_beta_tool_formats and a user holding the 'Custom Tool Execution' role; whether a Planemo-managed Galaxy grants that is untested.",
+      "proved_by": "planemo test: workflow import succeeds and the classifier jobs run",
+      "status_after_attempt_1": "held: all jobs ok and outputs produced in planemo attempt 1"
+    },
+    {
+      "risk": "The single-end sub-list ('Split alignments by pairedness'/output_discarded) is empty when every sample is paired-end; three mapped steps and one merge then run on an empty collection.",
+      "proved_by": "test case default_paired_end_bams: invocation schedules fully and 'Single-end reads' has 0 elements",
+      "status_after_attempt_1": "held: all jobs ok and outputs produced in planemo attempt 1"
+    },
+    {
+      "risk": "cat1 concatenates two gzip files; the result must stay a readable fastqsanger.gz.",
+      "proved_by": "decompressed file comparison on 'Paired-end reads'; fastq_info and FastQC jobs on the concatenated files",
+      "status_after_attempt_1": "held: all jobs ok and outputs produced in planemo attempt 1"
+    },
+    {
+      "risk": "samtools_view expression 'flag.unmap || flag.munmap' must reach the command line unchanged (text sanitizer).",
+      "proved_by": "'Paired-end reads' content: the single unmapped-mate pair of sample test is present only if the filter works (2821 vs 2820 reads)",
+      "status_after_attempt_1": "held: all jobs ok and outputs produced in planemo attempt 1"
+    },
+    {
+      "risk": "MultiQC receives tabular idxstats/stats in txt inputs and two FastQC collections with different identifiers.",
+      "proved_by": "MultiQC job state and report text",
+      "status_after_attempt_1": "held: all jobs ok and outputs produced in planemo attempt 1"
+    },
+    {
+      "risk": "Tool installation: 11 Tool Shed wrappers must be installed and their containers resolved by Planemo (--biocontainers).",
+      "proved_by": "planemo test start-up / first job of each tool",
+      "status_after_attempt_1": "held: all jobs ok and outputs produced in planemo attempt 1"
+    },
+    {
+      "risk": "bgruening/fastq_info passes validation failures (exit 1 or 3) through as a successful job; a broken FASTQ does not fail the invocation, unlike the source pipeline.",
+      "proved_by": "not provable by a passing run; the tests assert the 'OK' line of each report"
+    },
+    {
+      "risk": "Read order: samtools_fastx name-sorts its input, so reads are in name order, not the source's collate order (attempt 1 disproved the datatype-retyping workaround).",
+      "proved_by": "sorted-line file comparisons on the read outputs",
+      "status_after_attempt_1": "known; workflow and tests adjusted"
+    }
+  ],
+  "revalidated_after": "planemo attempt 1 (topology repair: 3 collate steps and the fast-mode input removed)"
+}

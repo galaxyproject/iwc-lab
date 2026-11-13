@@ -1,0 +1,265 @@
+entries:
+- id: fasta-fai-in-tool-rebuild-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: fasta_fai is not a workflow input and SAMTOOLS_FAIDX is not planned as a step; the consuming Galaxy samtools wrappers are assumed to index a history FASTA themselves
+  missing: tool discovery must confirm, per chosen wrapper, that a history FASTA reference works without a separate .fai input
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+  note: 'Moot: the FASTA reference is not carried (see cram-and-reference-not-carried), so no index is needed.'
+- id: optional-reference-vs-tool-conditional
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: the source's optional --fasta maps to an optional Galaxy data input, but Galaxy samtools wrappers select 'use a reference' through a static conditional, not through presence of the input
+  missing: 'a decision in data-flow/template: always wire the FASTA (input effectively required) or never wire it (BAM-only workflow)'
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+  note: 'Settled by not wiring a reference at all: the workflow is BAM-only (see cram-and-reference-not-carried).'
+- id: cram-input-support-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: 'CRAM samplesheet rows (file_type: cram) — the only case where the FASTA changes results'
+  missing: interface/data-flow must decide whether the Galaxy workflow accepts CRAM; depends on the chosen wrappers accepting cram input with a history reference
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+  note: 'Decided: CRAM is not carried; recorded as dropped in cram-and-reference-not-carried.'
+- id: igenomes-genome-key-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  units: params genome, igenomes_base, igenomes_ignore (iGenomes key lookup for fasta / fasta_fai)
+  because: nextflow-to-galaxy-reference-data-mapping, 'Data tables (both dbkey and generic) are discouraged in v1'; source main.nf lines 37-38 resolve the key to fasta/fasta_fai, which the Galaxy workflow takes directly as an explicit FASTA input
+  unmet: selecting a reference by iGenomes name
+  missing: the user supplies the FASTA from their history instead
+  note: 'Surrendered at run end (2026-11-13): the final workflow was emitted with this unmet; it is listed in model-test-log.md''s final summary.'
+- id: chr-region-filter-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: params.chr region extraction (SAMTOOLS_CHR + SAMTOOLS_CHR_INDEX, sample id renamed to <id>.<regions>)
+  missing: a samtools view wrapper whose region argument can be fed from an optional workflow string, with empty meaning no filter; else fix the default (no filter) and record the drop
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+  note: 'Decided: not carried; recorded as dropped in chr-region-filter-not-carried.'
+- id: collate-fast-mode-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: params.samtools_collate_fast / reads_in_memory (samtools collate -f -r N)
+  missing: a collate/fastq wrapper exposing fast mode; otherwise not exposed (performance-only option)
+  resolved_by: repair-galaxy-draft-topology
+  note: 'FIRST RESOLUTION REFUTED. Refuted by planemo attempt 1 (2026-11-13): job record of ''Mapped pairs to FASTQ'' shows a different input dataset than the collate output (implicit conversion back to bam) and the command ''samtools sort -@ ... -n <input> > input && samtools fastq -N -1 forward... -2 reverse... -s singletons...''. With no effective collate step there is nothing to wire a fast-mode input to. Earlier note (struck): ''add-input: boolean workflow input ''Collate in fast mode'' (default false) wired to the fast-mode port of the two paired-branch collate steps. iuc/samtools_collate 1.22+galaxy1 summary shows the boolean ''fast_mode'' (-f). Not carried: see reads-in-memory-not-exposed and the single-end deviation.'' Closed in escalation 2: remove-input (''Collate in fast mode''); see dropped entry collate-fast-mode-not-carried.'
+- id: qc-skip-flags-fixed-default
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: params no_read_QC and no_stats (ext.when gates on FASTQC_PRE_CONVERSION, FASTQC_POST_CONVERSION, SAMTOOLS_FLAGSTAT, SAMTOOLS_IDXSTATS, SAMTOOLS_STATS)
+  because: 'nextflow-params-to-galaxy-inputs, Control params: a skip flag may be ''resolved to a fixed Galaxy design default''; source defaults are false (QC and stats run), conf/modules.config ext.when closures. The Galaxy design also feeds these outputs to MultiQC, so skipping them would leave MultiQC without inputs.'
+  unmet: turning QC or stats off at launch
+  missing: QC and stats always run in the Galaxy workflow
+  note: 'Surrendered at run end (2026-11-13): the final workflow was emitted with this unmet; it is listed in model-test-log.md''s final summary.'
+- id: software-versions-file-not-produced
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: pipeline_info/nf_core_bamtofastq_software_mqc_versions.yml (channel.topic('versions') collectFile)
+  because: 'Galaxy records tool id and version per job in the invocation; there is no workflow-level topic channel to collect. Source: workflows/bamtofastq.nf softwareVersionsToYAML block.'
+  unmet: a single versions YAML output
+  missing: tool versions are in the Galaxy invocation/job metadata instead
+  note: 'Surrendered at run end (2026-11-13): the final workflow was emitted with this unmet; it is listed in model-test-log.md''s final summary.'
+- id: cram-and-reference-not-carried
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  units: 'CRAM samplesheet rows (file_type: cram, .crai index), params fasta / fasta_fai, process SAMTOOLS_FAIDX, the filetype branch in PRE_CONVERSION_QC'
+  because: '(1) Source subworkflows/local/pre_conversion_qc/main.nf branches per element on meta.filetype so FastQC never sees CRAM; a Galaxy list mixing bam and cram would need per-element datatype routing. (2) CRAM decoding needs the reference in every samtools step; the bundled channel-shape note lists connecting ''a tool conditional''s test parameter'' as Open (foundry #661/#667), so an optional FASTA cannot switch a wrapper''s reference mode per run — the FASTA would become required for BAM users too. Part (2) is now checked: iuc/samtools_view 1.22+galaxy2 and devteam/samtools_stats 2.0.9 both select the reference through the conditional addref_cond (test parameter addref_select: no | history | cached; the data input ''ref'' exists only in the ''history'' case), per their tool summaries in steps/. In addition samtools_view''s wrapper source carries the comment ''currently reference based CRAM is disabled''.'
+  unmet: CRAM to FASTQ conversion
+  missing: the Galaxy workflow accepts BAM only; a CRAM must be converted to BAM first
+  note: 'wrapper evidence attached by implement-galaxy-tool-step on 2026-11-13 Surrendered at run end (2026-11-13): the final workflow was emitted with this unmet; it is listed in model-test-log.md''s final summary.'
+- id: chr-region-filter-not-carried
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  units: params.chr; processes SAMTOOLS_CHR and SAMTOOLS_CHR_INDEX; renaming of sample id to <id>.<regions>; published samtools/<id>.<regions>.bam
+  because: Design choice, not a proven impossibility. Source workflows/bamtofastq.nf wraps the two processes in 'if (params.chr)'. A faithful Galaxy version is a transform-or-pass-through (gated step + pick_value over a mapped collection, bundled conditionals pattern) driven by 'string is non-empty', i.e. three extra steps and a boolean derived from an optional string. I declined that for this run to keep the routing logic to one mechanism. No wrapper was searched for this; an always-on region step whose empty value means 'all reads' was not evaluated.
+  unmet: extracting only reads from given chromosomes/regions before conversion
+  missing: users must region-filter the BAM before running the workflow
+  note: 'Evidence added by implement-galaxy-tool-step: in iuc/samtools_view 1.22+galaxy2 the region filter sits in conditional filter_config|cond_region (select_region: no | text | bed) and ''regions'' is a non-optional text with a character-class validator, so an always-on region step whose empty value means ''all reads'' is not available; the gated transform-or-pass-through form remains the only faithful option and is still declined. Surrendered at run end (2026-11-13): the final workflow was emitted with this unmet; it is listed in model-test-log.md''s final summary.'
+- id: paired-classifier-tool-need
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: classify_pairedness
+  unmet: per-BAM classification paired/single from the first <=1000 records (CHECKPAIREDEND)
+  missing: discovery must find a tool doing this or one must be authored
+  resolved_by: advance-galaxy-draft-step
+  note: 'Discovery miss; user-defined tool bamtofastq_check_paired_end authored and embedded under run: (steps/classify_pairedness/). Ran green in planemo attempts 1 and 2.'
+- id: any-of-flags-filter-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: pairs_with_unmapped_mate
+  unmet: single filter 'exclude 256, require any of 12' replacing three filters + merge
+  missing: wrapper support for samtools view --rf; otherwise restore the literal three filters and a per-sample merge
+  resolved_by: implement-galaxy-tool-step
+  note: 'iuc/samtools_view 1.22+galaxy2 has no ''--rf'' option (flag params: inclusive_filter -f, exclusive_filter -F, exclusive_filter_all -G), but its expression filter (cond_expr|expression, passed as -e ''...'', sanitizer allows all printable characters except the single quote) expresses the same set: exclusive_filter 256 + expression ''flag.unmap || flag.munmap''. Hand run with samtools 1.22: identical records to ''-F 256 --rf 12'' (same md5 of samtools view output). Step implemented as one filter; no topology change.'
+- id: collate-order-and-other-output-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: mapped_pairs_to_fastq
+  unmet: BAM to FASTQ steps must use samtools collate (default mode), pass -N, and expose the -0 'other' output
+  missing: wrapper evidence; if the wrapper name-sorts instead, the nf-test read md5s cannot be reproduced
+  resolved_by: repair-galaxy-draft-topology
+  note: 'Checked against the wrapper: samtools_fastx name-sorts (closed by the collate steps), has read_numbering ''-N'', and exposes -0 as output ''nonspecific'' (outputs option r0).'
+- id: split-discarded-side-no-corpus-precedent
+  status: resolved
+  raised_by: compare-against-iwc-exemplar
+  step: split_alignments
+  unmet: the single-end sub-list is the 'discarded' output of the collection split; it may be empty
+  missing: no IWC workflow consumes __FILTER_FROM_FILE__ output_discarded or maps over a possibly empty split result; the planemo run must show it works, else route single-end samples with a second identifier file
+  resolved_by: run-workflow-test
+  note: 'Planemo attempts 1 and 2: the empty output_discarded side schedules through the mapped single-end steps and the collection merge with all jobs ok; with one single-end sample (test 2) it carries that sample.'
+- id: fastx-name-sorts-single-end-to-fastq
+  status: resolved
+  blocking: true
+  raised_by: implement-galaxy-tool-step
+  step: Single-end to FASTQ
+  unmet: reads in samtools collate order (the source runs 'samtools collate -O | samtools fastq'); the plan requires this order to reproduce the nf-test read md5s
+  missing: 'iuc/samtools_fastx 1.22+galaxy2 cannot do it alone: its command starts with "#if not $input.is_of_type(''qname_sorted.bam'', ''qname_input_sorted.bam''): samtools sort -n ''$input'' > input" (tools-iuc tool_collections/samtools/samtools_fastx/samtools_fastx.xml), i.e. it name-sorts every coordinate-sorted BAM. A structural edit closes it: put iuc/samtools_collate 1.22+galaxy1 (output_file, declared format unsorted.bam) before this step and set that output''s datatype to qname_input_sorted.bam, which the fastx wrapper then uses unsorted.'
+  resolved_by: repair-galaxy-draft-topology
+  note: 'FIRST RESOLUTION REFUTED. Refuted by planemo attempt 1 (2026-11-13): job record of ''Mapped pairs to FASTQ'' shows a different input dataset than the collate output (implicit conversion back to bam) and the command ''samtools sort -@ ... -n <input> > input && samtools fastq -N -1 forward... -2 reverse... -s singletons...''. Earlier note (struck): ''add-step (a samtools collate step before this step, output datatype changed to qname_input_sorted.bam, hidden) + rewire (this step''s input now comes from the collate step).'' Closed again in escalation 2 by the fold: remove-step (the collate step) + rewire (this step reads the filter/split output directly). The unmet read order is now carried by the plain entry read-order-is-name-sorted.'
+- id: fastx-name-sorts-mapped-pairs-to-fastq
+  status: resolved
+  blocking: true
+  raised_by: implement-galaxy-tool-step
+  step: Mapped pairs to FASTQ
+  unmet: reads in samtools collate order (the source runs 'samtools collate -O | samtools fastq'); the plan requires this order to reproduce the nf-test read md5s
+  missing: 'iuc/samtools_fastx 1.22+galaxy2 cannot do it alone: its command starts with "#if not $input.is_of_type(''qname_sorted.bam'', ''qname_input_sorted.bam''): samtools sort -n ''$input'' > input" (tools-iuc tool_collections/samtools/samtools_fastx/samtools_fastx.xml), i.e. it name-sorts every coordinate-sorted BAM. A structural edit closes it: put iuc/samtools_collate 1.22+galaxy1 (output_file, declared format unsorted.bam) before this step and set that output''s datatype to qname_input_sorted.bam, which the fastx wrapper then uses unsorted.'
+  resolved_by: repair-galaxy-draft-topology
+  note: 'FIRST RESOLUTION REFUTED. Refuted by planemo attempt 1 (2026-11-13): job record of ''Mapped pairs to FASTQ'' shows a different input dataset than the collate output (implicit conversion back to bam) and the command ''samtools sort -@ ... -n <input> > input && samtools fastq -N -1 forward... -2 reverse... -s singletons...''. Earlier note (struck): ''add-step (a samtools collate step before this step, output datatype changed to qname_input_sorted.bam, hidden) + rewire (this step''s input now comes from the collate step).'' Closed again in escalation 2 by the fold: remove-step (the collate step) + rewire (this step reads the filter/split output directly). The unmet read order is now carried by the plain entry read-order-is-name-sorted.'
+- id: fastx-name-sorts-unmapped-mate-pairs-to-fastq
+  status: resolved
+  blocking: true
+  raised_by: implement-galaxy-tool-step
+  step: Unmapped-mate pairs to FASTQ
+  unmet: reads in samtools collate order (the source runs 'samtools collate -O | samtools fastq'); the plan requires this order to reproduce the nf-test read md5s
+  missing: 'iuc/samtools_fastx 1.22+galaxy2 cannot do it alone: its command starts with "#if not $input.is_of_type(''qname_sorted.bam'', ''qname_input_sorted.bam''): samtools sort -n ''$input'' > input" (tools-iuc tool_collections/samtools/samtools_fastx/samtools_fastx.xml), i.e. it name-sorts every coordinate-sorted BAM. A structural edit closes it: put iuc/samtools_collate 1.22+galaxy1 (output_file, declared format unsorted.bam) before this step and set that output''s datatype to qname_input_sorted.bam, which the fastx wrapper then uses unsorted.'
+  resolved_by: repair-galaxy-draft-topology
+  note: 'FIRST RESOLUTION REFUTED. Refuted by planemo attempt 1 (2026-11-13): job record of ''Mapped pairs to FASTQ'' shows a different input dataset than the collate output (implicit conversion back to bam) and the command ''samtools sort -@ ... -n <input> > input && samtools fastq -N -1 forward... -2 reverse... -s singletons...''. Earlier note (struck): ''add-step (a samtools collate step before this step, output datatype changed to qname_input_sorted.bam, hidden) + rewire (this step''s input now comes from the collate step).'' Closed again in escalation 2 by the fold: remove-step (the collate step) + rewire (this step reads the filter/split output directly). The unmet read order is now carried by the plain entry read-order-is-name-sorted.'
+- id: reads-in-memory-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: repair-galaxy-draft-topology
+  units: param reads_in_memory (samtools collate -r N, used only with fast mode)
+  because: 'iuc/samtools_collate 1.22+galaxy1 summary (steps/samtools_collate/galaxy-tool-summary.json): inputs are input, no_pg, fast_mode only; its command is ''samtools collate $no_pg $fast_mode $input --output-fmt BAM -o $output_file'' — no -r option.'
+  unmet: setting the number of reads kept in memory in collate fast mode
+  missing: samtools' default (10000) is used
+  note: 'Superseded by collate-fast-mode-not-carried: after escalation 2 there is no collate step at all. Surrendered at run end (2026-11-13): the final workflow was emitted with this unmet; it is listed in model-test-log.md''s final summary.'
+- id: read-order-is-name-sorted
+  status: surrendered
+  raised_by: repair-galaxy-draft-topology
+  step: Mapped pairs to FASTQ
+  unmet: FASTQ reads in the source's samtools collate order (needed for md5 parity with the nf-test snapshot)
+  missing: 'iuc/samtools_fastx 1.22+galaxy2 always runs ''samtools sort -n'' before ''samtools fastq'' on inputs reachable from a workflow (attempt-1 job record). Reads come out in name order. Content is identical as a multiset of lines (hand check + offline verifier with sort: true). Applies to all three BAM to FASTQ steps.'
+  resolved_by: null
+  note: 'Not closable with existing wrappers; an authored collate+fastq tool was ruled out (an existing wrapper runs the step''s work). Tests compare reads with sort: true. Surrendered at run end (2026-11-13): the final workflow was emitted with this unmet; it is listed in model-test-log.md''s final summary.'
+- id: collate-fast-mode-not-carried
+  status: surrendered
+  kind: dropped
+  raised_by: repair-galaxy-draft-topology
+  units: params samtools_collate_fast and reads_in_memory (samtools collate -f -r N); workflow input 'Collate in fast mode'; the three collate steps added in escalation 1; source test tests/collate_fast.nf.test
+  because: 'Planemo attempt 1 job record: samtools_fastx name-sorts its input regardless of what precedes it, so a collate step (fast or not) cannot change the output; iuc/samtools_collate 1.22+galaxy1 has no -r option (its summary lists input, no_pg, fast_mode only).'
+  unmet: choosing samtools collate fast mode
+  missing: the Galaxy workflow always name-sorts inside the BAM to FASTQ wrapper
+  note: 'supersedes the resolution of collate-fast-mode-unverified Surrendered at run end (2026-11-13): the final workflow was emitted with this unmet; it is listed in model-test-log.md''s final summary.'
+discoveries:
+- id: fasta-only-matters-for-cram
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: Every consumer uses the FASTA only as samtools --reference; CHECKPAIREDEND adds --reference only when meta.filetype == 'cram'. The classification note cites bamtofastq as 'FASTA needed only when input is CRAM'.
+  impact: For BAM input the reference input does not change any output; it can stay optional.
+- id: faidx-rebuild-not-detected-by-summary
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: reference_rebuilds[] is empty; PREPARE_INDICES uses fasta_fai.branch { meta.index == false } -> SAMTOOLS_FAIDX.
+  impact: fasta_fai is compute-if-missing in the source even though the summary field is empty.
+- id: samplesheet-columns-all-have-native-galaxy-homes
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: sample_id -> element identifier; mapped -> dataset; index -> bam metadata index; file_type -> datatype
+  impact: input is a plain list of bam; SAMTOOLS_INDEX in PREPARE_INDICES is subsumed by Galaxy's bam datatype
+- id: multiqc-gets-no-qc-files-in-source
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: 'summary warning + edge note: ch_multiqc_files holds only versions/summary/methods YAML'
+  impact: a literal translation of MULTIQC would have no inputs in Galaxy
+- id: nf-test-gz-md5-is-of-decompressed-content
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: 'Hand run with samtools 1.17/1.22/1.23.1: decompressed md5 of the merged forward/reverse FASTQ equals the snapshot md5 for test_1/test_2.merged.fastq.gz; the .gz byte md5 does not.'
+  impact: snapshot read md5s are usable expected values for decompressed content; read order must be preserved
+- id: unmapped-union-filter-equivalent
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: 'Same hand run: ''samtools view -F 256 --rf 12'' vs three category filters + samtools merge give identical decompressed FASTQ.'
+  impact: four source process calls fold into one node without changing output
+- id: default-test-has-no-single-end-sample
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: test_bam_samplesheet.csv rows test and test2 are both paired_end; only test_bam_samplesheet_no_bai.csv and test_chr_samplesheet.csv contain test3 (single_end).
+  impact: the single-end branch is empty in the selected test; a second test case is needed to exercise it
+- id: no-iwc-bam-to-fastq-exemplar
+  raised_by: compare-against-iwc-exemplar
+  evidence: 'IWC c07557f: no workflow for alignments-to-reads; samtools_fastx used in 2 workflows as a clean-up step; collapse->Filter1->Cut1->__FILTER_FROM_FILE__ motif found in influenza-consensus-and-subtyping.'
+  impact: no domain exemplar; idiom-only guidance for the template
+decisions:
+- id: reference-fasta-as-optional-data-input
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: Expose one optional data input of format fasta; no fai input, no data table, no genome key.
+  rationale: 'v1 posture of the mapping note: explicit optional inputs + in-tool rebuild.'
+  evidence:
+  - fasta-only-matters-for-cram
+- id: alignments-as-plain-list
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Workflow input is a list collection of bam, element identifier = sample_id; no sample_sheet collection.
+  rationale: No sample-sheet column needs to survive as row metadata.
+  evidence:
+  - samplesheet-columns-all-have-native-galaxy-homes
+- id: two-read-output-collections
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Expose 'Paired-end reads' (list:paired) and 'Single-end reads' (list) as separate outputs.
+  rationale: The source routes each sample to one of two branches with different output shapes.
+  evidence: []
+- id: multiqc-fed-with-fastqc-and-samtools
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Feed MultiQC the FastQC and samtools QC outputs instead of versions-only.
+  rationale: Superset of the source behaviour and the pipeline's documented intent; a versions-only MultiQC has no Galaxy equivalent.
+  evidence:
+  - multiqc-gets-no-qc-files-in-source
+- id: route-by-classifier-and-collection-split
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Per-sample single/paired routing = classifier step, identifier table, collection split into two sub-lists; no per-element 'when'.
+  rationale: 'Operator note: per-element branch needs explicit filters/classifiers; keeps each branch a plain map-over.'
+  evidence:
+  - default-test-has-no-single-end-sample
+- id: fold-unmapped-filters
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Replace SAMTOOLS_VIEW_UNMAP_UNMAP/_UNMAP_MAP/_MAP_UNMAP + SAMTOOLS_MERGE_UNMAP by one flag filter.
+  rationale: Identical output; avoids building a nested collection per sample for the merge.
+  evidence:
+  - unmapped-union-filter-equivalent
+- id: bam-only-single-input
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: The workflow has one input (list of bam). Reference FASTA and 'Regions to extract' inputs from the interface brief are removed.
+  rationale: Follows from the two recorded drops.
+  evidence: []
+- id: routing-plumbing-follows-iwc-motif
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: 'Data-flow nodes 6-8 are four Resolved steps: collapse_dataset 5.1.0 -> Filter1 (c2==''paired'') -> Cut1 (c1) -> __FILTER_FROM_FILE__ (remove_if_absent), both split outputs consumed.'
+  rationale: Tool ids, versions, ports and state taken from the IWC influenza exemplar excerpt.
+  evidence:
+  - no-iwc-bam-to-fastq-exemplar
+- id: fast-mode-not-applied-to-single-end
+  decided_by: repair-galaxy-draft-topology
+  decision: '''Collate in fast mode'' is wired to the two paired-branch collate steps only; the single-end collate step always runs in normal mode.'
+  rationale: The source applies ext.args '-f -r N' to SAMTOOLS_COLLATEFASTQ_SINGLE_END too, but the wrapper help states fast mode 'will output only primary alignments that have either the READ1 or READ2 flags set (but not both)'; single-end reads have neither flag, so fast mode would empty the single-end output. Deviation from the source, on purpose.
+  evidence: []
+- id: fold-collate-into-fastx
+  decided_by: repair-galaxy-draft-topology
+  decision: Remove the three collate steps and the 'Collate in fast mode' input; BAM to FASTQ steps read the filtered BAMs directly.
+  rationale: 'repair skill fold clause: the consumer''s wrapper does the work (grouping reads by name) itself.'
+  evidence: []
+  supersedes: fast-mode-not-applied-to-single-end
+brief_change_recommendations: []
+topology_repair:
+  escalations: 2
+  cap: 5
+  open_history:
+  - 0
+  - 0
+  note: 'escalation 2 was triggered by runtime evidence (planemo attempt 1), not by an open blocking entry: it re-closes the three fastx-name-sorts-* entries whose first resolution was refuted. Open blocking entries after it: 0.'

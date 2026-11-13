@@ -1,0 +1,907 @@
+class: GalaxyWorkflowDraft
+label: nf-core/bamtofastq (Galaxy draft from aa0150e)
+doc: |
+  Draft of the Galaxy workflow for nf-core/bamtofastq at aa0150e. Topology is settled here
+  (inputs, outputs, steps, edges, when-guards). Wrapper-tier items are TODO or identity-pinned
+  (tool_version TODO); see _plan_* on each step. Source: summary-nextflow.json (reconciled),
+  nextflow-galaxy-reference-data.md, nextflow-galaxy-interface.md, nextflow-galaxy-data-flow.md.
+inputs:
+  samples:
+    type: collection
+    collection_type: sample_sheet
+    label: samples
+    format:
+    - bam
+    - cram
+    column_definitions:
+    - name: sample_id
+      type: string
+      optional: false
+      validators:
+      - type: regex
+        expression: ^\S+$
+    - name: file_type
+      type: string
+      optional: false
+      restrictions:
+      - bam
+      - cram
+    doc: One row per BAM or CRAM. sample_id must be unique per row (source does not enforce it). The index column is not carried (see open-requirements).
+  reference_fasta:
+    type: data
+    label: reference_fasta
+    format: fasta
+    optional: true
+    doc: Reference FASTA. Optional for BAM rows; required for CRAM rows (not enforced by the source).
+  reference_fasta_index:
+    type: data
+    label: reference_fasta_index
+    format: fai
+    optional: true
+    doc: FASTA index. If absent it is built from reference_fasta by a workflow-tier step.
+  chromosome_filter:
+    type: string
+    label: chromosome_filter
+    optional: true
+    doc: Region filter (source params.chr). Changes output element identifiers to <sample>.<chr>.
+  skip_samtools_reports:
+    type: boolean
+    label: skip_samtools_reports
+    default: false
+    doc: Source no_stats. When true, the three samtools report outputs are skipped.
+  collate_fast:
+    type: boolean
+    label: collate_fast
+    default: false
+    doc: Source samtools_collate_fast. Changes collate arguments.
+  reads_in_memory:
+    type: int
+    label: reads_in_memory
+    default: 100000
+    doc: Source reads_in_memory. Used only when collate_fast is true.
+  multiqc_title:
+    type: string
+    label: multiqc_title
+    optional: true
+  multiqc_config:
+    type: data
+    label: multiqc_config
+    optional: true
+  multiqc_logo:
+    type: data
+    label: multiqc_logo
+    optional: true
+  multiqc_methods_description:
+    type: data
+    label: multiqc_methods_description
+    optional: true
+outputs:
+  paired_reads:
+    outputSource: filter_paired/TODO_pair
+    label: paired_reads
+  single_reads:
+    outputSource: filter_single/output
+    label: single_reads
+  multiqc_report:
+    outputSource: multiqc/html_report
+    label: multiqc_report
+  samtools_flagstat:
+    outputSource: flagstat/output1
+    label: samtools_flagstat
+  samtools_idxstats:
+    outputSource: idxstats/output
+    label: samtools_idxstats
+  samtools_stats:
+    outputSource: stats/output
+    label: samtools_stats
+steps:
+  index_fasta:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_faidx/samtools_faidx/1.22+galaxy1
+    tool_version: 1.22+galaxy1
+    tool_shed_repository:
+      changeset_revision: 78d6d62d4ce4
+      name: samtools_faidx
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: build FASTA index when reference_fasta is given
+    when: $(inputs.when !== null)
+    in:
+      when: reference_fasta
+      input: reference_fasta
+    out:
+    - id: output
+    state:
+      input:
+        __class__: ConnectedValue
+  pick_fai:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: 0.2.0
+    tool_shed_repository:
+      changeset_revision: b19e21af9c52
+      name: pick_value
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: FASTA index (supplied or built)
+    in:
+      style_cond|type_cond|pick_from_0|value: reference_fasta_index
+      style_cond|type_cond|pick_from_1|value: index_fasta/output
+    out:
+    - id: data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+          pick_from:
+          - value:
+              __class__: ConnectedValue
+          - value:
+              __class__: ConnectedValue
+  classify_layout:
+    label: classify each sample as single-end or paired-end
+    run:
+      class: GalaxyUserTool
+      id: samtools_paired_layout_check
+      version: 1.0.0
+      name: Paired-end layout check (samtools)
+      description: Decides whether a BAM or CRAM holds paired-end or single-end reads, from its first 1000 records.
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      help:
+        format: markdown
+        content: |
+          Samples the first 1000 records of a SAM, BAM or CRAM file and counts the records with the paired flag (0x1).
+          The file counts as paired-end when every sampled record has that flag; otherwise it is single-end.
+          Two text outputs hold `true` or `false`: `is_single` and `is_paired`.
+          CRAM input needs the reference FASTA. This reproduces the CHECKPAIREDEND rule of nf-core/bamtofastq at aa0150e.
+      configfiles:
+      - filename: classify_layout.sh
+        content: |
+          #!/bin/sh
+          set -e
+          IN="$1"
+          REF="$2"
+          REF_ARGS=""
+          if [ -n "$REF" ]; then
+              REF_ARGS="--reference $REF"
+          fi
+          samtools view $REF_ARGS "$IN" > all.sam
+          head -n 1000 all.sam > sample.sam
+          samtools view -c sample.sam > total.txt
+          samtools view -c -f 1 sample.sam > paired.txt
+          awk 'NR==1{p=$1} NR==2{t=$1} END { if (t>0 && p==t) { ip="true"; isg="false" } else { ip="false"; isg="true" }; print isg > "is_single.txt"; print ip > "is_paired.txt" }' paired.txt total.txt
+          rm -f all.sam sample.sam
+      shell_command: |
+        sh classify_layout.sh '$(inputs.input.path)' '$(inputs.reference ? inputs.reference.path : "")'
+      inputs:
+      - name: input
+        type: data
+        format:
+        - sam
+        - bam
+        - cram
+        label: Alignment file
+        help: One SAM, BAM or CRAM file (one sample).
+      - name: reference
+        type: data
+        format:
+        - fasta
+        optional: true
+        label: Reference FASTA (CRAM only)
+        help: Needed to decode CRAM. Leave empty for SAM or BAM input.
+      outputs:
+      - name: is_single
+        type: data
+        format: txt
+        from_work_dir: is_single.txt
+        label: Single-end (true or false)
+      - name: is_paired
+        type: data
+        format: txt
+        from_work_dir: is_paired.txt
+        label: Paired-end (true or false)
+    in:
+      input: samples
+      reference: pick_fai/data_param
+    out:
+    - id: is_single
+    - id: is_paired
+  gate_single:
+    tool_id: param_value_from_file
+    tool_version: 0.1.0
+    label: per-sample single-end gate
+    in:
+      input1: classify_layout/is_single
+    out:
+    - id: boolean_param
+    state:
+      input1: &id001
+        __class__: ConnectedValue
+      param_type: boolean
+      remove_newlines: true
+  gate_paired:
+    tool_id: param_value_from_file
+    tool_version: 0.1.0
+    label: per-sample paired-end gate
+    in:
+      input1: classify_layout/is_paired
+    out:
+    - id: boolean_param
+    state:
+      input1: *id001
+      param_type: boolean
+      remove_newlines: true
+  flagstat:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8
+    tool_version: 2.0.8
+    tool_shed_repository:
+      changeset_revision: a0d8e49a018c
+      name: samtools_flagstat
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: samtools flagstat on the input files
+    when: $(!inputs.when)
+    in:
+      when: skip_samtools_reports
+      input1: samples
+    out:
+    - id: output1
+    state:
+      input1:
+        __class__: ConnectedValue
+      output_fmt: txt
+  idxstats:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats/2.0.8
+    tool_version: 2.0.8
+    tool_shed_repository:
+      changeset_revision: 13aad5cb9be4
+      name: samtools_idxstats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: samtools idxstats on the input files
+    when: $(!inputs.when)
+    in:
+      when: skip_samtools_reports
+      input: samples
+    out:
+    - id: output
+    state:
+      input:
+        __class__: ConnectedValue
+  stats:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.9
+    tool_version: 2.0.9
+    tool_shed_repository:
+      changeset_revision: 8fca6e1eac98
+      name: samtools_stats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: samtools stats on the input files
+    when: $(!inputs.when)
+    in:
+      when: skip_samtools_reports
+      input: samples
+      addref_cond|ref: pick_fai/data_param
+    out:
+    - id: output
+    state:
+      input: &id002
+        __class__: ConnectedValue
+      coverage_cond:
+        coverage_select: 'no'
+      filter_by_flags:
+        filter_flags: nofilter
+      addref_cond:
+        addref_select: history
+        ref: *id002
+      remove_dups: false
+      sparse: false
+      remove_overlaps: false
+  chr_extract:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: extract region (only with chromosome_filter)
+    when: $(inputs.when !== null)
+    in:
+      when: chromosome_filter
+      input: samples
+      mode|filter_config|cond_region|regions: chromosome_filter
+      addref_cond|ref: pick_fai/data_param
+    out:
+    - id: outputsam
+    state:
+      input: &id003
+        __class__: ConnectedValue
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: text
+            regions: *id003
+          cond_rg:
+            select_rg: 'no'
+          cond_expr:
+            select_expr: 'no'
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: history
+        ref: *id003
+  pick_bam:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: 0.2.0
+    tool_shed_repository:
+      changeset_revision: b19e21af9c52
+      name: pick_value
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: sample BAM after the chromosome branch
+    in:
+      style_cond|type_cond|pick_from_0|value: chr_extract/outputsam
+      style_cond|type_cond|pick_from_1|value: samples
+    out:
+    - id: data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+          pick_from:
+          - value:
+              __class__: ConnectedValue
+          - value:
+              __class__: ConnectedValue
+  select_mm:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: select mapped-mapped records
+    when: $(inputs.when)
+    in:
+      when: gate_paired/boolean_param
+      input: pick_bam/data_param
+      addref_cond|ref: pick_fai/data_param
+    out:
+    - id: outputsam
+    state:
+      input: &id004
+        __class__: ConnectedValue
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: 'no'
+          cond_rg:
+            select_rg: 'no'
+          cond_expr:
+            select_expr: 'no'
+          inclusive_filter:
+          - '1'
+          exclusive_filter:
+          - '4'
+          - '8'
+          exclusive_filter_all: []
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: history
+        ref: *id004
+  select_uu:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: select unmapped-unmapped records
+    when: $(inputs.when)
+    in:
+      when: gate_paired/boolean_param
+      input: pick_bam/data_param
+      addref_cond|ref: pick_fai/data_param
+    out:
+    - id: outputsam
+    state:
+      input: *id004
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: 'no'
+          cond_rg:
+            select_rg: 'no'
+          cond_expr:
+            select_expr: 'no'
+          inclusive_filter:
+          - '4'
+          - '8'
+          exclusive_filter:
+          - '256'
+          exclusive_filter_all: []
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: history
+        ref: *id004
+  select_um:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: select unmapped-mapped records
+    when: $(inputs.when)
+    in:
+      when: gate_paired/boolean_param
+      input: pick_bam/data_param
+      addref_cond|ref: pick_fai/data_param
+    out:
+    - id: outputsam
+    state:
+      input: *id004
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: 'no'
+          cond_rg:
+            select_rg: 'no'
+          cond_expr:
+            select_expr: 'no'
+          inclusive_filter:
+          - '4'
+          exclusive_filter:
+          - '8'
+          - '256'
+          exclusive_filter_all: []
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: history
+        ref: *id004
+  select_mu:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: select mapped-unmapped records
+    when: $(inputs.when)
+    in:
+      when: gate_paired/boolean_param
+      input: pick_bam/data_param
+      addref_cond|ref: pick_fai/data_param
+    out:
+    - id: outputsam
+    state:
+      input: *id004
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: 'no'
+          cond_rg:
+            select_rg: 'no'
+          cond_expr:
+            select_expr: 'no'
+          inclusive_filter:
+          - '8'
+          exclusive_filter:
+          - '4'
+          - '256'
+          exclusive_filter_all: []
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: history
+        ref: *id004
+  collate_mapped:
+    tool_id: TODO
+    tool_version: TODO
+    label: collate and convert mapped records to paired FASTQ
+    when: $(inputs.when)
+    in:
+      when: gate_paired/boolean_param
+      TODO_input: collate_mapped_records/output_file
+      TODO_fasta: pick_fai/data_param
+    out:
+    - id: TODO_pair
+    _plan_state: |
+      Paired output (read 1 and read 2). Collate arguments from source (-f -r reads_in_memory when collate_fast is set; -N in ext.args2). Output as a paired collection.
+    _plan_context: |
+      Source: COLLATE_FASTQ_MAP (samtools collatefastq, interleave false, publishDir disabled). No IWC exemplar uses samtools collate or fastq at this pin. Deferred.
+    _plan_in: |
+      TODO_input: collate_mapped_records output (mapped records); TODO_fasta: reference.
+    _plan_out: |
+      TODO_pair: paired FASTQ per sample (list:paired). Mapped side of the join.
+  collate_unmapped:
+    tool_id: TODO
+    tool_version: TODO
+    label: collate and convert unmapped records to paired FASTQ
+    when: $(inputs.when)
+    in:
+      when: gate_paired/boolean_param
+      TODO_input: collate_unmapped_records/output_file
+      TODO_fasta: pick_fai/data_param
+    out:
+    - id: TODO_pair
+    _plan_state: |
+      As collate_mapped, with the same collate settings.
+    _plan_context: |
+      Source: COLLATE_FASTQ_UNMAP. Deferred for the same reason as collate_mapped.
+    _plan_in: |
+      TODO_input: collate_unmapped_records output; TODO_fasta: reference.
+    _plan_out: |
+      TODO_pair: paired FASTQ per sample (list:paired). Unmapped side of the join.
+  filter_mapped:
+    tool_id: TODO
+    tool_version: TODO
+    label: drop skipped mapped elements
+    in:
+      TODO_input: collate_mapped/TODO_pair
+    out:
+    - id: TODO_pair
+    _plan_state: |
+      Remove null elements produced by the per-element when-guard.
+    _plan_context: |
+      Galaxy null/empty element filter, applied after a mapped step with skipped elements (collection-cleanup pattern). Not used in IWC at this pin (__FILTER_NULL__ has no corpus use); deferred.
+    _plan_in: |
+      TODO_input: collate_mapped output (list:paired with nulls).
+    _plan_out: |
+      TODO_pair: list:paired without the skipped samples. Positional pairing with filter_unmapped is then the same element set.
+  filter_unmapped:
+    tool_id: TODO
+    tool_version: TODO
+    label: drop skipped unmapped elements
+    in:
+      TODO_input: collate_unmapped/TODO_pair
+    out:
+    - id: TODO_pair
+    _plan_state: |
+      As filter_mapped.
+    _plan_context: |
+      As filter_mapped.
+    _plan_in: |
+      TODO_input: collate_unmapped output.
+    _plan_out: |
+      TODO_pair: list:paired without the skipped samples.
+  unzip_mapped:
+    tool_id: __UNZIP_COLLECTION__
+    tool_version: TODO
+    label: split mapped pairs into read 1 and read 2
+    in:
+      TODO_input: filter_mapped/TODO_pair
+    out:
+    - id: TODO_forward
+    - id: TODO_reverse
+    _plan_state: |
+      No parameters.
+    _plan_context: |
+      Built-in collection operation. Corpus: __UNZIP_COLLECTION__ 1.0.0 in 11 IWC steps.
+    _plan_in: |
+      TODO_input: list:paired from filter_mapped.
+    _plan_out: |
+      TODO_forward, TODO_reverse: list collections of read 1 and read 2 (mapped).
+  unzip_unmapped:
+    tool_id: __UNZIP_COLLECTION__
+    tool_version: TODO
+    label: split unmapped pairs into read 1 and read 2
+    in:
+      TODO_input: filter_unmapped/TODO_pair
+    out:
+    - id: TODO_forward
+    - id: TODO_reverse
+    _plan_state: |
+      No parameters.
+    _plan_context: |
+      As unzip_mapped.
+    _plan_in: |
+      TODO_input: list:paired from filter_unmapped.
+    _plan_out: |
+      TODO_forward, TODO_reverse: list collections of read 1 and read 2 (unmapped).
+  nest_fwd:
+    tool_id: TODO
+    tool_version: TODO
+    label: pair mapped and unmapped read 1 per sample
+    in:
+      TODO_first: unzip_mapped/TODO_forward
+      TODO_second: unzip_unmapped/TODO_forward
+    out:
+    - id: TODO_nested
+    _plan_state: |
+      Per sample, a list of two datasets in the order mapped then unmapped (matches source concatenation order: mapped R1 then unmapped R1).
+    _plan_context: |
+      Shape change from two sibling lists to one per-element list of two datasets, required as input to a multi-dataset concatenation. The sibling pairing is positional; identifier synchronisation is the open point (see open-requirements). Candidate: apply-rules or build-list per element.
+    _plan_in: |
+      TODO_first: mapped read 1 list; TODO_second: unmapped read 1 list.
+    _plan_out: |
+      TODO_nested: per sample a two-dataset list, ready for concat.
+  nest_rev:
+    tool_id: TODO
+    tool_version: TODO
+    label: pair mapped and unmapped read 2 per sample
+    in:
+      TODO_first: unzip_mapped/TODO_reverse
+      TODO_second: unzip_unmapped/TODO_reverse
+    out:
+    - id: TODO_nested
+    _plan_state: |
+      As nest_fwd for read 2.
+    _plan_context: |
+      As nest_fwd.
+    _plan_in: |
+      TODO_first: mapped read 2 list; TODO_second: unmapped read 2 list.
+    _plan_out: |
+      TODO_nested: per sample two-dataset list for read 2.
+  concat_fwd:
+    tool_id: toolshed.g2.bx.psu.edu/repos/artbio/concatenate_multiple_datasets/cat_multi_datasets
+    tool_version: TODO
+    label: concatenate read 1 (mapped then unmapped)
+    in:
+      TODO_input: nest_fwd/TODO_nested
+    out:
+    - id: TODO_out
+    _plan_state: |
+      No parameters beyond the input list.
+    _plan_context: |
+      Source: CAT_FASTQ (reads_to_concat, read 1 side). Corpus: cat_multi_datasets 1.4.3 in 9 IWC steps (the sra-manifest exemplar concatenates per sample this way).
+    _plan_in: |
+      TODO_input: per-sample two-dataset list for read 1.
+    _plan_out: |
+      TODO_out: concatenated read 1 per sample.
+  concat_rev:
+    tool_id: toolshed.g2.bx.psu.edu/repos/artbio/concatenate_multiple_datasets/cat_multi_datasets
+    tool_version: TODO
+    label: concatenate read 2 (mapped then unmapped)
+    in:
+      TODO_input: nest_rev/TODO_nested
+    out:
+    - id: TODO_out
+    _plan_state: |
+      As concat_fwd, for read 2.
+    _plan_context: |
+      As concat_fwd.
+    _plan_in: |
+      TODO_input: per-sample two-dataset list for read 2.
+    _plan_out: |
+      TODO_out: concatenated read 2 per sample.
+  zip_pairs:
+    tool_id: __ZIP_COLLECTION__
+    tool_version: TODO
+    label: zip read 1 and read 2 into paired reads
+    in:
+      TODO_forward: concat_fwd/TODO_out
+      TODO_reverse: concat_rev/TODO_out
+    out:
+    - id: TODO_pair
+    _plan_state: |
+      No parameters. Pair forward and reverse by element.
+    _plan_context: |
+      Built-in collection operation. Corpus: __ZIP_COLLECTION__ 1.0.0 in 2 IWC steps.
+    _plan_in: |
+      TODO_forward, TODO_reverse: the concatenated read collections (positional).
+    _plan_out: |
+      TODO_pair: list:paired per sample.
+  filter_paired:
+    tool_id: TODO
+    tool_version: TODO
+    label: drop skipped samples from paired reads
+    in:
+      TODO_input: zip_pairs/TODO_pair
+    out:
+    - id: TODO_pair
+    _plan_state: |
+      As filter_mapped.
+    _plan_context: |
+      As filter_mapped. Output is the paired_reads workflow output.
+    _plan_in: |
+      TODO_input: zip_pairs output.
+    _plan_out: |
+      TODO_pair: paired_reads (list:paired).
+  collate_single:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx/samtools_fastx/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 4bde991b8037
+      name: samtools_fastx
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: collate and convert single-end records to FASTQ
+    when: $(inputs.when)
+    in:
+      when: gate_single/boolean_param
+      input: pick_bam/data_param
+    out:
+    - id: other
+    state:
+      input:
+        __class__: ConnectedValue
+      output_fmt_cond:
+        output_fmt_select: fastqsanger
+        output_quality: false
+        ilumina_casava: false
+      outputs:
+      - other
+      copy_tags: false
+      read_numbering: ''
+      inclusive_filter: []
+      exclusive_filter:
+      - '256'
+      - '2048'
+      exclusive_filter_all: []
+      idxout_cond:
+        idxout_select: 'no'
+  filter_single:
+    tool_id: __FILTER_NULL__
+    tool_version: 1.0.0
+    label: drop skipped samples from single-end reads
+    in:
+      input: collate_single/other
+    out:
+    - id: output
+    state:
+      input:
+        __class__: ConnectedValue
+  multiqc:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc
+    tool_version: 1.35+galaxy5
+    tool_shed_repository:
+      changeset_revision: 94b6bea727ae
+      name: multiqc
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: MultiQC report
+    in:
+      results_0|software_cond|output_0|type|input: stats/output
+      results_0|software_cond|output_1|type|input: flagstat/output1
+      results_0|software_cond|output_2|type|input: idxstats/output
+      title: multiqc_title
+    out:
+    - id: html_report
+    state:
+      results:
+      - software_cond:
+          software: samtools
+          output:
+          - type:
+              type: stats
+              input: &id005
+                __class__: ConnectedValue
+          - type:
+              type: flagstat
+              input: *id005
+          - type:
+              type: idxstats
+              input: *id005
+      title: *id005
+      flat: false
+      export: false
+      png_plots: false
+  collate_mapped_records:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_collate/samtools_collate/1.22+galaxy1
+    tool_version: 1.22+galaxy1
+    tool_shed_repository:
+      changeset_revision: e7fa06931998
+      name: samtools_collate
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: name-collate mapped records (before paired FASTQ)
+    when: $(inputs.when)
+    in:
+      when: gate_paired/boolean_param
+      input: select_mm/outputsam
+      fast_mode: collate_fast
+    out:
+    - id: output_file
+    state:
+      input: &id006
+        __class__: ConnectedValue
+      no_pg: false
+      fast_mode: *id006
+  collate_unmapped_records:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_collate/samtools_collate/1.22+galaxy1
+    tool_version: 1.22+galaxy1
+    tool_shed_repository:
+      changeset_revision: e7fa06931998
+      name: samtools_collate
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: name-collate unmapped records (before paired FASTQ)
+    when: $(inputs.when)
+    in:
+      when: gate_paired/boolean_param
+      input: select_unmapped_union/outputsam
+      fast_mode: collate_fast
+    out:
+    - id: output_file
+    state:
+      input: &id007
+        __class__: ConnectedValue
+      no_pg: false
+      fast_mode: *id007
+  select_unmapped_union:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    label: select unmapped records (unmapped read or unmapped mate, secondary excluded)
+    when: $(inputs.when)
+    in:
+      when: gate_paired/boolean_param
+      input: pick_bam/data_param
+      addref_cond|ref: pick_fai/data_param
+    out:
+    - id: outputsam
+    state:
+      input: &id008
+        __class__: ConnectedValue
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: 'no'
+          cond_rg:
+            select_rg: 'no'
+          cond_expr:
+            select_expr: 'yes'
+            expression: (flag.unmap || flag.munmap) && !flag.secondary
+          inclusive_filter: []
+          exclusive_filter: []
+          exclusive_filter_all: []
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: history
+        ref: *id008

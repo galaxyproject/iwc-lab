@@ -1,0 +1,151 @@
+discoveries:
+  - id: reference-fasta-optional-for-bam-required-for-cram
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    evidence: "summary-nextflow.json reference_assets[] and workflows/bamtofastq.nf: fasta/fasta_fai are optional (required: false) and used for CRAM reference resolution."
+    impact: "Surface fasta as an optional Galaxy data input (format: fasta) rather than required."
+  - id: multiqc-qc-channels-disconnected-in-source
+    raised_by: nextflow-summary-to-galaxy-interface
+    evidence: "workflows/bamtofastq.nf lines 79-83, 171-172, 217-239: PRE_CONVERSION_QC and FASTQC_POST_CONVERSION outputs are not mixed into ch_multiqc_files at commit aa0150e; only software_versions, workflow_summary_mqc.yaml, and methods_description_mqc.yaml reach MULTIQC."
+    impact: "Data-flow and MultiQC tool mapping must decide how Galaxy MultiQC consumes QC outputs (samtools + fastqc) or handles optional/empty QC branches."
+  - id: samtools-index-subsumed-by-galaxy-metadata
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    evidence: "PREPARE_INDICES (SAMTOOLS_INDEX) and SAMTOOLS_CHR_INDEX build .bai/.crai indexes when absent; Galaxy automatically builds and attaches bai/crai metadata to bam/cram datasets."
+    impact: "Omit standalone SAMTOOLS_INDEX and SAMTOOLS_CHR_INDEX steps unless a discovered wrapper explicitly requires a separate index dataset."
+  - id: no-iwc-bamtofastq-domain-exemplar
+    raised_by: compare-against-iwc-exemplar
+    evidence: "Full scan of ~/.foundry/iwc/workflows found no domain exemplar for paired/single BAM/CRAM-to-FASTQ conversion; microbiome/host-contamination-removal-long-reads uses samtools_fastx only for single-end unmapped extraction after minimap2."
+    impact: "Template and tool-step phases cannot rely on an IWC canonical subgraph and must verify samtools collate/fastx, fastq_info, and multiqc schemas directly."
+  - id: iwc-conditional-pick-value-and-multiqc-pattern
+    raised_by: compare-against-iwc-exemplar
+    evidence: "transcriptomics/rnaseq-pe uses iuc/pick_value (0.2.0) to merge mutually exclusive conditional branches and splits MultiQC across conditional variants when QC inputs are optional."
+    impact: "Template and step-authoring must check whether pick_value supports list collections for chr filtering and whether iuc/multiqc tolerates NO_REPLACEMENT on software_cond inputs when no_read_qc or no_stats is true."
+decisions:
+  - id: omit-igenomes-data-table-lookup
+    decided_by: nextflow-summary-to-galaxy-reference-data
+    decision: "Do not surface params.genome / igenomes_base / igenomes_ignore as Galaxy dbkey or data-table lookups; start the Galaxy reference surface at optional explicit fasta input."
+    rationale: "v1 Galaxy portability posture avoids admin-managed tool_data_table_conf.xml / .loc dependencies."
+    evidence:
+      - reference-fasta-optional-for-bam-required-for-cram
+  - id: map-samplesheet-to-list-collection
+    decided_by: nextflow-summary-to-galaxy-interface
+    decision: "Represent params.input (sample_id, mapped, index, file_type) as a Galaxy collection input `alignments` of collection_type `list` (elements bam/cram) rather than `sample_sheet`."
+    rationale: "sample_id maps to Galaxy element_identifier, index (.bai/.crai) is stored natively in Galaxy dataset metadata, and file_type duplicates Galaxy dataset format (bam/cram). Using list keeps all downstream Tool Shed wrappers directly mappable."
+    evidence:
+      - reference-fasta-optional-for-bam-required-for-cram
+  - id: inline-when-plus-pick-value-for-chr-and-qc-gates
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    decision: "Use inline step when: gates for optional QC steps (!no_read_qc, !no_stats) and inline when: + pick_value (first_non_null) for optional chr filtering; flatten subworkflows into a single Galaxy DAG."
+    rationale: "Nextflow conditionals gate short 1-3 step paths; subworkflow boundaries would add unnecessary boilerplate."
+    evidence:
+      - reference-fasta-optional-for-bam-required-for-cram
+  - id: wire-qc-outputs-into-galaxy-multiqc
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    decision: "Wire samtools_flagstat, samtools_idxstats, samtools_stats, fastqc_pre_conversion_zip, and fastqc_post_conversion_zip into MultiQC (gated by !(no_read_qc && no_stats))."
+    rationale: "In source commit aa0150e, QC channels were left unwired due to a commented-out debug line; Galaxy MultiQC tool consumes actual QC outputs directly."
+    evidence:
+      - multiqc-qc-channels-disconnected-in-source
+topology_repair:
+  escalations: 2
+  cap: 5
+  open_history: [0, 0]
+entries:
+  - id: fasta-fai-in-tool-rebuild-unverified
+    status: open
+    blocking: false
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    unmet: "Verify whether selected Galaxy samtools / checkpairedend wrappers rebuild or resolve .fai from an optional fasta input without an explicit SAMTOOLS_FAIDX workflow step"
+    missing: "Wrapper input schema inspection from discover-shed-tool / summarize-galaxy-tool"
+    resolved_by: null
+    supersedes: null
+    note: "PREPARE_INDICES runs SAMTOOLS_FAIDX when fasta is supplied without fasta_fai; re-evaluate if a chosen wrapper requires an explicit fai dataset."
+  - id: igenomes-key-not-carried
+    status: open
+    kind: dropped
+    blocking: false
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    units: "params.genome, params.igenomes_base, params.igenomes_ignore (getGenomeAttribute resolution in main.nf)"
+    because: "v1 reference-data mapping posture (references/notes/nextflow-to-galaxy-reference-data-mapping.md) excludes dbkey/from_data_table admin .loc dependencies in favor of explicit dataset inputs."
+    unmet: "Preconfigured iGenomes genome-key shorthand resolving fasta/fasta_fai"
+    missing: "No portable Galaxy data-table equivalent without instance-specific .loc setup"
+    resolved_by: null
+    supersedes: null
+    note: "Users supply fasta directly as an optional Galaxy dataset input."
+  - id: alignments-mixed-bam-cram-datatype
+    status: open
+    blocking: false
+    raised_by: nextflow-summary-to-galaxy-interface
+    unmet: "Confirm how gxformat2 `list` input `alignments` accepts both `bam` and `cram` elements (e.g., `format: [bam, cram]` vs omitted `format`)"
+    missing: "gxformat2 schema / draft-validate confirmation in template/implementation phases"
+    resolved_by: null
+    supersedes: null
+    note: "Source samplesheet accepts both .bam and .cram rows."
+  - id: multiqc-boilerplate-overrides-not-carried
+    status: open
+    kind: dropped
+    blocking: false
+    raised_by: nextflow-summary-to-galaxy-interface
+    units: "params.multiqc_config, params.multiqc_logo, params.multiqc_methods_description"
+    because: "nf-core boilerplate MultiQC custom config/logo/methods HTML overrides are optional report styling; Galaxy MultiQC generates standard reports without custom nf-core template assets."
+    unmet: "Custom MultiQC YAML config, logo, and nf-core methods description HTML"
+    missing: "Omitted from public Galaxy workflow interface per control-param exclusion rules"
+    resolved_by: null
+    supersedes: null
+    note: "multiqc_title is retained as an optional string input."
+  - id: chr-pick-value-collection-compatibility
+    status: open
+    blocking: false
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: "Confirm pick_value (first_non_null) handles a skipped mapped list collection alongside alignments without error"
+    missing: "Template/runtime verification in validate-galaxy-workflow / run-workflow-test"
+    resolved_by: null
+    supersedes: null
+    note: "Alternative if pick_value rejects mixed skipped/list collection: twin branch or conditional expression check."
+  - id: empty-branch-collection-mapover-safety
+    status: open
+    blocking: false
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: "Confirm empty paired_alignments or single_alignments list collections pass cleanly through downstream map-over, merge, and fastqutils_info steps"
+    missing: "Runtime test verification in Planemo"
+    resolved_by: null
+    supersedes: null
+    note: "In default.nf.test both samples are paired-end, leaving single_alignments empty."
+  - id: multiqc-partial-skip-input-tolerance
+    status: open
+    blocking: false
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    step: multiqc
+    unmet: "Ensure MultiQC step handles optional/skipped QC branches when only one of no_stats or no_read_qc is enabled, or when CRAM skips pre-conversion FastQC"
+    missing: "MultiQC wrapper input inspection in advance-galaxy-draft-step"
+    resolved_by: null
+    supersedes: null
+    note: "Depends on whether Galaxy multiqc repeat parameters are optional on NO_REPLACEMENT (if not, escalate to repair-galaxy-draft-topology to split branches + pick_value per IWC rnaseq-pe idiom)."
+  - id: samtools-merge-per-sample-arity
+    status: open
+    blocking: false
+    raised_by: nextflow-summary-to-galaxy-template
+    step: samtools_merge_unmap
+    unmet: "Confirm samtools merge wrapper accepts 3 separate per-sample mapped inputs (unmap_unmap, unmap_map, map_unmap) rather than collapsing across samples"
+    missing: "iuc/samtools_merge wrapper parameter inspection in advance-galaxy-draft-step"
+    resolved_by: null
+    supersedes: null
+    note: "If samtools_merge only accepts a single multiple=true data parameter, escalate to repair-galaxy-draft-topology to nest per-sample into list:list before merging."
+  - id: samtools-chr-optional-fasta-branch
+    status: resolved
+    blocking: true
+    raised_by: implement-galaxy-tool-step
+    step: samtools_chr
+    unmet: "Single iuc/samtools_view (1.22+galaxy2) step cannot pass optional workflow fasta input because addref_cond.addref_select is static ('no' vs 'history') and history.ref is optional: false"
+    missing: "Parallel branch step for fasta != null feeding pick_value select_effective_alignments"
+    resolved_by: repair-galaxy-draft-topology
+    supersedes: null
+    note: "Added samtools_chr_with_fasta (when fasta != null, addref_select: history) and added its output to select_effective_alignments; samtools_chr handles fasta == null (addref_select: no)."
+  - id: samtools-stats-optional-fasta-branch
+    status: resolved
+    blocking: true
+    raised_by: implement-galaxy-tool-step
+    step: samtools_stats
+    unmet: "Single devteam/samtools_stats (2.0.9) step cannot pass optional workflow fasta input because addref_cond.addref_select is static ('no' vs 'history') and history.ref is optional: false"
+    missing: "Parallel branch step for fasta != null and pick_value (first_or_skip) fan-in"
+    resolved_by: repair-galaxy-draft-topology
+    supersedes: null
+    note: "Added samtools_stats_with_fasta (when !no_stats && fasta != null, draft tier pinned to devteam/samtools_stats 2.0.9) and pick_value select_samtools_stats (mode: first_or_skip); rewired outputs.samtools_stats and multiqc/TODO_stats."

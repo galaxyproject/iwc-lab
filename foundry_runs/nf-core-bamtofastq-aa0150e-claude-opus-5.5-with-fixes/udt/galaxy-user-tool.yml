@@ -1,0 +1,51 @@
+class: GalaxyUserTool
+id: bamtofastq_check_paired_end
+version: 1.0.0
+name: Check paired-end status of an alignment
+description: Classify a BAM/CRAM as paired- or single-end (nf-core/bamtofastq CHECKPAIREDEND) and report its container format
+license: MIT
+container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+requirements:
+  - type: resource
+    cores_min: 1
+inputs:
+  - name: alignment
+    type: data
+    format: [bam, cram]
+    label: Alignment (BAM or CRAM)
+  - name: reference
+    type: data
+    format: [fasta]
+    optional: true
+    label: Reference FASTA
+    help: Only used for CRAM input, when the CRAM header does not point to an accessible reference.
+outputs:
+  - name: classification
+    type: data
+    format: tabular
+    from_work_dir: classification.tsv
+    label: Paired-end classification
+configfiles:
+  - filename: check_paired.sh
+    content: |
+      in='$(inputs.alignment.path)'
+      ref='$(inputs.reference ? "--reference " + inputs.reference.path : "")'
+      # Same rule as nf-core/bamtofastq modules/local/checkpairedend: sample up to the first 1000 records
+      # and call the file paired only if every sampled record has flag 0x1.
+      if [ "\$(samtools view $ref "$in" | head -n1000 | wc -l)" -lt "1000" ]; then
+          lines=\$(samtools view $ref "$in" | wc -l)
+      else
+          lines=1000
+      fi
+      frac=\$({ samtools view -H $ref "$in"; samtools view $ref "$in" | head -n "$lines"; } | samtools view $ref -c -f 1 | awk -v lines="$lines" '{print $1/lines}')
+      if [ "$frac" = "1" ]; then pairing=paired; else pairing=single; fi
+      if [ "\$(head -c 4 "$in")" = "CRAM" ]; then filetype=cram; else filetype=bam; fi
+      printf '%s\t%s\n' "$pairing" "$filetype" > classification.tsv
+shell_command: sh check_paired.sh
+help:
+  format: markdown
+  content: |
+    Port of the `CHECKPAIREDEND` process of nf-core/bamtofastq (modules/local/checkpairedend).
+    Writes one tab-separated line `<paired|single>\t<bam|cram>`. A file is *paired* when every
+    record among the first min(1000, n) records carries SAM flag 0x1. The container format is read
+    from the file magic (`CRAM` header) rather than the Galaxy datatype.

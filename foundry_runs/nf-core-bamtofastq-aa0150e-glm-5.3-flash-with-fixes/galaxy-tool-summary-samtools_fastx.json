@@ -1,0 +1,1754 @@
+{
+  "schema_version": 1,
+  "tool_id": "samtools_fastx",
+  "tool_version": "1.22+galaxy2",
+  "cache_key": "13b95b4b5a8057220674179d7da68f54f519922bf93672e012d612b94287e16b",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~samtools_fastx~samtools_fastx/versions/1.22+galaxy2",
+    "cached_at": "2026-11-12T13:39:34.869Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/13b95b4b5a8057220674179d7da68f54f519922bf93672e012d612b94287e16b.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "samtools_fastx",
+    "version": "1.22+galaxy2",
+    "name": "Samtools fastx",
+    "description": "extract FASTA or FASTQ from alignment files",
+    "inputs": [
+      {
+        "name": "input",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "BAM or SAM file to convert",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "sam",
+          "bam",
+          "cram"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "output_fmt_cond",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "output_fmt_select",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Output format",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "FASTA",
+              "value": "fasta",
+              "selected": true
+            },
+            {
+              "label": "FASTQ",
+              "value": "fastqsanger",
+              "selected": false
+            },
+            {
+              "label": "compressed FASTA",
+              "value": "fasta.gz",
+              "selected": false
+            },
+            {
+              "label": "compressed FASTQ",
+              "value": "fastqsanger.gz",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "fastqsanger",
+            "parameters": [
+              {
+                "name": "default_quality",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Default quality if none is given",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "output_quality",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Output quality in the OQ tag if available",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "-O",
+                "falsevalue": ""
+              },
+              {
+                "name": "ilumina_casava",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "add Illumina Casava 1.8 format entry to header (eg 1:N:0:ATCACG)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "-i",
+                "falsevalue": ""
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "fasta",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "fastqsanger.gz",
+            "parameters": [
+              {
+                "name": "default_quality",
+                "parameter_type": "gx_integer",
+                "hidden": false,
+                "label": "Default quality if none is given",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "integer",
+                "value": null,
+                "min": null,
+                "max": null,
+                "validators": []
+              },
+              {
+                "name": "output_quality",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Output quality in the OQ tag if available",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "-O",
+                "falsevalue": ""
+              },
+              {
+                "name": "ilumina_casava",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "add Illumina Casava 1.8 format entry to header (eg 1:N:0:ATCACG)",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": "-i",
+                "falsevalue": ""
+              }
+            ],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "fasta.gz",
+            "parameters": [],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "outputs",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "outputs",
+        "help": "disjoint subsets of the reads can be redirected to separate data sets. \"READ[12]\" are reads for which the READ[12] flag is set and the READ[21] flag is not set. \"unspecific\" reads are those for which both ore neither of these flags are set. \"singletons\" are the singleto reads. Note that if selected READ1 and READ2 contain only the paired reads. \"other\" are the remaining reads. If onlz 'others' or nothing is selected all reads go to a single data set.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "others",
+            "value": "other",
+            "selected": true
+          },
+          {
+            "label": "READ1",
+            "value": "r1",
+            "selected": false
+          },
+          {
+            "label": "READ2",
+            "value": "r2",
+            "selected": false
+          },
+          {
+            "label": "singletons",
+            "value": "s",
+            "selected": false
+          },
+          {
+            "label": "unspecific",
+            "value": "r0",
+            "selected": false
+          }
+        ],
+        "multiple": true,
+        "validators": []
+      },
+      {
+        "name": "copy_tags",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Copy RG/BC/QT tags to output header",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-t",
+        "falsevalue": ""
+      },
+      {
+        "name": "copy_arb_tags",
+        "parameter_type": "gx_text",
+        "hidden": false,
+        "label": "copy arbitrary tags to the FASTA header line",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "text",
+        "area": false,
+        "value": null,
+        "default_options": [],
+        "validators": []
+      },
+      {
+        "name": "read_numbering",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Omit or append read numbers",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "no",
+            "value": "",
+            "selected": true
+          },
+          {
+            "label": "Do not append /1 and /2 to read names",
+            "value": "-n",
+            "selected": false
+          },
+          {
+            "label": "always append /1 and /2 to read name",
+            "value": "-N",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "inclusive_filter",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Require that these flags are set",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Read is paired",
+            "value": "1",
+            "selected": false
+          },
+          {
+            "label": "Read is mapped in a proper pair",
+            "value": "2",
+            "selected": false
+          },
+          {
+            "label": "Read is unmapped",
+            "value": "4",
+            "selected": false
+          },
+          {
+            "label": "Mate is unmapped",
+            "value": "8",
+            "selected": false
+          },
+          {
+            "label": "Read is mapped to the reverse strand of the reference",
+            "value": "16",
+            "selected": false
+          },
+          {
+            "label": "Mate is mapped to the reverse strand of the reference",
+            "value": "32",
+            "selected": false
+          },
+          {
+            "label": "Read is the first in a pair",
+            "value": "64",
+            "selected": false
+          },
+          {
+            "label": "Read is the second in a pair",
+            "value": "128",
+            "selected": false
+          },
+          {
+            "label": "Alignment of the read is not primary",
+            "value": "256",
+            "selected": false
+          },
+          {
+            "label": "Read fails platform/vendor quality checks",
+            "value": "512",
+            "selected": false
+          },
+          {
+            "label": "Read is a PCR or optical duplicate",
+            "value": "1024",
+            "selected": false
+          },
+          {
+            "label": "Alignment is supplementary",
+            "value": "2048",
+            "selected": false
+          }
+        ],
+        "multiple": true,
+        "validators": []
+      },
+      {
+        "name": "exclusive_filter",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Exclude reads with any of the following flags set",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Read is paired",
+            "value": "1",
+            "selected": false
+          },
+          {
+            "label": "Read is mapped in a proper pair",
+            "value": "2",
+            "selected": false
+          },
+          {
+            "label": "Read is unmapped",
+            "value": "4",
+            "selected": false
+          },
+          {
+            "label": "Mate is unmapped",
+            "value": "8",
+            "selected": false
+          },
+          {
+            "label": "Read is mapped to the reverse strand of the reference",
+            "value": "16",
+            "selected": false
+          },
+          {
+            "label": "Mate is mapped to the reverse strand of the reference",
+            "value": "32",
+            "selected": false
+          },
+          {
+            "label": "Read is the first in a pair",
+            "value": "64",
+            "selected": false
+          },
+          {
+            "label": "Read is the second in a pair",
+            "value": "128",
+            "selected": false
+          },
+          {
+            "label": "Alignment of the read is not primary",
+            "value": "256",
+            "selected": true
+          },
+          {
+            "label": "Read fails platform/vendor quality checks",
+            "value": "512",
+            "selected": false
+          },
+          {
+            "label": "Read is a PCR or optical duplicate",
+            "value": "1024",
+            "selected": false
+          },
+          {
+            "label": "Alignment is supplementary",
+            "value": "2048",
+            "selected": true
+          }
+        ],
+        "multiple": true,
+        "validators": []
+      },
+      {
+        "name": "exclusive_filter_all",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Exclude reads with all of the following flags set",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Read is paired",
+            "value": "1",
+            "selected": false
+          },
+          {
+            "label": "Read is mapped in a proper pair",
+            "value": "2",
+            "selected": false
+          },
+          {
+            "label": "Read is unmapped",
+            "value": "4",
+            "selected": false
+          },
+          {
+            "label": "Mate is unmapped",
+            "value": "8",
+            "selected": false
+          },
+          {
+            "label": "Read is mapped to the reverse strand of the reference",
+            "value": "16",
+            "selected": false
+          },
+          {
+            "label": "Mate is mapped to the reverse strand of the reference",
+            "value": "32",
+            "selected": false
+          },
+          {
+            "label": "Read is the first in a pair",
+            "value": "64",
+            "selected": false
+          },
+          {
+            "label": "Read is the second in a pair",
+            "value": "128",
+            "selected": false
+          },
+          {
+            "label": "Alignment of the read is not primary",
+            "value": "256",
+            "selected": false
+          },
+          {
+            "label": "Read fails platform/vendor quality checks",
+            "value": "512",
+            "selected": false
+          },
+          {
+            "label": "Read is a PCR or optical duplicate",
+            "value": "1024",
+            "selected": false
+          },
+          {
+            "label": "Alignment is supplementary",
+            "value": "2048",
+            "selected": false
+          }
+        ],
+        "multiple": true,
+        "validators": []
+      },
+      {
+        "name": "idxout_cond",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "idxout_select",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Write index read files",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "No",
+              "value": "no",
+              "selected": true
+            },
+            {
+              "label": "Yes (beta: feedback welcome)",
+              "value": "yes",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "no",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "yes",
+            "parameters": [
+              {
+                "name": "write1st",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "write first index reads to extra data set",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": true,
+                "truevalue": "yes",
+                "falsevalue": "no"
+              },
+              {
+                "name": "write2nd",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "write second index reads to extra data set",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": true,
+                "truevalue": "yes",
+                "falsevalue": "no"
+              },
+              {
+                "name": "index_format",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Index format: How to parse barcode and quality tags",
+                "help": "The index-format string describes how to parse the barcode and quality tags, for example:   i14i8       the first 14 characters are index 1, the next 8 characters are index 2   n8i14       ignore the first 8 characters, and use the next 14 characters for index 1   If the tag contains a separator, then the numeric part can be replaced with '*' to mean   'read until the separator or end of tag', for example:   n*i*        ignore the left part of the tag until the separator, then use the second part               of the tag as index 1",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "barcode_tag",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Barcode tag [default: BC]",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              },
+              {
+                "name": "quality_tag",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "Quality tag [default: QT]",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "nonspecific",
+        "label": "${on_string} converted to ${output_fmt_cond.output_fmt_select} (nonspecific)",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "nonspecific",
+        "precreate_directory": false
+      },
+      {
+        "name": "forward",
+        "label": "${on_string} converted to ${output_fmt_cond.output_fmt_select} (READ1)",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "forward",
+        "precreate_directory": false
+      },
+      {
+        "name": "reverse",
+        "label": "${on_string} converted to ${output_fmt_cond.output_fmt_select} (READ2)",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "reverse",
+        "precreate_directory": false
+      },
+      {
+        "name": "singletons",
+        "label": "${on_string} converted to ${output_fmt_cond.output_fmt_select} (singletons)",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "singletons",
+        "precreate_directory": false
+      },
+      {
+        "name": "output",
+        "label": "${on_string} converted to ${output_fmt_cond.output_fmt_select}",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "output",
+        "precreate_directory": false
+      },
+      {
+        "name": "i1",
+        "label": "${on_string} converted to ${output_fmt_cond.output_fmt_select} (1st index)",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "i1",
+        "precreate_directory": false
+      },
+      {
+        "name": "i2",
+        "label": "${on_string} converted to ${output_fmt_cond.output_fmt_select} (2nd index)",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "i2",
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1093/gigascience/giab008"
+      },
+      {
+        "type": "doi",
+        "content": "10.1093/bioinformatics/btr076"
+      }
+    ],
+    "license": null,
+    "profile": "24.0",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\nThis tool uses `Samtools <http://www.htslib.org/>`_ to extract sequences from a\nSAM or BAM file in FASTA or FASTQ format.\n    \n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "output_fmt_cond": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "output_fmt_select"
+              ],
+              "properties": {
+                "output_fmt_select": {
+                  "type": "string",
+                  "enum": [
+                    "fastqsanger"
+                  ]
+                },
+                "default_quality": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "output_quality": {
+                  "type": "boolean"
+                },
+                "ilumina_casava": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "output_fmt_select": {
+                  "type": "string",
+                  "enum": [
+                    "fasta"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "output_fmt_select"
+              ],
+              "properties": {
+                "output_fmt_select": {
+                  "type": "string",
+                  "enum": [
+                    "fastqsanger.gz"
+                  ]
+                },
+                "default_quality": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "output_quality": {
+                  "type": "boolean"
+                },
+                "ilumina_casava": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "output_fmt_select"
+              ],
+              "properties": {
+                "output_fmt_select": {
+                  "type": "string",
+                  "enum": [
+                    "fasta.gz"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "other",
+                  "r1",
+                  "r2",
+                  "s",
+                  "r0"
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "copy_tags": {
+          "type": "boolean"
+        },
+        "copy_arb_tags": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "read_numbering": {
+          "type": "string",
+          "enum": [
+            "",
+            "-n",
+            "-N"
+          ]
+        },
+        "inclusive_filter": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "1",
+                  "2",
+                  "4",
+                  "8",
+                  "16",
+                  "32",
+                  "64",
+                  "128",
+                  "256",
+                  "512",
+                  "1024",
+                  "2048"
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exclusive_filter": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "1",
+                  "2",
+                  "4",
+                  "8",
+                  "16",
+                  "32",
+                  "64",
+                  "128",
+                  "256",
+                  "512",
+                  "1024",
+                  "2048"
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exclusive_filter_all": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "1",
+                  "2",
+                  "4",
+                  "8",
+                  "16",
+                  "32",
+                  "64",
+                  "128",
+                  "256",
+                  "512",
+                  "1024",
+                  "2048"
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "idxout_cond": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "idxout_select": {
+                  "type": "string",
+                  "enum": [
+                    "no"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "idxout_select"
+              ],
+              "properties": {
+                "idxout_select": {
+                  "type": "string",
+                  "enum": [
+                    "yes"
+                  ]
+                },
+                "write1st": {
+                  "type": "boolean"
+                },
+                "write2nd": {
+                  "type": "boolean"
+                },
+                "index_format": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "barcode_tag": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "quality_tag": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "output_fmt_cond": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "output_fmt_select"
+                  ],
+                  "properties": {
+                    "output_fmt_select": {
+                      "type": "string",
+                      "enum": [
+                        "fastqsanger"
+                      ]
+                    },
+                    "default_quality": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "output_quality": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "ilumina_casava": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "output_fmt_select": {
+                      "type": "string",
+                      "enum": [
+                        "fasta"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "output_fmt_select"
+                  ],
+                  "properties": {
+                    "output_fmt_select": {
+                      "type": "string",
+                      "enum": [
+                        "fastqsanger.gz"
+                      ]
+                    },
+                    "default_quality": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/Int"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "output_quality": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "ilumina_casava": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "output_fmt_select"
+                  ],
+                  "properties": {
+                    "output_fmt_select": {
+                      "type": "string",
+                      "enum": [
+                        "fasta.gz"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "other",
+                      "r1",
+                      "r2",
+                      "s",
+                      "r0"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "__class__"
+                    ],
+                    "properties": {
+                      "__class__": {
+                        "type": "string",
+                        "enum": [
+                          "ConnectedValue"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "copy_tags": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "copy_arb_tags": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "read_numbering": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "",
+                "-n",
+                "-N"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "inclusive_filter": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "1",
+                      "2",
+                      "4",
+                      "8",
+                      "16",
+                      "32",
+                      "64",
+                      "128",
+                      "256",
+                      "512",
+                      "1024",
+                      "2048"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "__class__"
+                    ],
+                    "properties": {
+                      "__class__": {
+                        "type": "string",
+                        "enum": [
+                          "ConnectedValue"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exclusive_filter": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "1",
+                      "2",
+                      "4",
+                      "8",
+                      "16",
+                      "32",
+                      "64",
+                      "128",
+                      "256",
+                      "512",
+                      "1024",
+                      "2048"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "__class__"
+                    ],
+                    "properties": {
+                      "__class__": {
+                        "type": "string",
+                        "enum": [
+                          "ConnectedValue"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exclusive_filter_all": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "1",
+                      "2",
+                      "4",
+                      "8",
+                      "16",
+                      "32",
+                      "64",
+                      "128",
+                      "256",
+                      "512",
+                      "1024",
+                      "2048"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "__class__"
+                    ],
+                    "properties": {
+                      "__class__": {
+                        "type": "string",
+                        "enum": [
+                          "ConnectedValue"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "idxout_cond": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "idxout_select": {
+                      "type": "string",
+                      "enum": [
+                        "no"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "idxout_select"
+                  ],
+                  "properties": {
+                    "idxout_select": {
+                      "type": "string",
+                      "enum": [
+                        "yes"
+                      ]
+                    },
+                    "write1st": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "write2nd": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "index_format": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "barcode_tag": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "quality_tag": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

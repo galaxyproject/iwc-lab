@@ -1,0 +1,134 @@
+class: GalaxyWorkflow
+label: 'IWC exemplar slice (pattern reference): atacseq when-gating idiom'
+doc: Bounded subgraph of galaxyproject/iwc epigenetics/atacseq (gxwf convert --to
+  format2 --compact --no-stateful), sliced to the boolean-inversion + step-level when
+  idiom. Cross-domain pattern reference for the nf-core/bamtofastq translation; no
+  same-domain IWC exemplar exists. See iwc-comparison-notes.md.
+inputs:
+- id: Gene annotation file
+  type: data
+  optional: false
+  format:
+  - gtf
+  - gtf.gz
+  doc: GTF used for TSS enrichment QC
+- id: Compute TSS enrichment Genome-wide
+  type: boolean
+  optional: false
+  default: false
+  doc: Computing genome-wide takes longer than computing on a single chromosome.
+- id: Compute TSS enrichment on a specific chromosome
+  type: string
+  optional: false
+  default: chr1
+  doc: This is only used if the TSS enrichment is not computed Genome-wide
+steps:
+- id: Compute TSSE on specified chromosome
+  label: Compute TSSE on specified chromosome
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/map_param_value/map_param_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: 022a635f2283
+    name: map_param_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_param_type|input_param
+    source: Compute TSS enrichment Genome-wide
+  out:
+  - id: output_param_boolean
+    hide: true
+  tool_state:
+    input_param_type:
+      type: boolean
+      __current_case__: 3
+      input_param:
+        __class__: ConnectedValue
+      mappings:
+      - __index__: 0
+        from: false
+        to: 'true'
+      - __index__: 1
+        from: true
+        to: 'false'
+    output_param_type: boolean
+    unmapped:
+      on_unmapped: input
+      __current_case__: 0
+- id: ATACseqQC TSSE GW
+  label: ATACseqQC TSSE GW
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/atacseqqc/atacseqqc_tsse/1.34.0+galaxy0
+  tool_version: 1.34.0+galaxy0
+  tool_shed_repository:
+    changeset_revision: e03e488e03e0
+    name: atacseqqc
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: gtf
+    source: Gene annotation file
+  - id: inputbam
+    source: remove PCR duplicates/outFile
+  - id: when
+    source: Compute TSS enrichment Genome-wide
+  out:
+  - id: tsse_plot
+    hide: true
+  - id: tsse_score
+    hide: true
+  - id: tsse_values
+    hide: true
+  tool_state:
+    gtf:
+      __class__: ConnectedValue
+    inputbam:
+      __class__: ConnectedValue
+    output_selector:
+    - tssescore
+    - tssevalues
+    region_cond:
+      region: GW
+      __current_case__: 1
+  when: $(inputs.when)
+- id: ATACseqQC TSSE on chromosome
+  label: ATACseqQC TSSE on chromosome
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/atacseqqc/atacseqqc_tsse/1.34.0+galaxy0
+  tool_version: 1.34.0+galaxy0
+  tool_shed_repository:
+    changeset_revision: e03e488e03e0
+    name: atacseqqc
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: gtf
+    source: Gene annotation file
+  - id: inputbam
+    source: remove PCR duplicates/outFile
+  - id: region_cond|chromosome
+    source: Compute TSS enrichment on a specific chromosome
+  - id: when
+    source: Compute TSSE on specified chromosome/output_param_boolean
+  out:
+  - id: tsse_plot
+    hide: true
+  - id: tsse_score
+    hide: true
+  - id: tsse_values
+    hide: true
+  tool_state:
+    gtf:
+      __class__: ConnectedValue
+    inputbam:
+      __class__: ConnectedValue
+    output_selector:
+    - tssescore
+    - tssevalues
+    region_cond:
+      region: select
+      __current_case__: 2
+      chromosome:
+        __class__: ConnectedValue
+  when: $(inputs.when)
+outputs:
+- id: TSS Enrichment Score (slice)
+  outputSource: ATACseqQC TSSE GW/tsse_score

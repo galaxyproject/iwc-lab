@@ -1,0 +1,29 @@
+{
+  "command": "gxwf validate --json --cache-dir <tool-cache> galaxy-workflow.gxwf.yml",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "not_run_reason": null,
+  "diagnostics": [],
+  "residual_runtime_risks": [
+    {
+      "risk": "Per-element `when:` gating over mapped boolean collections (endedness routing) is engine-verified upstream but has no IWC corpus use; the when input connections (named `when`) are expression-only pseudo-inputs the tools do not declare.",
+      "would_prove_or_disprove": "The planemo workflow test run (phase 12): endedness detection must route both paired-end samples through the paired path and produce the four reads elements."
+    },
+    {
+      "risk": "Embedded GalaxyUserTool steps (6 definitions, 7 steps) require enable_beta_tool_formats and the Custom Tool Execution role on the planemo-managed Galaxy; whether planemo's test user satisfies this is untested (galaxy-user-tool-workflow-binding open question).",
+      "would_prove_or_disprove": "The planemo run either materializes the embedded tools and runs them, or fails at workflow import/tool resolution with a UDT-specific error."
+    },
+    {
+      "risk": "pick_value (chr_pick) with a skipped pick_from input (chr unset) and a mapped default: expected to pass through the alignments collection per engine semantics.",
+      "would_prove_or_disprove": "The planemo run (chr left empty): conversion steps must receive the original alignments."
+    },
+    {
+      "risk": "__MERGE_COLLECTION__ suffix_conflict identifier naming (test_1/test_2 from r1/r2 conflicts) and __FILTER_NULL__ over when-skipped null elements.",
+      "would_prove_or_disprove": "The reads output collection in the planemo run must contain exactly test_1, test_2, test2_1, test2_2."
+    },
+    {
+      "risk": "samtools wrapper version drift (devteam wrappers bundle samtools 1.22 vs the snapshot's 1.23.1) may alter flagstat/idxstats output bytes.",
+      "would_prove_or_disprove": "The checksum assertions in galaxy-workflow.gxwf-tests.yml (expected values independently reproduced with samtools 1.23.1 in the source container and equal to the upstream snapshot)."
+    }
+  ]
+}

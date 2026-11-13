@@ -1,0 +1,74 @@
+class: GalaxyWorkflow
+label: Host or Contamination Removal on Long-Reads
+doc: "SUBGRAPH ONLY (low-confidence pattern exemplar): iwc workflows/microbiome/host-contamination-removal/host-contamination-removal-long-reads \u2014 Split BAM -> samtools_fastx. minimap2 producer step omitted."
+inputs:
+- id: Long-reads
+  type: collection
+  collection_type: list
+  optional: false
+  fields: null
+  column_definitions: null
+  doc: Long-reads as a collection of fastqsanger(.gz) files
+outputs:
+- id: Reads without Host or Contamination
+  outputSource: _unlabeled_step_7
+steps:
+- id: Split BAM
+  label: Split BAM
+  doc: Split BAM into mapped and unmapped
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bamtools_split_mapped/bamtools_split_mapped/2.5.3+galaxy0
+  tool_version: 2.5.3+galaxy0
+  tool_shed_repository:
+    changeset_revision: 90af4f8f59af
+    name: bamtools_split_mapped
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_bam
+    source: minimap2/alignment_output
+  out:
+  - id: mapped
+    hide: true
+  - id: unmapped
+    hide: true
+  state: {}
+  tool_state: null
+  uuid: 56141fe0-3b82-4005-8035-9369f30511d5
+- id: _unlabeled_step_7
+  doc: Extractions of FastQ from the unmapped reads
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx/samtools_fastx/1.22+galaxy2
+  tool_version: 1.22+galaxy2
+  tool_shed_repository:
+    changeset_revision: 4bde991b8037
+    name: samtools_fastx
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input
+    source: Split BAM/unmapped
+  out:
+  - id: output
+    rename: Reads without host or contamination reads
+  state:
+    output_fmt_cond:
+      output_fmt_select: fastqsanger
+      output_quality: false
+      ilumina_casava: false
+    outputs:
+    - other
+    copy_tags: false
+    read_numbering: ''
+    exclusive_filter:
+    - '256'
+    - '2048'
+    idxout_cond:
+      idxout_select: 'no'
+  tool_state: null
+  uuid: 2e9642e7-4404-4d9b-9530-912c62a7a665
+tags:
+- microbiome
+- contamination
+- long_reads
+uuid: 77356bff-79be-48bb-a22d-51250c1f49c5
+license: MIT
+release: '0.6'

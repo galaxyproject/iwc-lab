@@ -1,0 +1,144 @@
+- doc: >-
+    Two paired-end BAM files converted to paired FASTQ with QC enabled (nf-core tests/default.nf.test, profile test)
+  job:
+    alignments:
+      class: Collection
+      collection_type: list
+      elements:
+      - class: File
+        identifier: test
+        location: >-
+          https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam
+        filetype: bam
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 0799f89638bddd570439115c606f425c22d189b1
+      - class: File
+        identifier: test2
+        location: >-
+          https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam
+        filetype: bam
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 522fb037cea05b9d41dd69647f27a644838bf507
+    reference_fasta:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      filetype: fasta
+      hashes:
+      - hash_function: SHA-1
+        hash_value: 56e7a0c035e2fce8ebe497d3704431d7586fd444
+    skip_read_qc: false
+    skip_stats: false
+  outputs:
+    converted_reads:
+      class: Collection
+      collection_type: list:paired
+      element_count: 2
+      element_tests:
+        test:
+          class: Collection
+          count: 2
+          element_tests:
+            forward:
+              decompress: true
+              asserts:
+              - that: has_n_lines
+                n: 11284
+              - that: has_text
+                text: testN:1
+            reverse:
+              decompress: true
+              asserts:
+              - that: has_n_lines
+                n: 11284
+        test2:
+          class: Collection
+          count: 2
+          element_tests:
+            forward:
+              decompress: true
+              asserts:
+              - that: has_n_lines
+                n: 10872
+              - that: has_text
+                text: testT:1
+            reverse:
+              decompress: true
+              asserts:
+              - that: has_n_lines
+                n: 10872
+    flagstat:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          checksum: md5$a53f3d26e2e9851f7d528442bbfe9781
+        test2:
+          checksum: md5$acbd95030a362a7e6491faa87d1b9c2c
+    idxstats:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          checksum: md5$e179601fa7b8ebce81ac3765206f6c15
+        test2:
+          checksum: md5$90f01313bc89c7fd096aad051cd71b66
+    alignment_stats:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+          - that: has_text
+            text: "raw total sequences:\t5642"
+        test2:
+          asserts:
+          - that: has_text
+            text: "raw total sequences:\t5436"
+    fastq_integrity:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+          - that: has_text
+            text: 'Number of reads: 2821'
+          - that: has_text
+            text: OK
+        test2:
+          asserts:
+          - that: has_text
+            text: 'Number of reads: 2718'
+          - that: has_text
+            text: OK
+    fastqc_input_data:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+          - that: has_text
+            text: Total Sequences
+    fastqc_reads_data:
+      class: Collection
+      collection_type: list:paired
+      element_count: 2
+      element_tests:
+        test:
+          class: Collection
+          count: 2
+          element_tests:
+            forward:
+              asserts:
+              - that: has_text
+                text: Total Sequences
+    multiqc_report:
+      asserts:
+      - that: has_text
+        text: MultiQC
