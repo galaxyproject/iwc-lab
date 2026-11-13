@@ -1,0 +1,102 @@
+class: GalaxyUserTool
+id: oncoanalyser_redux
+version: 2.0.5
+name: hmftools REDUX (merge, duplicate marking, jitter)
+description: Merge lane BAMs, mark duplicates, unmap problem regions and compute MS jitter/BQR tables with hmftools REDUX
+license: GPL-3.0-only
+container: quay.io/biocontainers/hmftools-redux:2.0.5--hdfd78af_0
+requirements:
+- type: resource
+  cores_min: 8
+  ram_min: 32768
+inputs:
+- name: input_bams
+  type: data
+  format:
+  - bam
+  label: Lane BAMs for one sample
+  multiple: true
+- name: sample_id
+  type: text
+  label: Sample name
+- name: genome_fasta
+  type: data
+  format:
+  - fasta
+  label: Reference genome FASTA
+- name: genome_fai
+  type: data
+  format:
+  - fai
+  label: Reference FASTA index (.fai)
+- name: genome_dict
+  type: data
+  format:
+  - txt
+  - data
+  label: Reference sequence dictionary (.dict)
+- name: hmf_resources
+  type: data
+  format:
+  - tar.gz
+  - tar
+  - data
+  label: HMF pipeline resources archive
+  help: hmf_pipeline_resources.38_v3.0.0--8.tar.gz (data.oncoanalyser.com); members are extracted by relative path.
+- name: genome_version
+  type: select
+  label: Reference genome version
+  options:
+  - value: '38'
+    label: '38'
+    selected: true
+- name: sequencing_platform
+  type: select
+  label: Sequencing platform
+  options:
+  - value: illumina
+    label: illumina
+    selected: true
+  - value: sbx
+    label: sbx
+  - value: ultima
+    label: ultima
+shell_command: "set -e\nTHREADS=$GALAXY_SLOTS; [ -n \"$THREADS\" ] || THREADS=1\nMEM=$GALAXY_MEMORY_MB; [ -n \"$MEM\" ] || MEM=16384\nXMX=`expr $MEM \\* 85 / 100`m\nUPPER_PLATFORM=`echo '$(inputs.sequencing_platform)'\
+  \ | tr a-z A-Z`\nB='$(inputs.hmf_resources.path)'\ntar -tzf \"$B\" > hmf_members.txt\nTOP=`head -n 1 hmf_members.txt | cut -d/ -f1`\ngrep -E -e \"^$TOP/common/unmap_regions.38.tsv\" -e \"^$TOP/dna/variants/msi_jitter_sites.38.tsv.gz\"\
+  \ hmf_members.txt > hmf_wanted.txt\nsed -n 's#/[^/]*$##p' hmf_wanted.txt | sort -u | xargs mkdir -p\ntar -xzf \"$B\" -T hmf_wanted.txt\nR=$TOP\nln -s '$(inputs.genome_fasta.path)' genome.fa\nln -s '$(inputs.genome_fai.path)'\
+  \ genome.fa.fai\nln -s '$(inputs.genome_dict.path)' genome.dict\nSID='$(inputs.sample_id)'\nCONSENSUS=-form_consensus; SKIPDUP=\nif [ '$(inputs.sequencing_platform)' = ultima ]; then CONSENSUS=; SKIPDUP=-skip_duplicate_marking;\
+  \ fi\nI=0; BAMS=\nfor B in $(inputs.input_bams.map((input) => `'${input.path}'`).join(\" \")); do\n  I=`expr $I + 1`; ln -s \"$B\" lane_$I.bam; samtools index -@ $THREADS lane_$I.bam\n  if [ -z \"$BAMS\"\
+  \ ]; then BAMS=lane_$I.bam; else BAMS=$BAMS,lane_$I.bam; fi\ndone\nmkdir -p redux_$SID\nredux -Xmx$XMX -sample $SID -input_bam $BAMS -ref_genome genome.fa -ref_genome_version $(inputs.genome_version)\
+  \ \\\n  -ref_genome_msi_file $R/dna/variants/msi_jitter_sites.38.tsv.gz -unmap_regions $R/common/unmap_regions.38.tsv \\\n  -bamtool `which samtools` -sequencing_type $UPPER_PLATFORM -bqr_write_plot $CONSENSUS\
+  \ $SKIPDUP \\\n  -threads $THREADS -output_bam redux_$SID/$SID.redux.bam -output_dir redux_$SID/\ncp redux_$SID/$SID.redux.bam redux.bam\ncp redux_$SID/$SID.redux.bam.bai redux.bam.bai\ncp redux_$SID/$SID.redux.duplicate_freq.tsv\
+  \ duplicate_freq.tsv\nmkdir redux_tsvs && cp redux_$SID/*.tsv* redux_tsvs/ && tar -cf redux_dir.tar redux_tsvs\n"
+outputs:
+- name: redux_bam
+  type: data
+  format: bam
+  from_work_dir: redux.bam
+  label: REDUX BAM
+- name: redux_bai
+  type: data
+  format: data
+  from_work_dir: redux.bam.bai
+  label: REDUX BAM index
+- name: redux_dir
+  type: data
+  format: tar
+  from_work_dir: redux_dir.tar
+  label: REDUX tables (jitter, MS, BQR)
+- name: duplicate_freq
+  type: data
+  format: tabular
+  from_work_dir: duplicate_freq.tsv
+  label: Duplicate frequency table
+help:
+  format: markdown
+  content: 'Port of nf-core/oncoanalyser 3.0.0 `REDUX (modules/local/redux)` for Galaxy (core DNA spine translation).
+
+    Uses the module''s own biocontainer. HMF resources come from one archive input; members are
+
+    extracted by their `conf/hmf_data.config` relative paths. Lane BAMs are indexed with the image''s samtools before merging (the source receives indexes alongside). UMI mode is not carried.
+
+    '

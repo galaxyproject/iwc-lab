@@ -1,0 +1,73 @@
+class: GalaxyUserTool
+id: oncoanalyser_linx_somatic
+version: 2.3.1
+name: hmftools LINX somatic SV annotation
+description: Cluster somatic structural variants, call fusions and drivers from PURPLE output with hmftools LINX
+license: GPL-3.0-only
+container: quay.io/biocontainers/hmftools-linx:2.3.1--hdfd78af_0
+requirements:
+- type: resource
+  cores_min: 1
+  ram_min: 8192
+inputs:
+- name: purple_dir
+  type: data
+  format:
+  - tar
+  label: PURPLE output
+- name: sample_id
+  type: text
+  label: Tumor sample name
+- name: hmf_resources
+  type: data
+  format:
+  - tar.gz
+  - tar
+  - data
+  label: HMF pipeline resources archive
+  help: hmf_pipeline_resources.38_v3.0.0--8.tar.gz (data.oncoanalyser.com); members are extracted by relative path.
+- name: driver_gene_panel
+  type: data
+  format:
+  - tabular
+  label: Driver gene panel (optional)
+  optional: true
+  help: Defaults to common/DriverGenePanel.38.tsv inside the HMF resources archive.
+- name: genome_version
+  type: select
+  label: Reference genome version
+  options:
+  - value: '38'
+    label: '38'
+    selected: true
+shell_command: "set -e\nMEM=$GALAXY_MEMORY_MB; [ -n \"$MEM\" ] || MEM=8192\nXMX=`expr $MEM \\* 75 / 100`m\nB='$(inputs.hmf_resources.path)'\ntar -tzf \"$B\" > hmf_members.txt\nTOP=`head -n 1 hmf_members.txt\
+  \ | cut -d/ -f1`\ngrep -E -e \"^$TOP/common/ensembl_data\" -e \"^$TOP/dna/sv/known_fusion_data.38.csv\" -e \"^$TOP/common/DriverGenePanel.38.tsv\" hmf_members.txt > hmf_wanted.txt\nsed -n 's#/[^/]*$##p'\
+  \ hmf_wanted.txt | sort -u | xargs mkdir -p\ntar -xzf \"$B\" -T hmf_wanted.txt\nR=$TOP\nDGP='$(inputs.driver_gene_panel ? inputs.driver_gene_panel.path : '')'; [ -n \"$DGP\" ] || DGP=$R/common/DriverGenePanel.38.tsv\n\
+  T='$(inputs.sample_id)'\ntar -xf '$(inputs.purple_dir.path)'\nlinx -Xmx$XMX -sample $T -sv_vcf purple/$T.purple.sv.vcf.gz -purple_dir purple -ref_genome_version $(inputs.genome_version) \\\n  -ensembl_data_dir\
+  \ $R/common/ensembl_data -known_fusion_file $R/dna/sv/known_fusion_data.38.csv -driver_gene_panel $DGP \\\n  -write_vis_data -write_neo_epitopes -output_dir linx_somatic/\ncp linx_somatic/$T.linx.driver.catalog.tsv\
+  \ driver_catalog.tsv; cp linx_somatic/$T.linx.fusion.tsv fusions.tsv\ncp linx_somatic/$T.linx.svs.tsv svs.tsv\ntar -cf linx_somatic_dir.tar linx_somatic\n"
+outputs:
+- name: linx_dir
+  type: data
+  format: tar
+  from_work_dir: linx_somatic_dir.tar
+  label: LINX somatic output directory
+- name: driver_catalog
+  type: data
+  format: tabular
+  from_work_dir: driver_catalog.tsv
+  label: LINX somatic driver catalogue
+- name: fusions
+  type: data
+  format: tabular
+  from_work_dir: fusions.tsv
+  label: LINX fusions
+- name: svs
+  type: data
+  format: tabular
+  from_work_dir: svs.tsv
+  label: LINX SV annotations
+help:
+  format: markdown
+  content: "Port of nf-core/oncoanalyser 3.0.0 `LINX_SOMATIC (modules/local/linx/somatic)` for Galaxy (core DNA spine translation).\nUses the module's own biocontainer. HMF resources come from one archive\
+    \ input; members are\nextracted by their `conf/hmf_data.config` relative paths. \n"

@@ -1,0 +1,125 @@
+class: GalaxyUserTool
+id: oncoanalyser_sage_germline
+version: 5.0.2
+name: hmftools SAGE germline variant calling
+description: Call germline variants at panel and hotspot regions from a tumor/normal pair with hmftools SAGE
+license: GPL-3.0-only
+container: quay.io/biocontainers/hmftools-sage:5.0.2--hdfd78af_0
+requirements:
+- type: resource
+  cores_min: 4
+  ram_min: 16384
+inputs:
+- name: tumor_bam
+  type: data
+  format:
+  - bam
+  label: Tumor BAM (REDUX)
+- name: tumor_bai
+  type: data
+  format:
+  - data
+  label: Tumor BAM index (.bai)
+- name: normal_bam
+  type: data
+  format:
+  - bam
+  label: Normal BAM (REDUX)
+- name: normal_bai
+  type: data
+  format:
+  - data
+  label: Normal BAM index (.bai)
+- name: tumor_id
+  type: text
+  label: Tumor sample name
+  help: Must match the BAM read-group SM.
+- name: normal_id
+  type: text
+  label: Normal sample name
+  help: Must match the BAM read-group SM.
+- name: tumor_redux_dir
+  type: data
+  format:
+  - tar
+  label: Tumor REDUX tables
+- name: normal_redux_dir
+  type: data
+  format:
+  - tar
+  label: Normal REDUX tables
+- name: genome_fasta
+  type: data
+  format:
+  - fasta
+  label: Reference genome FASTA
+- name: genome_fai
+  type: data
+  format:
+  - fai
+  label: Reference FASTA index (.fai)
+- name: genome_dict
+  type: data
+  format:
+  - txt
+  - data
+  label: Reference sequence dictionary (.dict)
+- name: hmf_resources
+  type: data
+  format:
+  - tar.gz
+  - tar
+  - data
+  label: HMF pipeline resources archive
+  help: hmf_pipeline_resources.38_v3.0.0--8.tar.gz (data.oncoanalyser.com); members are extracted by relative path.
+- name: driver_gene_panel
+  type: data
+  format:
+  - tabular
+  label: Driver gene panel (optional)
+  optional: true
+  help: Defaults to common/DriverGenePanel.38.tsv inside the HMF resources archive.
+- name: genome_version
+  type: select
+  label: Reference genome version
+  options:
+  - value: '38'
+    label: '38'
+    selected: true
+- name: sequencing_platform
+  type: select
+  label: Sequencing platform
+  options:
+  - value: illumina
+    label: illumina
+    selected: true
+  - value: sbx
+    label: sbx
+  - value: ultima
+    label: ultima
+shell_command: "set -e\nTHREADS=$GALAXY_SLOTS; [ -n \"$THREADS\" ] || THREADS=1\nMEM=$GALAXY_MEMORY_MB; [ -n \"$MEM\" ] || MEM=16384\nXMX=`expr $MEM \\* 95 / 100`m\nUPPER_PLATFORM=`echo '$(inputs.sequencing_platform)'\
+  \ | tr a-z A-Z`\nB='$(inputs.hmf_resources.path)'\ntar -tzf \"$B\" > hmf_members.txt\nTOP=`head -n 1 hmf_members.txt | cut -d/ -f1`\ngrep -E -e \"^$TOP/dna/variants/KnownHotspots.germline.38.vcf.gz\"\
+  \ -e \"^$TOP/dna/variants/HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel_noCENorHET7.bed.gz\" -e \"^$TOP/common/ensembl_data\" -e \"^$TOP/common/DriverGenePanel.38.tsv\"\
+  \ hmf_members.txt > hmf_wanted.txt\nsed -n 's#/[^/]*$##p' hmf_wanted.txt | sort -u | xargs mkdir -p\ntar -xzf \"$B\" -T hmf_wanted.txt\nR=$TOP\nln -s '$(inputs.genome_fasta.path)' genome.fa\nln -s '$(inputs.genome_fai.path)'\
+  \ genome.fa.fai\nln -s '$(inputs.genome_dict.path)' genome.dict\nln -s '$(inputs.tumor_bam.path)' '$(inputs.tumor_id).redux.bam'\nln -s '$(inputs.tumor_bai.path)' '$(inputs.tumor_id).redux.bam.bai'\n\
+  ln -s '$(inputs.normal_bam.path)' '$(inputs.normal_id).redux.bam'\nln -s '$(inputs.normal_bai.path)' '$(inputs.normal_id).redux.bam.bai'\ntar -xf '$(inputs.tumor_redux_dir.path)' && mv redux_tsvs/* .\
+  \ && rmdir redux_tsvs\ntar -xf '$(inputs.normal_redux_dir.path)' && mv redux_tsvs/* . && rmdir redux_tsvs\nDGP='$(inputs.driver_gene_panel ? inputs.driver_gene_panel.path : '')'; [ -n \"$DGP\" ] || DGP=$R/common/DriverGenePanel.38.tsv\n\
+  mkdir -p germline\nsage -Xmx$XMX -tumor '$(inputs.normal_id)' -tumor_bam '$(inputs.normal_id).redux.bam' \\\n  -reference '$(inputs.tumor_id)' -reference_bam '$(inputs.tumor_id).redux.bam' -ref_sample_count\
+  \ 0 \\\n  -ref_genome genome.fa -ref_genome_version $(inputs.genome_version) -hotspots $R/dna/variants/KnownHotspots.germline.38.vcf.gz \\\n  -driver_gene_panel $DGP -high_confidence_bed $R/dna/variants/HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel_noCENorHET7.bed.gz\
+  \ -ensembl_data_dir $R/common/ensembl_data \\\n  -sequencing_type $UPPER_PLATFORM -germline -panel_only -threads $THREADS -output_vcf 'germline/$(inputs.tumor_id).sage.germline.vcf.gz'\ncp 'germline/$(inputs.tumor_id).sage.germline.vcf.gz'\
+  \ sage.vcf.gz\n"
+outputs:
+- name: sage_vcf
+  type: data
+  format: vcf_bgzip
+  from_work_dir: sage.vcf.gz
+  label: SAGE germline VCF
+help:
+  format: markdown
+  content: 'Port of nf-core/oncoanalyser 3.0.0 `SAGE_GERMLINE (modules/local/sage/germline)` for Galaxy (core DNA spine translation).
+
+    Uses the module''s own biocontainer. HMF resources come from one archive input; members are
+
+    extracted by their `conf/hmf_data.config` relative paths. As in the source, the normal is passed as -tumor and the tumor as -reference in germline mode.
+
+    '

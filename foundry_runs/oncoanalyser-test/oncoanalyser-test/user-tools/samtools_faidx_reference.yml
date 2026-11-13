@@ -1,0 +1,26 @@
+class: GalaxyUserTool
+id: oncoanalyser_samtools_faidx
+version: 1.21.0
+name: Index reference FASTA (samtools faidx)
+description: Build a .fai index for a reference FASTA, as nf-core/oncoanalyser SAMTOOLS_FAIDX does
+license: MIT
+container: quay.io/biocontainers/samtools:1.21--h50ea8bc_0
+requirements: []
+inputs:
+  - name: fasta
+    type: data
+    format: [fasta]
+    label: Reference FASTA
+shell_command: |
+  ln -s '$(inputs.fasta.path)' genome.fasta && samtools faidx genome.fasta
+outputs:
+  - name: fai
+    type: data
+    format: fai
+    from_work_dir: genome.fasta.fai
+    label: FASTA index
+help:
+  format: markdown
+  content: |
+    Port of the nf-core `SAMTOOLS_FAIDX` module as used by nf-core/oncoanalyser PREPARE_REFERENCE
+    (`samtools faidx <fasta>`), samtools 1.21 from the source module's biocontainer.

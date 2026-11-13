@@ -1,0 +1,82 @@
+class: GalaxyUserTool
+id: oncoanalyser_pave_somatic
+version: 1.9.0
+name: hmftools PAVE somatic annotation
+description: Annotate somatic SAGE variants with gene impact, PON, mappability, ClinVar and gnomAD using hmftools PAVE
+license: GPL-3.0-only
+container: quay.io/biocontainers/hmftools-pave:1.9--hdfd78af_0
+requirements:
+- type: resource
+  cores_min: 4
+  ram_min: 16384
+inputs:
+- name: sage_vcf
+  type: data
+  format:
+  - vcf_bgzip
+  label: SAGE VCF
+- name: sample_id
+  type: text
+  label: Tumor sample name
+- name: genome_fasta
+  type: data
+  format:
+  - fasta
+  label: Reference genome FASTA
+- name: genome_fai
+  type: data
+  format:
+  - fai
+  label: Reference FASTA index (.fai)
+- name: hmf_resources
+  type: data
+  format:
+  - tar.gz
+  - tar
+  - data
+  label: HMF pipeline resources archive
+  help: hmf_pipeline_resources.38_v3.0.0--8.tar.gz (data.oncoanalyser.com); members are extracted by relative path.
+- name: driver_gene_panel
+  type: data
+  format:
+  - tabular
+  label: Driver gene panel (optional)
+  optional: true
+  help: Defaults to common/DriverGenePanel.38.tsv inside the HMF resources archive.
+- name: genome_version
+  type: select
+  label: Reference genome version
+  options:
+  - value: '38'
+    label: '38'
+    selected: true
+- name: sequencing_platform
+  type: select
+  label: Sequencing platform
+  options:
+  - value: illumina
+    label: illumina
+    selected: true
+  - value: sbx
+    label: sbx
+  - value: ultima
+    label: ultima
+shell_command: "set -e\nTHREADS=$GALAXY_SLOTS; [ -n \"$THREADS\" ] || THREADS=1\nMEM=$GALAXY_MEMORY_MB; [ -n \"$MEM\" ] || MEM=16384\nXMX=`expr $MEM \\* 75 / 100`m\nUPPER_PLATFORM=`echo '$(inputs.sequencing_platform)'\
+  \ | tr a-z A-Z`\nB='$(inputs.hmf_resources.path)'\ntar -tzf \"$B\" > hmf_members.txt\nTOP=`head -n 1 hmf_members.txt | cut -d/ -f1`\ngrep -E -e \"^$TOP/dna/variants/hmf_wgs_sage_pon\" -e \"^$TOP/dna/variants/clinvar.38.vcf.gz\"\
+  \ -e \"^$TOP/dna/variants/mappability_150.38.bed.gz\" -e \"^$TOP/common/ensembl_data\" -e \"^$TOP/common/DriverGenePanel.38.tsv\" -e \"^$TOP/dna/variants/gnomad\" hmf_members.txt > hmf_wanted.txt\nsed\
+  \ -n 's#/[^/]*$##p' hmf_wanted.txt | sort -u | xargs mkdir -p\ntar -xzf \"$B\" -T hmf_wanted.txt\nR=$TOP\nln -s '$(inputs.genome_fasta.path)' genome.fa\nln -s '$(inputs.genome_fai.path)' genome.fa.fai\n\
+  DGP='$(inputs.driver_gene_panel ? inputs.driver_gene_panel.path : '')'; [ -n \"$DGP\" ] || DGP=$R/common/DriverGenePanel.38.tsv\ncase '$(inputs.sequencing_platform)' in\n  sbx) SPON=$R/dna/variants/hmf_wgs_sage_pon.ill_sbx.38.tsv.gz;;\n\
+  \  ultima) SPON=$R/dna/variants/hmf_wgs_sage_pon.ill_ult.38.tsv.gz;;\n  *) SPON=$R/dna/variants/hmf_wgs_sage_pon_1000.38.tsv.gz;;\nesac\nln -s '$(inputs.sage_vcf.path)' input.sage.vcf.gz\nmkdir -p pave_somatic\n\
+  pave -Xmx$XMX -sample '$(inputs.sample_id)' -input_vcf input.sage.vcf.gz -ref_genome genome.fa -ref_genome_version $(inputs.genome_version) \\\n  -pon_file $SPON -gnomad_freq_dir $R/dna/variants/gnomad\
+  \ -clinvar_vcf $R/dna/variants/clinvar.38.vcf.gz \\\n  -driver_gene_panel $DGP -mappability_bed $R/dna/variants/mappability_150.38.bed.gz -ensembl_data_dir $R/common/ensembl_data \\\n  -sequencing_type\
+  \ $UPPER_PLATFORM -threads $THREADS -output_dir pave_somatic/ -output_vcf 'pave_somatic/$(inputs.sample_id).pave.somatic.vcf.gz'\ncp 'pave_somatic/$(inputs.sample_id).pave.somatic.vcf.gz' pave.vcf.gz\n"
+outputs:
+- name: pave_vcf
+  type: data
+  format: vcf_bgzip
+  from_work_dir: pave.vcf.gz
+  label: PAVE somatic VCF
+help:
+  format: markdown
+  content: "Port of nf-core/oncoanalyser 3.0.0 `PAVE_SOMATIC (modules/local/pave/somatic)` for Galaxy (core DNA spine translation).\nUses the module's own biocontainer. HMF resources come from one archive\
+    \ input; members are\nextracted by their `conf/hmf_data.config` relative paths. \n"

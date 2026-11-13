@@ -1,0 +1,63 @@
+class: GalaxyUserTool
+id: oncoanalyser_linx_germline
+version: 2.3.1
+name: hmftools LINX germline SV annotation
+description: Annotate germline structural-variant disruptions of driver genes with hmftools LINX
+license: GPL-3.0-only
+container: quay.io/biocontainers/hmftools-linx:2.3.1--hdfd78af_0
+requirements:
+- type: resource
+  cores_min: 1
+  ram_min: 8192
+inputs:
+- name: sv_vcf
+  type: data
+  format:
+  - vcf_bgzip
+  label: PURPLE germline SV VCF
+- name: sample_id
+  type: text
+  label: Tumor sample name
+- name: hmf_resources
+  type: data
+  format:
+  - tar.gz
+  - tar
+  - data
+  label: HMF pipeline resources archive
+  help: hmf_pipeline_resources.38_v3.0.0--8.tar.gz (data.oncoanalyser.com); members are extracted by relative path.
+- name: driver_gene_panel
+  type: data
+  format:
+  - tabular
+  label: Driver gene panel (optional)
+  optional: true
+  help: Defaults to common/DriverGenePanel.38.tsv inside the HMF resources archive.
+- name: genome_version
+  type: select
+  label: Reference genome version
+  options:
+  - value: '38'
+    label: '38'
+    selected: true
+shell_command: "set -e\nMEM=$GALAXY_MEMORY_MB; [ -n \"$MEM\" ] || MEM=8192\nXMX=`expr $MEM \\* 75 / 100`m\nB='$(inputs.hmf_resources.path)'\ntar -tzf \"$B\" > hmf_members.txt\nTOP=`head -n 1 hmf_members.txt\
+  \ | cut -d/ -f1`\ngrep -E -e \"^$TOP/common/ensembl_data\" -e \"^$TOP/common/DriverGenePanel.38.tsv\" hmf_members.txt > hmf_wanted.txt\nsed -n 's#/[^/]*$##p' hmf_wanted.txt | sort -u | xargs mkdir -p\n\
+  tar -xzf \"$B\" -T hmf_wanted.txt\nR=$TOP\nDGP='$(inputs.driver_gene_panel ? inputs.driver_gene_panel.path : '')'; [ -n \"$DGP\" ] || DGP=$R/common/DriverGenePanel.38.tsv\nT='$(inputs.sample_id)'\nmkdir\
+  \ -p linx_germline\nif [ -s '$(inputs.sv_vcf.path)' ]; then\n  ln -s '$(inputs.sv_vcf.path)' sv_germline.vcf.gz\n  linx -Xmx$XMX -sample $T -sv_vcf sv_germline.vcf.gz -germline -ref_genome_version $(inputs.genome_version)\
+  \ \\\n    -ensembl_data_dir $R/common/ensembl_data -driver_gene_panel $DGP -output_dir linx_germline/\nfi\nif [ -f linx_germline/$T.linx.germline.driver.catalog.tsv ]; then cp linx_germline/$T.linx.germline.driver.catalog.tsv\
+  \ germline_driver_catalog.tsv; else : > germline_driver_catalog.tsv; fi\n"
+outputs:
+- name: germline_driver_catalog
+  type: data
+  format: tabular
+  from_work_dir: germline_driver_catalog.tsv
+  label: LINX germline driver catalogue
+help:
+  format: markdown
+  content: 'Port of nf-core/oncoanalyser 3.0.0 `LINX_GERMLINE (modules/local/linx/germline)` for Galaxy (core DNA spine translation).
+
+    Uses the module''s own biocontainer. HMF resources come from one archive input; members are
+
+    extracted by their `conf/hmf_data.config` relative paths. Skips LINX (empty catalogue) when PURPLE wrote no germline SV VCF, matching the source''s skip branch.
+
+    '

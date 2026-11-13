@@ -1,0 +1,167 @@
+class: GalaxyUserTool
+id: oncoanalyser_purple
+version: 4.4.0
+name: hmftools PURPLE (purity, ploidy, copy number)
+description: Fit purity and ploidy, call copy number and finalise somatic/germline variant and SV calls with hmftools PURPLE
+license: GPL-3.0-only
+container: quay.io/biocontainers/hmftools-purple:4.4--hdfd78af_0
+requirements:
+- type: resource
+  cores_min: 4
+  ram_min: 16384
+inputs:
+- name: amber_dir
+  type: data
+  format:
+  - tar
+  label: AMBER output
+- name: cobalt_dir
+  type: data
+  format:
+  - tar
+  label: COBALT output
+- name: esvee_dir
+  type: data
+  format:
+  - tar
+  label: ESVEE output
+- name: pave_somatic_vcf
+  type: data
+  format:
+  - vcf_bgzip
+  label: PAVE somatic VCF
+- name: pave_germline_vcf
+  type: data
+  format:
+  - vcf_bgzip
+  label: PAVE germline VCF
+- name: tumor_id
+  type: text
+  label: Tumor sample name
+- name: normal_id
+  type: text
+  label: Normal sample name
+- name: genome_fasta
+  type: data
+  format:
+  - fasta
+  label: Reference genome FASTA
+- name: genome_fai
+  type: data
+  format:
+  - fai
+  label: Reference FASTA index (.fai)
+- name: genome_dict
+  type: data
+  format:
+  - txt
+  - data
+  label: Reference sequence dictionary (.dict)
+- name: hmf_resources
+  type: data
+  format:
+  - tar.gz
+  - tar
+  - data
+  label: HMF pipeline resources archive
+  help: hmf_pipeline_resources.38_v3.0.0--8.tar.gz (data.oncoanalyser.com); members are extracted by relative path.
+- name: driver_gene_panel
+  type: data
+  format:
+  - tabular
+  label: Driver gene panel (optional)
+  optional: true
+  help: Defaults to common/DriverGenePanel.38.tsv inside the HMF resources archive.
+- name: genome_version
+  type: select
+  label: Reference genome version
+  options:
+  - value: '38'
+    label: '38'
+    selected: true
+- name: min_purity
+  type: float
+  optional: true
+  label: Minimum purity (-min_purity)
+- name: max_purity
+  type: float
+  optional: true
+  label: Maximum purity (-max_purity)
+- name: min_ploidy
+  type: float
+  optional: true
+  label: Minimum ploidy (-min_ploidy)
+- name: max_ploidy
+  type: float
+  optional: true
+  label: Maximum ploidy (-max_ploidy)
+shell_command: "set -e\nTHREADS=$GALAXY_SLOTS; [ -n \"$THREADS\" ] || THREADS=1\nMEM=$GALAXY_MEMORY_MB; [ -n \"$MEM\" ] || MEM=16384\nXMX=`expr $MEM \\* 75 / 100`m\nB='$(inputs.hmf_resources.path)'\ntar\
+  \ -tzf \"$B\" > hmf_members.txt\nTOP=`head -n 1 hmf_members.txt | cut -d/ -f1`\ngrep -E -e \"^$TOP/dna/copy_number/GC_profile.1000bp.38.cnp\" -e \"^$TOP/dna/variants/KnownHotspots.somatic.38.vcf.gz\"\
+  \ -e \"^$TOP/dna/variants/KnownHotspots.germline.38.vcf.gz\" -e \"^$TOP/common/ensembl_data\" -e \"^$TOP/common/DriverGenePanel.38.tsv\" -e \"^$TOP/dna/copy_number/cohort_germline_amp_del_freq.38.csv\"\
+  \ hmf_members.txt > hmf_wanted.txt\nsed -n 's#/[^/]*$##p' hmf_wanted.txt | sort -u | xargs mkdir -p\ntar -xzf \"$B\" -T hmf_wanted.txt\nR=$TOP\nln -s '$(inputs.genome_fasta.path)' genome.fa\nln -s '$(inputs.genome_fai.path)'\
+  \ genome.fa.fai\nln -s '$(inputs.genome_dict.path)' genome.dict\nDGP='$(inputs.driver_gene_panel ? inputs.driver_gene_panel.path : '')'; [ -n \"$DGP\" ] || DGP=$R/common/DriverGenePanel.38.tsv\nT='$(inputs.tumor_id)'\n\
+  tar -xf '$(inputs.amber_dir.path)'; tar -xf '$(inputs.cobalt_dir.path)'; tar -xf '$(inputs.esvee_dir.path)'\nmkdir -p pave_somatic pave_germline\nln -s '$(inputs.pave_somatic_vcf.path)' pave_somatic/$T.pave.somatic.vcf.gz\n\
+  ln -s '$(inputs.pave_germline_vcf.path)' pave_germline/$T.pave.germline.vcf.gz\npurple -Xmx$XMX -tumor $T -reference '$(inputs.normal_id)' -amber amber -cobalt cobalt -esvee_dir esvee \\\n  -pave_somatic_dir\
+  \ pave_somatic -pave_germline_dir pave_germline -ref_genome genome.fa -ref_genome_version $(inputs.genome_version) \\\n  -driver_gene_panel $DGP -ensembl_data_dir $R/common/ensembl_data -somatic_hotspots\
+  \ $R/dna/variants/KnownHotspots.somatic.38.vcf.gz \\\n  -germline_hotspots $R/dna/variants/KnownHotspots.germline.38.vcf.gz \\\n  -germline_amp_del_freq_file $R/dna/copy_number/cohort_germline_amp_del_freq.38.csv\
+  \ \\\n  -gc_profile $R/dna/copy_number/GC_profile.1000bp.38.cnp $(inputs.min_purity != null ? '-min_purity ' + inputs.min_purity : '') $(inputs.max_purity != null ? '-max_purity ' + inputs.max_purity\
+  \ : '') $(inputs.min_ploidy != null ? '-min_ploidy ' + inputs.min_ploidy : '') $(inputs.max_ploidy != null ? '-max_ploidy ' + inputs.max_ploidy : '') \\\n  -circos `which circos` -threads $THREADS -output_dir\
+  \ purple/\ncp purple/$T.purple.purity.tsv purity.tsv; cp purple/$T.purple.qc qc.txt\ncp purple/$T.purple.somatic.vcf.gz somatic.vcf.gz; cp purple/$T.purple.germline.vcf.gz germline.vcf.gz\ncp purple/$T.purple.sv.vcf.gz\
+  \ sv.vcf.gz\nif [ -f purple/$T.purple.sv.germline.vcf.gz ]; then cp purple/$T.purple.sv.germline.vcf.gz sv_germline.vcf.gz; else : > sv_germline.vcf.gz; fi\ncp purple/$T.purple.cnv.somatic.tsv cnv_somatic.tsv;\
+  \ cp purple/$T.purple.driver.catalog.somatic.tsv driver_catalog_somatic.tsv\ntar -cf purple_dir.tar purple\n"
+outputs:
+- name: purple_dir
+  type: data
+  format: tar
+  from_work_dir: purple_dir.tar
+  label: PURPLE output directory
+- name: purity
+  type: data
+  format: tabular
+  from_work_dir: purity.tsv
+  label: PURPLE purity
+- name: qc
+  type: data
+  format: txt
+  from_work_dir: qc.txt
+  label: PURPLE QC
+- name: somatic_vcf
+  type: data
+  format: vcf_bgzip
+  from_work_dir: somatic.vcf.gz
+  label: PURPLE somatic VCF
+- name: germline_vcf
+  type: data
+  format: vcf_bgzip
+  from_work_dir: germline.vcf.gz
+  label: PURPLE germline VCF
+- name: sv_vcf
+  type: data
+  format: vcf_bgzip
+  from_work_dir: sv.vcf.gz
+  label: PURPLE somatic SV VCF
+- name: sv_germline_vcf
+  type: data
+  format: vcf_bgzip
+  from_work_dir: sv_germline.vcf.gz
+  label: PURPLE germline SV VCF
+- name: cnv_somatic
+  type: data
+  format: tabular
+  from_work_dir: cnv_somatic.tsv
+  label: PURPLE somatic copy number
+- name: driver_catalog_somatic
+  type: data
+  format: tabular
+  from_work_dir: driver_catalog_somatic.tsv
+  label: PURPLE somatic driver catalogue
+help:
+  format: markdown
+  content: 'Port of nf-core/oncoanalyser 3.0.0 `PURPLE (modules/local/purple)` for Galaxy (core DNA spine translation).
+
+    Uses the module''s own biocontainer. HMF resources come from one archive input; members are
+
+    extracted by their `conf/hmf_data.config` relative paths. Optional purity/ploidy bounds reproduce the source test profile''s `withName: ''PURPLE'' ext.args`. The PAVE VCFs are placed in pave_somatic/
+    and pave_germline/ directories, as PURPLE reads them.
+
+    '

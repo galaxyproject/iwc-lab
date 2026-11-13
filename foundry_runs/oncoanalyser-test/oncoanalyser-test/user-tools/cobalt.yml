@@ -1,0 +1,86 @@
+class: GalaxyUserTool
+id: oncoanalyser_cobalt
+version: 3.0.0
+name: hmftools COBALT (read-depth ratios)
+description: GC-normalised read-depth ratios for a tumor/normal pair with hmftools COBALT
+license: GPL-3.0-only
+container: quay.io/biocontainers/hmftools-cobalt:3.0--hdfd78af_0
+requirements:
+- type: resource
+  cores_min: 4
+  ram_min: 16384
+inputs:
+- name: tumor_bam
+  type: data
+  format:
+  - bam
+  label: Tumor BAM (REDUX)
+- name: tumor_bai
+  type: data
+  format:
+  - data
+  label: Tumor BAM index (.bai)
+- name: normal_bam
+  type: data
+  format:
+  - bam
+  label: Normal BAM (REDUX)
+- name: normal_bai
+  type: data
+  format:
+  - data
+  label: Normal BAM index (.bai)
+- name: tumor_id
+  type: text
+  label: Tumor sample name
+  help: Must match the BAM read-group SM.
+- name: normal_id
+  type: text
+  label: Normal sample name
+  help: Must match the BAM read-group SM.
+- name: genome_fasta
+  type: data
+  format:
+  - fasta
+  label: Reference genome FASTA
+- name: genome_fai
+  type: data
+  format:
+  - fai
+  label: Reference FASTA index (.fai)
+- name: hmf_resources
+  type: data
+  format:
+  - tar.gz
+  - tar
+  - data
+  label: HMF pipeline resources archive
+  help: hmf_pipeline_resources.38_v3.0.0--8.tar.gz (data.oncoanalyser.com); members are extracted by relative path.
+- name: genome_version
+  type: select
+  label: Reference genome version
+  options:
+  - value: '38'
+    label: '38'
+    selected: true
+shell_command: "set -e\nTHREADS=$GALAXY_SLOTS; [ -n \"$THREADS\" ] || THREADS=1\nMEM=$GALAXY_MEMORY_MB; [ -n \"$MEM\" ] || MEM=16384\nXMX=`expr $MEM \\* 75 / 100`m\nB='$(inputs.hmf_resources.path)'\ntar\
+  \ -tzf \"$B\" > hmf_members.txt\nTOP=`head -n 1 hmf_members.txt | cut -d/ -f1`\ngrep -E -e \"^$TOP/dna/copy_number/GC_profile.1000bp.38.cnp\" hmf_members.txt > hmf_wanted.txt\nsed -n 's#/[^/]*$##p' hmf_wanted.txt\
+  \ | sort -u | xargs mkdir -p\ntar -xzf \"$B\" -T hmf_wanted.txt\nR=$TOP\nln -s '$(inputs.genome_fasta.path)' genome.fa\nln -s '$(inputs.genome_fai.path)' genome.fa.fai\nln -s '$(inputs.tumor_bam.path)'\
+  \ '$(inputs.tumor_id).redux.bam'\nln -s '$(inputs.tumor_bai.path)' '$(inputs.tumor_id).redux.bam.bai'\nln -s '$(inputs.normal_bam.path)' '$(inputs.normal_id).redux.bam'\nln -s '$(inputs.normal_bai.path)'\
+  \ '$(inputs.normal_id).redux.bam.bai'\ncobalt -Xmx$XMX -tumor '$(inputs.tumor_id)' -tumor_bam '$(inputs.tumor_id).redux.bam' \\\n  -reference '$(inputs.normal_id)' -reference_bam '$(inputs.normal_id).redux.bam'\
+  \ \\\n  -ref_genome genome.fa -ref_genome_version $(inputs.genome_version) \\\n  -gc_profile $R/dna/copy_number/GC_profile.1000bp.38.cnp -threads $THREADS -output_dir cobalt/\ntar -cf cobalt_dir.tar cobalt\n"
+outputs:
+- name: cobalt_dir
+  type: data
+  format: tar
+  from_work_dir: cobalt_dir.tar
+  label: COBALT output directory
+help:
+  format: markdown
+  content: 'Port of nf-core/oncoanalyser 3.0.0 `COBALT (modules/local/cobalt/run)` for Galaxy (core DNA spine translation).
+
+    Uses the module''s own biocontainer. HMF resources come from one archive input; members are
+
+    extracted by their `conf/hmf_data.config` relative paths. Matched-normal mode: -tumor_only_diploid_bed is not passed (source passes it only in tumor-only mode).
+
+    '

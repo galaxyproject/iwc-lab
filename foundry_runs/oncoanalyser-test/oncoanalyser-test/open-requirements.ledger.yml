@@ -1,0 +1,357 @@
+topology_repair:
+  escalations: 1
+  cap: 3
+  open_history:
+  - 0
+entries:
+- id: reference-data-not-test-scale
+  status: surrendered
+  blocking: false
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  unmet: a reference set small enough to upload to test.galaxyproject.org and run the workflow test
+  missing: 'selected nf-test (tests/profile_test.nf.test) uses full GRCh38_hmf references: FASTA 3.25 GB, HMF bundle 5.91 GB, bwa-mem2 tar 8.91 GB, GRIDSS tar 7.71 GB, STAR tar 27.4 GB, BWA img 5.63 GB
+    (content-length, 2026-11-11); no reduced reference exists in nf-core/test-datasets oncoanalyser branch per the test config'
+  resolved_by: null
+  supersedes: null
+  note: 'phase 8 (test-data resolution) must search for or construct a reduced reference, else phases 12-13 cannot run on the target | surrendered at run end (2026-11-11): written into the final artifacts
+    as a labelled gap'
+- id: hmf-bundle-member-extraction-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  unmet: hmftools steps read ~55 members (files and subdirectories) of a single hmf_pipeline_resources archive input
+  missing: no confirmed Galaxy wrapper that accepts the archive and extracts members by HMF relative path; alternative is per-member extraction steps
+  resolved_by: validate-galaxy-workflow
+  supersedes: null
+  note: 'implemented: UDTs list the archive top dir and extract members with busybox tar patterns ''*/<relpath>'' (FNM_LEADING_DIR assumed for directories); runtime unverified - probe job on test.galaxyproject.org
+    (history b1251ce3b0e2e90f3f525f72ec419291, dataset 703493f5161f518b) still running at extraction time | first probe failed (busybox tar: "*/common/ensembl_data: not found in archive"); UDTs rewritten
+    to list once, grep prefixes, mkdir parents, tar -T; re-probe dataset 2b536c102b57dd14 extracted files correctly'
+- id: overridable-bundle-member-defaults
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  unmet: driver_gene_panel, gridss_config, isofox_counts, isofox_gc_ratios optional inputs default to HMF bundle members when unset
+  missing: gxformat2 has no "default to member of another input"; needs wrapper-level fallback or conditional wiring
+  resolved_by: advance-galaxy-draft-step
+  supersedes: null
+  note: implemented for driver_gene_panel (UDT falls back to $R/common/DriverGenePanel.38.tsv when the optional input is null); gridss_config/isofox_* belong to dropped stages
+- id: reference-datatypes-unverified-on-target
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  unmet: tar, bwa_mem2_index, sequence dictionary datatypes for reference inputs
+  missing: not checked against test.galaxyproject.org datatypes registry
+  resolved_by: advance-galaxy-draft-step
+  supersedes: null
+  note: 'GET /api/datatypes on target: tar, tar.gz, vcf_bgzip, fai, bam, tabular, txt, fasta, fastqsanger.gz present; bai, directory, dict absent (dict emitted as txt, bai as data)'
+- id: gridss-index-and-bwa-img-no-builder
+  status: surrendered
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  unmet: rebuild-on-absence for ref_data_genome_gridss_index (GRIDSS_INDEX) and ref_data_genome_img (GATK4_BWA_INDEX_IMAGE)
+  missing: no Galaxy builder wrapper known (rebuild-unverified); treat as required uploads when VIRUSBreakend / ESVEE / CIDER steps are kept
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: genome-key-plumbing-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  units: params genome, force_genome, ref_data_base, ref_data_genomes_base, igenomes_base, igenomes_ignore, genome_type, ref_data_types, prepare_reference_only
+  because: these resolve remote reference locations by key (conf/hmf_genomes.config, lib/WorkflowMain.groovy setParamsDefaults); v1 posture forbids data tables and the Galaxy surface starts at per-asset
+    inputs (nextflow-to-galaxy-reference-data-mapping, Recommendations)
+  unmet: selecting a genome by key
+  missing: no Galaxy input for the key; user supplies per-asset reference datasets
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: prepare-reference-staging-not-carried
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  units: CUSTOM_EXTRACTTARBALL (DECOMP_* aliases) and WRITE_REFERENCE_DATA (WRITE_* aliases) in PREPARE_REFERENCE; prepare_reference run mode
+  because: Galaxy inputs arrive materialized as datasets; archives are extracted inside consuming wrappers; prepare_reference mode is a reference-producing mode outside WGTS (summary-nextflow.json workflow.conditionals
+    run_mode guards)
+  unmet: staging/decompression of reference tarballs and the reference-export mode
+  missing: no Galaxy steps for these
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: non-wgts-reference-params-not-carried
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  units: ref_data_panel_data_path, target_regions_bed, isofox_tpm_norm, isofox_gene_ids
+  because: consumed only in TARGETED / PANEL_RESOURCE_CREATION workflows; WGTS passes [] for target_regions_bed and isofox_tpm_norm (workflows/wgts.nf)
+  unmet: targeted-panel reference data
+  missing: no Galaxy inputs
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: rna-stages-not-built
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  units: READ_ALIGNMENT_RNA (STAR_ALIGN, SAMTOOLS_SORT, GATK4_MARKDUPLICATES), ISOFOX_QUANTIFICATION, SAGE_APPEND, NEO_PREDICTION; tumor RNA samplesheet rows
+  because: 'user scope decision 2026-11-11 (core DNA spine) after checking test.galaxyproject.org GET /api/tools?q=<tool> and Tool Shed /api/repositories?q=hmftools: no hmftools wrappers anywhere'
+  unmet: transcript expression, fusions, RNA allele support, neoepitopes
+  missing: not in the Galaxy workflow
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: downstream-interpretation-stages-not-built
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  units: LILAC_CALLING, CHORD_PREDICTION, SIGS_FITTING, PEACH_CALLING, CUPPA_PREDICTION, VIRUSBREAKEND_CALLING (VIRUSBREAKEND, VIRUSINTERPRETER), TEAL_CHARACTERISATION, CIDER_CALLING, ORANGE_REPORTING
+  because: 'user scope decision 2026-11-11 (core DNA spine) after checking test.galaxyproject.org GET /api/tools?q=<tool> and Tool Shed /api/repositories?q=hmftools: no hmftools wrappers anywhere'
+  unmet: HLA typing, HRD, signatures, PGx, tissue of origin, viral integration, telomeres, IG/TCR, ORANGE report
+  missing: not in the Galaxy workflow
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: qc-and-plot-stages-not-built
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  units: BAMTOOLS_METRICS, QSEE_METRICS, SAGE_PLOTTING, LINX_PLOTTING (LINX_VISUALISER, LINXREPORT), MULTIQC_REPORTING
+  because: 'user scope decision 2026-11-11 (core DNA spine) after checking test.galaxyproject.org GET /api/tools?q=<tool> and Tool Shed /api/repositories?q=hmftools: no hmftools wrappers anywhere; user
+    chose the spine listing excluding these'
+  unmet: BAM metrics, cohort QC, SAGE/LINX plots and HTML report, MultiQC
+  missing: not in the Galaxy workflow
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: umi-processing-not-carried
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  units: READ_UMI_PROCESSING (FASTP_UMI, FASTQ_TOOLS) and params umi_type, fastp_umi_*, fastq_tools_umi_*, redux_umi_*
+  because: UMIs are off by default (fastp_umi_enabled/fastq_tools_umi_enabled/redux_umi_enabled false in nextflow.config) and the test profile does not enable them; out of the agreed spine
+  unmet: UMI-aware deduplication
+  missing: not in the Galaxy workflow
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: non-wgts-modes-not-carried
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  units: TARGETED, PURITY_ESTIMATE, PANEL_RESOURCE_CREATION workflows; params mode, purity_estimate_mode, panel, force_panel
+  because: summary workflow.conditionals run_mode guards; agreed scope is WGTS core DNA spine
+  unmet: targeted panel, purity-estimate and panel-resource modes
+  missing: not in the Galaxy workflow
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: multi-group-donor-tumor-only-not-carried
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  units: samplesheet group_id/subject_id batching over several groups; donor sample_type; tumor-only (no normal) runs; samplesheet rows supplying BAM/CRAM or per-tool *_dir filetypes (resume-from-stage)
+  because: interface design takes one matched tumor/normal subject per invocation as two list:paired inputs; Galaxy sample_sheet has no cross-row tumor-normal pairing (galaxy-sample-sheet-collections note)
+  unmet: multi-subject batch runs, donor and tumor-only analyses, starting from existing alignments or intermediate results
+  missing: not in the Galaxy workflow
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: stage-selection-params-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  units: params processes_manual, processes_include, processes_exclude
+  because: stages are fixed by the agreed spine; Processes.getRunStages runtime selection has no Galaxy equivalent without conditionals
+  unmet: user-selectable stage subset
+  missing: not in the Galaxy workflow
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: bwamem2-index-input-not-exposed
+  status: surrendered
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  units: param ref_data_genome_bwamem2_index
+  because: installed wrapper toolshed.g2.bx.psu.edu/repos/iuc/bwa_mem2/bwa_mem2/2.3+galaxy1 indexes the history FASTA in-tool (wrapper options not yet inspected; confirm in phase 7)
+  unmet: reuse of a pre-built bwa-mem2 index
+  missing: not in the Galaxy workflow
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: hmftools-udt-creation-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  unmet: user-defined tools for REDUX, AMBER, COBALT, SAGE (somatic, germline), ESVEE, PAVE (somatic, germline), PURPLE, LINX (somatic, germline) on test.galaxyproject.org
+  missing: only GET /api/unprivileged_tools (200) checked; creating a UDT and using biocontainers/hmftools-* images not yet verified
+  resolved_by: advance-galaxy-draft-step
+  supersedes: null
+  note: POST /api/unprivileged_tools returned 200 (uuid 986cbb20-...); a probe UDT ran on the udt-scratch runner in apptainer with a quay.io biocontainer image
+  blocking: true
+- id: hmftools-directory-outputs-as-archives
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  unmet: hmftools steps exchange whole output directories (amber/, cobalt/, purple/, ...)
+  missing: interface chose tar archives (fallback data) per step plus named files; tar datatype on target and UDT archive packing/unpacking unverified
+  resolved_by: advance-galaxy-draft-step
+  supersedes: null
+  note: 'data-flow: archives only for amber/cobalt/esvee/redux/purple/linx dirs; PAVE outputs travel as vcf_bgzip and PURPLE rebuilds pave_*_dir | implemented: each hmftools UDT writes its output directory
+    as an uncompressed tar dataset (format tar, registered on target) and consumers untar it'
+- id: purple-test-args-as-inputs
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  unmet: conf/test.config PURPLE ext.args -min_purity 1 -max_purity 1 -min_ploidy 2 -max_ploidy 2
+  missing: exposed as optional float inputs purple_min/max_purity/ploidy; the PURPLE UDT must map them to arguments
+  resolved_by: advance-galaxy-draft-step
+  supersedes: null
+  note: 'implemented: PURPLE UDT optional float inputs min/max_purity/ploidy wired from workflow inputs; flags emitted only when set'
+- id: read-group-id-format
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: align_tumor_lanes
+  unmet: '@RG ID <sample_id>.<library_id>.<lane> and SM <sample_id> per lane, -Y soft-clipping, as in BWAMEM2_ALIGN'
+  missing: Galaxy lane identifier is <library_id>_<lane>, so ID becomes <sample_id>.<library>_<lane> (header-only difference); the bwa-mem2 wrapper must accept a custom RG and -Y
+  resolved_by: advance-galaxy-draft-step
+  supersedes: null
+  note: 'IWC exemplar sets rg_selector: do_not_set; no corpus backing, so set rg explicitly | implemented: bwa_mem2 rg_selector set, ID auto-named from the lane element identifier, SM connected from tumor/normal_sample_id,
+    PL ILLUMINA, -Y and -K 100000000 via io_options'
+- id: fai-dict-conditional-build
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: build_fai
+  unmet: build fai/dict only when the optional input is null, then pick_value
+  missing: 'step when: on a null optional input plus pick_value is not yet checked on the target; fallback is to make reference_genome_fai/dict required'
+  resolved_by: nextflow-summary-to-galaxy-template
+  supersedes: null
+  note: 'template: build_fai/build_dict always run (cheap) and pick_value first_non_null prefers the supplied optional input; no when: on null needed'
+- id: linx-germline-empty-sv-vcf
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: linx_germline
+  unmet: LINX germline runs on purple.sv.germline.vcf.gz
+  missing: source skips LINX_GERMLINE when the file is absent; the Galaxy step always runs and must tolerate an empty or missing germline SV VCF
+  resolved_by: advance-galaxy-draft-step
+  supersedes: null
+  note: 'implemented: PURPLE emits an empty sv_germline dataset when absent; LINX germline UDT skips and writes an empty catalogue'
+- id: no-iwc-somatic-exemplar
+  status: surrendered
+  raised_by: compare-against-iwc-exemplar
+  step: null
+  unmet: corpus precedent for tumor/normal twin chains, hmftools archive passing between user-defined tools, PURPLE multi-slot fan-in, when:+pick_value reference builds
+  missing: IWC ed48e2f has no somatic/tumor-normal workflow (grep tumor|somatic over .ga files); nearest exemplar ploidy-aware-genotype-calling is Low confidence
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: bam-index-not-staged-for-udt-consumers
+  status: resolved
+  blocking: true
+  raised_by: advance-galaxy-draft-step
+  step: amber
+  unmet: BAM index (.bai) beside each tumor/normal BAM for amber, cobalt, esvee, sage_somatic, sage_germline (hmftools open BAMs by index)
+  missing: probe on test.galaxyproject.org (history b1251ce3b0e2e90f3f525f72ec419291, probe UDT oncoanalyser_probe_bam_index) shows a GalaxyUserTool bam input is staged as a bare .dat with no index or metadata
+    path; hmftools-amber/cobalt/sage containers have no indexer; no wired input carries the index
+  resolved_by: repair-galaxy-draft-topology
+  supersedes: null
+  note: 'proposed repair: redux_tumor/redux_normal emit the REDUX-written .bai as an extra output (format data; no bai datatype on target) and wire it into each BAM consumer | applied: add-output (redux_tumor/redux_normal
+    TODO_redux_bai) and rewire (tumor_bai/normal_bai into amber, cobalt, esvee, sage_somatic, sage_germline); twins edited together'
+- id: genome-version-37-not-carried
+  status: surrendered
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  step: null
+  units: workflow input genome_version value 37 (GRCh37_hmf)
+  because: UDTs address GRCh38 bundle member names from conf/hmf_data.config hmf_data_paths['38'] (e.g. AmberGermlineSites.38.tsv.gz); the 37 names differ per file
+  unmet: GRCh37 analyses
+  missing: genome_version restricted to 38
+  resolved_by: null
+  supersedes: null
+  note: 'surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+- id: udt-runtime-assumptions-unverified
+  status: surrendered
+  raised_by: advance-galaxy-draft-step
+  step: null
+  unmet: 'hmftools UDT commands run as written in the biocontainers: bioconda wrapper accepts leading -Xmx, $GALAXY_SLOTS/$GALAXY_MEMORY_MB set, sh-compatible syntax, tar pattern extraction, samtools in
+    the REDUX image, sambamba in the ESVEE image, circos in the PURPLE image'
+  missing: no job has run any hmftools UDT; first probe on the target was still pulling/running the amber image after ~20 min
+  resolved_by: null
+  supersedes: null
+  note: 'phase 12 (test run) is skipped by user decision, so this stays open unless a small smoke job is run | verified on target: bash present, Galaxy runs commands under set -e, bioconda amber wrapper
+    accepts -Xmx, GALAXY_SLOTS=4 and GALAXY_MEMORY_MB=3788 set, tar -T extraction works; tool command lines themselves still unexecuted | surrendered at run end (2026-11-11): written into the final artifacts
+    as a labelled gap'
+- id: target-udt-memory-too-small
+  status: surrendered
+  raised_by: validate-galaxy-workflow
+  step: null
+  unmet: 16-32 GB memory for REDUX/ESVEE/SAGE/PURPLE on human WGS
+  missing: test.galaxyproject.org UDT jobs get GALAXY_MEMORY_MB=3788 regardless of ram_min (probe dataset 2b536c102b57dd14)
+  resolved_by: null
+  supersedes: null
+  note: 'run on a larger server | surrendered at run end (2026-11-11): written into the final artifacts as a labelled gap'
+discoveries:
+- id: reference-total-size-59gb
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: content-length of GRCh38_hmf/26.1 assets and hmf_pipeline_resources.38_v3.0.0--8.tar.gz on data.oncoanalyser.com, 2026-11-11
+  impact: in-tool bwa-mem2/STAR rebuild and test upload are infeasible at full scale on test.galaxyproject.org
+- id: iwc-history-fasta-in-tool-index
+  raised_by: compare-against-iwc-exemplar
+  evidence: 'variant-calling/ploidy-aware-genotype-calling BWA-MEM mapping uses reference_source_selector: history, index_a: auto'
+  impact: supports not exposing a bwa-mem2 index input (bwamem2-index-input-not-exposed)
+decisions:
+- id: hmf-resources-as-single-archive-input
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: expose the HMF resource bundle as one workflow input hmf_pipeline_resources (tar/data) passed to each hmftools step
+  rationale: ~55 members including subdirectories; per-file inputs would make an unusable workflow surface; mirrors ref_data_hmf_data_path semantics
+  evidence:
+  - hmf-bundle-member-extraction-unverified
+- id: fai-dict-workflow-tier-build
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: build fai and dict once as workflow-tier steps when not supplied, rather than in each consuming tool
+  rationale: more than 3 consumers (mapping note deviation threshold)
+- id: core-dna-spine-scope
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: 'Galaxy workflow covers WGTS core DNA spine: bwa-mem2 -> REDUX -> AMBER, COBALT, SAGE somatic+germline, ESVEE -> PAVE somatic+germline -> PURPLE -> LINX somatic+germline'
+  rationale: user choice 2026-11-11 after the tool-availability check
+  basis: user
+- id: one-subject-parallel-tumor-normal-inputs
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: inputs tumor_dna_reads and normal_dna_reads as list:paired (lane elements) plus tumor_sample_id/normal_sample_id strings; one subject per invocation
+  rationale: long-format samplesheet regrouped by group_id with heterogeneous tumor/normal roles; sample_sheet must be outermost and cannot pair rows
+  evidence:
+  - multi-group-donor-tumor-only-not-carried
+- id: test-run-not-executed
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: design test plan and fixtures; do not execute the Galaxy test run on test.galaxyproject.org
+  rationale: user choice 2026-11-11; ~59 GB references vs 10.7 GB quota
+  basis: user
+  evidence:
+  - reference-data-not-test-scale
+- id: twin-tumor-normal-branches
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: tumor and normal alignment and REDUX run as twin parallel chains; lanes are mapped over then reduced by REDUX
+  rationale: each chain needs its own sample-name parameter, and downstream hmftools take tumor/normal in named slots
+- id: always-build-fai-dict-pick-value
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: build_fai and build_dict run unconditionally; pick_fai/pick_dict (iuc pick_value 0.2.0, installed on target) take the first non-null of supplied vs built
+  rationale: 'avoids a when: guard on a null optional input; faidx/dict cost is small next to alignment'
+- id: no-comment-frames
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: 'emit no comments: frames in the draft'
+  rationale: a prior run in this workspace found geometry-less comment frames rejected on Galaxy import; frames are optional
+- id: hmftools-steps-as-embedded-udts
+  decided_by: advance-galaxy-draft-step
+  decision: 12 hmftools steps embed 11 GalaxyUserTool definitions (REDUX shared by tumor/normal twins) under run:, using the source modules biocontainers; build_fai/build_dict embed samtools 1.21 UDTs
+  rationale: no Tool Shed or target wrappers for hmftools; no faidx/CreateSequenceDictionary wrapper on target; UDT registration verified on target
+brief_change_recommendations: []

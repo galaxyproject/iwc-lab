@@ -1,0 +1,53 @@
+{
+  "command": "gxwf validate galaxy-workflow.gxwf.yml --json --cache-dir ../.galaxy-tool-cache",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "not_run_reason": null,
+  "tool_state_summary": {
+    "validated": 18,
+    "failed": 0
+  },
+  "additional_checks": [
+    {
+      "check": "gxwf validate-tests galaxy-workflow.gxwf-tests.yml --workflow galaxy-workflow.gxwf.yml",
+      "status": "pass"
+    },
+    {
+      "check": "POST /api/workflows on test.galaxyproject.org (native conversion via gxwf convert --to native)",
+      "status": "pass",
+      "evidence": "imported as workflow 30b0ca049992aa27: 34 steps (16 inputs + 18 tools), no step errors; embedded GalaxyUserTool definitions accepted (pre-fix revision of the hmftools tools; the re-embedded revision changes only shell_command text)"
+    },
+    {
+      "check": "UDT runtime probe in quay.io/biocontainers/hmftools-amber:4.3--hdfd78af_0 on test.galaxyproject.org",
+      "status": "pass",
+      "evidence": "history b1251ce3b0e2e90f3f525f72ec419291 dataset 2b536c102b57dd14: tar -T prefix extraction, bioconda wrapper -Xmx, GALAXY_SLOTS=4, GALAXY_MEMORY_MB=3788; earlier probe 703493f5161f518b showed busybox tar rejects */pattern members (fixed)"
+    }
+  ],
+  "diagnostics": [],
+  "residual_runtime_risks": [
+    {
+      "risk": "Reference data (~59 GB) exceeds the 10.7 GB account quota; full test cannot run on test.galaxyproject.org",
+      "proof": "planemo test on a server with references staged"
+    },
+    {
+      "risk": "UDT jobs on test.galaxyproject.org received 3.8 GB RAM / 4 slots despite ram_min 16384-32768; REDUX, ESVEE, SAGE, PURPLE on human WGS need far more",
+      "proof": "job metrics of a real-data run on a larger server"
+    },
+    {
+      "risk": "bwa-mem2 history-FASTA in-tool index build for a 3.2 GB genome needs ~64 GB RAM",
+      "proof": "bwa_mem2 job on the target with the full FASTA"
+    },
+    {
+      "risk": "hmftools command lines (REDUX, COBALT, ESVEE, SAGE, PAVE, PURPLE, LINX) have not executed; only AMBER image startup and archive extraction were probed",
+      "proof": "a smoke run of each UDT on real BAMs"
+    },
+    {
+      "risk": "VCF consumers (PAVE, PURPLE, LINX germline) receive .vcf.gz without .tbi; assumed hmftools read VCFs sequentially without an index",
+      "proof": "PAVE/PURPLE job logs on real data"
+    },
+    {
+      "risk": "Snapshot md5 parity depends on identical alignments (bwa-mem2 2.3 vs 2.2.1, samtools vs sambamba sort, RG ID format)",
+      "proof": "workflow test run comparing checksums"
+    }
+  ]
+}

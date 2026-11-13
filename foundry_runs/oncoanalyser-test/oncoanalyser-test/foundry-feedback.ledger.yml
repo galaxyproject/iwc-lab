@@ -1,0 +1,518 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: oncoanalyser-test
+  status: complete
+  started_at: '2026-11-11T05:46:14Z'
+  phases:
+  - n: 1
+    kind: mold
+    skill: summarize-nextflow
+    status: done
+    feedback_checked: true
+  - n: 2
+    kind: mold
+    skill: nextflow-summary-to-galaxy-reference-data
+    status: done
+    feedback_checked: true
+  - n: 3
+    kind: mold
+    skill: nextflow-summary-to-galaxy-interface
+    status: done
+    feedback_checked: true
+  - n: 4
+    kind: mold
+    skill: nextflow-summary-to-galaxy-data-flow
+    status: done
+    feedback_checked: true
+  - n: 5
+    kind: mold
+    skill: compare-against-iwc-exemplar
+    status: done
+    feedback_checked: true
+  - n: 6
+    kind: mold
+    skill: nextflow-summary-to-galaxy-template
+    status: done
+    feedback_checked: true
+  - n: 7
+    kind: mold
+    skill: advance-galaxy-draft-step
+    status: done
+    iterations: 5
+    feedback_checked: true
+  - n: 8
+    kind: branch
+    pattern: test-data-resolution
+    status: done
+    feedback_checked: true
+    selected: nextflow-to-test-data
+  - n: 9
+    kind: mold
+    skill: nextflow-test-to-galaxy-test-plan
+    status: done
+    feedback_checked: true
+  - n: 10
+    kind: mold
+    skill: implement-galaxy-workflow-test
+    status: done
+    feedback_checked: true
+  - n: 11
+    kind: mold
+    skill: validate-galaxy-workflow
+    status: done
+    feedback_checked: true
+  - n: 12
+    kind: mold
+    skill: run-workflow-test
+    status: done
+    feedback_checked: true
+  - n: 13
+    kind: mold
+    skill: debug-galaxy-workflow-output
+    status: done
+    feedback_checked: true
+  finished_at: '2026-11-11T06:46:55Z'
+entries:
+- id: summarize-nextflow-cli-nftest-file-profile-and-stub-ignored
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: '@galaxy-foundry/summarize-nextflow CLI (via foundry summarize-nextflow)'
+    locator: packages/summarize-nextflow
+  kind: defect
+  severity: major
+  what: tests/default.nf.test declares file-level `profile "test_stub"` and `options "-stub"`, but the candidate was emitted with effective_profiles [test], execution_mode real, scope primary, and params_delta/inputs
+    taken from conf/test.config.
+  expected: Apply file/test-level profile directives over the nf-test.config root profile (replace unless +name) and set execution_mode stub when options contain -stub, classifying such candidates bootstrap-only.
+  evidence: 'nf-core/oncoanalyser 3.0.0: both candidates resolved to profile test, so test_selection fell to needs-scope-choice; corrected by hand to select tests/profile_test.nf.test.'
+  status: open
+  issue: null
+- id: summarize-nextflow-cli-primary-workflow-picks-mode-dispatcher
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: '@galaxy-foundry/summarize-nextflow CLI (via foundry summarize-nextflow)'
+    locator: packages/summarize-nextflow
+  kind: defect
+  severity: major
+  what: The primary workflow was NFCORE_ONCOANALYSER, a run-mode dispatcher that only calls named workflows (WGTS, TARGETED, ...) and no processes; workflow.edges were 13 params/inputs -> workflow edges.
+  expected: Apply the mold selection rule (named workflow invoking the most pipeline processes, counting through subworkflows) so WGTS (workflows/wgts.nf, 33 subworkflow calls) is selected and its edges
+    are extracted.
+  evidence: Raw summary workflow.name NFCORE_ONCOANALYSER; WGTS present only as a subworkflows[] entry. Edges rebuilt by hand at subworkflow granularity.
+  status: open
+  issue: null
+- id: summarize-nextflow-cli-placeholder-provenance-and-pin-reclone
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: '@galaxy-foundry/summarize-nextflow CLI (via foundry summarize-nextflow)'
+    locator: packages/summarize-nextflow
+  kind: defect
+  severity: major
+  what: With a local clone, source.url was emitted as https://example.invalid/unknown.git and version as unknown, with no warning. Passing --pin 3.0.0 with a local path made the CLI re-clone through Windows
+    git, which failed with "detected dubious ownership" on the \\wsl.localhost path.
+  expected: Resolve remote/tag/HEAD from the local clone (or warn per failed lookup instead of using placeholders); with a local path, check out or verify --pin in place rather than re-cloning.
+  evidence: Windows-hosted npm CLI run against a WSL checkout of nf-core/oncoanalyser at tag 3.0.0; the first run with --pin exited during the clone, the second without --pin produced placeholder provenance.
+  status: open
+  issue: null
+- id: summarize-nextflow-cli-topic-only-outputs-misnamed
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: '@galaxy-foundry/summarize-nextflow CLI (via foundry summarize-nextflow)'
+    locator: packages/summarize-nextflow
+  kind: defect
+  severity: minor
+  what: Module outputs declared only with `topic:` (no `emit:`) were named "meta" (first token of the tuple) or "output_<random digits>".
+  expected: Name topic-only outputs by their topic (or leave a stable positional name) and never use the first tuple token as an output name.
+  evidence: 'All oncoanalyser local modules, e.g. AMBER outputs `tuple val(meta), path(''amber/''), topic: amber_dir` -> name "meta".'
+  status: open
+  issue: null
+- id: summarize-nextflow-cli-reference-assets-miss-genome-attributes
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: '@galaxy-foundry/summarize-nextflow CLI (via foundry summarize-nextflow)'
+    locator: packages/summarize-nextflow
+  kind: defect
+  severity: major
+  what: reference_assets held only ref_data_base and ref_data_genomes_base; the seven getGenomeAttribute() params in main.nf (fasta, fai, dict, img, bwamem2/gridss/star index) and ref_data_hmf_data_path
+    were missing, and reference_rebuilds was empty although prepare_reference has six compute-if-missing branches (SAMTOOLS_FAIDX, SAMTOOLS_DICT, GATK4_BWA_INDEX_IMAGE, BWAMEM2_INDEX, GRIDSS_INDEX, STAR_GENOMEGENERATE).
+  expected: Detect `params.X = getGenomeAttribute(...)` assignments as reference assets, and detect `if (!params.X) { BUILDER(...) }` rebuild guards in subworkflows, not only in the primary workflow.
+  evidence: subworkflows/local/prepare_reference/main.nf guards like `if (! params.ref_data_genome_fai) { SAMTOOLS_FAIDX(...) }`; entries added by hand.
+  status: open
+  issue: null
+- id: summarize-nextflow-cli-samplesheet-path-column-kind
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: '@galaxy-foundry/summarize-nextflow CLI (via foundry summarize-nextflow)'
+    locator: packages/summarize-nextflow
+  kind: defect
+  severity: minor
+  what: The samplesheet column `filepath` (no nf-schema format) was classified kind meta, although Utils.parseInput consumes it as file path(s); the custom long-format parser (one row per file, filetype
+    role selector, R1;R2 joined by ";") produced no warning.
+  expected: When a column has no format, trace its use (or its name and the parse function) before defaulting to meta, and add a warnings[] advisory when the samplesheet is parsed by custom Groovy rather
+    than samplesheetToList.
+  evidence: assets/schema_input.json filepath property; lib/Utils.groovy parseInput.
+  status: open
+  issue: null
+- id: summarize-nextflow-mold-silent-on-multi-mode-runtime-stages
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: mold
+    label: summarize-nextflow
+    locator: content/molds/summarize-nextflow/index.md
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+  kind: gap
+  severity: major
+  what: The mold assumes one primary workflow whose conditionals guard on params. oncoanalyser has a params.mode dispatcher choosing among five named workflows, and stage enablement (run_config.stages.*)
+    is computed at runtime in lib/ Groovy from samplesheet content; the schema has no place for alternate run modes or derived stage guards.
+  expected: Say how to summarize multi-mode pipelines (record each mode workflow, or pick one with a warning) and how to record guards that derive from samplesheet content rather than params.
+  evidence: Handled by modeling WGTS as primary and recording the other modes and the runtime stage derivation in warnings[].
+  status: open
+  issue: null
+- id: reference-mapping-note-silent-on-directory-archive-bundles
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in: &id001
+    mold: nextflow-summary-to-galaxy-reference-data
+    path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+    revision: 5
+    content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject: &id002
+    kind: research
+    label: nextflow-to-galaxy-reference-data-mapping
+    locator: content/research/nextflow-to-galaxy-reference-data-mapping/index.md
+    content_hash: 4676cdf3de4bcec6161b6102c9e842efa7b3c953f9c2f2787b4debea48e4a7eb
+  kind: gap
+  severity: major
+  what: oncoanalyser resolves ~55 reference files, several of them subdirectories, from one HMF resource directory/tarball (ref_data_hmf_data_path + hmf_data_paths relative map). The note covers coordinated
+    bundles of ~4 files and suggests sample_sheet:record, but says nothing on archive/directory bundles consumed member-by-member.
+  expected: Give a default shape for directory/tarball bundles (single archive input plus in-wrapper member extraction vs per-member extract steps), with the datatype to use (tar, directory, data) and how
+    it interacts with wrapper discovery.
+  evidence: Chose a single hmf_pipeline_resources archive input on judgment; recorded as decision hmf-resources-as-single-archive-input in the open-requirements ledger.
+  status: open
+  issue: null
+- id: reference-mapping-note-no-scale-or-test-feasibility-check
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in: *id001
+  subject: *id002
+  kind: gap
+  severity: minor
+  what: Nothing in the mold or notes asks for reference size, or whether the in-tool rebuild posture is feasible at genome scale (bwa-mem2/STAR index builds on a 3.2 GB human FASTA), even though it decides
+    whether downstream test phases can run on the target.
+  expected: Have the brief record approximate asset sizes and rebuild resource cost, and raise an open requirement when the source test uses references that are not test-scale.
+  evidence: Sizes measured ad hoc via HTTP HEAD (about 59 GB in total); raised as reference-data-not-test-scale.
+  status: open
+  issue: null
+- id: sample-sheet-note-silent-on-long-format-role-rows
+  raised_by: nextflow-summary-to-galaxy-interface
+  observed_in: &id003
+    mold: nextflow-summary-to-galaxy-interface
+    path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+    revision: 6
+    content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: research
+    label: galaxy-sample-sheet-collections
+    locator: content/research/galaxy-sample-sheet-collections/index.md
+    content_hash: 98736fdcd0c4f4698af4e0cd4c539b33e3d0db872de1e10487556b21033030ec
+  kind: gap
+  severity: major
+  what: 'oncoanalyser samplesheet is long format: one row per file, a filetype role column, sample_type tumor/normal rows regrouped per group_id into one paired-role record. The note maps only wide sheets
+    (path columns per row) and gives no shape for cross-row role pairing.'
+  expected: Add a mapping for long-format, role-keyed sheets (e.g. parallel per-role collections per subject, or sample_sheet:record after regrouping) and say when to fall back to one subject per invocation.
+  evidence: Interface chose parallel tumor/normal list:paired inputs on judgment; decision one-subject-parallel-tumor-normal-inputs.
+  status: open
+  issue: null
+- id: channel-shape-note-silent-on-directory-outputs
+  raised_by: nextflow-summary-to-galaxy-interface
+  observed_in: *id003
+  subject:
+    kind: research
+    label: nextflow-to-galaxy-channel-shape-mapping
+    locator: content/research/nextflow-to-galaxy-channel-shape-mapping/index.md
+    content_hash: 32efd59cc86563b145819cda38f0692bdd3144aac10ae831dc6d8accd9dcda8d
+  kind: gap
+  severity: major
+  what: 'Every hmftools module emits and consumes whole directories (tuple val(meta), path(''amber/'') topic: amber_dir). The channel-shape and path-glob notes cover files and collections only, not directory
+    outputs passed between steps.'
+  expected: Give a default Galaxy representation for directory-valued channels (archive dataset, list collection via discover_datasets, or named-file fan-out) and its datatype.
+  evidence: Chose tar archive per step plus named checkpoint files; recorded as hmftools-directory-outputs-as-archives in the open-requirements ledger.
+  status: open
+  issue: null
+- id: interface-mold-no-target-tool-availability-check
+  raised_by: nextflow-summary-to-galaxy-interface
+  observed_in: *id003
+  subject:
+    kind: mold
+    label: nextflow-summary-to-galaxy-interface
+    locator: content/molds/nextflow-summary-to-galaxy-interface/index.md
+    content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+  kind: gap
+  severity: major
+  what: Scope for a 30-stage pipeline depended on whether its tools exist on the target. The procedure never says to check target or Tool Shed availability before fixing the interface; that check otherwise
+    first happens in phase 7, after interface, data-flow and template are already pinned.
+  expected: Before pinning the interface, have large-scope translations do a coarse availability check (target /api/tools, Tool Shed search, UDT permission) and surface a scope choice when most tools are
+    missing.
+  evidence: Ad-hoc checks found 0 of ~25 hmftools on test.galaxyproject.org or the Tool Shed; the user then narrowed scope to the core DNA spine.
+  status: open
+  issue: null
+- id: open-requirements-decision-basis-lacks-user
+  raised_by: nextflow-summary-to-galaxy-interface
+  observed_in: *id003
+  subject:
+    kind: research
+    label: open-requirements-ledger
+    locator: content/research/open-requirements-ledger/index.md
+    content_hash: f9076119f5110cd28d3d827a88898e9ada28de4f5db6efefbd9a827cd9971a18
+  kind: friction
+  severity: minor
+  what: Decisions carry basis brief-proposal | agent, but this run made scope and testing decisions by asking the user mid-pipeline; neither value describes that.
+  expected: 'Add basis: user (with the question asked) for decisions taken interactively during a run.'
+  evidence: 'Recorded decisions core-dna-spine-scope and test-run-not-executed with basis: user.'
+  status: open
+  issue: null
+- id: iwc-exemplar-low-confidence-sibling-file-ambiguous
+  raised_by: compare-against-iwc-exemplar
+  observed_in:
+    mold: compare-against-iwc-exemplar
+    path: content/molds/compare-against-iwc-exemplar/index.md
+    revision: 12
+    content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: mold
+    label: compare-against-iwc-exemplar
+    locator: content/molds/compare-against-iwc-exemplar/index.md
+    content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+  kind: friction
+  severity: minor
+  what: The procedure says to write iwc-exemplar.gxwf.yml once a High or Medium exemplar is chosen, and that a Low cross-domain match "may surface a short excerpt". It does not say whether the sibling file
+    is written for Low; the output declaration says it is absent only when there is no nearest exemplar.
+  expected: State whether a Low-confidence match writes the sibling file (labelled pattern-only) or only the inline excerpt.
+  evidence: 'oncoanalyser run: Low match ploidy-aware-genotype-calling; wrote both, labelled pattern comparison only.'
+  status: open
+  issue: null
+- id: udt-authoring-note-silent-on-indexed-inputs
+  raised_by: advance-galaxy-draft-step
+  observed_in: &id004
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 11
+    content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject: &id005
+    kind: research
+    label: galaxy-user-tool-authoring
+    locator: content/research/galaxy-user-tool-authoring/index.md
+    content_hash: 365fad455369945a34bda537c8dbf409a0966f0f88da9fe78b61cff32d5b0d0d
+  kind: gap
+  severity: major
+  what: A GalaxyUserTool data input of format bam is staged as a bare .dat file with no index (and no metadata path) in its JS object; the authoring note never says so, so every BAM/CRAM/bgzip-VCF consumer
+    that needs an index silently breaks.
+  expected: 'State how indexed datatypes reach a UDT (they do not), and give the pattern: emit the index as a separate dataset from the producer, or index inside the tool when the image has an indexer.'
+  evidence: 'Probe UDT on test.galaxyproject.org printed inputs.bam = {class: File, path: .../dataset_<uuid>.dat, format: bam, ...} and an inputs directory holding only the .dat; required a topology repair
+    adding bai edges to 5 hmftools steps.'
+  status: open
+  issue: null
+- id: udt-authoring-note-silent-on-dollar-brace
+  raised_by: advance-galaxy-draft-step
+  observed_in: *id004
+  subject: *id005
+  kind: gap
+  severity: minor
+  what: The note says only $(...) is an expression and to escape $(date), but does not say whether ${VAR} (CWL-style JavaScript body) is interpreted; shell defaults like ${GALAXY_SLOTS:-1} are the natural
+    idiom.
+  expected: Say whether ${...} is evaluated in shell_command/configfiles and how to escape it.
+  evidence: Authored 11 hmftools UDTs avoiding ${...} entirely (plain $VAR plus test-and-assign) because the note was silent.
+  status: open
+  issue: null
+- id: advance-step-one-step-per-call-vs-twins
+  raised_by: advance-galaxy-draft-step
+  observed_in: *id004
+  subject:
+    kind: mold
+    label: advance-galaxy-draft-step
+    locator: content/molds/advance-galaxy-draft-step/index.md
+    content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+  kind: friction
+  severity: minor
+  what: The loop advances one drafty step per call, but this draft had 12 hmftools steps realized by 11 authored tools (twins and siblings sharing one definition) plus twin bwa-mem2 steps; doing them one
+    call at a time would re-read the same evidence 18 times.
+  expected: Allow (or describe) realizing a twin/sibling set in one iteration when they share a wrapper or authored definition, recording one iteration per set.
+  evidence: Phase 7 realized 18 steps in 5 batched iterations (twins, builders, pick_value pair, one topology repair, hmftools set).
+  status: open
+  issue: null
+- id: udt-first-job-container-pull-latency
+  raised_by: advance-galaxy-draft-step
+  observed_in: *id004
+  subject:
+    kind: related-project
+    label: test.galaxyproject.org udt-scratch runner
+    locator: https://test.galaxyproject.org
+  kind: friction
+  severity: minor
+  what: A first GalaxyUserTool job using quay.io/biocontainers/hmftools-amber:4.3--hdfd78af_0 stayed running for over 20 minutes on a few-byte input, while a samtools-image UDT finished in about a minute.
+  expected: Document expected first-pull latency for UDT container images on test.galaxyproject.org, or pre-cache images.
+  evidence: history b1251ce3b0e2e90f3f525f72ec419291 dataset 703493f5161f518b, job created 2026-11-11T06:22Z.
+  status: open
+  issue: null
+- id: test-data-refs-no-intentionally-omitted-optional
+  raised_by: nextflow-to-test-data
+  observed_in:
+    mold: nextflow-to-test-data
+    path: content/molds/nextflow-to-test-data/index.md
+    revision: 4
+    content_hash: 842e097edfb5bfbc37b62a35d5870ee2087df33919212a7965fd70dae799b189
+    foundry_head: 2f8792a62ca53f074605ddbcfb25e75871f52b24
+  subject:
+    kind: schema
+    label: test-data-refs
+    locator: package://@galaxy-foundry/gxwf-foundry#testDataRefsSchema
+    content_hash: 534dcb2f44e24a33bd59de2bca8d882af97321c602cf1b66776c22c38b0207a8
+  kind: gap
+  severity: minor
+  what: 'An optional workflow input that the source test deliberately leaves unset (driver_gene_panel) can only be expressed as resolved: false / storage: unresolved, which reads as a gap and tells the
+    branch harness to fall through to find-test-data.'
+  expected: 'Allow a ref to record "omitted by design" (e.g. storage: omitted, or resolved: true with no fixture) so optional inputs the source test does not set are not mistaken for search work.'
+  evidence: oncoanalyser test-data-refs.json driver_gene_panel entry; the harness had to judge the branch settled by hand.
+  status: open
+  issue: null
+- id: test-plan-mold-declares-only-summary-input
+  raised_by: nextflow-test-to-galaxy-test-plan
+  observed_in:
+    mold: nextflow-test-to-galaxy-test-plan
+    path: content/molds/nextflow-test-to-galaxy-test-plan/index.md
+    revision: 8
+    content_hash: fa769216f621ef25470c9fb907df1278635c0a1e022b647b9462ff7b92469291
+    foundry_head: 47aa5c1cf419386ea72929c8ee34aec0db65588f
+  subject:
+    kind: mold
+    label: nextflow-test-to-galaxy-test-plan
+    locator: content/molds/nextflow-test-to-galaxy-test-plan/index.md
+    content_hash: fa769216f621ef25470c9fb907df1278635c0a1e022b647b9462ff7b92469291
+  kind: gap
+  severity: major
+  what: The mold declares only summary-nextflow as input, yet a plan with resolved labels needs the Galaxy interface or concrete workflow (labels), test-data-refs (fixtures), the scope ledger (which snapshot
+    entries are out of scope), and the raw .nf.test.snap (summary carries snapshot structure but the plan needed per-file md5s).
+  expected: Declare galaxy-workflow (or the interface brief), test-data-refs and open-requirements-ledger as inputs, and say whether per-file snapshot md5s come from the summary or the .snap sidecar.
+  evidence: oncoanalyser plan read galaxy-workflow.gxwf.yml labels, test-data-refs.json fixtures and tests/profile_test.nf.test.snap content[1] md5 tokens outside the declared inputs.
+  status: open
+  issue: null
+- id: udt-authoring-note-silent-on-busybox-userland
+  raised_by: validate-galaxy-workflow
+  observed_in: &id006
+    mold: validate-galaxy-workflow
+    path: content/molds/validate-galaxy-workflow/index.md
+    revision: 5
+    content_hash: 74e3743fc376f33c1eb37832ab4869c327d48f87e015c7a38597cf4c4ca939cd
+    foundry_head: 88eb241e0b7226af678c1a938ab2bfc89a31aa1e
+  subject:
+    kind: research
+    label: galaxy-user-tool-authoring
+    locator: content/research/galaxy-user-tool-authoring/index.md
+    content_hash: 365fad455369945a34bda537c8dbf409a0966f0f88da9fe78b61cff32d5b0d0d
+  kind: gap
+  severity: major
+  what: 'Biocontainers images run a BusyBox userland: tar rejects wildcard members ("*/common/ensembl_data: not found in archive") and has no --wildcards/--strip-components. The note recommends biocontainers
+    images but says nothing about the shell/coreutils the command will meet, and Galaxy runs shell_command under set -e. All 11 hmftools UDTs passed gxwf validate-tool-source and still failed at runtime.'
+  expected: Warn that biocontainers images ship BusyBox tools (tar, sed, grep subsets) and that shell_command runs under set -e; recommend POSIX-only idioms or a runtime probe before embedding.
+  evidence: test.galaxyproject.org probe datasets 703493f5161f518b (failed) and 2b536c102b57dd14 (fixed, tar -T).
+  status: open
+  issue: null
+- id: udt-dollar-escape-passed-literally
+  raised_by: validate-galaxy-workflow
+  observed_in: *id006
+  subject:
+    kind: research
+    label: galaxy-user-tool-authoring
+    locator: content/research/galaxy-user-tool-authoring/index.md
+    content_hash: 365fad455369945a34bda537c8dbf409a0966f0f88da9fe78b61cff32d5b0d0d
+  kind: defect
+  severity: minor
+  what: 'The note says to escape shell variables that are not Galaxy expressions as \$(date). On test.galaxyproject.org (27.0.dev0) the backslash was passed through: echo SHELL=\$0 printed "SHELL=$0" literally,
+    so the escape suppresses shell expansion rather than Galaxy expansion.'
+  expected: Verify and correct the escape rule against Galaxy 26/27 (state what reaches the shell for \$( and \$VAR).
+  evidence: probe dataset 703493f5161f518b first line "SHELL=$0".
+  status: open
+  issue: null
+- id: target-ignores-udt-ram-min
+  raised_by: validate-galaxy-workflow
+  observed_in: *id006
+  subject:
+    kind: related-project
+    label: test.galaxyproject.org UDT runner resource mapping
+    locator: https://test.galaxyproject.org
+  kind: friction
+  severity: minor
+  what: A UDT declaring requirements ram_min was given GALAXY_MEMORY_MB=3788 and GALAXY_SLOTS=4; resource requirements on user-defined tools are not honoured or are capped on the public test server.
+  expected: Document the UDT runner caps, or map ram_min/cores_min to destinations.
+  evidence: probe dataset 2b536c102b57dd14 output "SLOTS=4 MEM=3788".
+  status: open
+  issue: null
+- id: report-feedback-bundling-rule-vs-precedent
+  raised_by: report-foundry-run-feedback
+  observed_in:
+    mold: report-foundry-run-feedback
+    path: content/molds/report-foundry-run-feedback/index.md
+    revision: 1
+    content_hash: cffa8d8103479a92dd7282c6964cccfb7fb73d95f673f52e53e7743a2cb270da
+    foundry_head: 63a3f9cf9c97a637fe1628d298e524f35709e289
+  subject:
+    kind: mold
+    label: report-foundry-run-feedback
+    locator: content/molds/report-foundry-run-feedback/index.md
+    content_hash: cffa8d8103479a92dd7282c6964cccfb7fb73d95f673f52e53e7743a2cb270da
+  kind: friction
+  severity: minor
+  what: 'The procedure says not to merge distinct corrections and to write one section per correction cluster, but open issues on the tracker (#666, #672, #654) bundle several independent defects about
+    one asset into one issue. For four distinct CLI defects this run followed the tracker precedent and drafted one bundled issue.'
+  expected: State whether distinct corrections on one subject should be drafted as separate issues or one bundled issue with numbered items, consistent with tracker practice.
+  evidence: oncoanalyser-test foundry-issue-drafts.md cluster A (4 entries on packages/summarize-nextflow).
+  status: open
+  issue: null

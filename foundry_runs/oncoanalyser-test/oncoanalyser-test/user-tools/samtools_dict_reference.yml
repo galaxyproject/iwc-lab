@@ -1,0 +1,26 @@
+class: GalaxyUserTool
+id: oncoanalyser_samtools_dict
+version: 1.21.0
+name: Sequence dictionary for reference FASTA (samtools dict)
+description: Write a SAM sequence dictionary (.dict) for a reference FASTA, as nf-core/oncoanalyser SAMTOOLS_DICT does
+license: MIT
+container: quay.io/biocontainers/samtools:1.21--h50ea8bc_0
+requirements: []
+inputs:
+  - name: fasta
+    type: data
+    format: [fasta]
+    label: Reference FASTA
+shell_command: |
+  samtools dict '$(inputs.fasta.path)' --output genome.dict
+outputs:
+  - name: dict
+    type: data
+    format: txt
+    from_work_dir: genome.dict
+    label: Sequence dictionary
+help:
+  format: markdown
+  content: |
+    Port of the nf-core `SAMTOOLS_DICT` module (`samtools dict <fasta> --output <fasta>.dict`),
+    samtools 1.21. The .dict is emitted as `txt` (no dictionary datatype is assumed on the target).

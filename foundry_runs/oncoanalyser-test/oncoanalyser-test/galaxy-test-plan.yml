@@ -1,0 +1,535 @@
+plan_version: '1'
+source:
+  kind: nextflow
+  name: nf-core/oncoanalyser
+  derived_from: test-evidence
+  notes: 'Translated from tests/profile_test.nf.test::-profile test (test_selection: selected; primary, real execution, tag cicd.large). Snapshot captures stable_path and stable_content (md5 of files not
+    in tests/.nftignore). The stub test tests/default.nf.test::-profile test_stub is bootstrap-only and not translated. Only the core DNA spine is in the Galaxy workflow.'
+workflow:
+  title: oncoanalyser WGS tumor/normal core (REDUX, AMBER, COBALT, SAGE, ESVEE, PAVE, PURPLE, LINX)
+  label_source: draft
+  notes: Labels read from the concrete galaxy-workflow.gxwf.yml.
+test_cases:
+- id: oncoanalyser_profile_test_core_dna
+  doc: subject_a simulated WGS tumor/normal DNA (one lane each) through bwa-mem2, REDUX, AMBER, COBALT, ESVEE, SAGE, PAVE, PURPLE, LINX against full GRCh38_hmf references.
+  derived_from: mixed
+  provenance: tests/profile_test.nf.test::-profile test; conf/test.config (input fastq_eval.subject_a.wgts.tndna_trna.minimal.csv, mode wgts, genome GRCh38_hmf, PURPLE ext.args)
+  job_inputs:
+  - workflow_label: tumor_dna_reads
+    label_status: resolved
+    description: Simulated subject_a tumor DNA reads, one lane element library_1_001 (forward/reverse) per test-data-refs.json
+    collection_shape: list:paired
+    datatype: fastqsanger.gz
+    fixture:
+      storage: remote-url
+      location: null
+      checksum: null
+      provenance: test-data-refs.json elements (remote-url + SHA-1 per FASTQ) from fastq_eval.subject_a.wgts.tndna_trna.minimal.csv
+  - workflow_label: normal_dna_reads
+    label_status: resolved
+    description: Simulated subject_a normal DNA reads, one lane element library_1_001 (forward/reverse) per test-data-refs.json
+    collection_shape: list:paired
+    datatype: fastqsanger.gz
+    fixture:
+      storage: remote-url
+      location: null
+      checksum: null
+      provenance: test-data-refs.json elements (remote-url + SHA-1 per FASTQ) from fastq_eval.subject_a.wgts.tndna_trna.minimal.csv
+  - workflow_label: tumor_sample_id
+    label_status: resolved
+    description: Tumor sample name from samplesheet sample_id
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: subject_a.tumor
+      checksum: null
+      provenance: samplesheet row sample_id
+  - workflow_label: normal_sample_id
+    label_status: resolved
+    description: Normal sample name from samplesheet sample_id
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: subject_a.normal
+      checksum: null
+      provenance: samplesheet row sample_id
+  - workflow_label: reference_genome
+    label_status: resolved
+    description: reference_genome for genome GRCh38_hmf (conf/test.config genome)
+    collection_shape: null
+    datatype: fasta
+    fixture:
+      storage: remote-url
+      location: https://data.oncoanalyser.com/r2/reference/dist/v1/genomes/GRCh38_hmf/26.1/GRCh38_masked_exclusions_alts_hlas.fasta
+      checksum: null
+      provenance: genome GRCh38_hmf from conf/test.config resolved through conf/hmf_genomes.config (params.ref_data_genomes_base = https://data.oncoanalyser.com/r2/reference/dist/v1/genomes); fasta; 3,249,610,262
+        bytes (content-length 2026-11-11), not hashed (size)
+  - workflow_label: reference_genome_fai
+    label_status: resolved
+    description: reference_genome_fai for genome GRCh38_hmf (conf/test.config genome)
+    collection_shape: null
+    datatype: fai
+    fixture:
+      storage: remote-url
+      location: https://data.oncoanalyser.com/r2/reference/dist/v1/genomes/GRCh38_hmf/26.1/samtools_index-1.16/GRCh38_masked_exclusions_alts_hlas.fasta.fai
+      checksum: SHA-1:9e9d96a578505b9bfe199cb0daba69d117bd31dc
+      provenance: genome GRCh38_hmf from conf/test.config resolved through conf/hmf_genomes.config (params.ref_data_genomes_base = https://data.oncoanalyser.com/r2/reference/dist/v1/genomes); fai; local
+        copy test-data/reference/GRCh38_masked_exclusions_alts_hlas.fasta.fai
+  - workflow_label: reference_genome_dict
+    label_status: resolved
+    description: reference_genome_dict for genome GRCh38_hmf (conf/test.config genome)
+    collection_shape: null
+    datatype: txt
+    fixture:
+      storage: remote-url
+      location: https://data.oncoanalyser.com/r2/reference/dist/v1/genomes/GRCh38_hmf/26.1/samtools_index-1.16/GRCh38_masked_exclusions_alts_hlas.fasta.dict
+      checksum: SHA-1:ae12331e2976af70443f191661e5fa42f0ec12fc
+      provenance: genome GRCh38_hmf from conf/test.config resolved through conf/hmf_genomes.config (params.ref_data_genomes_base = https://data.oncoanalyser.com/r2/reference/dist/v1/genomes); dict; local
+        copy test-data/reference/GRCh38_masked_exclusions_alts_hlas.fasta.dict
+  - workflow_label: reference_genome_bwa_img
+    label_status: resolved
+    description: reference_genome_bwa_img for genome GRCh38_hmf (conf/test.config genome)
+    collection_shape: null
+    datatype: data
+    fixture:
+      storage: remote-url
+      location: https://data.oncoanalyser.com/r2/reference/dist/v1/genomes/GRCh38_hmf/26.1/bwa_index_image-gatk-4.6.1.0/GRCh38_masked_exclusions_alts_hlas.fasta.img
+      checksum: null
+      provenance: genome GRCh38_hmf from conf/test.config resolved through conf/hmf_genomes.config (params.ref_data_genomes_base = https://data.oncoanalyser.com/r2/reference/dist/v1/genomes); img; 5,630,614,282
+        bytes, not hashed (size)
+  - workflow_label: hmf_pipeline_resources
+    label_status: resolved
+    description: hmf_pipeline_resources for genome GRCh38_hmf (conf/test.config genome)
+    collection_shape: null
+    datatype: tar.gz
+    fixture:
+      storage: remote-url
+      location: https://data.oncoanalyser.com/r2/reference/dist/v1/hartwig/pipeline_resources/hmf_pipeline_resources.38_v3.0.0--8.tar.gz
+      checksum: null
+      provenance: params.ref_data_hmf_data_path default for genome_version 38 (lib/Constants.groovy HMF_DATA_38_PATH, set in WorkflowMain.setParamsDefaults); 5,908,235,935 bytes, not hashed (size)
+  - workflow_label: genome_version
+    label_status: resolved
+    description: GRCh38
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: '38'
+      checksum: null
+      provenance: conf/test.config genome GRCh38_hmf -> genome_version 38
+  - workflow_label: sequencing_platform
+    label_status: resolved
+    description: Illumina (source default)
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: illumina
+      checksum: null
+      provenance: params.sequencing_platform unset -> illumina (WorkflowMain.setParamsDefaults)
+  - workflow_label: purple_min_purity
+    label_status: resolved
+    description: PURPLE bound from conf/test.config withName PURPLE ext.args
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: '1'
+      checksum: null
+      provenance: conf/test.config process.withName:'PURPLE'.ext.args = '-min_purity 1 -max_purity 1 -min_ploidy 2 -max_ploidy 2'
+  - workflow_label: purple_max_purity
+    label_status: resolved
+    description: PURPLE bound from conf/test.config withName PURPLE ext.args
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: '1'
+      checksum: null
+      provenance: conf/test.config process.withName:'PURPLE'.ext.args = '-min_purity 1 -max_purity 1 -min_ploidy 2 -max_ploidy 2'
+  - workflow_label: purple_min_ploidy
+    label_status: resolved
+    description: PURPLE bound from conf/test.config withName PURPLE ext.args
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: '2'
+      checksum: null
+      provenance: conf/test.config process.withName:'PURPLE'.ext.args = '-min_purity 1 -max_purity 1 -min_ploidy 2 -max_ploidy 2'
+  - workflow_label: purple_max_ploidy
+    label_status: resolved
+    description: PURPLE bound from conf/test.config withName PURPLE ext.args
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: '2'
+      checksum: null
+      provenance: conf/test.config process.withName:'PURPLE'.ext.args = '-min_purity 1 -max_purity 1 -min_ploidy 2 -max_ploidy 2'
+  expected_outputs:
+  - workflow_label: tumor_redux_duplicate_freq
+    label_status: resolved
+    description: REDUX duplicate-frequency table for the tumor
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.redux.duplicate_freq.tsv (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bwa-mem2
+        2.3 (Galaxy) vs 2.2.1 (source container) and samtools vs sambamba sorting may perturb alignments)
+      expected_value: md5$f135adcd8e9877c9ebc1c65a6d1ab6a0
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: low
+    - family: has_n_columns
+      intent: tab-separated duplicate frequency table with a header row
+      expected_value: null
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+  - workflow_label: amber_qc
+    label_status: resolved
+    description: AMBER QC key=value file
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.amber.qc (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bwa-mem2 2.3 (Galaxy) vs
+        2.2.1 (source container) and samtools vs sambamba sorting may perturb alignments)
+      expected_value: md5$167bd398d1d8b8ab3e33a465368925c1
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: low
+    - family: has_text
+      intent: AMBER QC reports a QC status line
+      expected_value: QCStatus
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+  - workflow_label: sage_somatic_vcf
+    label_status: resolved
+    description: SAGE somatic VCF
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.sage.somatic.vcf.gz (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bgzip block layout
+        and VCF header lines must also match)
+      expected_value: md5$fe71a9d0e7c9ac9548eae70647751d25
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: low
+    - family: has_text
+      intent: VCF header names the tumor sample
+      expected_value: subject_a.tumor
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+  - workflow_label: sage_germline_vcf
+    label_status: resolved
+    description: SAGE germline VCF
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.sage.germline.vcf.gz (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bgzip and header
+        parity required)
+      expected_value: md5$12c95564804250950016ee23a0a03350
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: low
+  - workflow_label: pave_somatic_vcf
+    label_status: resolved
+    description: PAVE-annotated somatic VCF
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.pave.somatic.vcf.gz (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bgzip and header
+        parity required)
+      expected_value: md5$f3356d6984193a365a6c8f1277ca2662
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: low
+  - workflow_label: pave_germline_vcf
+    label_status: resolved
+    description: PAVE-annotated germline VCF
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.pave.germline.vcf.gz (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bgzip and header
+        parity required)
+      expected_value: md5$703db36587f5e1cc3919386aff5356e2
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: low
+  - workflow_label: purple_purity
+    label_status: resolved
+    description: PURPLE purity/ploidy fit
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.purple.purity.tsv (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bwa-mem2 2.3 (Galaxy)
+        vs 2.2.1 (source container) and samtools vs sambamba sorting may perturb alignments)
+      expected_value: md5$8da173f1d586c4c27a0d9a6ad5f898d5
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: medium
+    - family: has_n_lines
+      intent: header plus one fit row
+      expected_value: 2
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+    - family: has_text
+      intent: purity is pinned to 1 by the test bounds (min_purity = max_purity = 1)
+      expected_value: '1.0'
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: low
+  - workflow_label: purple_qc
+    label_status: resolved
+    description: PURPLE QC
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.purple.qc (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bwa-mem2 2.3 (Galaxy) vs
+        2.2.1 (source container) and samtools vs sambamba sorting may perturb alignments)
+      expected_value: md5$c4000be330d137c21e44930cf42da7a4
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: medium
+    - family: has_text
+      intent: QC status line present
+      expected_value: QCStatus
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+  - workflow_label: purple_somatic_vcf
+    label_status: resolved
+    description: PURPLE somatic VCF
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.purple.somatic.vcf.gz (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bgzip and header
+        parity required)
+      expected_value: md5$6599ab8ef531c2545d0726a0549d0bf3
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: low
+  - workflow_label: purple_germline_vcf
+    label_status: resolved
+    description: PURPLE germline VCF
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.purple.germline.vcf.gz (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bgzip and
+        header parity required)
+      expected_value: md5$07647e5de388f3bb7f18e67723cec00c
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: low
+  - workflow_label: purple_cnv_somatic
+    label_status: resolved
+    description: PURPLE somatic copy-number segments
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.purple.cnv.somatic.tsv (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bwa-mem2 2.3
+        (Galaxy) vs 2.2.1 (source container) and samtools vs sambamba sorting may perturb alignments)
+      expected_value: md5$12ec015fa351ecb0dbdf32ce00670911
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: medium
+    - family: has_text
+      intent: header names the chromosome column
+      expected_value: chromosome
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+  - workflow_label: purple_driver_catalog_somatic
+    label_status: resolved
+    description: PURPLE somatic driver catalogue
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.purple.driver.catalog.somatic.tsv (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match
+        (bwa-mem2 2.3 (Galaxy) vs 2.2.1 (source container) and samtools vs sambamba sorting may perturb alignments)
+      expected_value: md5$7b874829acf0a85bf8bf3692bd0818b3
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: medium
+  - workflow_label: linx_driver_catalog
+    label_status: resolved
+    description: LINX somatic driver catalogue
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.linx.driver.catalog.tsv (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bwa-mem2
+        2.3 (Galaxy) vs 2.2.1 (source container) and samtools vs sambamba sorting may perturb alignments)
+      expected_value: md5$6e83bd77057f9045dcf11c30f4688e74
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: medium
+  - workflow_label: linx_fusions
+    label_status: resolved
+    description: LINX fusions
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.linx.fusion.tsv (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bwa-mem2 2.3 (Galaxy)
+        vs 2.2.1 (source container) and samtools vs sambamba sorting may perturb alignments)
+      expected_value: md5$c5f4ad474f36407eadd399c0b68f2141
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: medium
+    - family: has_text
+      intent: simulated reads include a KMT2A-MLLT3 fusion (read names in the tumor FASTQ, e.g. tumor:fusion.KTM2A-MLLT3)
+      expected_value: MLLT3
+      tolerance: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: low
+  - workflow_label: linx_svs
+    label_status: resolved
+    description: LINX SV annotations
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.linx.svs.tsv (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bwa-mem2 2.3 (Galaxy)
+        vs 2.2.1 (source container) and samtools vs sambamba sorting may perturb alignments)
+      expected_value: md5$6f5e4a77473c07e803dda49334c59084
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: medium
+  - workflow_label: linx_germline_driver_catalog
+    label_status: resolved
+    description: LINX germline driver catalogue
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: nf-test snapshot md5 of subject_a.tumor.linx.germline.driver.catalog.tsv (tests/profile_test.nf.test.snap stable_content); byte parity only if upstream alignments and tool versions match (bwa-mem2
+        2.3 (Galaxy) vs 2.2.1 (source container) and samtools vs sambamba sorting may perturb alignments)
+      expected_value: md5$b58bb63a3fe312b195aa2973d59789ad
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: medium
+  - workflow_label: tumor_redux_bam
+    label_status: resolved
+    description: tumor REDUX BAM
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: ftype
+      intent: BAM output
+      expected_value: bam
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: normal_redux_bam
+    label_status: resolved
+    description: normal REDUX BAM
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: ftype
+      intent: BAM output
+      expected_value: bam
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: esvee_somatic_vcf
+    label_status: resolved
+    description: ESVEE somatic SV VCF
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: ftype
+      intent: bgzip VCF
+      expected_value: vcf_bgzip
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: purple_sv_vcf
+    label_status: resolved
+    description: PURPLE somatic SV VCF
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: ftype
+      intent: bgzip VCF
+      expected_value: vcf_bgzip
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+unresolved:
+- kind: fixture
+  description: 'References are full-scale (~59 GB: FASTA 3.2 GB, BWA img 5.6 GB, HMF bundle 5.9 GB, plus an in-tool bwa-mem2 index build needing ~64 GB RAM); exceed the 10.7 GB quota on test.galaxyproject.org.'
+  blocking: true
+  suggested_resolution: Run on a server with references preloaded or larger quota; the user chose not to execute the test run.
+- kind: assertion
+  description: Snapshot md5 parity depends on identical alignments (Galaxy bwa-mem2 2.3 vs source 2.2.1 container; samtools vs sambamba sort; read-group ID library_1_001 vs library_1.001) and identical
+    bgzip/VCF headers.
+  blocking: false
+  suggested_resolution: Treat md5 checks as low/medium-confidence; on mismatch keep the structural has_text/has_n_lines/ftype checks and inspect value-level differences.
+- kind: other
+  description: hmftools user-defined tool commands have not run on the target (open-requirements udt-runtime-assumptions-unverified).
+  blocking: false
+  suggested_resolution: Smoke-run one UDT on real data before the full test.
+omissions:
+- target: RNA, LILAC, VIRUSBreakend, CUPPA, CHORD, SIGS, PEACH, Neo, TEAL, CIDER, Qsee, bam-tools, SAGE append/visualiser, LINX plots, ORANGE, MultiQC snapshot entries
+  reason: stages not in the Galaxy workflow (core DNA spine scope decision; ledger *-not-built drops)
+  category: out-of-scope
+- target: logs/* and pipeline_info/* paths in stable_path
+  reason: Nextflow runtime artifacts with no Galaxy equivalent
+  category: out-of-scope
+- target: redux .bam/.bai, esvee raw/somatic VCFs, purple .sv.vcf.gz md5
+  reason: listed in tests/.nftignore upstream (non-deterministic); Galaxy test checks datatype only
+  category: nondeterministic
+- target: task-count assertion (46 tasks, 42 with cached refs)
+  reason: Nextflow task accounting; the Galaxy job graph differs
+  category: out-of-scope
+warnings:
+- code: test-not-executable-on-target
+  message: 'User decision: test plan designed but not run (reference size vs quota).'
+  path: test_cases[0]

@@ -1,0 +1,145 @@
+- doc: 'nf-core/oncoanalyser tests/profile_test.nf.test (-profile test), core DNA spine: subject_a simulated tumor/normal WGS reads (1 lane each) against full GRCh38_hmf references; PURPLE purity/ploidy
+    pinned to 1/2 as in conf/test.config. Snapshot md5s are carried as checksums (low/medium confidence: bwa-mem2 2.3 and samtools sorting in Galaxy vs 2.2.1/sambamba in the source). NOT RUN: references
+    (~59 GB) exceed the test.galaxyproject.org quota.'
+  job:
+    tumor_dna_reads:
+      class: Collection
+      collection_type: list:paired
+      elements:
+      - class: Collection
+        identifier: library_1_001
+        elements:
+        - class: File
+          location: https://github.com/nf-core/test-datasets/raw/oncoanalyser/sample_data/simulated_reads/wgts/fastq/single_lane_single_library/subject_a.tumor.dna.R1.fastq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: 7ef20f42e853d94e6afc02e6ab63a22517190ee5
+          identifier: forward
+        - class: File
+          location: https://github.com/nf-core/test-datasets/raw/oncoanalyser/sample_data/simulated_reads/wgts/fastq/single_lane_single_library/subject_a.tumor.dna.R2.fastq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: 582c68ac9fa899fdbb7e8f0dc475226ad43233cf
+          identifier: reverse
+    normal_dna_reads:
+      class: Collection
+      collection_type: list:paired
+      elements:
+      - class: Collection
+        identifier: library_1_001
+        elements:
+        - class: File
+          location: https://github.com/nf-core/test-datasets/raw/oncoanalyser/sample_data/simulated_reads/wgts/fastq/single_lane_single_library/subject_a.normal.dna.R1.fastq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: 014fc050516695022a1455ff180226af6efe73ac
+          identifier: forward
+        - class: File
+          location: https://github.com/nf-core/test-datasets/raw/oncoanalyser/sample_data/simulated_reads/wgts/fastq/single_lane_single_library/subject_a.normal.dna.R2.fastq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: 3ec81cbd38b86620174bc3caad24c41dfb266ee9
+          identifier: reverse
+    reference_genome:
+      class: File
+      location: https://data.oncoanalyser.com/r2/reference/dist/v1/genomes/GRCh38_hmf/26.1/GRCh38_masked_exclusions_alts_hlas.fasta
+      filetype: fasta
+    reference_genome_fai:
+      class: File
+      location: https://data.oncoanalyser.com/r2/reference/dist/v1/genomes/GRCh38_hmf/26.1/samtools_index-1.16/GRCh38_masked_exclusions_alts_hlas.fasta.fai
+      filetype: fai
+      hashes:
+      - hash_function: SHA-1
+        hash_value: 9e9d96a578505b9bfe199cb0daba69d117bd31dc
+    reference_genome_dict:
+      class: File
+      location: https://data.oncoanalyser.com/r2/reference/dist/v1/genomes/GRCh38_hmf/26.1/samtools_index-1.16/GRCh38_masked_exclusions_alts_hlas.fasta.dict
+      filetype: txt
+      hashes:
+      - hash_function: SHA-1
+        hash_value: ae12331e2976af70443f191661e5fa42f0ec12fc
+    reference_genome_bwa_img:
+      class: File
+      location: https://data.oncoanalyser.com/r2/reference/dist/v1/genomes/GRCh38_hmf/26.1/bwa_index_image-gatk-4.6.1.0/GRCh38_masked_exclusions_alts_hlas.fasta.img
+      filetype: data
+    hmf_pipeline_resources:
+      class: File
+      location: https://data.oncoanalyser.com/r2/reference/dist/v1/hartwig/pipeline_resources/hmf_pipeline_resources.38_v3.0.0--8.tar.gz
+      filetype: tar.gz
+    tumor_sample_id: subject_a.tumor
+    normal_sample_id: subject_a.normal
+    genome_version: '38'
+    sequencing_platform: illumina
+    purple_min_purity: 1.0
+    purple_max_purity: 1.0
+    purple_min_ploidy: 2.0
+    purple_max_ploidy: 2.0
+  outputs:
+    tumor_redux_duplicate_freq:
+      checksum: md5$f135adcd8e9877c9ebc1c65a6d1ab6a0
+      asserts:
+      - has_n_columns:
+          min: 2
+    amber_qc:
+      checksum: md5$167bd398d1d8b8ab3e33a465368925c1
+      asserts:
+      - has_text:
+          text: QCStatus
+    sage_somatic_vcf:
+      checksum: md5$fe71a9d0e7c9ac9548eae70647751d25
+      asserts:
+      - has_text:
+          text: subject_a.tumor
+      decompress: true
+    sage_germline_vcf:
+      checksum: md5$12c95564804250950016ee23a0a03350
+    pave_somatic_vcf:
+      checksum: md5$f3356d6984193a365a6c8f1277ca2662
+    pave_germline_vcf:
+      checksum: md5$703db36587f5e1cc3919386aff5356e2
+    purple_purity:
+      checksum: md5$8da173f1d586c4c27a0d9a6ad5f898d5
+      asserts:
+      - has_n_lines:
+          n: 2
+      - has_text:
+          text: '1.0'
+    purple_qc:
+      checksum: md5$c4000be330d137c21e44930cf42da7a4
+      asserts:
+      - has_text:
+          text: QCStatus
+    purple_somatic_vcf:
+      checksum: md5$6599ab8ef531c2545d0726a0549d0bf3
+    purple_germline_vcf:
+      checksum: md5$07647e5de388f3bb7f18e67723cec00c
+    purple_cnv_somatic:
+      checksum: md5$12ec015fa351ecb0dbdf32ce00670911
+      asserts:
+      - has_text:
+          text: chromosome
+    purple_driver_catalog_somatic:
+      checksum: md5$7b874829acf0a85bf8bf3692bd0818b3
+    linx_driver_catalog:
+      checksum: md5$6e83bd77057f9045dcf11c30f4688e74
+    linx_fusions:
+      checksum: md5$c5f4ad474f36407eadd399c0b68f2141
+      asserts:
+      - has_text:
+          text: MLLT3
+    linx_svs:
+      checksum: md5$6f5e4a77473c07e803dda49334c59084
+    linx_germline_driver_catalog:
+      checksum: md5$b58bb63a3fe312b195aa2973d59789ad
+    tumor_redux_bam:
+      ftype: bam
+    normal_redux_bam:
+      ftype: bam
+    esvee_somatic_vcf:
+      ftype: vcf_bgzip
+    purple_sv_vcf:
+      ftype: vcf_bgzip
