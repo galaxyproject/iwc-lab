@@ -106,3 +106,12 @@ The k-mer counts in a `.snpdiffs` header (`Shared_Kmers`, `Reference_Unique_Kmer
 `Query_Unique_Kmers`) are allowed to be one higher than upstream's. CSP2 v.0.9.7.8 counts an
 empty first attempt of its k-mer counter as an extra k-mer, which happens when the host is short
 of memory; nothing else in the output changes when it does.
+
+Shortage of memory can also do worse. With a small but positive Java heap, CSP2's k-mer counter
+can run out of memory part-way, print only some of the k-mers and still exit successfully, and
+CSP2 v.0.9.7.8 accepts that partial set. The run then succeeds with k-mer counts and
+`Kmer_Similarity` that are wrong by much more than one (81.93 instead of 98.51 in one observed
+case). The MUMmer alignment, SNP, indel and assembly metrics are not affected. The counter sizes
+its heap from the host's free memory, not the container's limit, so run the alignment step where
+the host has memory to spare, and treat a `Kmer_Similarity` far below what the alignment
+percentages suggest as a sign of this rather than of the data.
