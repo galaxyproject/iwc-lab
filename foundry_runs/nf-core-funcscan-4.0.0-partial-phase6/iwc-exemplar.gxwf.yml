@@ -1,0 +1,1338 @@
+# Dependency-closed relevant subgraph of the IWC workflow
+#   microbiome/metagenomic-genes-catalogue/metagenomic-genes-catalogue.ga (release 1.6)
+# Obtained with: gxwf convert --to format2 --compact, then pruned to 22 of 36 steps that
+# carry the structural motifs iwc-comparison-notes.md compares (gated steps, pick_value
+# gate values and twin cascades, the screening fan-out, collapse/argNorm fan-in, and the
+# gated embedded subworkflow) plus their transitive dependencies and the workflow inputs
+# they read. The MultiQC tail and the taxonomy branch that only fed it are outside the
+# slice and are quoted in the notes instead. Nothing was rewired, relabelled or hand-edited.
+class: GalaxyWorkflow
+name: metagenomic-genes-catalogue - relevant subgraph
+doc: Metagenomic analysis, from raw reads to gene catalog. Uses Megahit to assemble contigs and Prodgial to predict
+  CDSs on contigs to provide the gene catalog. Finally, functional, taxonomic, and antimicrobial resistance information
+  is provided.
+license: GPL-3.0-or-later
+release: '1.6'
+tags:
+- Metagenomics
+- fastq
+- ABRomics
+- genes-collection
+- paired-collection(s)
+uuid: 5b5917c3-40e0-4046-903c-ff85d7c44c96
+inputs:
+- id: Metagenomics Trimmed reads
+  type: collection
+  collection_type: list:paired
+  optional: false
+  format:
+  - fastq
+  - fastq.gz
+  - fastqsanger
+  - fastqsanger.gz
+  fields: null
+  column_definitions: null
+  doc: Input for this workflow is a paired collection from metagenomics trimmed reads
+- id: AMR genes detection database
+  type: string
+  optional: false
+  restrictOnConnections: true
+  doc: Select the database to identify AMR genes with AMRFinderPlus.
+- id: Full genes catalogue
+  type: boolean
+  optional: false
+  default: false
+  doc: Set it to Yes if you want to have the full gene catalogue. Functionnal and taxonomical annotation are made
+    on full clustered CDS
+- id: Virulence genes detection database
+  type: string
+  optional: false
+  restrictOnConnections: true
+  doc: Select the database to identify virulence genes with ABRicate.
+- id: starAMR database
+  type: string
+  optional: false
+  restrictOnConnections: true
+  doc: Select the database to identify AMR elements with starAMR.
+steps:
+- id: _unlabeled_step_7
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/megahit/megahit/1.2.9+galaxy2
+  tool_version: 1.2.9+galaxy2
+  tool_shed_repository:
+    changeset_revision: 792acb18fb24
+    name: megahit
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_option|batchmode|pair_input
+    source: Metagenomics Trimmed reads
+  out:
+  - id: log_output
+    hide: true
+    rename: Megahit Log Output
+    add_tags:
+    - log
+  - id: output
+    rename: Megahit Contigs Output
+    add_tags:
+    - contigs
+  tool_state:
+    advanced_section:
+      nomercy: false
+      bubble_level: '2'
+      merge_level: 20,0.95
+      prune_level: '2'
+      prune_depth: '2'
+      disconnect_ratio: '0.1'
+      low_local_ratio: '0.2'
+      cleaning_rounds: '5'
+      nolocal: false
+      kmin1pass: false
+    basic_section:
+      min_count: '2'
+      k_mer:
+        k_mer_method: klist_method
+        __current_case__: 0
+        k_list: 21,29,39,59,79,99,119,141
+    input_option:
+      choice: paired_collection
+      __current_case__: 3
+      batchmode:
+        processmode: individual
+        __current_case__: 0
+        pair_input:
+          __class__: ConnectedValue
+    output_section:
+      min_contig_len: '200'
+      show_intermediate_contigs: false
+      log_file: true
+  uuid: 9bde7736-159e-4976-9872-9385783ef349
+- id: _unlabeled_step_8
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: b19e21af9c52
+    name: pick_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: when
+    source: Full genes catalogue
+  out: []
+  tool_state:
+    style_cond:
+      pick_style: first_or_default
+      __current_case__: 1
+      type_cond:
+        param_type: boolean
+        __current_case__: 3
+        pick_from:
+        - __index__: 0
+          value: false
+        default_value: true
+  when: $(inputs.when)
+  uuid: fb14670b-056e-4975-8473-444491094110
+- id: _unlabeled_step_9
+  doc: Convert to tabular format to make it easier to modify the contig ID.
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fasta_to_tabular/fasta2tab/1.1.1
+  tool_version: 1.1.1
+  tool_shed_repository:
+    changeset_revision: e7ed3c310b74
+    name: fasta_to_tabular
+    owner: devteam
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input
+    source: _unlabeled_step_7
+  out: []
+  tool_state:
+    descr_columns: '1'
+    input:
+      __class__: ConnectedValue
+    keep_first: '0'
+  uuid: 29cb9ff4-f1cf-4786-aafa-90f66d79a3ff
+- id: _unlabeled_step_11
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: b19e21af9c52
+    name: pick_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: style_cond|type_cond|pick_from_0|value
+    source: _unlabeled_step_8/boolean_param
+  out: []
+  tool_state:
+    style_cond:
+      pick_style: first_or_default
+      __current_case__: 1
+      type_cond:
+        param_type: boolean
+        __current_case__: 3
+        pick_from:
+        - __index__: 0
+          value:
+            __class__: ConnectedValue
+        default_value: true
+  uuid: fe245aa8-e9cf-4623-bb91-41057aef5f5b
+- id: _unlabeled_step_12
+  doc: Adds the sample name to the column corresponding to the initial ID. Allows you to create a unique ID for
+    each sample.
+  tool_id: toolshed.g2.bx.psu.edu/repos/mvdbeek/add_input_name_as_column/addName/0.3.0
+  tool_version: 0.3.0
+  tool_shed_repository:
+    changeset_revision: 8a19efbd2178
+    name: add_input_name_as_column
+    owner: mvdbeek
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input
+    source: _unlabeled_step_9
+  out: []
+  tool_state:
+    header:
+      contains_header: 'no'
+      __current_case__: 1
+    input:
+      __class__: ConnectedValue
+    prepend: true
+  uuid: 8febe229-996f-4eca-9562-addafb51bcc1
+- id: _unlabeled_step_13
+  doc: Return to the fasta format with unique IDs.
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/tabular_to_fasta/tab2fasta/1.1.1
+  tool_version: 1.1.1
+  tool_shed_repository:
+    changeset_revision: 0a7799698fe5
+    name: tabular_to_fasta
+    owner: devteam
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input
+    source: _unlabeled_step_12
+  out:
+  - id: output
+    rename: Megahit output with sample name in ID
+  tool_state:
+    input:
+      __class__: ConnectedValue
+    seq_col: '3'
+    title_col:
+    - '1'
+    - '2'
+  uuid: 3e975316-6203-40ac-bd84-f7f95e49b49c
+- id: _unlabeled_step_14
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/prodigal/prodigal/2.6.3+galaxy0
+  tool_version: 2.6.3+galaxy0
+  tool_shed_repository:
+    changeset_revision: 91791b6ecd38
+    name: prodigal
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_fa
+    source: _unlabeled_step_13
+  out:
+  - id: output
+    rename: Prodigal Genes Coordinates
+  - id: output_faa
+    rename: Prodigal Genes Translation
+  - id: output_fnn
+    rename: Prodigal Genes Sequences
+  - id: output_start
+    rename: Prodigal Start Tabular
+  tool_state:
+    closed: false
+    force_nonsd: false
+    input_fa:
+      __class__: ConnectedValue
+    input_train:
+      __class__: RuntimeValue
+    masked_seq: false
+    out_format: gbk
+    procedure: meta
+    trans_table: '11'
+  uuid: c58b4e41-5b6c-454b-8669-ed3ab9e61c10
+- id: _unlabeled_step_15
+  doc: Concatenate contigs from each sample
+  tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_cat/9.11+galaxy0
+  tool_version: 9.11+galaxy0
+  tool_shed_repository:
+    changeset_revision: 30b60202d990
+    name: text_processing
+    owner: bgruening
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: inputs
+    source: _unlabeled_step_14/output_fnn
+  out:
+  - id: out_file1
+    change_datatype: fasta
+    rename: Concatenate Datasets
+    add_tags:
+    - fasta
+  tool_state:
+    inputs:
+      __class__: ConnectedValue
+    queries: []
+  uuid: e3db603e-5048-4bc1-bc80-e90c21600261
+- id: MMseqs2 full catalogue Sequence Clustering
+  label: MMseqs2 full catalogue Sequence Clustering
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/mmseqs2_easy_linclust_clustering/mmseqs2_easy_linclust_clustering/18-8cc5c+galaxy0
+  tool_version: 18-8cc5c+galaxy0
+  tool_shed_repository:
+    changeset_revision: 0a60a6d93d3b
+    name: mmseqs2_easy_linclust_clustering
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_fasta
+    source: _unlabeled_step_15/out_file1
+  - id: when
+    source: Full genes catalogue
+  out: []
+  tool_state:
+    align:
+      convertalis: false
+      alignment_output_mode: '0'
+      wrapped_scoring: false
+      min_aln_len: '0'
+      seq_id_mode: '0'
+      alt_ali: '0'
+      score_bias: '0.0'
+      realign: false
+      realign_score_bias: '-0.2'
+      realign_max_seqs: '2147483647'
+      corr_score_weight: '0.0'
+      alignment_mode: '0'
+      evalue: '0.001'
+      max_rejected: '2147483647'
+      max_accept: '2147483647'
+    alph_type:
+      dbtype: '0'
+      __current_case__: 0
+    cluster:
+      cluster_mode: '0'
+      max_iterations: '1000'
+      similarity_type: '2'
+    common:
+      max_seq_len: '65535'
+    cov: '0.8'
+    cov_mode: '0'
+    expert:
+      filter_hits: false
+      sort_results: '0'
+    input_fasta:
+      __class__: ConnectedValue
+    kmermatcher:
+      cluster_weight_threshold: '0.9'
+      kmer_per_seq: '21'
+      hash_shift: '67'
+      include_only_extendable: false
+      ignore_multi_kmer: false
+    min_seq_id: '0.95'
+    misc:
+      rescore_mode: '0'
+      shuffle: true
+      id_offset: '0'
+    output_files:
+      output_selection:
+      - file_rep_seq
+      - file_all_seq
+      - file_cluster_tsv
+    prefilter:
+      add_self_matches: false
+      kmer_length: '0'
+      mask: '1'
+      mask_prob: '0.9'
+      mask_lower_case: '0'
+      mask_n_repeat: '0'
+      spaced_kmer_mode: '0'
+  when: $(inputs.when)
+  uuid: 32319560-6538-41ae-af05-ffc8bd13059b
+- id: _unlabeled_step_17
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: b19e21af9c52
+    name: pick_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: style_cond|type_cond|default_value
+    source: _unlabeled_step_14/output_fnn
+  - id: style_cond|type_cond|pick_from_0|value
+    source: MMseqs2 full catalogue Sequence Clustering/output_rep_seq
+  out:
+  - id: data_param
+    hide: true
+  tool_state:
+    style_cond:
+      pick_style: first_or_default
+      __current_case__: 1
+      type_cond:
+        param_type: data
+        __current_case__: 4
+        pick_from:
+        - __index__: 0
+          value:
+            __class__: ConnectedValue
+        default_value:
+          __class__: ConnectedValue
+  uuid: 017375cf-e4ad-43a9-9c07-cf7d48d19474
+- id: _unlabeled_step_18
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/amrfinderplus/amrfinderplus/4.2.7+galaxy0
+  tool_version: 4.2.7+galaxy0
+  tool_shed_repository:
+    changeset_revision: 96112e4c5e26
+    name: amrfinderplus
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_option|amrfinder_db_select
+    source: AMR genes detection database
+  - id: input_option|input_mode|nucleotide_input
+    source: _unlabeled_step_17/data_param
+  out:
+  - id: amrfinderplus_report
+    rename: AMRFinderplus Report
+  - id: nucleotide_output
+    rename: Amrfinderplus Nucleotide
+  tool_state:
+    input_option:
+      amrfinder_db_select:
+        __class__: ConnectedValue
+      input_mode:
+        input_select: nucleotide
+        __current_case__: 0
+        nucleotide_input:
+          __class__: ConnectedValue
+        nucleotide_flank5_size: '0'
+    options:
+      ident_min: '-1.0'
+      coverage_min: '0.5'
+      translation_table: '11'
+      plus: false
+      report_all_equal: false
+      print_node: false
+      name: null
+      add_version_columns: false
+    organism_options:
+      organism_conditionnal:
+        organism_select: ''
+        __current_case__: 1
+  uuid: b0f0dda9-e4aa-449f-8e90-d9b577e7310e
+- id: _unlabeled_step_19
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/abricate/abricate/1.4.0+galaxy1
+  tool_version: 1.4.0+galaxy1
+  tool_shed_repository:
+    changeset_revision: d8b0de0554a9
+    name: abricate
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: adv|db
+    source: Virulence genes detection database
+  - id: file_input
+    source: _unlabeled_step_17/data_param
+  out:
+  - id: report
+    rename: Abricate Virulence Report
+  tool_state:
+    adv:
+      db:
+        __class__: ConnectedValue
+      no_header: false
+      min_dna_id: '80.0'
+      min_cov: '80.0'
+    file_input:
+      __class__: ConnectedValue
+  uuid: f0068a6e-6249-45bd-8afd-4f42615b3f97
+- id: _unlabeled_step_20
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/staramr/staramr_search/0.12.3+galaxy0
+  tool_version: 0.12.3+galaxy0
+  tool_shed_repository:
+    changeset_revision: cfe8742b704e
+    name: staramr
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: genomes
+    source: _unlabeled_step_17/data_param
+  - id: staramr_db_select
+    source: starAMR database
+  out:
+  - id: mlst
+    hide: true
+    rename: MLST
+  - id: pointfinder
+    hide: true
+    rename: Pointfinder
+  - id: blast_hits
+    rename: Blast Hits
+  - id: detailed_summary
+    rename: Detailed Summary
+  - id: plasmidfinder
+    rename: Plasmidfinder
+  - id: resfinder
+    rename: Resfinder
+  - id: summary
+    rename: Summary
+  tool_state:
+    advanced:
+      pid_threshold: '98.0'
+      percent_length_overlap_resfinder: '60.0'
+      percent_length_overlap_pointfinder: '95.0'
+      percent_length_overlap_plasmidfinder: '60.0'
+      genome_size_lower_bound: '4000000'
+      genome_size_upper_bound: '6000000'
+      minimum_N50_value: '10000'
+      minimum_contig_length: '300'
+      unacceptable_number_contigs: '1000'
+      report_all_blast: false
+      exclude_negatives: false
+      exclude_resistance_phenotypes: false
+      mlst_scheme: auto
+      exclude_genes:
+        exclude_genes_condition: default
+        __current_case__: 0
+      complex_mutations_file:
+        __class__: RuntimeValue
+      plasmidfinder_type: include_all
+    genomes:
+      __class__: ConnectedValue
+    hide_db_build: ''
+    output_files:
+      output_selection:
+      - mlst_table
+      - summary_table
+      - detailed_summary_table
+      - resfinder_table
+      - plasmidfinder_table
+      - pointfinder_table
+    pointfinder_organism: disabled
+    staramr_db_select:
+      __class__: ConnectedValue
+  uuid: fd8c472a-7bb0-472f-aa97-8f8e0c18a409
+- id: _unlabeled_step_21
+  tool_id: toolshed.g2.bx.psu.edu/repos/nml/collapse_collections/collapse_dataset/5.1.0
+  tool_version: 5.1.0
+  tool_shed_repository:
+    changeset_revision: 90981f86000f
+    name: collapse_collections
+    owner: nml
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_list
+    source: _unlabeled_step_18/amrfinderplus_report
+  out:
+  - id: output
+    rename: AMRfinderplus Concatenated Reports
+    add_tags:
+    - AMRFinderplusConcatenated
+  tool_state:
+    filename:
+      add_name: false
+      __current_case__: 1
+    input_list:
+      __class__: ConnectedValue
+    one_header: true
+  uuid: 3d196054-ae98-40d7-a723-1bd2c212ca28
+- id: _unlabeled_step_22
+  tool_id: toolshed.g2.bx.psu.edu/repos/nml/collapse_collections/collapse_dataset/5.1.0
+  tool_version: 5.1.0
+  tool_shed_repository:
+    changeset_revision: 90981f86000f
+    name: collapse_collections
+    owner: nml
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_list
+    source: _unlabeled_step_19/report
+  out:
+  - id: output
+    rename: ABRicate Virulence Concatenated Reports
+    add_tags:
+    - ABRicateConcatenated
+  tool_state:
+    filename:
+      add_name: false
+      __current_case__: 1
+    input_list:
+      __class__: ConnectedValue
+    one_header: true
+  uuid: 806ac9f6-4a76-4da3-b69c-f7a0e3d7a871
+- id: _unlabeled_step_24
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/argnorm/argnorm/1.1.0+galaxy0
+  tool_version: 1.1.0+galaxy0
+  tool_shed_repository:
+    changeset_revision: 9125d3f45f4d
+    name: argnorm
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input
+    source: _unlabeled_step_21
+  out:
+  - id: output
+    remove_tags:
+    - argNormAMRFinderPlusconcatenated
+    rename: Argnorm AMRfinderplus Concatenated Reports
+  tool_state:
+    choose_tool:
+      tool: amrfinderplus
+      __current_case__: 4
+    input:
+      __class__: ConnectedValue
+  uuid: 704c5095-7253-4a1c-bb53-62e49e6a5792
+- id: _unlabeled_step_27
+  doc: Workflow for retrieving the IDs of contigs and CDSs of antibiotic resistance genes and filtering Prodigal
+    output to retrieve a catalogue of antibiotic resistance genes and potential genes present on the same contig
+    as the ARG.
+  run:
+    class: GalaxyWorkflow
+    label: Genes catalogue AMR specific part
+    doc: null
+    inputs:
+    - id: argNorm AMRFinderPlus Tabular report
+      type: data
+      optional: false
+      format:
+      - tsv
+    - id: ABRicate Tabular report
+      type: data
+      optional: false
+      format:
+      - tabular
+    - id: StarAMR Tabular report
+      type: data
+      optional: false
+      format:
+      - tabular
+    - id: Megahit contigs
+      type: collection
+      collection_type: list
+      optional: false
+      fields: null
+      column_definitions: null
+    - id: Prodigal Genes Sequences
+      type: data
+      optional: false
+      format:
+      - fasta
+    outputs:
+    - id: FASTA with CDS corresponding to ARGs (ARGs)
+      outputSource: Filter FASTA to keep CDS corresponding to ARGs
+    - id: FASTA with contigs related to ARGs
+      outputSource: _unlabeled_step_22
+    - id: FASTA with CDS corresponding and related to ARGs (ARGs and linked to)
+      outputSource: CDSs from contigs corresponding and related to an ARG/outfile
+    - id: FASTA with CDS related to ARGs (linked to)
+      outputSource: Keep CDSs from contigs related to an ARG
+    steps:
+    - id: Only keep AMRFinderPlus contig ID
+      label: Only keep AMRFinderPlus contig ID
+      tool_id: Cut1
+      tool_version: 1.0.2
+      in:
+      - id: input
+        source: argNorm AMRFinderPlus Tabular report
+      out:
+      - id: out_file1
+        hide: true
+        rename: Contig ID Column AMRFinderPlus
+        add_tags:
+        - AMR_genes_contig_ID
+      tool_state:
+        columnList: c2
+        delimiter: T
+        input:
+          __class__: ConnectedValue
+      uuid: 6e952cae-4ca3-4194-817f-33c21b396565
+    - id: Only keep ABRicate contig ID
+      label: Only keep ABRicate contig ID
+      tool_id: Cut1
+      tool_version: 1.0.2
+      in:
+      - id: input
+        source: ABRicate Tabular report
+      out:
+      - id: out_file1
+        hide: true
+        rename: Contig ID Column ABRicate
+        add_tags:
+        - AMR_genes_contig_ID
+      tool_state:
+        columnList: c2
+        delimiter: T
+        input:
+          __class__: ConnectedValue
+      uuid: 962281b2-3313-42b0-9720-3c11aae988dd
+    - id: Only keep starAMR contig ID
+      label: Only keep starAMR contig ID
+      tool_id: Cut1
+      tool_version: 1.0.2
+      in:
+      - id: input
+        source: StarAMR Tabular report
+      out:
+      - id: out_file1
+        hide: true
+        rename: Contig ID Column starAMR
+        add_tags:
+        - AMR_genes_contig_ID
+      tool_state:
+        columnList: c8
+        delimiter: T
+        input:
+          __class__: ConnectedValue
+      uuid: 95e19d32-5c42-436b-a6b5-f513d563ce93
+    - id: _unlabeled_step_8
+      tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fasta_to_tabular/fasta2tab/1.1.1
+      tool_version: 1.1.1
+      tool_shed_repository:
+        changeset_revision: e7ed3c310b74
+        name: fasta_to_tabular
+        owner: devteam
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: input
+        source: Megahit contigs
+      out: []
+      tool_state:
+        descr_columns: '3'
+        input:
+          __class__: ConnectedValue
+        keep_first: '0'
+      uuid: 439e0ecc-18ad-4c61-82c6-02accd7790aa
+    - id: 'Keep contig ID information '
+      label: 'Keep contig ID information '
+      tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_replace_in_line/9.11+galaxy0
+      tool_version: 9.11+galaxy0
+      tool_shed_repository:
+        changeset_revision: 30b60202d990
+        name: text_processing
+        owner: bgruening
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: infile
+        source: Prodigal Genes Sequences
+      out: []
+      tool_state:
+        infile:
+          __class__: ConnectedValue
+        replacements:
+        - __index__: 0
+          find_pattern: '^>([^ ]+)_([^_ ]+) '
+          replace_pattern: '>\1 \2 '
+          sed_options: null
+      uuid: 5326dc14-1ef1-436f-ae5b-7a5e5b7f747a
+    - id: _unlabeled_step_10
+      tool_id: Remove beginning1
+      tool_version: 1.0.0
+      in:
+      - id: input
+        source: Only keep AMRFinderPlus contig ID/out_file1
+      out: []
+      tool_state:
+        input:
+          __class__: ConnectedValue
+        num_lines: '1'
+      uuid: 198b9efe-4775-4bc2-ab6d-da0e8d5cd30c
+    - id: _unlabeled_step_11
+      tool_id: Remove beginning1
+      tool_version: 1.0.0
+      in:
+      - id: input
+        source: Only keep starAMR contig ID/out_file1
+      out: []
+      tool_state:
+        input:
+          __class__: ConnectedValue
+        num_lines: '1'
+      uuid: fa8666d2-e53a-43cc-a231-68915751a599
+    - id: _unlabeled_step_12
+      tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fasta_to_tabular/fasta2tab/1.1.1
+      tool_version: 1.1.1
+      tool_shed_repository:
+        changeset_revision: e7ed3c310b74
+        name: fasta_to_tabular
+        owner: devteam
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: input
+        source: Keep contig ID information /outfile
+      out: []
+      tool_state:
+        descr_columns: '3'
+        input:
+          __class__: ConnectedValue
+        keep_first: '0'
+      uuid: a8799d8b-994a-4173-bfaa-f8f32509aaba
+    - id: _unlabeled_step_13
+      tool_id: cat1
+      tool_version: 1.0.0
+      in:
+      - id: input1
+        source: _unlabeled_step_10/out_file1
+      - id: queries_0|input2
+        source: Only keep ABRicate contig ID/out_file1
+      - id: queries_1|input2
+        source: _unlabeled_step_11/out_file1
+      out: []
+      tool_state:
+        input1:
+          __class__: ConnectedValue
+        queries:
+        - __index__: 0
+          input2:
+            __class__: ConnectedValue
+        - __index__: 1
+          input2:
+            __class__: ConnectedValue
+      uuid: f69611ad-c298-4930-a28e-9b44b0228315
+    - id: Filter FASTA to keep CDS corresponding to ARGs
+      label: Filter FASTA to keep CDS corresponding to ARGs
+      tool_id: toolshed.g2.bx.psu.edu/repos/galaxyp/filter_by_fasta_ids/filter_by_fasta_ids/2.3
+      tool_version: '2.3'
+      tool_shed_repository:
+        changeset_revision: dff7df6fcab5
+        name: filter_by_fasta_ids
+        owner: galaxyp
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: header_criteria|identifiers
+        source: _unlabeled_step_13/out_file1
+      - id: input
+        source: Prodigal Genes Sequences
+      out:
+      - id: output
+        rename: FASTA with CDS corresponding to ARGs (ARGs)
+        add_tags:
+        - CDS_ARGs
+      tool_state:
+        dedup: false
+        header_criteria:
+          header_criteria_select: id_list
+          __current_case__: 1
+          identifiers:
+            __class__: ConnectedValue
+          id_regex:
+            find: beginning
+            __current_case__: 0
+        input:
+          __class__: ConnectedValue
+        output_discarded: false
+        sequence_criteria:
+          sequence_criteria_select: ''
+          __current_case__: 0
+      uuid: bd9fc6e0-4410-456e-9fbf-eaff43fee045
+    - id: Remove specific CDS information
+      label: Remove specific CDS information
+      tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_replace_in_column/9.11+galaxy0
+      tool_version: 9.11+galaxy0
+      tool_shed_repository:
+        changeset_revision: 30b60202d990
+        name: text_processing
+        owner: bgruening
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: infile
+        source: _unlabeled_step_13/out_file1
+      out: []
+      tool_state:
+        infile:
+          __class__: ConnectedValue
+        replacements:
+        - __index__: 0
+          column: '1'
+          find_pattern: ^(.*)_[^_]+$
+          replace_pattern: \\1
+      uuid: 6326e281-1b79-4fe5-adad-ab000a1c54ce
+    - id: _unlabeled_step_16
+      tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fasta_to_tabular/fasta2tab/1.1.1
+      tool_version: 1.1.1
+      tool_shed_repository:
+        changeset_revision: e7ed3c310b74
+        name: fasta_to_tabular
+        owner: devteam
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: input
+        source: Filter FASTA to keep CDS corresponding to ARGs
+      out: []
+      tool_state:
+        descr_columns: '1'
+        input:
+          __class__: ConnectedValue
+        keep_first: '0'
+      uuid: 99b4cc63-01af-4559-ba43-8504bac25425
+    - id: Unique ARGs contig ID
+      label: Unique ARGs contig ID
+      tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/unique/bg_uniq/0.3
+      tool_version: '0.3'
+      tool_shed_repository:
+        changeset_revision: 7ce75adb93be
+        name: unique
+        owner: bgruening
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: input
+        source: Remove specific CDS information/outfile
+      out: []
+      tool_state:
+        adv_opts:
+          adv_opts_selector: basic
+          __current_case__: 0
+        ignore_case: false
+        input:
+          __class__: ConnectedValue
+        is_numeric: false
+      uuid: 9d8c8234-c3c5-45f1-bfd5-7643aec1af55
+    - id: Join Megahit to AMR
+      label: Join Megahit to AMR
+      tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_easyjoin_tool/9.11+galaxy0
+      tool_version: 9.11+galaxy0
+      tool_shed_repository:
+        changeset_revision: 30b60202d990
+        name: text_processing
+        owner: bgruening
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: infile1
+        source: _unlabeled_step_8
+      - id: infile2
+        source: Unique ARGs contig ID/outfile
+      out:
+      - id: output
+        rename: Prodigal Filtered with AMR
+      tool_state:
+        column1: '1'
+        column2: '1'
+        empty_string_filler: '0'
+        header: false
+        ignore_case: false
+        infile1:
+          __class__: ConnectedValue
+        infile2:
+          __class__: ConnectedValue
+        jointype: ' '
+      uuid: e059c135-0412-4cce-a04a-15e73a97c1db
+    - id: Join Prodigal to AMR
+      label: Join Prodigal to AMR
+      tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_easyjoin_tool/9.11+galaxy0
+      tool_version: 9.11+galaxy0
+      tool_shed_repository:
+        changeset_revision: 30b60202d990
+        name: text_processing
+        owner: bgruening
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: infile1
+        source: _unlabeled_step_12
+      - id: infile2
+        source: Unique ARGs contig ID/outfile
+      out:
+      - id: output
+        rename: Prodigal Filtered with AMR
+      tool_state:
+        column1: '1'
+        column2: '1'
+        empty_string_filler: '0'
+        header: false
+        ignore_case: false
+        infile1:
+          __class__: ConnectedValue
+        infile2:
+          __class__: ConnectedValue
+        jointype: ' '
+      uuid: 75d1671c-22d9-438f-8eae-f86e01cc2f8a
+    - id: _unlabeled_step_20
+      tool_id: toolshed.g2.bx.psu.edu/repos/nml/collapse_collections/collapse_dataset/5.1.0
+      tool_version: 5.1.0
+      tool_shed_repository:
+        changeset_revision: 90981f86000f
+        name: collapse_collections
+        owner: nml
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: input_list
+        source: Join Megahit to AMR
+      out: []
+      tool_state:
+        filename:
+          add_name: false
+          __current_case__: 1
+        input_list:
+          __class__: ConnectedValue
+        one_header: false
+      uuid: 2b2933d2-4d10-4767-a96c-cd1950ddecf1
+    - id: _unlabeled_step_21
+      tool_id: toolshed.g2.bx.psu.edu/repos/devteam/tabular_to_fasta/tab2fasta/1.1.1
+      tool_version: 1.1.1
+      tool_shed_repository:
+        changeset_revision: 0a7799698fe5
+        name: tabular_to_fasta
+        owner: devteam
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: input
+        source: Join Prodigal to AMR
+      out: []
+      tool_state:
+        input:
+          __class__: ConnectedValue
+        seq_col: '4'
+        title_col:
+        - '1'
+        - '2'
+        - '3'
+      uuid: 27f1ed86-99ee-455d-aea5-fdfb35c1f274
+    - id: _unlabeled_step_22
+      tool_id: toolshed.g2.bx.psu.edu/repos/devteam/tabular_to_fasta/tab2fasta/1.1.1
+      tool_version: 1.1.1
+      tool_shed_repository:
+        changeset_revision: 0a7799698fe5
+        name: tabular_to_fasta
+        owner: devteam
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: input
+        source: _unlabeled_step_20
+      out:
+      - id: output
+        rename: FASTA with contigs related to ARGs
+        add_tags:
+        - contigs_ARGs
+      tool_state:
+        input:
+          __class__: ConnectedValue
+        seq_col: '4'
+        title_col:
+        - '1'
+      uuid: a747e674-29b1-4a69-b7a1-176cec4a5eee
+    - id: CDSs from contigs corresponding and related to an ARG
+      label: CDSs from contigs corresponding and related to an ARG
+      tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_replace_in_line/9.11+galaxy0
+      tool_version: 9.11+galaxy0
+      tool_shed_repository:
+        changeset_revision: 30b60202d990
+        name: text_processing
+        owner: bgruening
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: infile
+        source: _unlabeled_step_21
+      out:
+      - id: outfile
+        rename: FASTA with CDS corresponding and related to ARGs (ARGs and linked to)
+        add_tags:
+        - CDS_related_to_and_ARGs
+      tool_state:
+        infile:
+          __class__: ConnectedValue
+        replacements:
+        - __index__: 0
+          find_pattern: '^>([^ ]+)_# '
+          replace_pattern: '>\1 # '
+          sed_options: null
+      uuid: 0db8d26f-1e31-482f-af38-c454217c3a2d
+    - id: _unlabeled_step_24
+      tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fasta_to_tabular/fasta2tab/1.1.1
+      tool_version: 1.1.1
+      tool_shed_repository:
+        changeset_revision: e7ed3c310b74
+        name: fasta_to_tabular
+        owner: devteam
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: input
+        source: CDSs from contigs corresponding and related to an ARG/outfile
+      out: []
+      tool_state:
+        descr_columns: '1'
+        input:
+          __class__: ConnectedValue
+        keep_first: '0'
+      uuid: 86f5d234-99da-4cb9-90f8-e9168cc3dc8c
+    - id: _unlabeled_step_25
+      tool_id: comp1
+      tool_version: 1.0.2
+      in:
+      - id: input1
+        source: _unlabeled_step_24
+      - id: input2
+        source: _unlabeled_step_16
+      out: []
+      tool_state:
+        field1: '1'
+        field2: '1'
+        input1:
+          __class__: ConnectedValue
+        input2:
+          __class__: ConnectedValue
+        mode: V
+      uuid: 02e426ca-d9b6-4602-8a2e-dac0f7887520
+    - id: Keep CDSs from contigs related to an ARG
+      label: Keep CDSs from contigs related to an ARG
+      tool_id: toolshed.g2.bx.psu.edu/repos/devteam/tabular_to_fasta/tab2fasta/1.1.1
+      tool_version: 1.1.1
+      tool_shed_repository:
+        changeset_revision: 0a7799698fe5
+        name: tabular_to_fasta
+        owner: devteam
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: input
+        source: _unlabeled_step_25/out_file1
+      out:
+      - id: output
+        rename: FASTA with CDS related to ARGs (linked to)
+        add_tags:
+        - CDS_related_to_ARGs
+      tool_state:
+        input:
+          __class__: ConnectedValue
+        seq_col: '2'
+        title_col:
+        - '1'
+      uuid: d65a7614-7e47-49af-a0b4-99a900429edb
+    tags: []
+    uuid: 6aceab99-cbc4-4c1a-8d5b-ebc97323bdd2
+    license: GPL-3.0-or-later
+  in:
+  - id: ABRicate Tabular report
+    source: _unlabeled_step_22
+  - id: Megahit contigs
+    source: _unlabeled_step_13
+  - id: Prodigal Genes Sequences
+    source: _unlabeled_step_15/out_file1
+  - id: StarAMR Tabular report
+    source: _unlabeled_step_20/resfinder
+  - id: argNorm AMRFinderPlus Tabular report
+    source: _unlabeled_step_24
+  - id: when
+    source: _unlabeled_step_11/boolean_param
+  out: []
+  when: $(inputs.when)
+  uuid: 9bdaa750-fa35-4c52-b9b9-c50695e64d34
+- id: _unlabeled_step_29
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: b19e21af9c52
+    name: pick_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: style_cond|type_cond|pick_from_0|value
+    source: _unlabeled_step_27/FASTA with CDS corresponding to ARGs (ARGs)
+  out:
+  - id: data_param
+    hide: true
+  tool_state:
+    style_cond:
+      pick_style: first
+      __current_case__: 0
+      type_cond:
+        param_type: data
+        __current_case__: 4
+        pick_from:
+        - __index__: 0
+          value:
+            __class__: ConnectedValue
+  uuid: aea5b9ca-0ad4-480d-a580-92ac6c0c707a
+- id: _unlabeled_step_30
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: b19e21af9c52
+    name: pick_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: style_cond|type_cond|pick_from_0|value
+    source: MMseqs2 full catalogue Sequence Clustering/output_rep_seq
+  - id: style_cond|type_cond|pick_from_1|value
+    source: _unlabeled_step_27/FASTA with CDS related to ARGs (linked to)
+  out: []
+  tool_state:
+    style_cond:
+      pick_style: first
+      __current_case__: 0
+      type_cond:
+        param_type: data
+        __current_case__: 4
+        pick_from:
+        - __index__: 0
+          value:
+            __class__: ConnectedValue
+        - __index__: 1
+          value:
+            __class__: ConnectedValue
+  uuid: 68a69009-f6f3-4335-a9e4-74f77feecec1
+- id: _unlabeled_step_31
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: b19e21af9c52
+    name: pick_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: style_cond|type_cond|pick_from_0|value
+    source: MMseqs2 full catalogue Sequence Clustering/output_rep_seq
+  - id: style_cond|type_cond|pick_from_1|value
+    source: _unlabeled_step_27/FASTA with CDS corresponding and related to ARGs (ARGs and linked to)
+  out: []
+  tool_state:
+    style_cond:
+      pick_style: first
+      __current_case__: 0
+      type_cond:
+        param_type: data
+        __current_case__: 4
+        pick_from:
+        - __index__: 0
+          value:
+            __class__: ConnectedValue
+        - __index__: 1
+          value:
+            __class__: ConnectedValue
+  uuid: 73da5594-23ca-4431-a2f4-f7482ea7f364
+- id: MMseqs2 ARGs Sequence Clustering
+  label: MMseqs2 ARGs Sequence Clustering
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/mmseqs2_easy_linclust_clustering/mmseqs2_easy_linclust_clustering/18-8cc5c+galaxy0
+  tool_version: 18-8cc5c+galaxy0
+  tool_shed_repository:
+    changeset_revision: 0a60a6d93d3b
+    name: mmseqs2_easy_linclust_clustering
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_fasta
+    source: _unlabeled_step_29/data_param
+  - id: when
+    source: _unlabeled_step_11/boolean_param
+  out: []
+  tool_state:
+    align:
+      convertalis: false
+      alignment_output_mode: '0'
+      wrapped_scoring: false
+      min_aln_len: '0'
+      seq_id_mode: '0'
+      alt_ali: '0'
+      score_bias: '0.0'
+      realign: false
+      realign_score_bias: '-0.2'
+      realign_max_seqs: '2147483647'
+      corr_score_weight: '0.0'
+      alignment_mode: '0'
+      evalue: '0.001'
+      max_rejected: '2147483647'
+      max_accept: '2147483647'
+    alph_type:
+      dbtype: '0'
+      __current_case__: 0
+    cluster:
+      cluster_mode: '0'
+      max_iterations: '1000'
+      similarity_type: '2'
+    common:
+      max_seq_len: '65535'
+    cov: '0.8'
+    cov_mode: '0'
+    expert:
+      filter_hits: false
+      sort_results: '0'
+    input_fasta:
+      __class__: ConnectedValue
+    kmermatcher:
+      cluster_weight_threshold: '0.9'
+      kmer_per_seq: '21'
+      hash_shift: '67'
+      include_only_extendable: false
+      ignore_multi_kmer: false
+    min_seq_id: '0.95'
+    misc:
+      rescore_mode: '0'
+      shuffle: true
+      id_offset: '0'
+    output_files:
+      output_selection:
+      - file_rep_seq
+      - file_all_seq
+      - file_cluster_tsv
+    prefilter:
+      add_self_matches: false
+      kmer_length: '0'
+      mask: '1'
+      mask_prob: '0.9'
+      mask_lower_case: '0'
+      mask_n_repeat: '0'
+      spaced_kmer_mode: '0'
+  when: $(inputs.when)
+  uuid: 96c3fd81-1d55-49c0-8360-c07b90c8646c
+- id: _unlabeled_step_35
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: b19e21af9c52
+    name: pick_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: style_cond|type_cond|pick_from_0|value
+    source: MMseqs2 full catalogue Sequence Clustering/output_rep_seq
+  - id: style_cond|type_cond|pick_from_1|value
+    source: MMseqs2 ARGs Sequence Clustering/output_rep_seq
+  out:
+  - id: data_param
+    rename: MMseqs2 representative sequences
+  tool_state:
+    style_cond:
+      pick_style: first
+      __current_case__: 0
+      type_cond:
+        param_type: data
+        __current_case__: 4
+        pick_from:
+        - __index__: 0
+          value:
+            __class__: ConnectedValue
+        - __index__: 1
+          value:
+            __class__: ConnectedValue
+  uuid: d9bbde97-c86b-4c97-a4d1-35bee7bd3ad5
+outputs:
+- id: Megahit Contigs Output
+  outputSource: _unlabeled_step_7
+- id: Megahit output with sample name in ID
+  outputSource: _unlabeled_step_13
+- id: Prodigal Genes Sequences
+  outputSource: _unlabeled_step_14/output_fnn
+- id: Concatenate Datasets
+  outputSource: _unlabeled_step_15/out_file1
+- id: AMRFinderplus Report
+  outputSource: _unlabeled_step_18/amrfinderplus_report
+- id: Abricate Virulence Report
+  outputSource: _unlabeled_step_19/report
+- id: Detailed Summary
+  outputSource: _unlabeled_step_20/detailed_summary
+- id: Resfinder
+  outputSource: _unlabeled_step_20/resfinder
+- id: Plasmidfinder
+  outputSource: _unlabeled_step_20/plasmidfinder
+- id: AMRfinderplus Concatenated Reports
+  outputSource: _unlabeled_step_21
+- id: ABRicate Virulence Concatenated Reports
+  outputSource: _unlabeled_step_22
+- id: Argnorm AMRfinderplus Concatenated Reports
+  outputSource: _unlabeled_step_24
+- id: FASTA with CDS corresponding and related to ARGs (ARGs and linked to)
+  outputSource: _unlabeled_step_27/FASTA with CDS corresponding and related to ARGs (ARGs and linked to)
+- id: FASTA with contigs related to ARGs
+  outputSource: _unlabeled_step_27/FASTA with contigs related to ARGs
+- id: MMseqs2 representative sequences
+  outputSource: _unlabeled_step_35/data_param

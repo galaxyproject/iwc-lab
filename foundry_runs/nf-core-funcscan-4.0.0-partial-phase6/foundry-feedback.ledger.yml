@@ -1,0 +1,871 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: funcscan-run1
+  status: running
+  phases:
+    - { n: 1, kind: mold, skill: summarize-nextflow, status: done, feedback_checked: true }
+    - { n: 2, kind: mold, skill: nextflow-summary-to-galaxy-reference-data, status: done, feedback_checked: true }
+    - { n: 3, kind: mold, skill: nextflow-summary-to-galaxy-interface, status: done, feedback_checked: true }
+    - { n: 4, kind: mold, skill: nextflow-summary-to-galaxy-data-flow, status: done, feedback_checked: true }
+    - { n: 5, kind: mold, skill: compare-against-iwc-exemplar, status: done, feedback_checked: true }
+    - { n: 6, kind: mold, skill: nextflow-summary-to-galaxy-template, status: running }
+    - { n: 7, kind: mold, skill: advance-galaxy-draft-step, status: pending, iterations: 0 }
+    - { n: 8, kind: branch, pattern: test-data-resolution, status: pending }
+    - { n: 9, kind: mold, skill: nextflow-test-to-galaxy-test-plan, status: pending }
+    - { n: 10, kind: mold, skill: implement-galaxy-workflow-test, status: pending }
+    - { n: 11, kind: mold, skill: validate-galaxy-workflow, status: pending }
+    - { n: 12, kind: mold, skill: run-workflow-test, status: pending }
+    - { n: 13, kind: mold, skill: debug-galaxy-workflow-output, status: pending }
+entries:
+  - id: foundry-cli-bootstrap-install-cannot-satisfy-schema-pin
+    raised_by: summarize-nextflow
+    observed_in:
+      mold: summarize-nextflow
+      path: content/molds/summarize-nextflow/index.md
+      revision: 20
+      content_hash: d8e6759095994ad000fb8b78018da070761a5abfb8cf0a80c6c59b550a272501
+      foundry_head: 871b5e6deadfd56aeb5e2ba92eb8f6f50c8449ee
+    subject:
+      kind: cli-tool
+      label: foundry
+      locator: content/cli/foundry/index.md
+      content_hash: 85505b02785fea8bfb0429ac78224dfef0dce63c933140f087f7257a04e52a86
+    kind: defect
+    severity: blocker
+    what: >-
+      The documented bootstrap install (npm install -g @galaxy-foundry/gxwf-foundry,
+      no version pin) resolves to 0.4.0, whose bundled
+      @galaxy-foundry/summarize-nextflow schema is stale: $defs.Process carries 15
+      properties and omits publish_dir_matches, resolved_args, and template, all three
+      of which the Mold's procedure section 4 mandates emitting and all three of which
+      fall under additionalProperties: false. No published release satisfies the cast's
+      own version gate: 0.4.0 reports its summary-nextflow schema as sha256
+      839e11b1892af74df3158377027e7d340a67dafdb9b5965d79e9715a1a109d54 against the
+      pinned 1b8872152de9be50634b3ec73cfd5963ae0ec19a95ccb99f6fe734f42656d80d and exits
+      4, while 0.1.2, 0.2.0 and 0.3.0 reject --schema-sha256 with "unknown option".
+      Foundry main carries a summary-nextflow schema structurally identical to the
+      cast's 284-path copy, so the cast pin is current and only the npm publish lags.
+    expected: >-
+      Pin the bootstrap to a gxwf-foundry release that carries the cast's
+      summary-nextflow schema (or publish one, since main already has it), and say in
+      the CLI note that `latest` must be verified against the --schema-sha256 gate
+      before a run starts rather than assuming a clean install is a usable validator.
+    evidence: >-
+      On a freshly installed toolchain, foundry validate-summary-nextflow
+      --schema-sha256 1b887... exited 4 with "schema skew" and validated nothing.
+      Structural diff of the installed dist/schema/summary-nextflow.schema.json against
+      the bundle's packaged copy gave 266 common paths, 0 changed paths, 0 paths new in
+      the validator, and 18 paths present only in the bundle ($defs.PublishDirMatch,
+      $defs.ResolvedArg, $defs.ProcessTemplate and their Process fields). Diffing Foundry
+      main's packages/summarize-nextflow/src/schema/summary-nextflow.schema.json against
+      the bundle copy showed 284/284 paths identical and no textual difference modulo
+      key order and whitespace. Phase 1 halted at its pre-flight gate and wrote no
+      artifact.
+    status: open
+    issue: null
+  - id: summarize-nextflow-validation-gate-has-documented-failure-but-no-recovery-path
+    raised_by: summarize-nextflow
+    observed_in:
+      mold: summarize-nextflow
+      path: content/molds/summarize-nextflow/index.md
+      revision: 20
+      content_hash: d8e6759095994ad000fb8b78018da070761a5abfb8cf0a80c6c59b550a272501
+      foundry_head: 871b5e6deadfd56aeb5e2ba92eb8f6f50c8449ee
+    subject:
+      kind: mold
+      label: summarize-nextflow
+      locator: content/molds/summarize-nextflow/index.md
+      content_hash: d8e6759095994ad000fb8b78018da070761a5abfb8cf0a80c6c59b550a272501
+    kind: gap
+    severity: major
+    what: >-
+      The Validation section states what exit 4 means and orders the run to stop, but says
+      nothing about what to do next, and the Mold's own bundle already carries the exact
+      schema the gate asks for. The cast has no documented way to finish a summary once the
+      installed validator lags, so every run that hits the skew either dies at phase 1 or
+      improvises a substitute validator with no guidance on whether that is admissible.
+    expected: >-
+      State the recovery path in the Mold: the bundle's
+      references/schemas/summary-nextflow.schema.json is hash-identical to the value passed
+      to --schema-sha256, so when the installed validator is out of step, validate the
+      emitted artifact against that packaged copy with any Draft-07 validator, record the
+      substitution in Summary.warnings[], and link the skew entry. Also say explicitly that
+      dropping schema-mandated Process fields to satisfy a stale validator is not a permitted
+      workaround, since that is the tempting wrong answer.
+    evidence: >-
+      After the exit-4 gate this run could neither proceed nor stop usefully: Foundry main
+      carried the pinned schema, npm 0.4.0 did not, and no published release had both
+      --schema-sha256 and a matching schema. Resolution required inspecting the installed
+      package layout and diffing three schema copies by hand before choosing to validate
+      against the bundle's own copy.
+    status: open
+    issue: null
+  - id: reference-rebuild-asset-param-fk-is-prose-only-so-a-fabricated-binding-validates
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    observed_in:
+      mold: nextflow-summary-to-galaxy-reference-data
+      path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+      revision: 5
+      content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: schema
+      label: summary-nextflow
+      locator: "package://@galaxy-foundry/summarize-nextflow#summaryNextflowSchema"
+      content_hash: 1b8872152de9be50634b3ec73cfd5963ae0ec19a95ccb99f6fe734f42656d80d
+    kind: gap
+    severity: major
+    what: >-
+      ReferenceRebuildRule.asset_param is described as "FK into `params[].name`" and
+      guard_params as param names, but nothing enforces either: the def checks only that
+      the strings are present. Phase 1 of this run emitted all ten rebuild rules with
+      invented asset_param names and prose guards, and the artifact still validated with
+      zero errors. The Mold makes the field load-bearing - reference-data is told to read
+      reference_rebuilds[] as the primary classification input and that a non-empty list
+      means compute-if-missing applies to those asset_param values - so a downstream brief
+      inherits a fabricated param name with no signal, and the pipeline only finds out when
+      someone happens to grep the source tree.
+    expected: >-
+      Make the bindings checkable rather than advisory: have validate-summary-nextflow
+      assert asset_param resolves to a params[].name entry, builder resolves to a
+      processes[].name or subworkflows[].name entry, and every guard_params entry appears
+      in params[].name, as a cross-field pass alongside the schema check. State in the
+      summarize-nextflow Mold that these bindings must be derived from the branch pairing
+      and never written by hand, and that a binding the detector cannot recover is omitted
+      with a Summary.warnings[] row, not filled with a plausible-looking name.
+    evidence: >-
+      The pre-fix artifact listed interproscan_download_db, amp_download_databases,
+      taxa_classification_mmseqs_download_db, arg_amrfinderplus_download_db,
+      bgc_antismash_download_db, annotation_bakta_download_db, bgc_bigslice_download_db,
+      arg_deeparg_download_data, bgc_deepbgc_download_db and cazyme_dbcan_download_db: none
+      of the ten exists in params[], and every guard read "invoked unconditionally within
+      its screening subworkflow when the parent screening stage is enabled". Both the bad
+      and the corrected artifact reported 0 schema errors. Re-derived from source, the real
+      pairs are amp_ampcombi_db <- AMP_DATABASE_DOWNLOAD (amp.nf:119), annotation_bakta_db
+      <- BAKTA_BAKTADBDOWNLOAD (annotation.nf:89), arg_amrfinderplus_db <-
+      AMRFINDERPLUS_UPDATE (arg.nf:42), arg_deeparg_db <- DEEPARG_DOWNLOADDATA (arg.nf:131),
+      bgc_antismash_db <- ANTISMASH_ANTISMASHDOWNLOADDATABASES (bgc.nf:44), bgc_deepbgc_db
+      <- DEEPBGC_DOWNLOAD (bgc.nf:78), bgc_bigslice_db <- BIGSLICE_DOWNLOADDB (bgc.nf:141),
+      cazyme_dbcan_db <- RUNDBCAN_DATABASE (cazyme.nf:27),
+      protein_annotation_interproscan_db <- INTERPROSCAN_DATABASE (protein_annotation.nf:24)
+      and taxa_classification_mmseqs_db <- MMSEQS_DATABASES (taxa_class.nf:27).
+    status: open
+    issue: null
+  - id: rebuild-guard-field-has-no-way-to-say-derived-or-absent
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    observed_in:
+      mold: nextflow-summary-to-galaxy-reference-data
+      path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+      revision: 5
+      content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: schema
+      label: summary-nextflow
+      locator: "package://@galaxy-foundry/summarize-nextflow#summaryNextflowSchema"
+      content_hash: 1b8872152de9be50634b3ec73cfd5963ae0ec19a95ccb99f6fe734f42656d80d
+    kind: gap
+    severity: minor
+    what: >-
+      ReferenceRebuildRule.guard is typed as a required string and documented as the
+      "verbatim guard expression", but four of this pipeline's ten rebuild branches are a
+      bare `else`, which has no condition to copy. The field forces the run to put
+      something in: either a derived negation that looks verbatim, or prose that pretends
+      to be a condition, which is what phase 1 did.
+    expected: >-
+      Widen the field to record provenance, e.g. an optional guard_kind of
+      verbatim | derived_negation | branch_else plus the enclosing stage guard, or make
+      guard nullable with the enclosing chain conditions carried alongside. Downstream
+      needs to know which param decides the rebuild, and right now it cannot tell a copied
+      condition from a paraphrase.
+    evidence: >-
+      funcscan's rebuild sites pair a consuming branch with a bare else at amp.nf:118,
+      annotation.nf:87, bgc.nf:39-46, bgc.nf:75, bgc.nf:140, protein_annotation.nf:22 and
+      taxa_class.nf:25, and use `else if` at arg.nf:44, arg.nf:133 and cazyme.nf:29. Only
+      the latter three have a guard string to copy; the rest needed a derived
+      "! ( cond ) && ! ( cond )" form whose status had to be smuggled into
+      evidence.evidence[]. The stage guard that actually gates the rebuild
+      (!params.bgc_skip_antismash, params.bgc_run_bigslice, params.annotation_tool ==
+      "bakta", ...) has no field at all.
+    status: open
+    issue: null
+  - id: rebuild-detector-blind-to-aliased-multistep-and-url-sourced-builders
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    observed_in:
+      mold: nextflow-summary-to-galaxy-reference-data
+      path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+      revision: 5
+      content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: research
+      label: nextflow-reference-data-classification
+      locator: content/research/nextflow-reference-data-classification/index.md
+      content_hash: 2b33f3bddb635c9d700e506784b4bf16f8c387369bc66194a15cb75be9ad8a1f
+    kind: gap
+    severity: major
+    what: >-
+      The compute-if-missing section resolves detection entirely into "any non-empty
+      reference_rebuilds[] entry" and, for the positive form the detector misses, tells the
+      brief to mark the asset rebuild-unverified. On nf-core/funcscan that instruction
+      produces an empty rebuild surface and eleven unverified flags, because the pipeline's
+      rebuilds are not only positive-form: they are also invoked through an include alias,
+      chained over two processes, and in one case sourced from a hard-coded URL with no
+      param behind it. None of the three is named as a known gap, so a run following the
+      note cannot distinguish "no rebuild exists" from "the detector could not see it", and
+      the fallback advice quietly turns eleven load-bearing database builds into unknowns.
+    expected: >-
+      Add the three blind spots to the Known gap list beside the positive form: builders
+      invoked under an `include { X as Y }` alias (match aliases as well as canonical process
+      names), rebuilds needing more than one process (name the producer, carry the follow-on
+      steps), and builders whose source is a literal URL passed as a val rather than a
+      param-derived path. Make the fallback advice conditional too - "rebuild unverified" is
+      honest only after someone has checked the branch pairing, so say that a run holding the
+      source tree should confirm by hand before flagging.
+    evidence: >-
+      Deriving reference_rebuilds[] from the subworkflow sources by hand gave 11 rules where
+      the documented detector yields none. arg.nf:93 fetches CARD with
+      UNTAR_CARD([[], file('https://card.mcmaster.ca/latest/data', checkIfExists: true)]) -
+      an alias of the generic UNTAR module, so a canonical-name process set skips the download
+      outright - and RGI_CARDANNOTATION then converts it, making it a two-process rebuild; a
+      first attempt matching canonical names alone reported RGI_CARDANNOTATION as the builder
+      and lost the fetch. The other 10 pair a fromPath(params.X) branch against a bare else
+      or else-if that invokes a *_DOWNLOAD / *_DATABASE / *_UPDATE process, the shape the
+      note does not claim to cover.
+    status: open
+    issue: null
+  - id: reference-asset-kind-is-free-form-while-the-mold-documents-a-closed-list
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    observed_in:
+      mold: nextflow-summary-to-galaxy-reference-data
+      path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+      revision: 5
+      content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: mold
+      label: nextflow-summary-to-galaxy-reference-data
+      locator: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+      content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+    kind: gap
+    severity: minor
+    what: >-
+      The Mold's "Reading the summary" section presents asset_kind as a closed 12-value list
+      (fasta, fasta_index, sequence_dictionary, bwa_index, tabix_index, gtf, gff, bed, vcf,
+      database, other), but the schema declares it a free-form string with a different
+      example list that adds bwamem2_index and reference_sheet. Nothing agrees, so a
+      reference-data brief cannot branch on asset_kind safely, and this run's phase 1 emitted
+      four vocabulary entries that appear in neither list.
+    expected: >-
+      Pick one: constrain asset_kind to an enum in the schema, or state in the Mold that it
+      is open-vocabulary and list the values the summarizing Mold is expected to emit -
+      including the two this pipeline needed, a "tool ships its own database in the
+      container/conda env" kind and a "closed enum naming a database rather than locating
+      one" kind, neither of which the current vocabulary expresses.
+    evidence: >-
+      This run's reference_assets[] uses tool_reference_database, database_selector,
+      reference_file and pipeline_config_asset. The closed list forced genuinely different
+      things together: arg_rgi_data (enum NA/wgs/plasmid/chromosome), arg_deeparg_model (LS /
+      SS) and amp_ampir_model (precursor / mature) are curated select options and landed in
+      the same bucket as real database paths, while the AST-community tools whose databases
+      ride inside their conda env (AMPlify, ampir, Macrel, GECCO, argNorm, ABRicate defaults,
+      fARGene) have no kind at all and fell out of reference_assets[] entirely.
+    status: open
+    issue: null
+  - id: params-default-has-no-resolution-rule-when-the-schema-omits-it
+    raised_by: nextflow-summary-to-galaxy-interface
+    observed_in:
+      mold: nextflow-summary-to-galaxy-interface
+      path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+      revision: 6
+      content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: mold
+      label: summarize-nextflow
+      locator: content/molds/summarize-nextflow/index.md
+      content_hash: d8e6759095994ad000fb8b78018da070761a5abfb8cf0a80c6c59b550a272501
+    kind: gap
+    severity: major
+    what: >-
+      Procedure section 3 says to read the nextflow.config params block for defaults and, when
+      nextflow_schema.json exists, to "prefer it as the source of truth for type, description, and
+      required". Default is deliberately absent from that list, but nothing states where default
+      comes from when the two sources disagree - and for an nf-core pipeline they always disagree,
+      because the generated schema omits default for params whose value lives only in config. A run
+      that reads default off the schema and finds nothing records "no default" for params that do
+      have one, and nothing downstream can tell the two apart, because null means both "unset in
+      the source" and "not written into the schema". This run emitted exactly that: 129 of 220
+      params with default null, including 99 of 102 booleans whose config value is false.
+    expected: >-
+      State the resolution rule in section 3: params[].default is the value nextflow.config assigns
+      at runtime, the schema's default is used only for params config does not assign, and a null
+      means config assigns null. Add the nf-core specifics that make the trap easy to fall into -
+      nf-core omits default from the schema for most booleans, so schema-only extraction loses
+      every false - and say what to do with a templated config value (record the flattened form or
+      skip it, but do not emit an unresolved Groovy string as a value).
+    evidence: >-
+      funcscan 4.0.0: nextflow.config assigns all 220 params explicitly; nextflow_schema.json
+      carries a default for 91 of them, 3 of the 102 booleans. Merging config values into the
+      artifact recovered 101 defaults, produced 0 conflicts with the schema, left 28 params null
+      because config assigns null, and needed one special case (custom_config_base, whose config
+      value is a template over custom_config_version). The interface brief needed real defaults to
+      write 61 input fields, so the fix could not be deferred; it is recorded in
+      <run>/foundry-run.yml under phase 1. The artifact's own Summary.warnings[] now carries the
+      rule, but that is this run improvising a policy the Mold does not state.
+    status: open
+    issue: null
+  - id: sample-sheet-note-recommends-record-without-flagging-implicit-mapping
+    raised_by: nextflow-summary-to-galaxy-interface
+    observed_in:
+      mold: nextflow-summary-to-galaxy-interface
+      path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+      revision: 6
+      content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: research
+      label: galaxy-sample-sheet-collections
+      locator: content/research/galaxy-sample-sheet-collections/index.md
+      content_hash: 98736fdcd0c4f4698af4e0cd4c539b33e3d0db872de1e10487556b21033030ec
+    kind: gap
+    severity: major
+    what: >-
+      The "Mapping from Nextflow sample sheets" table sends "heterogeneous typed per-row artifacts"
+      to sample_sheet:record, and the params note repeats that recommendation as "Multiple
+      heterogeneous path columns per row". Neither entry mentions the constraint the same note
+      states five sections earlier: allow_implicit_mapping is True for everything except record. So
+      the variant the note tells a run to pick is the one variant that cannot be mapped over
+      implicitly, which is the whole point of a per-sample workflow input, and the brief has to
+      discover the collision between two sections of one note with no guidance on which way to
+      resolve it. Worse, record cannot express per-row-optional datasets at all - a record has a
+      fixed named member set for every element - so the pipeline whose rows genuinely vary in which
+      datasets they carry has no variant offered for it, and no row of the mapping table names that
+      case.
+    expected: >-
+      Add the implicit-mapping consequence to the record row of both tables, and add a row for
+      "path columns that are optional per row" naming the fallback (one sample_sheet collection per
+      slot, aligned by element_identifier, with identifier sync replacing schema validation) so a
+      run is not choosing between two silent losses on its own. If the intended answer is
+      placeholder datasets inside a record, say that explicitly.
+    evidence: >-
+      funcscan's assets/schema_input.json requires only sample and fasta, with dependentRequired
+      {protein: [gbk], gbk: [protein], gff: [protein]}, so valid rows come in three shapes and the
+      fasta-only row is the common case; sample_sheet:record would force all four datasets on every
+      row. The source itself splits the row with a multiMap into fastas|faas|gffs|gbks and gives
+      each consumer only the slot stream it needs, which is why four parallel sample_sheet inputs
+      were chosen in <run>/nextflow-galaxy-interface.md section 2.1, at the cost of moving row
+      validation to identifier alignment (carried as entries/samplesheet-per-row-optional-slots).
+    status: open
+    issue: null
+  - id: datatype-note-has-no-genbank-or-hmm-row
+    raised_by: nextflow-summary-to-galaxy-interface
+    observed_in:
+      mold: nextflow-summary-to-galaxy-interface
+      path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+      revision: 6
+      content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: research
+      label: nextflow-path-glob-to-galaxy-datatype
+      locator: content/research/nextflow-path-glob-to-galaxy-datatype/index.md
+      content_hash: 04d728aef2d113ff01cd00789cc7980cb808d5bc51bdf9752ef7ee53af486419
+    kind: gap
+    severity: minor
+    what: >-
+      The core datatype table covers some thirty extensions but has no GenBank/EMBL row and no HMM
+      profile row, while its confidence ladder offers no rung for the actual situation - an
+      extension that is a registered Galaxy datatype yet absent from this note. The note is the
+      Mold's declared authority for choosing format, so the run must either omit format for a
+      first-class sequence format or assert one the note cannot back, and the second option's
+      confidence has no defined label.
+    expected: >-
+      Add gbk/gbff/embl -> genbank and hmm/hmm3 -> hmm3 rows with confidence, or add one line to
+      the confidence ladder saying what to do when the registry knows a datatype and the table does
+      not: cite galaxy-datatypes-conf, mark it medium, and name it as unchecked against the note.
+      Silent omission is the worse default, because a wrong format on an input slot is visible to
+      users, not just to the run.
+    evidence: >-
+      funcscan takes .gbk/.gbff as a sample-sheet column (pattern ^\\S+\\.(gbk|gbff)(\\.gz)?$) and
+      produces GenBank from PROKKA (*.gbk), BAKTA_BAKTA (*.gbff), the pyrodigal annotations port
+      (*.gbk.gz) and GECCO's convert-format option; the HMM inputs amp_hmmsearch_models,
+      bgc_hmmsearch_models and annotation_bakta_hmms have no row either. This run asserted genbank
+      at low confidence and recorded entries/gbk-slot-datatype-unconfirmed; the reference-data Mold
+      had already asserted hmm3 in phase 2 for the same reason, so one gap bit two phases.
+    status: open
+    issue: null
+  - id: ledger-kind-cannot-record-a-param-pinned-at-a-fixed-default
+    raised_by: nextflow-summary-to-galaxy-interface
+    observed_in:
+      mold: nextflow-summary-to-galaxy-interface
+      path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+      revision: 6
+      content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: research
+      label: open-requirements-ledger
+      locator: content/research/open-requirements-ledger/index.md
+      content_hash: d3d36d558ae5a58de46a0eb869a5f5966be6b02fdb569476e4f77ce1cc1ddf7d
+    kind: gap
+    severity: minor
+    what: >-
+      nextflow-params-to-galaxy-inputs gives a Mold three outcomes for a control param: promote it
+      to a scalar input, "resolve to a fixed Galaxy design default", or record a validation loss.
+      The ledger's kind enum has only gap and dropped, so the middle outcome has nowhere to go -
+      dropped is defined as "source work it decided not to carry", but a pinned param is still in
+      the workflow, carrying its source value, with no user lever. Filing it as dropped asserts a
+      cut that did not happen, which is the mirror image of the warning the note already gives about
+      recording a cut as a gap. The note's own open question about totalling drops makes the cost
+      concrete: one entry here stands for 133 params.
+    expected: >-
+      Either add a kind for work carried at a fixed value (pinned or carried-fixed) with units plus
+      the value's source, or say in the params note that pinning is filed as dropped with the fixed
+      value and its provenance in because, so readers know the params are present but not editable.
+      Either way, keep the three vocabularies - promoted, pinned, dropped - distinguishable, since
+      the interface decision that matters downstream is which of the three a param got.
+    evidence: >-
+      funcscan: of 220 params, 58 became 61 Galaxy inputs, 136 are pinned at their nextflow.config
+      value (133 tool knobs plus 2 single-option tool selectors and 1 database URL), and 26 are
+      genuinely omitted. Both pinned groups are recorded as one kind: dropped entry with units
+      "133 of 220 params" in <run>/open-requirements.ledger.yml, whose because has to carry the
+      pinning rationale as prose because no field or kind means "pinned".
+    status: open
+    issue: null
+
+  - id: pattern-moc-links-pages-not-packaged-in-any-bundle
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    observed_in:
+      mold: nextflow-summary-to-galaxy-data-flow
+      path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+      revision: 8
+      content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: pattern
+      label: galaxy-collection-patterns
+      locator: references/patterns/galaxy-collection-patterns.md
+      revision: 4
+      content_hash: 2dbb4b7520ba30d3e9fdf68e6133fb35c597e7e8482478b4dee2abe9f415d6ef
+    kind: gap
+    severity: major
+    what: >-
+      The four pattern MOCs this Mold loads on demand are maps, not content: each instructs the reader
+      to "Open the linked operation page for tool parameters and examples", and none of those pages is
+      in the bundle - nor anywhere in the installed plugin cache. The MOCs are the only grounding the
+      mold offers for collection-shape and conditional-shape choices, so the instruction has no
+      satisfiable form at run time, and the two notes they defer tool settings to
+      (galaxy-collection-tools, galaxy-apply-rules-dsl) ship only in implement-galaxy-tool-step's
+      bundle. The effect is measurable rather than aesthetic: every recipe name this run could use is a
+      name with no construction behind it, so the data-flow brief can say "relabel, merge, split the
+      identifier" but not with which operation, on what shape, with which parameters - and cannot tell
+      a reviewer which of those steps are corpus-proven and which are inference from a MOC bullet.
+    expected: >-
+      Either package the pattern pages the MOCs link (at least the ones the MOCs recommend for the
+      decisions this Mold owns: identifier sync, relabel, merge/split, flatten, gate-on-nonempty,
+      route-between-alternatives, transform-or-pass-through, and the tabular bridges), or state in the
+      MOC frontmatter and in the mold's Load On Demand line that the MOC is a name list only, so a Mold
+      records recipe names as unverified pointers instead of writing them as if it had read the
+      construction. A third option worth weighing: ship the survey notes the MOCs cite
+      (iwc-transformations-survey and siblings), which are fewer files and carry the corpus counts that
+      make a recommendation arguable.
+    evidence: >-
+      4 MOCs in this bundle (galaxy-collection, galaxy-conditionals, galaxy-interval, galaxy-tabular),
+      linking 93 distinct targets: 53 resolve to no file in the installed tree, and 40 of those are
+      pattern/recipe pages (the other 13 are cross-refs to skills, other MOCs and survey notes). 9
+      bundles carry a references/patterns directory (cwl-summary-to-galaxy-data-flow,
+      cwl-summary-to-galaxy-template, freeform-summary-to-galaxy-data-flow,
+      freeform-summary-to-galaxy-template, nextflow-summary-to-galaxy-data-flow,
+      nextflow-summary-to-galaxy-template, repair-galaxy-draft-topology,
+      workflow-brief-to-galaxy-data-flow, workflow-brief-to-galaxy-template) and all 9 hold only the
+      MOCs, 3 or 4 files each - so this is packaging, not a bad link in one bundle. Subject locator
+      above is the packaged path, verified by hash; the canonical content/ path is not recoverable from
+      the bundle, which is itself part of the problem. Cost here: 12 placeholder transformations in
+      <run>/nextflow-galaxy-data-flow.md section 13 are named-recipe-only, and the two hardest
+      constructions in the workflow (variable-arity per-sample fan-in, nested four-way dot-product) are
+      recorded low-confidence against a missing page rather than against a competing construction -
+      carried as entries/variable-arity-fan-in-has-no-attested-galaxy-recipe.
+    status: open
+    issue: null
+
+  - id: conditionals-note-gives-no-construction-for-a-derived-gate
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    observed_in:
+      mold: nextflow-summary-to-galaxy-data-flow
+      path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+      revision: 8
+      content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: research
+      label: nextflow-conditional-to-galaxy-subworkflow-when
+      locator: content/research/nextflow-conditional-to-galaxy-subworkflow-when/index.md
+      revision: 2
+      content_hash: f38341565d0927321248b67a9d99ce9533cc89ef4e543cbf80378260e7025f7e
+    kind: gap
+    severity: major
+    what: >-
+      The note's worked idiom is when: $(inputs.when) - a boolean that arrives as a workflow input -
+      and its engine evidence covers how a skipped step behaves, how when_values cascade into a
+      subworkflow, and how pick_value fans outputs back in. What it never addresses is a guard the
+      workflow must compute itself: a predicate over several inputs, or over a step's result. Those are
+      two different translations and the note gives neither, so a Mold facing one has to choose between
+      repeating the whole expression on every gated step, inventing an upstream boolean-producing step
+      whose output type and legality in when: are unattested, or hoisting the decision to the user (an
+      interface change, not a data-flow one) - and the note's own decision rubric (subworkflow when: vs
+      inline when:) is silent on all three because it presumes the guard already exists as a value.
+    expected: >-
+      A section that states whether when: may reference another step's output, and if not, the cost
+      model for the repeat-the-expression fallback plus the sanctioned way to express a shared
+      condition (an input the workflow documents as derived, a validation-style first step, or
+      duplication with a comment). Naming which of the three is corpus-practice would settle more than
+      the subworkflow-vs-inline question for any pipeline whose branches are chosen by computed
+      predicates, which is most of them - funcscan's annotation_tool override is only the loudest case.
+    evidence: >-
+      funcscan's annotation switch annotation.nf:29 is
+      annotation_tool == "pyrodigal" || (annotation_tool == "prodigal" && run_bgc_screening &&
+      (!bgc_skip_antismash || !bgc_skip_deepbgc || !bgc_skip_gecco)) || (annotation_tool == "prodigal"
+      && run_amp_screening) - an OR over 6 inputs that also silently overrides the user's own
+      annotation_tool value with a log.warn at :32-37. Under the inputs-only reading this becomes 12
+      repeated when: strings per ANNOTATION instance (6 pyrodigal steps carry it, 6 prodigal steps
+      carry its negation conjoined with the equality test) and 24 across the two instances this brief
+      recommends, from 8 distinct expressions; the same reading puts the workflow at about 26
+      step-level strings and 12 distinct expressions in total. Recorded with the count rather than a
+      fix because the count is the argument - and it evaporates if when: does accept step outputs, which
+      is <run>/nextflow-galaxy-data-flow.md section 19 question 3.
+    status: open
+    issue: null
+
+  - id: operator-via-records-no-arity-or-key-so-review-triggers-cannot-fire
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    observed_in:
+      mold: nextflow-summary-to-galaxy-data-flow
+      path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+      revision: 8
+      content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: research
+      label: nextflow-operators-to-galaxy-collection-recipes
+      locator: content/research/nextflow-operators-to-galaxy-collection-recipes/index.md
+      revision: 1
+      content_hash: 59d97f05e7839f78cb7f42e17299fe6bc373bde8a32eca506238633a3dff9282
+    kind: gap
+    severity: minor
+    what: >-
+      workflow.edges[].via[] is a list of operator names, and the recipes note keys its whole
+      classification - including every user-review trigger - on parameters the name does not carry:
+      join's remainder, groupTuple's by:, combine's receiver (a file collection or a value list),
+      mix's whether the inputs are identifier-aligned, branch's whether an arm discards data. So the
+      note's own triggers cannot be evaluated from the summary alone: "join with remainder or duplicate
+      keys" and "unkeyed combine" are invisible at exactly the layer the note tells a Mold to read them
+      from. The consequence is not a wrong answer but a forced one - either mark every join and combine
+      for review (which drowns the few that matter) or open the sources, which the mold's
+      summary-first posture discourages.
+    expected: >-
+      Either carry the discriminator the note needs (a small structured operand per via[] entry:
+      key/remainder for join, by: for groupTuple, receiver kind for combine, arm-discards-data for
+      branch), or state in the recipes note that classification must be done from the source line and
+      that via[] is a locator, not evidence. The first is a schema change with a clear payoff; the
+      second is one sentence and would stop the next run from mistaking the operator list for a
+      complete account of the edge.
+    evidence: >-
+      funcscan has 6 .combine( sites, and the three different things they do are indistinguishable in
+      via[]: amp.nf:86 and bgc.nf:168 cross a per-sample protein list with uploaded HMM files (a real
+      second collection axis), arg.nf:71 crosses a per-sample list with ten class names tokenised out
+      of one comma-joined string param (no axis at all - it collapses into one tool parameter), and
+      amp.nf:159 / arg.nf:204 / bgc.nf:209 annotate a single dataset with a literal id so a bgzip step
+      can name it (zero nodes). Likewise 15 .join() sites, of which the summary cannot say that 1 is
+      remainder: true (bgc.nf:182, whose result is discarded) and 2 are remainder: false (bgc.nf:64-65).
+      Resolving this cost reading all 8 wiring files; the counts came from a scripted scan
+      (/tmp/gxy-scratch/dfcount.py, outside the source tree, run with -I).
+    status: open
+    issue: null
+
+  - id: sample-sheet-note-never-states-that-element-identifiers-must-be-unique
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    observed_in:
+      mold: nextflow-summary-to-galaxy-data-flow
+      path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+      revision: 8
+      content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: research
+      label: galaxy-sample-sheet-collections
+      locator: content/research/galaxy-sample-sheet-collections/index.md
+      revision: 2
+      content_hash: 98736fdcd0c4f4698af4e0cd4c539b33e3d0db872de1e10487556b21033030ec
+    kind: gap
+    severity: minor
+    what: >-
+      The note is detailed about column types, restrictions, validators, the record variant's
+      allow_implicit_mapping, and map-over propagation of column_definitions, but it never states the
+      one property the whole element_identifier design depends on: whether element identifiers within
+      one sample_sheet collection must be distinct, and what happens to a sheet with two rows sharing
+      one value in the identifier column. That is the first question a translation hits, because the
+      note's advice is to key every element on the sheet's sample column and then align collections by
+      identifier - advice that is only safe if that column is unique, which is a property of the source's
+      schema rather than of Galaxy, and which the note never tells the reader to go check.
+    expected: >-
+      A sentence in the note stating the constraint (and whether the collision is a validation error, a
+      silent overwrite, or a runtime failure), plus an instruction to compare the source sheet's key
+      against it - the same way the note already tells the reader to carry column metadata forward
+      explicitly. The data-flow mold's own procedure already demands "say what makes an element unique";
+      it would be cheaper if the note it loads on demand said what the target requires.
+    evidence: >-
+      funcscan is the counter-example the note does not cover: assets/schema_input.json puts
+      uniqueItems: true on the array of row objects, not on the sample column, so two rows sharing a
+      sample are valid input today - they are merged by groupTuple() at funcscan.nf:84 and then
+      files.find { ... } at :86-89 keeps only the first file matching each slot's extension test,
+      discarding the rest with no message. The fixture sheet cannot expose this (tests/*.snap show
+      sample_1, sample_2, sample_3 with one row each). So the key column is assumed unique by the
+      interface design and is not enforced by the source; the translation turns a silent data-loss case
+      into a rejected upload, which is an improvement that has to be documented as such. Carried as
+      entries/sample-column-uniqueness-assumed-not-enforced in <run>/open-requirements.ledger.yml.
+    status: open
+    issue: null
+
+  - id: conditionals-detector-attributes-only-to-processes-so-channel-guards-vanish
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    observed_in:
+      mold: nextflow-summary-to-galaxy-data-flow
+      path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+      revision: 8
+      content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: schema
+      label: summary-nextflow
+      locator: package://@galaxy-foundry/summarize-nextflow#summaryNextflowSchema
+      content_hash: 1b8872152de9be50634b3ec73cfd5963ae0ec19a95ccb99f6fe734f42656d80d
+    kind: gap
+    severity: minor
+    what: >-
+      workflow.conditionals[] is {guard, branch, affects[]}, and affects[] names processes. A parameter
+      guard that invokes no process - one that builds a channel conditionally, or stamps a metadata
+      field that a later process reads - therefore has nowhere to be recorded, and the omission is
+      silent: no warnings[] row, no placeholder, nothing a downstream Mold can see. These are not
+      exotic shapes; they are how nf-core pipelines annotate meta per branch, and how they build
+      optional per-variant input channels, and both change which elements exist downstream.
+    expected: >-
+      Either allow a channel name (or a <channel, field> pair) in affects[] alongside process names, or
+      emit a warnings[] row for every parameter guard that resolves to no process in the primary
+      workflow, so the omission is at least visible to the Mold that has to translate it. The second is
+      the cheaper fix and matches the schema's existing practice of surfacing detector blind spots as
+      warnings rather than as silent gaps.
+    evidence: >-
+      funcscan's primary workflow has 32 if/else-if blocks - 16 whose condition reads params, 16 whose
+      condition reads data. The 13 conditionals[] rows cover 14 of the 16 param-level blocks (:278 and
+      :300 are the same guard in two arms and share one row); 2 were dropped for lack of a process to
+      attribute them to. funcscan.nf:163 builds
+      ch_prepped_input_long only when run_bgc_screening, and funcscan.nf:143 stamps
+      meta + [gff_type: 'prodigal'] under a 5-input guard - the value RUNDBCAN_EASYCGC and
+      RUNDBCAN_EASYSUBSTRATE take per element, and whose absence makes cazyme.nf:44 skip the sample
+      entirely. Both were recovered here by reading workflows/funcscan.nf directly, which is
+      affordable for one workflow and not for a loop; a run working only from the summary would have
+      translated neither. Re-emerged as discoveries/two-gating-decisions-are-channel-level-not-process-level
+      in <run>/open-requirements.ledger.yml, where both are back as gates.
+    status: open
+    issue: null
+  - id: iwc-corpus-legacy-ga-shapes-are-documented-nowhere-in-the-bundle
+    raised_by: compare-against-iwc-exemplar
+    observed_in:
+      mold: compare-against-iwc-exemplar
+      path: content/molds/compare-against-iwc-exemplar/index.md
+      revision: 12
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+      foundry_head: 94ce4ea20107680b467d03e8889b63689774e325
+    subject:
+      kind: mold
+      label: compare-against-iwc-exemplar
+      locator: content/molds/compare-against-iwc-exemplar/index.md
+      revision: 12
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+    kind: defect
+    severity: major
+    what: >-
+      The Mold says to normalize candidate workflows with convert as needed for structural comparison and
+      says nothing else about what is on disk. In this corpus the consequences of measuring the native
+      format anyway - cheaper than converting 133 files - are silent and quantitative: tool_state is a
+      JSON *string* inside each step; a gated step's when is the literal string "$(inputs.when)" with the
+      real provenance in input_connections.when = {id, output_name}; top-level inputs and outputs are
+      *lists* keyed by id, not maps; a step's in is a list of {id, source}; an embedded subworkflow is
+      nested whole inside one step; and steps are a dict keyed "0".."N". Three of my first-pass
+      measurements were wrong because of this and each looked like a corpus fact: 0 sample-sheet inputs
+      (true, by luck), 0 text-valued database params (false - 44 exist; the probe had tested the raw JSON
+      instead of the escaped tool_state), and 0 gates whose provenance can be resolved (false - all 125
+      resolve once the legacy connection shape is known). Three files
+      (VGP-assembly-v2/Assembly-Hifi-HiC-phasing-VGP4, -Trio-phasing-VGP5, -Hifi-only-VGP3) additionally
+      carry step entries that are not objects and crash a straightforward parser, so the ranking covers
+      130 of 133.
+    expected: >-
+      State the corpus's serialization once - legacy .ga, format-version 0.1, tool_state as an embedded
+      JSON string, when: as a literal with provenance in the input connection - and say to convert first
+      and measure the converted form, or to parse tool_state when measuring natively. A three-line shape
+      note would have kept three wrong numbers out of a run artifact; they were caught only because the
+      results were implausible ("nobody in IWC gates a step" is not believable) and were re-derived from
+      parsed values. Also worth one line: some files do not parse cleanly.
+    evidence: >-
+      Verified on the operator-supplied corpus under bioHackthon/iwc/workflows: 133 .ga files, all with
+      format-version 0.1 and release/uuid/readme keys; 125 gated steps across 29 files, every one carrying
+      the literal when string. Corrected figures reproduced by /tmp/gxy-scratch/iwcidioms.py and
+      iwcgates.py (run with -I) after iwcscan.py's first version failed on the dict-shaped steps.
+    status: open
+    issue: null
+  - id: iwc-mold-hardcodes-its-corpus-location-with-no-operator-input
+    raised_by: compare-against-iwc-exemplar
+    observed_in:
+      mold: compare-against-iwc-exemplar
+      path: content/molds/compare-against-iwc-exemplar/index.md
+      revision: 12
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+      foundry_head: 94ce4ea20107680b467d03e8889b63689774e325
+    subject:
+      kind: mold
+      label: compare-against-iwc-exemplar
+      locator: content/molds/compare-against-iwc-exemplar/index.md
+      revision: 12
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+    kind: gap
+    severity: minor
+    what: >-
+      Step 1 of the procedure is "clone or pull and merge the IWC corpus to ~/.foundry/iwc". There is no
+      input slot for a corpus the caller already has, and no instruction for the case where the network is
+      not in play. This run was commissioned with an explicit read/write boundary (read only the run
+      folder, the funcscan-test folder and the IWC fixtures; no installs) and a local checkout of the same
+      corpus was named by the operator, so the honest options were to violate the boundary by cloning or
+      to violate the procedure by using the checkout. I took the second and recorded it in the artifact.
+      Under --use-subagents, or under any harness that constrains writes, the collision recurs and a
+      subagent is likelier to just clone.
+    expected: >-
+      An optional input for an operator-supplied corpus path, one sentence saying a supplied path
+      supersedes the clone, and what to record when neither is available and the phase has to report no
+      comparison at all.
+    evidence: >-
+      ~/.foundry/iwc does not exist on this machine; the corpus used was the operator's local
+      bioHackthon/iwc/workflows checkout. Nothing was cloned or fetched and nothing was written outside
+      the run directory and /tmp/gxy-scratch/.
+    status: open
+    issue: null
+  - id: confidence-rubric-has-no-row-for-divergent-topology
+    raised_by: compare-against-iwc-exemplar
+    observed_in:
+      mold: compare-against-iwc-exemplar
+      path: content/molds/compare-against-iwc-exemplar/index.md
+      revision: 12
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+      foundry_head: 94ce4ea20107680b467d03e8889b63689774e325
+    subject:
+      kind: mold
+      label: compare-against-iwc-exemplar
+      locator: content/molds/compare-against-iwc-exemplar/index.md
+      revision: 12
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+    kind: gap
+    severity: minor
+    what: >-
+      The Feature Hierarchy ranks input collection topology second and warns that a structurally similar
+      workflow in the wrong science must not become a misleading exemplar; the Confidence table then
+      defines Medium as "same domain and topology, but partial tool-family or output match". That row is
+      stricter than the hierarchy above it, and the cell this run landed in - same domain, strong
+      tool-family, DAG-motif and output-shape overlap, topology diverging - is undefined. The rows left
+      for it are Low ("cross-domain structural match only", false here) and "no nearest exemplar", which
+      per the Non-goals section suppresses the sibling artifact and the excerpt entirely. Choosing Medium
+      meant inventing a row, so the artifact carries a confidence label the rubric cannot reproduce and a
+      later reader cannot tell whether Medium here means what Medium means elsewhere.
+    expected: >-
+      One more row, or a reworded Medium, keyed on the hierarchy's own order: same domain and majority
+      tool families with a diverging input topology is a usable exemplar whose divergence is filed as an
+      open obligation, distinct from same-topology-partial-tools. It should also say what caps a rating -
+      "16 of 26 tool families absent from the whole corpus" is a different cap from "topology differs" and
+      the table cannot express either.
+    evidence: >-
+      Chosen exemplar microbiome/metagenomic-genes-catalogue scored 28 against a runner-up at 18 with zero
+      tool overlap; both divergences are recorded in iwc-comparison-notes.md sections 1 and 3.2-3.3. The
+      artifact is labelled Medium with the reason spelled out because no table row fits.
+    status: open
+    issue: null
+  - id: exemplar-subgraph-artifact-has-no-selection-or-validity-rule
+    raised_by: compare-against-iwc-exemplar
+    observed_in:
+      mold: compare-against-iwc-exemplar
+      path: content/molds/compare-against-iwc-exemplar/index.md
+      revision: 12
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+      foundry_head: 94ce4ea20107680b467d03e8889b63689774e325
+    subject:
+      kind: mold
+      label: compare-against-iwc-exemplar
+      locator: content/molds/compare-against-iwc-exemplar/index.md
+      revision: 12
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+    kind: gap
+    severity: minor
+    what: >-
+      The artifact is specified as a cleaned gxformat2 conversion of the relevant subgraph, bounded rather
+      than the whole workflow, with no rule for what makes a step relevant, no rule for a kept step whose
+      producer was pruned away, and no requirement that the result still validates. "Cleaned" is also
+      undefined and can be read as licence to relabel or simplify a real workflow before handing it to the
+      template Mold as idiom. I had to invent four things: seed = gated steps, the embedded subworkflow,
+      pick_value steps, the screening tools and the fan-in steps; transitive closure over in[].source;
+      drop promoted outputs whose producer fell outside; validate with gxwf validate. The first attempt
+      kept 34 of 36 steps because MultiQC's seven slots pull in the whole taxonomy branch it exists to
+      feed - exactly the "a whole large workflow is noise" failure that section warns about - and the rule
+      that fixed it (do not seed on the report sink) is stated nowhere.
+    expected: >-
+      Name the selection rule (steps carrying the motifs the briefs diverge on, closed under their
+      dependencies) and its two mechanical consequences - dangling producers get pruned from outputs,
+      never rewired - require gxwf validate or draft-validate to pass on the emitted slice, and define
+      cleaning as pruning only: no relabelling and no state edits, so the downstream Mold pattern-matches
+      real corpus text.
+    evidence: >-
+      Emitted slice: 22 of 36 steps, 5 of 7 inputs, 15 of 23 promoted outputs, 1338 lines; gxwf validate
+      reports Structural validation: OK with 55 tool states validated and 0 skipped; original uuid and
+      release preserved, pruning documented in a header comment. Method and the MultiQC pull-in recorded
+      in iwc-comparison-notes.md section 5.
+    status: open
+    issue: null
+  - id: iwc-test-data-note-cannot-tell-a-convention-from-an-omission
+    raised_by: compare-against-iwc-exemplar
+    observed_in:
+      mold: compare-against-iwc-exemplar
+      path: content/molds/compare-against-iwc-exemplar/index.md
+      revision: 12
+      content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+      foundry_head: 94ce4ea20107680b467d03e8889b63689774e325
+    subject:
+      kind: research
+      label: iwc-test-data-conventions
+      locator: content/research/iwc-test-data-conventions/index.md
+      revision: 5
+      content_hash: b7ef14132a0b40f626fff98fde44234ce5c848b6a3c255f4748b803c9a44b074
+    kind: gap
+    severity: minor
+    what: >-
+      The note is thorough on fixture vocabulary - path vs location, collection and nested list:paired
+      shapes, identifiers, hashes, composite_data, tags, and the data-table scalar case with its
+      do-not-replace-the-scalar-with-class-File warning - and it is what this phase should compare test
+      style against. But it never mentions a sample_sheet-shaped job input, and never mentions how gates
+      interact with test documents. Those are the two things this comparison found: zero sample_sheet
+      fixtures among 157 test documents and 342 fixtures across 133 workflows, and 16 of 29 gated
+      workflows shipping a single test document while the closest lane analog ships four that flip
+      booleans and assert different output sets per arm. Because the note's own framing is that its corpus
+      observations describe the workflows sampled, not a rule, silence is unreadable: the bundle cannot
+      tell me whether sample_sheet fixtures are unconventional or simply absent from the sample, so the
+      finding had to be written as an observation about my snapshot instead of as a comparison against a
+      convention - which is the one thing this phase exists to do.
+    expected: >-
+      Either a row for sample_sheet / collection-from-tabular job inputs (including how Planemo resolves
+      them), or an explicit sentence that the sample contains none and the form is unattested there; plus
+      a short section on gated workflows - how many documents, which arms, and whether asserting a
+      different output set per arm is the convention. Both belong in the note rather than the Mold, since
+      they are corpus facts.
+    evidence: >-
+      Corpus counts from /tmp/gxy-scratch/iwcidioms.py and phase5facts.py over the operator's IWC
+      fixtures; the four-document example is
+      genome_annotation/functional-annotation/functional-annotation-of-sequences. The note carries status:
+      draft, revision 5, which may account for the gaps rather than contradict them.
+    status: open
+    issue: null
