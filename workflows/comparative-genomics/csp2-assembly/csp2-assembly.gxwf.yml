@@ -1,0 +1,139 @@
+class: GalaxyWorkflow
+label: CSP2 assembly of paired reads with SKESA
+doc: |-
+  This workflow runs the read assembly of the CFSAN SNP Pipeline 2 (CSP2, v.0.9.7.8), its assemble mode, on a collection of paired bacterial reads to produce one SKESA assembly per isolate, ready to use as the query or reference assemblies of the CSP2 SNP distance and screening workflows. SKESA is the build shipped in the CSP2 image. By default both mates of each pair are assembled; CSP2 v.0.9.7.8 itself assembles only the forward reads, and a switch reproduces that.
+creator:
+  - class: Person
+    identifier: https://orcid.org/0000-0002-4882-5357
+    name: Dannon Baker
+license: MIT
+release: '0.1'
+inputs:
+  Paired reads:
+    type: collection
+    collection_type: list:paired
+    format:
+      - fastqsanger
+      - fastqsanger.gz
+    doc: "One forward/reverse pair of FASTQ files per isolate, plain or gzipped; the identifier of each pair = isolate ID. The two files of a pair must list the mates in the same order."
+  Reproduce CSP2 v.0.9.7.8 assembly (forward reads only):
+    type: boolean
+    optional: true
+    default: false
+    doc: "Off (default): paired-end assembly of both mates. On: run SKESA with the command line of CSP2 v.0.9.7.8, which assembles the forward reads alone and leaves the reverse reads unread. Switch on only to match assemblies made by CSP2 itself at that version."
+outputs:
+  Assemblies:
+    outputSource: Assemble reads with SKESA/assembly
+steps:
+  Split pairs into forward and reverse:
+    tool_id: __UNZIP_COLLECTION__
+    tool_version: 1.0.0
+    doc: Two parallel lists, forward and reverse, each keyed by isolate ID, so that the assembly job can read the isolate ID from its inputs (source fetchReads.py, which pairs the files and takes the isolate ID from the file name).
+    in:
+      input: Paired reads
+    out:
+      - id: forward
+      - id: reverse
+  Assemble reads with SKESA:
+    doc: Source process skesaAssemble, one job per isolate (SKESA 2.4.0 from the FDA image) as one authored user-defined tool, given both mates as a pair by default or run with CSP2's own command line, which reads the forward file only, when the switch is on; the output list keeps the isolate IDs as element identifiers.
+    run:
+      class: GalaxyUserTool
+      id: csp2_skesa_assemble
+      version: 0.2.2
+      name: CSP2 SKESA assembly
+      description: assemble the paired reads of one isolate with the SKESA build of the CSP2 image
+      container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
+      configfiles:
+        - filename: reads.txt
+          content: |
+            ${
+              return [
+                String(inputs.forward.element_identifier),
+                String(inputs.reverse.element_identifier),
+                inputs.forward.path,
+                inputs.reverse.path,
+                inputs.forward_only ? "forward_only" : "paired"
+              ].join("\n") + "\n";
+            }
+      shell_command: |
+        if [ "`wc -l < reads.txt`" -ne 5 ]; then echo "An isolate ID contains a line break" >&2; exit 1; fi &&
+        { IFS= read -r id && IFS= read -r reverse_id && IFS= read -r forward && IFS= read -r reverse && IFS= read -r mode; } < reads.txt &&
+        if [ "$id" != "$reverse_id" ]; then echo "Forward reads '$id' and reverse reads '$reverse_id' are not the same isolate" >&2; exit 1; fi &&
+        case "$id" in
+          ""|-*|*__vs__*|*[![:alnum:]._-]*) echo "Isolate ID '$id' is empty, starts with '-', contains '__vs__' or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
+        esac &&
+        slots=$GALAXY_SLOTS &&
+        if [ -z "$slots" ]; then slots=1; fi &&
+        if [ "$mode" = forward_only ]; then
+          skesa --cores "$slots" --use_paired_ends --fastq "$forward" "$reverse" --contigs_out assembly.fasta
+        else
+          skesa --cores "$slots" --reads "$forward,$reverse" --contigs_out assembly.fasta
+        fi &&
+        if [ ! -e assembly.fasta ]; then echo "SKESA finished without writing an assembly for isolate '$id'" >&2; exit 1; fi &&
+        if [ ! -s assembly.fasta ]; then echo "SKESA assembled no contigs for isolate '$id'; the assembly is empty" >&2; fi
+      inputs:
+        - name: forward
+          type: data
+          format:
+            - fastqsanger
+            - fastqsanger.gz
+          label: Forward reads
+          help: Forward FASTQ of one isolate, plain or gzipped. Its element identifier is the isolate ID, which may use only letters, digits, '.', '_' and '-', not starting with '-' or containing '__vs__'.
+        - name: reverse
+          type: data
+          format:
+            - fastqsanger
+            - fastqsanger.gz
+          label: Reverse reads
+          help: Reverse FASTQ of the same isolate, from the list parallel to the forward list, carrying the same element identifier, with the mates in the same order as the forward file.
+        - name: forward_only
+          type: boolean
+          value: false
+          label: Reproduce CSP2 v.0.9.7.8 assembly (forward reads only)
+          help: Run SKESA with the command line of CSP2 v.0.9.7.8, which assembles the forward reads alone. Switch on only to match assemblies made by CSP2 itself at that version.
+      outputs:
+        - name: assembly
+          type: data
+          format: fasta
+          from_work_dir: assembly.fasta
+          label: SKESA assembly
+      help:
+        format: markdown
+        content: |
+          Assembles the paired reads of one isolate with the SKESA 2.4.0 binary of the CFSAN CSP2 v.0.9.7.8
+          image, which is the read assembly step of CSP2 (process `skesaAssemble`). No trimming, filtering or
+          other option is added; everything apart from the read arguments is SKESA's default.
+
+          **Default: paired-end assembly.** SKESA is given both files as one pair,
+          `skesa --cores <slots> --reads <forward>,<reverse> --contigs_out <assembly>`, the form SKESA documents
+          for mates in two files. Mates are paired by position, so the two files must list the reads in the
+          same order. SKESA stops with an error if the reverse file has fewer reads than the forward file and
+          ignores reverse reads beyond the last forward read.
+
+          **Reproduce CSP2 v.0.9.7.8 assembly (forward reads only).** CSP2 v.0.9.7.8 calls
+          `skesa --cores <slots> --use_paired_ends --fastq <forward> <reverse> --contigs_out <assembly>`.
+          SKESA takes one value per `--fastq`, so the reverse file after the space is dropped without a
+          message and the forward reads are assembled alone, as single-end reads. With the switch on the tool
+          runs that command unchanged. For the Week_42 reads of the CSP2 test data it gives, byte for byte,
+          the assembly published with CSP2's expected output (372 contigs, N50 24,332); the paired-end
+          default gives 137 contigs with an N50 of 64,029 from the same reads. Use the switch to match
+          assemblies made by CSP2 itself at that version, not for new work.
+
+          Meant to be mapped over two parallel lists, the forward and the reverse reads of a `list:paired`
+          collection, one job per isolate, giving a list of assemblies whose element identifiers are the
+          isolate IDs. The isolate ID is read from the element identifier and held to the same rule as the
+          CSP2 alignment tools (letters, digits, `.`, `_` and `-` only, not starting with `-` or containing
+          `__vs__`), so that a bad ID fails here and not after the assembly.
+
+          The assembly is an uncompressed FASTA with contigs named `Contig_<number>_<k-mer coverage>`; contigs
+          shorter than 200 bases are not reported. The output does not depend on the number of cores. The
+          job fails when SKESA fails, which includes reads it cannot assemble at all (too few or too short).
+          Every unassemblable input tried made SKESA fail; should it ever succeed without reporting a contig,
+          the assembly is an empty dataset and a warning goes to standard error.
+          SKESA's log is on the job's standard error.
+    in:
+      forward: Split pairs into forward and reverse/forward
+      reverse: Split pairs into forward and reverse/reverse
+      forward_only: Reproduce CSP2 v.0.9.7.8 assembly (forward reads only)
+    out:
+      - id: assembly
