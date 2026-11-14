@@ -1,0 +1,456 @@
+class: GalaxyWorkflow
+label: CSP2 screening of query assemblies against reference assemblies
+doc: |-
+  This workflow runs the CFSAN SNP Pipeline 2 (CSP2, v.0.9.7.8) in screen mode on a collection of bacterial query assemblies and a collection of reference assemblies to report, for every query and reference pair, whether the query covers the reference well enough to compare and how many SNPs separate the two after quality filtering. Every query is aligned against every reference with MUMmer, and CSP2's own scripts do the alignment parsing, quality filtering and SNP counting.
+creator:
+  - class: Person
+    identifier: https://orcid.org/0000-0002-4882-5357
+    name: Dannon Baker
+license: MIT
+release: '0.1'
+inputs:
+  Query assemblies:
+    type: collection
+    collection_type: list
+    format:
+      - fasta
+    doc: "One uncompressed FASTA assembly per query isolate; element identifier = isolate ID. An isolate that is also in Reference assemblies is treated as a reference only."
+  Reference assemblies:
+    type: collection
+    collection_type: list
+    format:
+      - fasta
+    doc: "One uncompressed FASTA assembly per reference isolate; element identifier = isolate ID. Every query is screened against every reference."
+  Minimum reference coverage (%):
+    type: float
+    optional: true
+    default: 85
+  Minimum alignment length:
+    type: int
+    optional: true
+    default: 500
+  Minimum alignment identity (%):
+    type: float
+    optional: true
+    default: 99
+  Reference contig edge distance:
+    type: int
+    optional: true
+    default: 150
+  Query contig edge distance:
+    type: int
+    optional: true
+    default: 150
+  SNP density windows:
+    type: string
+    optional: true
+    default: 1000,125,15
+    doc: Comma-separated window sizes; 0 disables density filtering.
+  Maximum SNPs per density window:
+    type: string
+    optional: true
+    default: 3,2,1
+    doc: Positionally paired with SNP density windows.
+outputs:
+  Reference IDs:
+    outputSource: Record reference IDs/output
+  SNPDiffs:
+    outputSource: Align pair and compile snpdiffs/snpdiffs
+  Raw MUMmer summary:
+    outputSource: Summarise snpdiffs/raw_mummer_summary
+  Isolate data:
+    outputSource: Summarise snpdiffs/isolate_data
+  Screening results:
+    outputSource: Screen snpdiffs/screening_results
+  Screening SNP tables:
+    outputSource: Screen snpdiffs/snp_tables
+  Screening logs:
+    outputSource: Screen snpdiffs/screening_logs
+steps:
+  Record reference IDs:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_element_identifiers/collection_element_identifiers/0.0.3
+    tool_version: 0.0.3
+    tool_shed_repository:
+      changeset_revision: 3e27acfa4830
+      name: collection_element_identifiers
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    doc: IDs of the reference isolates, one per line (source saveRefIDs / logs/Reference_IDs.txt).
+    in:
+      input_collection: Reference assemblies
+    out:
+      - id: output
+  Drop queries that are references:
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.1.0
+    doc: Source fetchData in screen mode, where the query set is every isolate that is not a reference; a no-op when the two collections share no identifier.
+    in:
+      input: Query assemblies
+      how|filter_source: Record reference IDs/output
+    out:
+      - id: output_filtered
+      - id: output_discarded
+    state:
+      how:
+        how_filter: remove_if_present
+  Pair queries with references:
+    tool_id: __CROSS_PRODUCT_FLAT__
+    tool_version: 1.0.0
+    doc: Queries x references as two parallel flat lists keyed <query>:<reference> (source to_align = query_data.combine(reference_data)).
+    in:
+      input_a: Drop queries that are references/output_filtered
+      input_b: Reference assemblies
+    out:
+      - id: output_a
+      - id: output_b
+    state:
+      join_identifier: ":"
+  Align pair and compile snpdiffs:
+    doc: Source process runMUMmer, one job per <query>:<reference> pair (dnadiff, then CSP2 compileMUMmer.py unmodified) as one authored user-defined tool from the FDA image; both isolate IDs are read from the pair's element identifier.
+    run:
+      class: GalaxyUserTool
+      id: csp2_align_pair_snpdiffs
+      version: 0.1.2
+      name: CSP2 MUMmer alignment to snpdiffs
+      description: align one query assembly to one reference assembly with MUMmer dnadiff and compile a CSP2 snpdiffs file
+      container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
+      configfiles:
+        - filename: pair.txt
+          content: |
+            ${
+              var pair = String(inputs.query_fasta.element_identifier).replace(/[\r\n\t]/g, " ");
+              var cut = pair.lastIndexOf(":");
+              return [
+                pair,
+                String(inputs.reference_fasta.element_identifier).replace(/[\r\n\t]/g, " "),
+                pair.substring(0, cut),
+                pair.substring(cut + 1),
+                inputs.query_fasta.path,
+                inputs.reference_fasta.path
+              ].join("\n") + "\n";
+            }
+      shell_command: |
+        { IFS= read -r pair && IFS= read -r reference_pair && IFS= read -r query && IFS= read -r reference && IFS= read -r query_path && IFS= read -r reference_path; } < pair.txt &&
+        if [ "$pair" != "$reference_pair" ]; then echo "Query assembly '$pair' and reference assembly '$reference_pair' are not the same pair" >&2; exit 1; fi &&
+        case "$pair" in
+          *:*) ;;
+          *) echo "Pair identifier '$pair' is not <query isolate ID>:<reference isolate ID>" >&2; exit 1 ;;
+        esac &&
+        for id in "$query" "$reference"; do
+          case "$id" in
+            ""|-*|*__vs__*|*[![:alnum:]._-]*) echo "Isolate ID '$id' from pair '$pair' is empty, starts with '-', contains '__vs__' or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
+          esac
+        done &&
+        work=`pwd` &&
+        report_id="$query"__vs__"$reference" &&
+        mkdir -p fasta mummer snpdiffs tmp &&
+        ln -s "$query_path" "fasta/$query.fasta" &&
+        ln -s "$reference_path" "fasta/$reference.fasta" &&
+        cd mummer &&
+        dnadiff -p "$report_id" "$work/fasta/$reference.fasta" "$work/fasta/$query.fasta" &&
+        cd "$work" &&
+        python /app/bin/compileMUMmer.py --query "$query" --query_fasta "fasta/$query.fasta" --reference "$reference" --reference_fasta "fasta/$reference.fasta" --mummer_dir mummer --snpdiffs_dir snpdiffs --temp_dir tmp --log_file "$report_id.log" &&
+        cp "snpdiffs/$report_id.snpdiffs" pair.snpdiffs
+      inputs:
+        - name: query_fasta
+          type: data
+          format:
+            - fasta
+          label: Query assembly
+          help: Uncompressed FASTA assembly of the query isolate. Its element identifier must be `<query isolate ID>:<reference isolate ID>`; the IDs may use only letters, digits, '.', '_' and '-', not starting with '-' or containing '__vs__'.
+        - name: reference_fasta
+          type: data
+          format:
+            - fasta
+          label: Reference assembly
+          help: Uncompressed FASTA assembly of the reference isolate, from the list parallel to the query list, carrying the same `<query isolate ID>:<reference isolate ID>` element identifier.
+      outputs:
+        - name: snpdiffs
+          type: data
+          format: txt
+          from_work_dir: pair.snpdiffs
+          label: CSP2 snpdiffs
+      help:
+        format: markdown
+        content: |
+          Runs the pairwise alignment of CFSAN CSP2 v.0.9.7.8 (process `runMUMmer`) in one job:
+          `dnadiff -p <query>__vs__<reference> <reference> <query>`, then CSP2's own
+          `compileMUMmer.py`, which reads the dnadiff report, 1-to-1 coordinates and SNP files plus both
+          assemblies and writes one `.snpdiffs` file.
+
+          Meant to be mapped over two parallel lists of assemblies whose element identifiers are
+          `<query isolate ID>:<reference isolate ID>`; the two isolate IDs are read from that identifier,
+          split at the last ':'.
+
+          The snpdiffs file is tab-delimited text: one `#` header line with the isolate IDs, assembly
+          metrics and alignment summary, `##` lines for the aligned regions, then one line per SNP, indel
+          or invalid site. The header's assembly paths are the relative labels `fasta/<isolate ID>.fasta`,
+          identical for an isolate across jobs and runs; they do not resolve outside the job.
+    in:
+      query_fasta: Pair queries with references/output_a
+      reference_fasta: Pair queries with references/output_b
+    out:
+      - id: snpdiffs
+  Summarise snpdiffs:
+    doc: Source process saveMUMmerLog (CSP2 saveSNPDiffs.py unmodified) over all snpdiffs in one job, as one authored user-defined tool from the FDA image.
+    run:
+      class: GalaxyUserTool
+      id: csp2_summarise_snpdiffs
+      version: 0.1.4
+      name: CSP2 snpdiffs summary
+      description: tabulate the alignment summary and the assembly metrics recorded in the headers of a set of CSP2 snpdiffs files
+      container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
+      configfiles:
+        - filename: snpdiffs.tsv
+          content: |
+            ${
+              return (inputs.snpdiffs.elements || inputs.snpdiffs).map(function (element) {
+                var pair = String(element.element_identifier).replace(/[\r\n\t]/g, " ");
+                var cut = pair.lastIndexOf(":");
+                return [pair, pair.substring(0, cut), pair.substring(cut + 1), element.path].join("\t");
+              }).join("\n") + "\n";
+            }
+      shell_command: |
+        tab=`printf '\t'` &&
+        if [ -z "`tr -d '\n' < snpdiffs.tsv`" ]; then echo "No snpdiffs files to summarise: no pair was aligned" >&2; exit 1; fi &&
+        mkdir -p snpdiffs &&
+        : > All_SNPDiffs.txt &&
+        while IFS="$tab" read -r pair query reference path; do
+          case "$pair" in
+            *:*) ;;
+            *) echo "snpdiffs identifier '$pair' is not <query isolate ID>:<reference isolate ID>" >&2; exit 1 ;;
+          esac
+          for id in "$query" "$reference"; do
+            case "$id" in
+              ""|-*|*__vs__*|*[![:alnum:]._-]*) echo "Isolate ID '$id' from pair '$pair' is empty, starts with '-', contains '__vs__' or has characters other than letters, digits, '.', '_' and '-'" >&2; exit 1 ;;
+            esac
+          done
+          staged="snpdiffs/$query"__vs__"$reference.snpdiffs" &&
+          ln -s "$path" "$staged" &&
+          echo "$staged" >> All_SNPDiffs.txt || exit 1
+        done < snpdiffs.tsv &&
+        python /app/bin/saveSNPDiffs.py --snpdiffs_file All_SNPDiffs.txt --summary_file Raw_MUMmer_Summary.tsv --isolate_file Isolate_Data.tsv --trim_name "" --ref_id_file '$(inputs.reference_ids.path)'
+      inputs:
+        - name: snpdiffs
+          type: data_collection
+          collection_type: list
+          format:
+            - txt
+          label: CSP2 snpdiffs files
+          help: One snpdiffs file per aligned pair, at least one. Each element identifier must be `<query isolate ID>:<reference isolate ID>`; the IDs may use only letters, digits, '.', '_' and '-', not starting with '-' or containing '__vs__'.
+        - name: reference_ids
+          type: data
+          format:
+            - txt
+          label: Reference isolate IDs
+          help: One reference isolate ID per line. Isolates listed here are marked Reference in the isolate table, all others Query. May be empty.
+      outputs:
+        - name: raw_mummer_summary
+          type: data
+          format: tabular
+          from_work_dir: Raw_MUMmer_Summary.tsv
+          label: Raw MUMmer summary
+        - name: isolate_data
+          type: data
+          format: tabular
+          from_work_dir: Isolate_Data.tsv
+          label: Isolate data
+      help:
+        format: markdown
+        content: |
+          Runs the alignment summary of CFSAN CSP2 v.0.9.7.8 (process `saveMUMmerLog`) in one job: CSP2's own
+          `saveSNPDiffs.py` over every snpdiffs file. Only the `#` header line of each file is read.
+
+          **Raw MUMmer summary** has one row per snpdiffs file: the file path, both isolate IDs, the assembly
+          metrics of both isolates and the alignment summary (aligned bases and percentages, SNP, indel and
+          invalid-site counts), with the header fields as columns.
+
+          **Isolate data** has one row per isolate: isolate ID, whether it is a Reference or a Query, assembly
+          path, contig count, assembly bases, N50, N90, L50, L90 and SHA256.
+
+          Each file is staged as `<query>__vs__<reference>.snpdiffs`, the name CSP2 gives it, with both IDs
+          read from the element identifier split at the last ':'. The `SNPDiffs_File` and `Assembly_Path`
+          columns hold job-local paths.
+    in:
+      snpdiffs: Align pair and compile snpdiffs/snpdiffs
+      reference_ids: Record reference IDs/output
+    out:
+      - id: raw_mummer_summary
+      - id: isolate_data
+  Screen snpdiffs:
+    doc: Source process screenSNPDiffs (CSP2 screenSNPDiffs.py unmodified) over all snpdiffs in one job, as one authored user-defined tool from the FDA image.
+    run:
+      class: GalaxyUserTool
+      id: csp2_screen_snpdiffs
+      version: 0.1.0
+      name: CSP2 snpdiffs screen
+      description: screen each query against its reference from a set of CSP2 snpdiffs files and report filtered SNP counts
+      container: cfsanbiostatistics/csp2:v.0.9.7.8-galaxy
+      configfiles:
+        - filename: snpdiffs.tsv
+          content: |
+            ${
+              var rows = (inputs.snpdiffs.elements || inputs.snpdiffs).map(function (element) {
+                var pair = String(element.element_identifier);
+                var cut = pair.lastIndexOf(":");
+                return [pair, pair.substring(0, cut), pair.substring(cut + 1), element.path].join("\t");
+              });
+              return rows.length ? rows.join("\n") + "\n" : "";
+            }
+        - filename: settings.txt
+          content: |
+            ${
+              return [
+                String(inputs.density_windows),
+                String(inputs.max_snps)
+              ].join("\n") + "\n";
+            }
+      shell_command: |
+        tab=`printf '\t'` &&
+        { IFS= read -r density_windows && IFS= read -r max_snps; } < settings.txt &&
+        for list in "$density_windows" "$max_snps"; do
+          case "$list" in
+            ""|*[!0-9,]*|,*|*,|*,,*) echo "'$list' is not a comma-separated list of whole numbers" >&2; exit 1 ;;
+          esac
+        done &&
+        if [ "$density_windows" != 0 ] && [ "`printf '%s' "$density_windows" | tr -cd ,`" != "`printf '%s' "$max_snps" | tr -cd ,`" ]; then
+          echo "SNP density windows '$density_windows' and Maximum SNPs per density window '$max_snps' must have the same number of entries" >&2; exit 1
+        fi &&
+        if [ ! -s snpdiffs.tsv ]; then echo "No snpdiffs files to screen: there are no query and reference pairs (is every query also a reference?)" >&2; exit 1; fi &&
+        mkdir -p snpdiffs logs tmp &&
+        : > All_SNPDiffs.txt &&
+        while IFS="$tab" read -r pair query reference path; do
+          case "$pair" in
+            *:*:*) echo "snpdiffs identifier '$pair' has more than one ':'; isolate IDs must not contain ':'" >&2; exit 1 ;;
+            *:*) ;;
+            *) echo "snpdiffs identifier '$pair' is not <query isolate ID>:<reference isolate ID>" >&2; exit 1 ;;
+          esac
+          for id in "$query" "$reference"; do
+            case "$id" in
+              ""|*[[:space:],/]*) echo "Isolate ID '$id' from pair '$pair' is empty or contains whitespace, ',' or '/'" >&2; exit 1 ;;
+              *__vs__*) echo "Isolate ID '$id' from pair '$pair' contains '__vs__', which CSP2 uses to join the two IDs in file names" >&2; exit 1 ;;
+            esac
+          done
+          staged="snpdiffs/$query"__vs__"$reference.snpdiffs" &&
+          ln -s "$path" "$staged" &&
+          echo "$staged" >> All_SNPDiffs.txt || exit 1
+        done < snpdiffs.tsv &&
+        python /app/bin/screenSNPDiffs.py --snpdiffs_file All_SNPDiffs.txt --log_dir logs --min_cov $(inputs.min_cov) --min_len $(inputs.min_len) --min_iden $(inputs.min_iden) --ref_edge $(inputs.ref_edge) --query_edge $(inputs.query_edge) --density_windows "$density_windows" --max_snps "$max_snps" --trim_name "" --output_file Screening_Results.tsv --ref_id '$(inputs.reference_ids.path)' --tmp_dir tmp &&
+        if [ ! -s Screening_Results.tsv ]; then echo "screenSNPDiffs.py finished without writing Screening_Results.tsv" >&2; exit 1; fi
+      inputs:
+        - name: snpdiffs
+          type: data_collection
+          collection_type: list
+          format:
+            - txt
+          label: CSP2 snpdiffs files
+          help: One snpdiffs file per aligned pair, at least one. Each element identifier must be `<query isolate ID>:<reference isolate ID>`; neither ID may contain ':', `__vs__`, whitespace, ',' or '/'.
+        - name: reference_ids
+          type: data
+          format:
+            - txt
+          label: Reference isolate IDs
+          help: One reference isolate ID per line. A snpdiffs file whose query is listed here and whose reference is not is screened in the reverse orientation. May be empty, in which case every file is screened as written.
+        - name: min_cov
+          type: float
+          value: 85
+          min: 0
+          max: 100
+          label: Minimum reference coverage (%)
+          help: CSP2 min_cov. A query passes the screen only if its alignments cover at least this percentage of the reference genome, before and after the length and identity filters.
+        - name: min_len
+          type: integer
+          value: 500
+          min: 0
+          label: Minimum alignment length
+          help: CSP2 min_len. SNPs are taken only from contig alignments at least this many bases long.
+        - name: min_iden
+          type: float
+          value: 99
+          min: 0
+          max: 100
+          label: Minimum alignment identity (%)
+          help: CSP2 min_iden. SNPs are taken only from contig alignments with at least this percent identity.
+        - name: ref_edge
+          type: integer
+          value: 150
+          min: 0
+          label: Reference contig edge distance
+          help: CSP2 ref_edge. SNPs within this many bases of the end of a reference contig are filtered out.
+        - name: query_edge
+          type: integer
+          value: 150
+          min: 0
+          label: Query contig edge distance
+          help: CSP2 query_edge. SNPs within this many bases of the end of a query contig are filtered out.
+        - name: density_windows
+          type: text
+          value: 1000,125,15
+          label: SNP density windows
+          help: CSP2 dwin. Comma-separated window sizes in bases; a window holding more SNPs than its entry in Maximum SNPs per density window is purged. Enter 0 to turn density filtering off.
+        - name: max_snps
+          type: text
+          value: 3,2,1
+          label: Maximum SNPs per density window
+          help: CSP2 wsnps. Comma-separated SNP counts, one per density window, in the same order.
+      outputs:
+        - name: screening_results
+          type: data
+          format: tabular
+          from_work_dir: Screening_Results.tsv
+          label: Screening results
+        - name: snp_tables
+          type: collection
+          collection_type: list
+          label: Screening SNP tables
+          discover_datasets:
+            - pattern: (?P<designation>.+)_SNPs\.tsv
+              directory: logs
+              format: tabular
+        - name: screening_logs
+          type: collection
+          collection_type: list
+          label: Screening logs
+          discover_datasets:
+            - pattern: (?P<designation>.+)\.log
+              directory: logs
+              format: txt
+      help:
+        format: markdown
+        content: |
+          Runs the screen of CFSAN CSP2 v.0.9.7.8 (process `screenSNPDiffs`) in one job: CSP2's own
+          `screenSNPDiffs.py` over every snpdiffs file, each file screened on its own.
+
+          **Screening results** has one row per snpdiffs file: both isolate IDs, the screen category, the
+          SNP count after filtering, the percentage of each genome aligned, assembly sizes, the number of
+          sites removed by each filter, and the k-mer and MUMmer statistics from the snpdiffs header. The
+          category is `Pass`, `Low_Coverage` (raw reference coverage below the minimum),
+          `Low_Quality_Coverage` (coverage below the minimum once short and low-identity alignments are
+          dropped) or `SNP_Cutoff` (more than 10,000 SNPs, indels and invalid sites). The SNP count and
+          filter columns are `NA` for every category but `Pass`. Rows are in no particular order.
+
+          **Screening SNP tables** holds one table per pair that passed and had at least one SNP in the
+          snpdiffs header: every SNP, indel and invalid site with its position in both genomes and the
+          filter that removed it (`Cat` is `SNP` for the sites that are counted). A pair that did not pass,
+          or passed with no SNP, has no table, so the collection can be empty.
+
+          **Screening logs** holds CSP2's log for every pair.
+
+          Each file is staged as `<query>__vs__<reference>.snpdiffs`, the name CSP2 gives it, with both IDs
+          read from the element identifier split at the last ':'. Tables and logs are named
+          `<query>__vs__<reference>` by CSP2 from the IDs in the snpdiffs header, after any reversal. The
+          logs hold job-local paths and a timestamp.
+    in:
+      snpdiffs: Align pair and compile snpdiffs/snpdiffs
+      reference_ids: Record reference IDs/output
+      min_cov: Minimum reference coverage (%)
+      min_len: Minimum alignment length
+      min_iden: Minimum alignment identity (%)
+      ref_edge: Reference contig edge distance
+      query_edge: Query contig edge distance
+      density_windows: SNP density windows
+      max_snps: Maximum SNPs per density window
+    out:
+      - id: screening_results
+      - id: snp_tables
+      - id: screening_logs
