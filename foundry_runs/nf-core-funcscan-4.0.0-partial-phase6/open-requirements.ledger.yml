@@ -1,0 +1,1882 @@
+ledger_version: 1
+pipeline: nextflow-to-galaxy
+run_slug: funcscan-run1
+started_by: nextflow-summary-to-galaxy-reference-data
+updated_by: nextflow-summary-to-galaxy-template
+note: >-
+  Started at phase 2: phase 1 (summarize-nextflow) is a source-summary Mold and does not carry
+  this ledger, so no upstream ledger was supplied. topology_repair is absent until the first
+  escalation from the phase 7 loop. Phase 3 (interface) added three discoveries, six gaps and one
+  dropped entry, updated the notes on three entries it narrowed, and changed no status: nothing
+  phase 2 opened is discharged by an interface brief alone - the DB input shape, the wrapper
+  rebuild capability and the pick-list exemplar all need compare-against-iwc-exemplar.
+
+  Phase 4 (data flow) added eight discoveries, nine gaps (all kind: gap) and six decisions, narrowed
+  the notes on seven entries it inherited, and closed nothing. Two of the nine gaps are blocking for
+  phase 5:
+  entries/variable-arity-fan-in-has-no-attested-galaxy-recipe and
+  entries/db-directory-input-shape-unsettled (which phase 4 narrowed further but cannot close - the
+  antiSMASH untar-versus-directory choice now has to be made at authoring time, see
+  entries/input-datatype-cannot-gate-a-step). Two entries phase 2 and phase 3 opened are now
+  narrower rather than settled: the four-sheet input shape has a concrete cost attached (identifier
+  sync, P1) and the conditional-producer output problem has a recommended shape (one label per
+  producer port). No entry is closed because nothing this phase wrote is verified against a real
+  Galaxy workflow; the six new decisions carry that as confidence, not as prose.
+
+  Phase 5 (IWC comparison) added three discoveries, five gaps and one decision, annotated six inherited
+  entries, and resolved two - the first status changes this ledger has had, since all 25 entries it
+  inherited carried status: open and the two that read as dropped do so through kind: dropped while
+  staying open. The status it introduces, status: resolved with resolved_by, is one the ledger's own
+  contract names: the artifact is specified as holding "the run's open, resolved, and surrendered
+  entries", and the entry schema already carries resolved_by and supersedes. The two resolved are
+  entries/multi-db-pick-list-no-galaxy-exemplar and
+  entries/variable-arity-fan-in-has-no-attested-galaxy-recipe, both resolved by cited corpus idiom
+  recorded in iwc-comparison-notes.md section 3.4 rather than by a built workflow, so each carries its
+  scope limit and its reopen condition in its own note. The six annotated entries gained corpus
+  measurements and stayed open, including both entries phase 4 marked blocking for this phase: one is
+  resolved, the other (entries/db-directory-input-shape-unsettled) the corpus cannot answer. Nothing
+  phase 2, 3 or 4 wrote was edited, and the four held-for-operator-decision recommendations are
+  untouched; two of them are promoted-output questions that phase 5 found the corpus has an opinion
+  about, and that is reported in the notes rather than acted on here.
+
+  Phase 6 (template) added four discoveries, six entries, six decisions and two brief-change
+  recommendations; it appended a phase-6 paragraph to the notes of seven entries it inherited
+  and changed no status. The reason nothing closes: the artifact this phase wrote is a draft,
+  so every question an entry poses that a real wrapper or a real Galaxy run answers is still
+  open - the entry that phase 5 said the corpus could not answer (entries/db-directory-input-
+  shape-unsettled) is now carried in the user-facing form as sixteen `type: data` inputs with
+  no `format`, which narrows it but does not answer it. Three of the six new entries are
+  blocking for advance-galaxy-draft-step: the DB-or-rebuild fork now lives inside twelve
+  consumer wrappers (entries/db-or-rebuild-fork-cannot-gate), MultiQC's three non-dataset
+  inputs have no producer in this workflow (entries/multiqc-input-fragments-have-no-producer),
+  and the promoted summary tables vary their datatype with run_taxa_classification
+  (entries/arg-summary-producer-is-input-dependent). One is blocking for the test phases
+  instead and is the one that can still change the topology: entries/preannotated-complement-
+  reading-diverges-from-source. Both new recommendations are held, not applied, so the phase-3
+  brief and the four recommendations the operator is still reviewing are byte-unchanged.
+
+discoveries:
+  - id: funcscan-pulls-every-db-from-the-network
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    evidence: >-
+      All eleven reference_rebuilds[] builders are network pulls: bakta_db download,
+      amrfinder_update, deeparg downloaddata, download-antismash-databases, deepbgc download,
+      run_dbcan database --aws_s3, mmseqs databases, download_bigslice_hmmdb,
+      bin/ampcombi_download.py, curl of protein_annotation_interproscan_db_url, and a
+      hard-coded https://card.mcmaster.ca/latest/data fetch at arg.nf:97.
+
+  - id: ten-of-eleven-db-consumers-run-per-sample
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    evidence: >-
+      AMPCOMBI2_PARSETABLES, BAKTA_BAKTA, AMRFINDERPLUS_RUN, RGI_MAIN, DEEPARG_PREDICT,
+      ANTISMASH_ANTISMASH, DEEPBGC_PIPELINE, RUNDBCAN_CAZYMEANNOTATION, INTERPROSCAN and
+      MMSEQS_TAXONOMY each take a per-sample channel alongside the database; only
+      BIGSLICE_BIGSLICE takes a .collect()-ed input (bgc.nf:135-148). The source deliberately
+      hoists each download into its own process and first()-s the result so it runs once.
+    impact: >-
+      A Galaxy wrapper that rebuilds on absence would re-pull a full public database once per
+      sample, so the mapping note's ~3-rebuild threshold rules out in-tool rebuild for these.
+
+  - id: several-tools-carry-their-db-inside-the-env
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    evidence: >-
+      AMPlify, ampir, Macrel, GECCO, argNorm, ABRicate's default databases and fARGene expose
+      no database param - only *_skip_* flags - so their reference data is installed inside the
+      conda env / container their modules declare. Nothing in reference_assets[] can show this.
+    impact: >-
+      The Galaxy wrapper must ship the same environment, or data the Nextflow user never had to
+      supply becomes a Galaxy input.
+
+  - id: funcscan-declares-almost-no-path-types
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    evidence: >-
+      Only input, outdir and multiqc_config carry a format keyword across 220 params; every
+      database param is a bare type=string. Asset path-ness in the summary is name- and
+      usage-derived (reference_assets[] confidence medium), and asset_kind carries no
+      format_hint for them.
+    impact: >-
+      Datatype choice for the Galaxy inputs cannot be read off the source; it has to be argued
+      per asset (brief section 7), and the interface deliberately leaves format unset for the
+      nine directory-shaped database inputs rather than guess.
+
+  - id: funcscan-publishes-through-config-not-emits
+    raised_by: nextflow-summary-to-galaxy-interface
+    evidence: >-
+      NFCORE_FUNCSCAN emits one channel (multiqc_report); FUNCSCAN emits multiqc_report plus
+      versions. Everything else reaches the user through 61 publishDir declarations, all of them
+      withName: selectors in conf/modules.config and none inline in a process - processes[].
+      publish_dir is null for all 55 processes, so only publish_dir_matches carries them.
+      25 of the 61 are conditional (params.save_db x13, params.save_annotations x4, plus
+      run_taxa_classification, run_protein_annotation, bgc_savefilteredcontigs,
+      arg_rgi_savejson, arg_rgi_savetmpfiles, arg_fargene_savetmpfiles) and GUNZIP's is
+      enabled: false (13 + 4 + 2 + 6 = 25).
+    impact: >-
+      Galaxy has no publishing step, so none of those 61 result sets becomes a workflow output
+      unless the interface asks for it explicitly; conversely the 36 unconditional ones need no
+      work at all, because step outputs already land in the history.
+
+  - id: headline-summary-tables-are-published-by-a-bgzip-step
+    raised_by: nextflow-summary-to-galaxy-interface
+    evidence: >-
+      MERGE_TAXONOMY_AMPCOMBI, MERGE_TAXONOMY_HAMRONIZATION and MERGE_TAXONOMY_COMBGC each carry
+      a publishDir whose saveAs is { _ -> null }, i.e. deliberately voided, and the file the user
+      receives is the output of the aliased AMP_/ARG_/BGC_TABIX_BGZIP steps (canonical
+      TABIX_BGZIP, output + gzi ports, ext.prefix set to hamronization_complete_summary_taxonomy
+      in conf/modules.config). HAMRONIZATION_SUMMARIZE's own publishDir carries
+      saveAs: { params.run_taxa_classification == false ? it : null }, so the combined ARG report
+      is hamronization_combined_report.tsv when taxa classification is off and
+      hamronization_complete_summary_taxonomy.tsv.gz when it is on.
+    impact: >-
+      A promoted output must name the bgzip step, not the computing step, and is conditional on
+      run_taxa_classification with two different producing ports and two formats.
+
+  - id: three-quarters-of-the-param-surface-is-plain-tool-knobs
+    raised_by: nextflow-summary-to-galaxy-interface
+    evidence: >-
+      Bucketing all 220 params: 1 sample sheet, 15 reference/annotation data params, 9 reference
+      selectors, 27 workflow-shape controls, 4 MultiQC report-config params, 23 runtime/publish/
+      CLI/report-transport params, and 141 tool knobs (annotation_* 40, bgc_* 40, arg_* 27,
+      amp_* 22, taxa_classification_* 10, protein_annotation_* 2). Of the 141, 69 are booleans
+      and 8 carry closed enums; none appears in a workflow.conditionals[] guard, none is a path,
+      and only 8 change which files a command writes.
+    impact: >-
+      Exposing the whole surface would put 199 fields on one Galaxy form to reach the 58 params
+      that decide what runs and what data is needed; the interface pins 133 of them at their
+      nextflow.config defaults instead (entries/tool-surface-pinned-at-source-defaults).
+
+  - id: annotation-tool-switch-changes-the-step-count
+    raised_by: nextflow-summary-to-galaxy-interface
+    evidence: >-
+      params.annotation_tool selects among prodigal / pyrodigal / prokka / bakta, and the branches
+      are not one-for-one swaps: annotation.nf:39-44 runs the Pyrodigal module twice under two
+      include aliases (PYRODIGAL_GBK with "gbk", PYRODIGAL_GFF with "gff") and then four GUNZIP
+      aliases over its outputs, while BAKTA_BAKTA yields 10 result ports (+versions) and PROKKA 12
+      (+versions) from a single call.
+    impact: >-
+      A single promoted annotation output cannot follow the switch, and the data-flow brief has to
+      wire a different number of steps per branch; see entries/conditional-output-producer-unexpressible.
+
+  - id: four-of-seven-screening-subworkflows-are-data-sinks
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    evidence: >-
+      At the top level only ANNOTATION (faa, gff, gbk, multiqc_files, versions), TAXA_CLASS
+      (sample_taxonomy, versions) and PROTEIN_ANNOTATION (tsv, versions) carry data onward. AMP,
+      ARG, BGC and CAZYME contribute versions and nothing else (funcscan.nf:251,271,297,329,352,376),
+      and CAZYME declares no emit: block at all (cazyme.nf:11-75). ANNOTATION.out.fna and
+      AMP.out.{ampcombi_summaries, ampcombi_summary_count} are emitted and never read.
+    impact: >-
+      Four of the seven lanes have no outgoing Galaxy edge, so nothing downstream can notice that
+      they produced nothing, and their whole scientific payload reaches the user through publishDir
+      alone - which is why phase 3's promotion list is load-bearing rather than cosmetic, and why a
+      test plan cannot assert on those lanes through any downstream step.
+
+  - id: most-of-the-edge-list-is-a-split-then-reassemble-cycle
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    evidence: >-
+      Over workflows/funcscan.nf plus the seven local subworkflows (8 files): 15 .join(), 7
+      .multiMap{}, 6 .groupTuple(), 2 .transpose(), 29 non-versions .mix() and 18
+      .filter{...isEmpty()} sites. funcscan.nf:70-96 is the archetype - each row's four slots are
+      flattened into tagged events, transposed, gunzipped, groupTuple()d back together and then
+      re-split by filename-extension sniffing (files.find { it.toString().tokenize('.').last()
+      .matches('fasta|fas|fna|fa') } at :86), with [] filling any slot the row did not carry.
+    impact: >-
+      Under the four aligned sample_sheet collections the slot label is membership, so the split and
+      the reassembly both disappear (decisions/per-collection-mapping-replaces-split-and-reassemble).
+      The corollary is the real risk: nothing in the summary's edge list says which joins are
+      load-bearing reshape and which are plumbing, so a translator working from edges alone builds
+      reshape steps for plumbing.
+
+  - id: emptiness-is-tested-per-consumer-and-the-warning-dies-there
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    evidence: >-
+      18 .filter { file != [] && file.isEmpty() } sites, distributed per consumer rather than once
+      per collection - faa before InterProScan, AMP, ARG, BGC and CAZYME, gbk before AMP and BGC,
+      taxonomy tsv before AMP/ARG/BGC, harmonised tsv before argnorm - each with its own log.warn
+      ("... will not be processed by ..."), 23 log.warn sites in total across the 8 wiring files.
+      Three distinct states are conflated by that one idiom: slot not supplied ([]), file present but
+      0 bytes (Path.isEmpty()), and file present but carrying no records
+      (AMPCOMBI2_COMPLETE.out.tsv.filter { tsv -> tsv.countLines() > 1 } at amp.nf:138).
+    impact: >-
+      A faithful translation repeats the filter at each consumer (~18 filter steps, not one), and
+      Galaxy has no user-visible per-element skip notice, so a sample that silently disappears from
+      one lane's output is unexplained. See entries/per-element-skip-warnings-have-no-galaxy-surface.
+
+  - id: interproscan-output-is-rewritten-by-groovy-before-anyone-uses-it
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    evidence: >-
+      protein_annotation.nf:37-44 reads the InterProScan tsv back with new File(tsv_path).readLines()
+      and appends two literal 'NA' fields to every line, writing
+      ${workflow.workDir}/tmp/${meta.id}_interproscan.faa.tsv, then emits the rewritten file as the
+      subworkflow's tsv. The source comment gives the reason: "INTERPROSCAN 5.72-103.0 only includes
+      13 columns and not 15 which ampcombi expects".
+    impact: >-
+      This is the only Groovy closure in the pipeline that transforms file bytes, it is invisible in
+      summary-nextflow.json (subworkflow Groovy is not a process, so no script_excerpt carries it),
+      and the promoted interproscan_table must bind to the rewritten table and not to the tool's own
+      output - promoting the tool output would publish a table that AMPcombi rejects.
+
+  - id: dead-wiring-in-the-bgc-warning-block
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    evidence: >-
+      bgc.nf:182-189 joins ch_bgcresults_for_combgc to fastas with remainder: true and filters the
+      result to emit a log.warn for samples with no BGC results; the filtered channel is never read
+      and COMBGC is invoked on the unfiltered channel at bgc.nf:191.
+    impact: >-
+      Zero Galaxy nodes. Recorded so that the phase 6 template does not materialise a join and a
+      filter that the source itself discards, and so the missing "no BGC hits for sample X" notice is
+      attributed to the same gap as the other 22 warnings rather than mistaken for lost wiring.
+
+  - id: multiqc-report-carries-no-screening-results
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    evidence: >-
+      ch_multiqc_files starts empty at funcscan.nf:60 and receives exactly four things: the collated
+      versions YAML (:426), workflow_summary_mqc.yaml (:429), methods_description_mqc.yaml (:434)
+      and, under the wider guard at :436, ANNOTATION.out.multiqc_files. No per-tool multiqc output
+      port is collected anywhere - grep for "out.multiqc" across subworkflows/local/ returns only
+      that ANNOTATION edge. MultiQC's only argument is --title from multiqc_title
+      (conf/modules.config:21-28).
+    impact: >-
+      The one workflow output funcscan emits describes software versions, the parameter summary, a
+      methods blurb and Prokka/Bakta statistics - and says nothing about AMP, ARG, BGC, CAZYME or
+      taxa results. Phase 9 must not treat multiqc_report.html as a scientific checkpoint, and this
+      is the concrete reason phase 3 declined to judge a run by it.
+
+  - id: versions-collation-and-parameter-summary-have-no-galaxy-producer
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    evidence: >-
+      70 ch_versions.mix() sites feed softwareVersionsToYAML(...).collectFile(storeDir:
+      "${outdir}/pipeline_info", name: 'nf_core_funcscan_software_mqc_versions.yml', sort: true) at
+      funcscan.nf:414-421; paramsSummaryMap(workflow, parameters_schema: ...) ->
+      paramsSummaryMultiqc(...) -> collectFile('workflow_summary_mqc.yaml') at :427-429; and
+      methodsDescriptionText(...) -> collectFile at :430-434. All three are nf-core helper functions
+      over the live workflow object, and the versions channel also mixes Path values with
+      (process, tool, version) triples, separated by branch { versions_file: entry instanceof Path }
+      at :397-402.
+    impact: >-
+      Galaxy keeps versions per job and has no workflow-level versions channel, no heterogeneous
+      channel to split by type, and no step that can read the resolved parameter set and run
+      metadata. So the promoted versions output that interface brief section 10.2 lists has no
+      producer node as specified - an interface delta (data-flow brief section 17.1), not a wiring
+      problem the template can solve.
+
+  - id: two-gating-decisions-are-channel-level-not-process-level
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    evidence: >-
+      funcscan.nf:143 (stamp gff_type: 'prodigal' onto newly-annotated samples when
+      run_cazyme_screening && !cazyme_skip_dbcan && (!dbcan_skip_cgc || !dbcan_skip_substrate)) and
+      funcscan.nf:163 (build ch_prepped_input_long only when run_bgc_screening) are parameter guards
+      that change a metadata field and a channel respectively; neither appears among the 13
+      workflow.conditionals[] rows in summary-nextflow.json, which are attributed to process names
+      in affects[] and so have nowhere to record a guard that invokes no process.
+    impact: >-
+      A translator working from the summary alone drops both: the CAZYME lane loses the gff_type
+      value it hard-requires (cazyme.nf:44 skips a sample whose meta.gff_type is missing), and the
+      long-contig branch loses its own gate. Both are re-added in the data-flow brief section 10; the
+      detector gap itself is filed in the feedback ledger.
+
+  - id: corpus-gates-live-in-parameter-space
+    raised_by: compare-against-iwc-exemplar
+    evidence: >-
+      125 gated steps across 29 of 133 IWC workflows. Every one spells its guard as the literal
+      when: $(inputs.when) and carries the value's provenance in its when input connection, resolved to
+      {id, output_name} in the legacy JSON; 42 are fed directly by a workflow input and 83 by a computed
+      step - map_param_value 47, a gated subworkflow's own when 32, param_value_from_file 2, pick_value
+      2. Legacy type: conditional steps: 0 in the whole corpus, and 0 negated when: expressions.
+    impact: >-
+      Settles the construction question the data-flow brief could only infer. A Galaxy gate is a
+      connected boolean plus a self-reference, it may be fed by another step's output, and chaining gates
+      through a helper step is the majority case rather than the exception - which is the construction
+      entries/data-derived-gate-needs-nonemptiness-threshold said no note described. It also bounds that
+      inference: every computed gate in the corpus is derived from a *value*, never from a *dataset*.
+
+  - id: corpus-inverts-gates-in-step-space-with-two-pick-values
+    raised_by: compare-against-iwc-exemplar
+    evidence: >-
+      The exemplar expresses "run the ARG-specific clustering only when the full-catalogue flag is
+      false" as two pick_value steps: a gated step whose state is pick_style first_or_default with
+      pick_from [false] and default_value true, feeding an ungated step whose pick_from value is a
+      ConnectedValue and whose default_value is likewise true; that second step's boolean_param then
+      feeds two gated tool steps and one gated subworkflow. No gate in 133 workflows is written as a
+      negated expression, and 24 workflows pair pick_value with at least one gated step.
+    impact: >-
+      funcscan's skip_* params (arg_skip_deeparg, dbcan_skip_cgc, cazyme_skip_dbcan, ...) are inverted
+      guards, so each costs this two-step chain rather than one when: string - a step-count effect the
+      data-flow brief's 11-gate count does not include. It also bears on the held
+      brief_change_recommendations/annotation-tool-override-belongs-on-the-form: the corpus never puts a
+      derived value of any kind into a gate, let alone a tool identity chosen by another input.
+
+  - id: multiqc-wrapper-offers-fixed-numbered-result-slots
+    raised_by: compare-against-iwc-exemplar
+    evidence: >-
+      The exemplar's multiqc 1.35+galaxy4 step exposes seven independent optional slots,
+      results_0..results_6, each a nested software_cond group holding an input plus an optional software
+      label, wired to five different producers including a collapse_dataset output and an argNorm report.
+      In bacterial_genomics/amr_gene_detection the producers are tooldistillator and
+      tooldistillator_summarize, and both of those results are promoted as well.
+    impact: >-
+      Gives the report lane a hard number to design against: one MultiQC step takes a fixed small number
+      of separately-labelled inputs, so funcscan's 61 result sets cannot be reported per-lane without an
+      aggregation step (the corpus's Tooldistillator route) or several MultiQC steps. The slot count is
+      wrapper-version-specific, so the count for whatever phase 7 picks must be read from the wrapper.
+
+  - id: ampcombi2-parsetables-takes-a-six-argument-tuple
+    raised_by: nextflow-summary-to-galaxy-template
+    evidence: >-
+      subworkflows/local/amp.nf:96-103 invokes AMPCOMBI2_PARSETABLES(input, faa, gbk,
+      params.amp_ampcombi_db_id, params.amp_ampcombi_db, interpro): six positional ports,
+      which the module declares as amp_input, faa_input, gbk_input, opt_amp_db, opt_amp_db_dir
+      and opt_interproscan. The hits side reaches the one `amp_input` port through
+      groupTuple().join(faa).join(gbk).join(interpro).multiMap, so an element carries 1-4 hit
+      files for one sample, while the two database ports are workflow values, not per-sample
+      data.
+    impact: >-
+      Settles the shape the data-flow brief left as a candidate list for merge point M1: the
+      AMPcombi2 fan-in is one four-axis bundle per sample (sample x {hits} aligned with faa,
+      gbk and interpro), so the flat `multiple: true` reading is out for this consumer and the
+      two database ports must stay outside the collection. comBGC is unaffected - its
+      ext.prefix shows it re-deriving the sample from the filename - so the flat option stays
+      live there.
+
+  - id: annotation-gunzips-two-arms-and-only-two-arms-emit-multiqc-inputs
+    raised_by: nextflow-summary-to-galaxy-template
+    evidence: >-
+      subworkflows/local/annotation.nf:41-44 gunzips PYRODIGAL_GBK.out.faa, .fna, .annotations
+      and PYRODIGAL_GFF.out.annotations; :60-63 mirrors that for the prodigal arm
+      (amino_acid_fasta, nucleotide_fasta, gene_annotations). Of the four annotation tools,
+      only prokka (out.txt) and bakta emit a file MultiQC consumes.
+    impact: >-
+      Sizes the subworkflow this phase had to instantiate: 19 inner steps, 8 of them gunzip,
+      and a report contribution that is a two-slot pick (prokka, bakta) per instance. A
+      pyrodigal-only or prodigal-only run therefore contributes nothing to the MultiQC report
+      even though it runs the heaviest stage, which is the second reason the report lane is
+      thin (the first is entries/multiqc-input-fragments-have-no-producer).
+
+  - id: the-multiqc-guard-is-not-the-annotation-guard
+    raised_by: nextflow-summary-to-galaxy-template
+    evidence: >-
+      funcscan.nf:126 gates ANNOTATION on (run_arg_screening && !arg_skip_deeparg) ||
+      run_amp_screening || run_bgc_screening || run_cazyme_screening. funcscan.nf:436 gates
+      the ANNOTATION-to-MultiQC connection on (run_arg_screening && !arg_skip_deeparg) ||
+      (run_amp_screening && (amp_run_hmmsearch || !amp_skip_amplify || !amp_skip_ampir)) ||
+      run_bgc_screening.
+    impact: >-
+      One logical question, two different predicates 310 lines apart, so the template cannot
+      write one `when:` string for both: 12 gated steps carry the ANNOTATION gate and the
+      report lane carries the MultiQC one. The difference is observable, not cosmetic - the
+      MultiQC guard is false where the ANNOTATION guard is true in two cases, a cazyme-only
+      run (no cazyme term) and an AMP run with hmmsearch off and both amplify and ampir
+      skipped (three extra sub-conditions). The draft reproduces both rather than merging
+      them.
+
+  - id: branch-label-readings-conflict-for-preannotated-rows
+    raised_by: nextflow-summary-to-galaxy-template
+    evidence: >-
+      funcscan.nf:97-100 is `branch { preannotated: gff != [] || gbk != []; fastas: true }`.
+      :106 and :118 feed ch_input_for_annotation from `.fastas`; :154-155 and :167 then
+      `.mix(ch_intermediate_input.preannotated)` back in, under the comment at :139 "Mix back
+      the preannotated samples with the newly annotated ones". assets/schema_input.json
+      requires sample and fasta on every row and adds only dependentRequired protein<->gbk,
+      gff->protein, so a pre-annotated row always carries a FASTA.
+    impact: >-
+      Whether the map form's `fastas: true` is a catch-all or an always-true condition decides
+      whether a pre-annotated sample is annotated once (complement reading, matching the
+      comment) or reaches every lane twice under one identifier (non-exclusive reading,
+      matching the operator's documented semantics, which could not be executed in this run).
+      The two readings are not interchangeable in Galaxy, where a collection cannot hold two
+      elements with the same id, so the fix under the non-exclusive reading is an extra
+      collapse step per lane and not a flipped predicate. See entries/preannotated-complement-
+      reading-diverges-from-source.
+
+entries:
+  - id: db-directory-input-shape-unsettled
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    unmet: "A Galaxy input shape for the eleven multi-file reference databases/directories"
+    missing: >-
+      Neither packaged note picks between a directory-typed input, one uploaded archive dataset
+      unpacked by a first step, and a multiple:true file list for reference data; no IWC
+      exemplar is cited. Provisional default recorded as decisions/db-inputs-as-uploaded-archives,
+      confidence low.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Close at compare-against-iwc-exemplar / discover-shed-tool by citing a wrapped tool that
+      takes a database argument, and stating the shape its wrapper accepts. Phase 3 narrowed but
+      did not close this: it left format unset on all nine directory-shaped DB inputs rather than
+      hard-code a low-confidence choice into the user-facing form, so the shape question now
+      blocks the template's inputs: block, not just the brief.
+
+      Phase 4 narrowed it a second time and still cannot close it. Two of the eleven assets turn out
+      to have a shape test inside the source itself (antiSMASH tarball-vs-directory-vs-absent at
+      bgc.nf:39-46, CARD processed-vs-raw by filename at arg.nf:109) and Galaxy cannot evaluate either,
+      so those two shapes must be fixed by the author now - see
+      entries/input-datatype-cannot-gate-a-step and the two interface deltas in data-flow brief
+      section 17. The remaining nine are unchanged and still need a cited wrapper.
+
+      Phase 5 searched the corpus for it and the result is negative, so it stays open as an authoring-time
+      decision: no workflow in 133 passes a directory, and no collection-typed workflow input exists in any
+      shape but list (87) and list:paired (37). Database inputs are text params 44 times to untyped
+      data_input 12 times, so the corpus convention is "the tool owns the database" - the opposite posture to
+      this run's decisions/db-inputs-as-uploaded-archives - and it says nothing about which shape a Galaxy
+      antiSMASH or dbCAN wrapper takes. Cite the wrapper at discover-shed-tool / advance-galaxy-draft-step;
+      the corpus cannot answer this one.
+
+      Phase 6 moved the question from the brief into the artifact and still cannot close it:
+      the draft declares every one of the sixteen reference inputs as `type: data` with no
+      `format`, so the unset shape the operator chose in phase 3 is now what a user sees on
+      the form. The two shape-test assets the entry names did get their author-time fixes
+      (antiSMASH is always an uploaded tar.gz through bgc_untar_antismash_db; CARD carries
+      arg_rgi_db_is_processed), which is why the entry now covers the remaining nine plus the
+      question of what a directory output even is - see entries/directory-output-has-no-
+      dataset-carrier. The cited wrapper is still the way to close it, and phase 7 is where a
+      wrapper is in hand.
+
+  - id: wrapper-rebuild-capability-unverified
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    unmet: "Build-on-absence behaviour for the consumer wrappers of the eleven databases"
+    missing: >-
+      The v1 posture assumes a wrapper can rebuild a missing index; the mapping note names
+      discovery of that capability as an open gap and gives no way to check it. Two builders are
+      additionally not the tool's own capability at all and cannot be inherited:
+      AMP_DATABASE_DOWNLOAD (pipeline-vendored bin/ampcombi_download.py) and INTERPROSCAN_DATABASE
+      (curl + tar of a user-repointable URL).
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Per-sample multiplicity (discoveries/ten-of-eleven-db-consumers-run-per-sample) makes this
+      load-bearing rather than theoretical.
+
+      Phase 4 pins where the answer has to land in the graph: each of the eleven assets sits in front
+      of a pick_value-style node whose inputs are the workflow input and the gated rebuild step, so the
+      rebuild is either a step in its own right or nothing - it cannot be hidden inside the consumer's
+      wrapper without deleting that node, and deleting it turns "optional input" into "required input".
+      Two of the eleven are then decided by the input's shape rather than by the wrapper, because the
+      source's decision to rebuild inspects the uploaded file (entries/input-datatype-cannot-gate-a-step):
+      antiSMASH and CARD.
+
+      Phase 6 made this the heaviest unverified assumption in the workflow rather than a
+      theoretical one: decisions/reference-fork-resolved-inside-consumer-wrappers deletes the
+      builder steps, so twelve consumer steps now have to rebuild or download on absence
+      themselves, and entries/db-or-rebuild-fork-cannot-gate is the record of why they have no
+      alternative drawn. Still open by construction - only a wrapper XML or a real run answers
+      it.
+
+  - id: multi-db-pick-list-no-galaxy-exemplar
+    status: resolved
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    unmet: "A worked Galaxy shape for 'user picks 0..N databases, each gating its own branch'"
+    missing: >-
+      Named as an unresolved representation gap by nextflow-to-galaxy-reference-data-mapping:
+      gxformat2 conditional + optional-input territory with no known-good exemplar at this scale
+      (7 stage/tool toggles, 11 optional database inputs, 9 selector params here).
+    resolved_by: compare-against-iwc-exemplar
+    supersedes: null
+    note: >-
+      Phase 3 fixed the interim shape and it is now concrete: 61 inputs total - one required
+      input_fasta sample_sheet plus three optional sample_sheet inputs, 15 optional data inputs,
+      8 selectors, 25 shape controls, 8 save flags, multiqc_title - with all gating carried by
+      when: expressions on the steps and stated in help text, never by requiredness. Still open
+      because nothing here is known to work: compare-against-iwc-exemplar should test it against
+      a corpus workflow with conditional optional inputs at non-trivial scale.
+
+      Phase 4 makes the scale precise and splits the question in two, because the same optionality
+      recurs one layer in. At the input surface it is 7 stage toggles, 11 optional database inputs
+      feeding 11 pick_value-style forks, and 26 when: strings of which 24 spell one derived tool-choice
+      test. At the collection surface it is worse and is the version worth searching for: four
+      materialised fan-ins whose contributor count varies with those same toggles
+      (entries/variable-arity-fan-in-has-no-attested-galaxy-recipe), two of them feeding one step with
+      a per-sample list of a variable number of files. A corpus workflow that gates a step on an input
+      and then has to gather whatever the skipped steps did not produce would answer both; one that
+      merely gates steps answers neither.
+
+      Resolved at phase 5 by corpus evidence, inside a scope stated here so the resolution cannot be
+      over-read. Settled: the pick-list half. In
+      microbiome/metagenomic-genes-catalogue four database inputs are workflow inputs of type string whose
+      option list is resolved inside the tool, and its test fixture passes option-like values
+      (amrfinderplus_V4.2_2026-05-15.1, resfinder, staramr_downloaded_07042025_...);
+      metagenomic-raw-reads-amr-analysis and amr_gene_detection repeat it for AMRFinderPlus and ABRicate.
+      Corpus-wide, of the 57 inputs whose label names a database or index, 44 are parameter_input text, 12
+      are untyped data_input and none is a collection. So "user picks a database from a list, per tool, and
+      each pick gates its own branch" is a shape real IWC workflows ship with, and
+      decisions/db-selectors-are-select-options is corroborated rather than provisional; the gating around it
+      is ordinary step-level when: (125 gated steps in 29 of 133 workflows, 42 of them fed straight from a
+      form boolean), which is the scale this entry called unprecedented.
+      Not settled, and why the companion entry below carries the same limit: the gathering half. The corpus
+      answers "collect whatever the skipped steps produced" with three recipes, none of them demonstrated
+      over four heterogeneous screening lanes, and no corpus workflow has a sample-sheet-shaped input at all
+      (entries/no-sample-sheet-input-precedent-in-corpus).
+
+  - id: container-bundled-databases
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    unmet: "Reference data for AMPlify, ampir, Macrel, GECCO, argNorm, ABRicate defaults and fARGene"
+    missing: >-
+      These expose no database param in the source, so nothing in the summary tells a Galaxy
+      designer where their data comes from; it is installed inside the module env. Whether the
+      Shed wrapper chosen for each carries the same data is unknown until the tool is picked.
+    resolved_by: null
+    supersedes: null
+    note: "Closes per tool at discover-shed-tool, by checking the wrapper's env against the module's."
+
+  - id: hmm-models-required-when-branch-enabled
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    unmet: "amp_hmmsearch_models / bgc_hmmsearch_models present exactly when the search branch is on"
+    missing: >-
+      The source hard-errors when the branch runs without them (amp.nf:76, bgc.nf:157), so they
+      are conditionally required, but Galaxy's required-only-when-conditional input affordance is
+      weak - the same weakness the mapping note records for cohort/panel data.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Phase 3 disposition: both exposed as optional hmm3 multiple:true inputs with the requirement
+      in help text, not silently dropped. The behaviour difference is now explicit - Nextflow fails
+      with a written message, the Galaxy workflow fails with a tool error - and if that is judged
+      unacceptable the only lever is a validation step in front of the branch.
+
+      Phase 4 adds a shape consequence: the uploaded models are not merely an optional input, they are
+      a genuine second collection axis. amp.nf:86 and bgc.nf:168 cross the per-sample protein list with
+      every uploaded model file, so a multiple:true upload there has to become a list:list (sample x
+      model) that is flattened back onto the sample axis afterwards (N25) - unlike
+      arg_fargene_hmmmodel, whose comma-joined class list collapses into one tool parameter
+      (decisions/fargene-class-axis-becomes-a-tool-parameter). So this input needs an answer to
+      entries/nested-collection-dot-product-unattested as well as to the requiredness question.
+
+  - id: mmseqs-db-id-has-no-option-list
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    unmet: "An option list for taxa_classification_mmseqs_db_id"
+    missing: >-
+      Free-string param (default Kalamari, no enum in nextflow_schema.json) that names which
+      database mmseqs databases downloads. A Galaxy select needs enumerated options; the source
+      does not carry them.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Interface kept it a text input with the default Kalamari, per the earlier instruction not to
+      invent a list. Either enumerate from the mmseqs server listing at wrapper-selection time or
+      leave it text.
+
+  - id: db-asset-sizes-unmeasured
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    unmet: "Realistic upload guidance for the eleven database inputs"
+    missing: "No size, download time or storage figure appears anywhere in the source tree."
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Measure at test-data resolution before telling a user to upload one; the input help text
+      cannot be written honestly until then, so the docs cost is now scheduled, not avoided.
+
+  - id: testdata-base-path-not-carried
+    status: open
+    kind: dropped
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    units: "1 param (pipelines_testdata_base_path) across 8 conf/test*.config files"
+    because: >-
+      It is the base URL/local path for the pipeline's own nf-test fixtures, referenced only from
+      conf/test.config, conf/test_full.config, conf/test_minimal.config, conf/test_bakta.config,
+      conf/test_bgc_bakta.config, conf/test_bgc_prokka.config, conf/test_bgc_pyrodigal.config and
+      conf/test_cazyme_pyrodigal.config - never from a process or subworkflow body. Test-fixture
+      resolution is phase 8's job, not the reference-data surface.
+    unmet: "A single switch for redirecting fixture downloads"
+    missing: "Nothing at run time - Galaxy workflow tests reference their own test-data directly."
+    resolved_by: null
+    supersedes: null
+    note: ""
+
+  - id: samplesheet-row-coupling-unexpressible
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-interface
+    unmet: >-
+      Per-row constraints between the samplesheet's path columns: dependentRequired
+      {protein: [gbk], gbk: [protein], gff: [protein]} and uniqueItems: true
+    missing: >-
+      Once the row is split across four sample_sheet collections (entries/
+      samplesheet-per-row-optional-slots) there is no place to state that protein and gbk must
+      appear together or that gff implies protein; Galaxy column restrictions and the
+      regex/in_range/length validator allowlist are per-column, and nf-schema's richer validation
+      has no target expression at all. uniqueItems on the sheet likewise has no equivalent, so a
+      duplicate row that nf-schema rejects now runs.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Downgraded to prose in the input help text, which is the mapping note's prescribed downgrade
+      for nf-schema validation beyond the allowlist. If a validation step in front of the analysis
+      is judged worth one extra step, this is the entry that justifies it.
+
+      Phase 4 shows the cost the four-sheet shape actually pays, which is the same gap seen from the
+      data-flow side: every multi-slot consumer (AMPcombi2, antiSMASH, comBGC, EasyCGC/EasySubstrate)
+      can only align the four sheets by element_identifier, so identifier sync becomes placeholder P1
+      and a row that carries gbk without protein - admissible in a Galaxy sheet, rejected by
+      dependentRequired in Nextflow - reaches those steps as a half-filled tuple rather than failing at
+      the form. Two concrete mitigations, neither one a schema feature: derive the pre-annotated split
+      from the union of the GBK and GFF sheets instead of trusting the coupling
+      (data-flow brief section 6), and keep the prose warning about coupling next to all four inputs,
+      not only next to the one that requires it.
+
+  - id: samplesheet-per-row-optional-slots
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-interface
+    unmet: >-
+      A single Galaxy input whose per-row dataset set varies between {fasta}, {fasta, protein,
+      gbk} and {fasta, protein, gbk, gff}
+    missing: >-
+      sample_sheet:record is the variant the sample-sheet note recommends for heterogeneous typed
+      per-row artifacts, but a record has a fixed named member set for every element, so the
+      fasta-only row - the only row the nf-schema requires besides sample - cannot be represented;
+      and record is the one variant with allow_implicit_mapping False, so every mapped step would
+      need an explicit slot extraction. The note's mapping table offers no shape for
+      per-row-optional heterogeneous slots, and no packaged note or corpus exemplar settles it.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Phase 3 chose four parallel sample_sheet inputs (input_fasta required; input_protein,
+      input_gbk, input_gff optional), aligned by element_identifier, mirroring the source's own
+      multiMap split into fastas|faas|gffs|gbks. Cost moved from schema validation to identifier
+      sync. Revisit at compare-against-iwc-exemplar if the corpus shows an accepted idiom for
+      optional record slots or placeholder datasets.
+
+  - id: sample-id-alphabet-narrowed
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-interface
+    unmet: "The source's sample-ID alphabet, ^\\S+$ from assets/schema_input.json"
+    missing: >-
+      Galaxy restricts sample-sheet column names and string values to [\\w\\-_ ?]*, so IDs that
+      pass nf-schema today (any non-space character: brackets, slashes, quotes, most punctuation)
+      are rejected by the Galaxy input. This is a tightening rather than a missing feature, but it
+      invalidates sheets that a Nextflow user can submit today, and nothing in the packaged notes
+      connects the two constraints.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      State it in the input documentation and, at test-data resolution, confirm the chosen test
+      sample IDs satisfy the Galaxy charset.
+
+  - id: gbk-slot-datatype-unconfirmed
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-interface
+    unmet: "A confident Galaxy format for the gbf/gbff sample-sheet slot and the GenBank outputs"
+    missing: >-
+      nextflow-path-glob-to-galaxy-datatype's core table has no GenBank/EMBL row, while funcscan
+      takes .gbk/.gbff as input and PROKKA (*.gbk), BAKTA_BAKTA (*.gbff), the pyrodigal
+      annotations port (*.gbk.gz) and GECCO's convert-format option all produce it. genbank is
+      asserted from Galaxy's registered datatypes rather than from the note, so it is recorded low
+      confidence - and it is a user-facing input slot as well as an output.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Confirm against galaxy-datatypes-conf (not in this bundle) or an IWC workflow that accepts
+      GenBank input, then reuse the same value for the four annotation output ports.
+
+  - id: conditional-output-producer-unexpressible
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-interface
+    unmet: >-
+      One stable public output label for results whose producing step depends on a select input
+      (annotation_tool across four tools, and the AMP/ARG/BGC summary tables across the
+      run_taxa_classification switch)
+    missing: >-
+      A gxformat2 outputs: entry binds one outputSource, so a label cannot follow a switch. For
+      annotation_tool the four alternatives differ in port count and name and even in step count
+      (discoveries/annotation-tool-switch-changes-the-step-count). For the summary tables the
+      producer and the format both change with run_taxa_classification
+      (discoveries/headline-summary-tables-are-published-by-a-bgzip-step). No packaged note
+      addresses promoted outputs for conditional producers.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Two admissible resolutions, to be chosen at nextflow-summary-to-galaxy-template: one label
+      per producer with a partly-empty interface per run, or merge/filter-empty upstream and
+      promote one merged collection. The choice also decides what the test plan can address by
+      name, so it must not be deferred past phase 6.
+
+      Phase 4 prefers the first, for the annotation switch specifically: the merge points for those
+      four producers are the per-port pick_value steps the data flow already needs for the conditional
+      arms, so binding one label per producer port adds no step, whereas merging them into one
+      collection would need a filter-empty pass over typed nulls - the same untested behaviour as
+      entries/variable-arity-fan-in-has-no-attested-galaxy-recipe. For the AMP/ARG/BGC summary tables
+      the data flow confirms the two-producer reading is unavoidable rather than a choice
+      (data-flow brief section 15: the promoted label binds to the taxonomy-merge step when
+      run_taxa_classification is on and to the pre-merge step when it is off), so a test that names
+      those tables must state which switch state it assumes.
+
+  - id: published-only-results-need-explicit-promotion
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-interface
+    unmet: >-
+      A Galaxy output set for the 61 publishDir result sets the source delivers by directory
+      layout, of which 13 are gated on save_db and 4 on save_annotations
+    missing: >-
+      The source emits one report and publishes everything else; Galaxy does the inverse. The
+      interface brief proposes a promoted set (brief section 10.2) plus optional DB-echo outputs
+      standing in for save_db, but nothing verifies that set covers what users of funcscan
+      actually need, and the per-tool directories (antismash zip/html/json, gecco
+      genes/features/clusters/gbk/json, deepbgc bgc_tsv/pfam_tsv/gbk/pngs) have no single Galaxy
+      home: each port becomes its own identifier-aligned collection.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Save the promoted list for nextflow-summary-to-galaxy-template, and check it against an IWC
+      exemplar's output count while there. save_db and save_annotations deliberately do not come
+      back as booleans - see the excluded-control assessment in the interface brief section 9.
+
+      Phase 4 bound every entry on that list to a producing node (data-flow brief section 15), which
+      turns the list into wiring rather than intention, and adds three findings the promotion list has
+      to absorb. (1) Four of the seven lanes - AMP, ARG, BGC and CAZYME - have no outgoing data edge
+      (discoveries/four-of-seven-screening-subworkflows-are-data-sinks), so for them a promoted output
+      is not a convenience but the only route their results take. (2) interproscan_table must bind to
+      the two-extra-column rewrite step and not to the InterProScan step
+      (discoveries/interproscan-output-is-rewritten-by-groovy-before-anyone-uses-it). (3) The versions
+      row cannot be bound at all (discoveries/versions-collation-and-parameter-summary-have-no-galaxy-producer).
+      Also worth noting against the count: 36 of the 61 result sets are unconditional publishes, so
+      they need nothing here - the promotion decision is about the 25 gated ones and the headline tables.
+
+  - id: tool-surface-pinned-at-source-defaults
+    status: open
+    kind: dropped
+    raised_by: nextflow-summary-to-galaxy-interface
+    units: "133 of 220 params (annotation_* 40, bgc_* 40, arg_* 27, amp_* 22, taxa_classification_* 10, protein_annotation_* 2, minus the 8 output-set-altering save flags that were promoted)"
+    because: >-
+      Each is a plain scalar with no branch, path or reference-selecting effect - verified: none
+      appears in a workflow.conditionals[] guard, none is a path param, 69 of the 141 tool knobs
+      are booleans and only 8 carry closed enums - and the 133 pinned ones are exactly the subset
+      that neither changes which steps run nor which files a command writes. Galaxy offers no
+      affordance that keeps a parameter both off the form and discoverable the way --help_full
+      does, so exposing all 141 would bury the 58 params that decide what runs and what data is
+      needed. Each is fixed at its nextflow.config value, which is the value the source ships.
+    unmet: "Per-tool tuning without editing the workflow"
+    missing: >-
+      Nothing needed by a faithful default run; a user who wants different tool settings has no
+      lever in Galaxy where they had one on the CLI. Recorded rather than hidden, and the eight
+      closed enums inside the pinned set are named in the brief so a reviewer can see what is
+      being fixed.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      The promotion rule is stated in the interface brief section 6 so the boundary is reviewable;
+      this entry reopens if compare-against-iwc-exemplar finds a corpus idiom for a collapsed
+      advanced section.
+
+  - id: single-option-tool-selectors-pinned
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-interface
+    unmet: >-
+      taxa_classification_tool (enum [mmseqs2]) and protein_annotation_tool (enum [InterProScan])
+      as user choices
+    missing: >-
+      Each enum carries exactly one admissible value in this source, so exposing them offers a
+      choice the workflow cannot honour; pinning them drops a form field each but turns a future
+      second taxa or protein-annotation tool into a workflow edit instead of a form change.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Also recorded so that if the workflow is later extended, these two params are the ones to
+      re-expose first. annotation_tool keeps four real options and stays an input.
+
+  - id: sample-column-uniqueness-assumed-not-enforced
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: >-
+      A per-row key that Galaxy element identifiers require - exactly one element per sample - on an
+      input the source accepts without it
+    missing: >-
+      assets/schema_input.json sets uniqueItems: true on the array of row objects, not on the sample
+      column, so two rows that share a sample but carry different fasta paths are valid input today.
+      funcscan.nf:84 groupTuple()s them into one element and :86-89 then keeps only the first file
+      matching each slot's extension test, so the second row's data is dropped with no message. A
+      Galaxy sample_sheet cannot hold two elements with one element_identifier, so the translated
+      workflow rejects the sheet outright instead of silently losing the row - a tightening that
+      turns a quiet data-loss case into a validation error, and the only place the four-collection
+      design rests on a property the source does not guarantee.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Not resolvable inside the translation; it belongs in the input help text next to
+      entries/sample-id-alphabet-narrowed, which is the same sheet column and the same class of
+      tightening. Worth one sentence in the workflow README: if a sheet loads in Nextflow but errors
+      in Galaxy, check for duplicate sample ids first, because in Nextflow that sheet was already
+      dropping data.
+
+  - id: per-element-branch-has-no-galaxy-carrier
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: >-
+      Per-element routing of the four input sheets' datasets by whether each is gzipped - branch {
+      compressed: it[1].toString().endsWith('.gz'); uncompressed: true } at funcscan.nf:72-75, feeding
+      GUNZIP_INPUT_PREP
+    missing: >-
+      Galaxy has no per-element branch: a mapped step either consumes the datatype or it does not, and
+      whether a given tool step can read a registered auto-compressed datatype (fasta.gz, gff3.gz are
+      legal per nextflow-path-glob-to-galaxy-datatype's compression rules) is a fact about the chosen
+      wrapper that no packaged note carries. The source's accepted input set is
+      ^\\S+\\.(fasta|fas|fna|fa)(\\.gz)?$ per column, so this is a real per-element set, not an
+      either/or at the interface.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Data-flow brief section 4.2 chose the cheapest faithful option: one unconditional
+      inflate-if-gzipped-else-pass-through step per sheet (4 nodes), i.e. the corpus
+      conditional-transform-or-pass-through shape moved from values to files. Decided at
+      advance-galaxy-draft-step per tool, because it depends on what each wrapper accepts; if a
+      wrapper reads .gz natively its step is deleted, and the interface's (\\.gz)? then costs nothing.
+
+      Phase 5 narrows this to routing. __FILTER_EMPTY_DATASETS__ appears in 8 workflows: a per-element
+      conditional *drop* with no branching, which is the shape the 18 emptiness filters need and gives the
+      inflate-if-gzipped step's pass-through half corpus backing (the same idiom as a pick_value default_value
+      firing when its connected input is absent). What stays unattested, with zero examples in 133 workflows,
+      is sending different elements to different steps because of a property of the element. The brief's
+      one-unconditional-step-per-sheet answer is therefore still the faithful one.
+
+  - id: per-element-skip-warnings-have-no-galaxy-surface
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: >-
+      User-visible explanation of why a sample is missing from one lane's output, which in the source
+      is 23 log.warn sites of the form "sample X produced an empty Y, so stage Z will not run for it"
+    missing: >-
+      Galaxy's per-job log is not surfaced in the history the way a workflow-level Nextflow warning
+      is, and no packaged note describes a step whose output is a user-facing notice. Once the
+      emptiness filters become filter-empty collection steps (entries above, placeholder P2) the
+      element vanishes silently, so a run over 3 samples that yields 2 AMP rows and 3 ARG rows gives
+      the user nothing to read.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Do not try to reconstruct the warnings with extra steps - the shim cost would exceed the value.
+      Two cheaper partials: name the filter steps after what they drop ("remove empty proteins"),
+      which puts the mechanism in the history even without the sample id; and have the phase 9 test
+      plan assert per-lane membership so a silent drop is at least caught in CI. Reopen if the corpus
+      has an idiom for an annotation-only step or a report-of-record collection.
+
+  - id: variable-arity-fan-in-has-no-attested-galaxy-recipe
+    status: resolved
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: >-
+      "For each sample, the files the N tools I enabled produced" as an input to one per-sample job,
+      where N varies with the shape-control inputs: AMPcombi2 parsetables over 1-4 hit producers
+      (amp.nf:105-115) plus per-sample faa/gbk/interpro, and comBGC over 1-3 BGC callers
+      (bgc.nf:70,88,106,182)
+    missing: >-
+      The natural primitives - zip, or an Apply-Rules build over N collections - all assume a fixed
+      input count, and a when:-skipped step yields a typed null whose behaviour inside a zip or a
+      dot-product is stated nowhere in the packaged notes. The source gets variable arity for free
+      because a skipped producer's channel stays channel.empty() and groupTuple simply sees fewer
+      files. Data-flow brief section 9 lists three candidate constructions (relabel to
+      {sample}__{tool} then __MERGE_COLLECTIONS__ then collection-split-identifier-via-rules;
+      Apply-Rules zip tolerant of nulls; or a flat multiple=true input when the wrapped tool can
+      re-derive the sample from the filename) and none of them is attested, largely because the
+      pattern pages those recipe names link to are not in this bundle.
+    resolved_by: compare-against-iwc-exemplar
+    supersedes: null
+    note: >-
+      Blocking for compare-against-iwc-exemplar - this is the item to settle by citation, ideally a
+      corpus workflow that gathers a variable number of optionally-produced collections per sample.
+      comBGC may be resolvable by the third option (the source's own ext.prefix shows comBGC reads
+      sample identity from filenames); AMPcombi2 is not, because it must also align faa, gbk and
+      interpro per sample. Related to
+      entries/multi-db-pick-list-no-galaxy-exemplar, which is the same optionality question at the
+      input surface rather than the collection surface.
+
+      Resolved at phase 5 by cited corpus idiom, scope-limited: recipes exist and are in use; this run's
+      exact use is still unproven. Three attested constructions (iwc-comparison-notes.md section 3.4 items 5
+      and 9): (a) Collapse Collection / collapse_dataset over a collection whose membership varies because
+      gated producers emit nothing - 29 of 133 workflows; (b) collection_column_join for per-identifier table
+      merges - 15 workflows; (c) a consuming step with fixed named optional inputs, where a skipped producer
+      simply leaves the slot empty - the exemplar's MultiQC has exactly seven
+      results_N|software_cond|input slots and its gated subworkflow takes five named inputs of three
+      different shapes. That discharges "no attested recipe" as written: phase 4's three candidates can now be
+      ranked against the corpus instead of invented, and its third option has real precedent in (c).
+      Remaining risk, carried rather than buried: (a) collapses into one collection, which serves AMPcombi's
+      parsetables only if that wrapper accepts a collection and can re-derive the tool from the element name,
+      and neither (b) nor (c) has been shown carrying a per-sample collection axis, which is this run's actual
+      case. If the AMPcombi wrapper will not take a collection, reopen this entry with branch (a) struck; that
+      test happens at advance-galaxy-draft-step, where the wrapper is in hand.
+
+      Phase 6 commits to a shape, so this entry's reopen condition now has a size attached.
+      The draft draws M1 and M3 as four placeholder steps each (relabel,
+      __MERGE_COLLECTIONS__, split identifier, nest list:list - decisions/variable-arity-fan-
+      in-materialised-as-a-reshape-quartet) because source evidence rules the flat option out
+      for AMPcombi2 (discoveries/ampcombi2-parsetables-takes-a-six-argument-tuple), while
+      comBGC keeps the flat route. The entry stays open on its stated terms: if the AMPcombi2
+      wrapper will not take a collection, branch (a) of the phase-5 resolution is struck and
+      eight steps - the two quartets - have to be redrawn, which is more than a per-step edit.
+
+  - id: nested-collection-dot-product-unattested
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: >-
+      One step consuming four list:list collections with the same two axes as aligned per-element
+      inputs - AMPcombi2 parsetables over sample x {hits, faa, gbk, interpro}
+    missing: >-
+      galaxy-sample-sheet-collections attests dot-product between two identically structured
+      sample_sheet collections; nothing states whether a dot-product (or an Apply-Rules zip) works
+      over a nested list:list, over four inputs at once, or over collections whose inner axis has
+      different lengths per element - which is the normal case here, since AMP contributors are sparse
+      (the ampir snapshot lists files for 2 of 3 samples).
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Decides whether AMPcombi is one step or four. If only a two-way product is available, the
+      faa/gbk/interpro side must be pre-joined into a sample_sheet per sample, which pulls
+      entries/samplesheet-row-coupling-unexpressible and P1 back into the AMP lane. Verify at
+      compare-against-iwc-exemplar or with gxwf draft-validate before phase 6 commits to either.
+
+      Phase 5: the corpus is silent, not negative, so this stays open. Exactly one of 133 workflows uses
+      __CROSS_PRODUCT_NESTED__ (microbiome/multi-sample-binning, a binning pipeline - Low-confidence pattern
+      comparison only), one uses __HARMONIZELISTS__, none uses sync_collections_by_id, and no workflow has a
+      nested collection at its input boundary. gxwf draft-validate over a draft remains the only verifier for
+      the ragged-inner-axis case and a draft does not exist before phase 6, so keep data-flow brief section 9's
+      fallback (pre-join faa/gbk/interpro per sample) live rather than assuming the four-way product works.
+
+      Phase 6 did not use a four-way dot-product, so the ragged-inner-axis question moves
+      rather than closes: it now sits inside the split-identifier and nest steps, which have
+      to produce a list:list whose inner axis length varies per sample. One clarification
+      worth recording against this entry's verification advice: gxwf draft-validate was run on
+      the emitted draft and reports zero diagnostics, but it checks the graph, not element
+      counts, so "verify with draft-validate" cannot settle the ragged case either. Only a
+      Galaxy run can.
+
+  - id: data-derived-gate-needs-nonemptiness-threshold
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: >-
+      Gates whose predicate reads the data: amp.nf:133 skips COMPLETE, CLUSTER and the taxonomy merge
+      when the AMPcombi summary count is 0 or 1 ("if only one summary exists we do not need to
+      cluster"), and amp.nf:138 gates clustering on tsv.countLines() > 1
+    missing: >-
+      Galaxy when: is an expression over workflow inputs. conditional-gate-on-nonempty-result is the
+      corpus-backed construction and derives emptiness - zero versus one or more - in four shim steps;
+      the source's threshold is "one is also useless", and a header-only tsv is not empty at all.
+      Neither a count threshold nor a row-count predicate is expressible through that shim, and no
+      packaged note describes a gate fed by a step output.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Data-flow brief section 12 recommends diverging deliberately: leave N29/N31 ungated and require
+      the wrapper to tolerate an empty or single-row table, which costs nothing in steps and changes
+      behaviour only in the no-hits case, where the source produced no file and Galaxy would produce
+      an empty one. Recorded rather than buried because it is scientific skip logic, not plumbing.
+      See also entries/input-datatype-cannot-gate-a-step for the same class on the input side.
+
+      Phase 5 confirms the mechanism half and confirms the predicate half is absent corpus-wide. Of 125 gated
+      steps in 29 workflows, 83 take their when: value from a step rather than a form input, so "a gate fed by
+      a step output" is normal Galaxy, not exotic - but every one of those producers is a parameter-space
+      transform (map_param_value 47, a gated subworkflow's own when 32, param_value_from_file 2, pick_value 2)
+      and zero gates anywhere test a dataset's emptiness, size or datatype. The four-step shim is therefore the
+      outer limit of what this corpus supports, and the brief's recommendation to leave N29/N31 ungated rests
+      on absence of precedent, not on a proven impossibility.
+
+      Phase 6 took the recommendation literally: ampcombi_complete and ampcombi_cluster are
+      drawn ungated with the threshold written into their _plan_context as a wrapper
+      obligation, because the four-step emptiness shim distinguishes 0 from >=1 and the
+      source's test is "<=1 is also useless" (amp.nf:133, :138). Same for the RGI and
+      hAMRonization sites. So the behaviour difference the entry predicts is now in the
+      artifact: a no-hits run yields an empty table in Galaxy where the source published
+      nothing.
+
+  - id: input-datatype-cannot-gate-a-step
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: >-
+      The source's three-way choice of how to obtain a reference database, decided by inspecting the
+      uploaded file: bgc.nf:39,42,46 branches on file(params.bgc_antismash_db).extension == 'gz'
+      versus .isDirectory() versus absent, and arg.nf:109 decides whether to process CARD with
+      !rgi_db.contains("card_database_processed") - a substring of the uploaded filename
+    missing: >-
+      when: is evaluated over workflow inputs, and neither a dataset's datatype nor whether its name
+      contains a substring is available to it; an uploaded directory is not even a single dataset in
+      Galaxy. So the "upload whatever shape you have and the pipeline adapts" affordance has no
+      target, and the choice must be made once, by the author, instead of per run by the user.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Two interface deltas follow (data-flow brief section 17.3 and 17.4): fix the antiSMASH database
+      input as an uploaded .tar.gz that always goes through the untar step, and replace the CARD
+      filename test with an explicit boolean input ("my CARD is already processed"). Both narrow
+      entries/db-directory-input-shape-unsettled rather than closing it - they pick a shape, they do
+      not show that the shape is the corpus convention.
+
+      Phase 5 adds the corpus side and it corroborates without proving: no dataset-derived gate of any kind
+      exists in 133 workflows, and neither datatypes nor filenames are among the properties any corpus gate
+      reads. That is "nobody has written this in this corpus", which is weaker than "Galaxy cannot", so the
+      author-time fixes stand on their own reasoning and this entry can be reopened cheaply if a draft finds
+      that when: can see a datatype after all.
+
+      Phase 6 implemented both author-time fixes this entry asks for, in the artifact: the
+      antiSMASH database is an uploaded tar.gz that always goes through an untar step, and the
+      CARD filename test became arg_rgi_db_is_processed (whose absence from the interface
+      brief is now brief_change_recommendations/add-arg-rgi-db-is-processed-input). The third
+      case the entry does not name is the one that defeated the same mechanism - DB present
+      versus absent cannot be gated either, and has no author-time fix, which is entries/db-
+      or-rebuild-fork-cannot-gate.
+
+  - id: bgc-mincontiglength-affects-lane-membership
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: >-
+      A Galaxy input for bgc_mincontiglength, consumed by SEQKIT_SEQ_LENGTH through
+      ext.args = "--min-len ${params.bgc_mincontiglength}" (conf/modules.config:103-105)
+    missing: >-
+      Phase 3 pinned it with the other 133 tool knobs, correctly applying its shape test - it adds no
+      input, output or step. The data flow shows the test is incomplete: it changes which contigs
+      survive into the long-contig variant, hence which samples have any element in the BGC lane at
+      all (funcscan.nf:109-114 then drops a sample with no long contigs entirely), which is exactly
+      the branch-membership effect the interface reserves for exposed controls. It is also one of only
+      two numeric knobs with a lane-wide effect.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Recommend promoting it as a numeric input with the nextflow.config default, which reclassifies 1
+      of the 133 pinned knobs and takes interface section 6's promotion rule from "adds an
+      input/output/step" to "changes what runs, what data is needed, or which samples a lane covers".
+      The same reasoning applies to bgc_savefilteredcontigs only as a publish flag, so it stays out.
+
+  - id: directory-collection-semantics-unattested
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    unmet: >-
+      A Galaxy shape for the per-sample intermediate directories the taxa-classification lane passes
+      between steps - mmseqs createdb's database, then mmseqs taxonomy's output, then createtsv
+      (taxa_class.nf:37,41,46-56), all tuple(meta, dir)
+    missing: >-
+      No packaged note addresses directory-shaped step outputs, let alone a list collection of them:
+      whether one can be a step input, whether map-over works over them, whether they can be promoted,
+      and whether gxformat2 can name them at all. The source's own databases are also
+      directory-or-tarball at the input side (entries/input-datatype-cannot-gate-a-step), so the
+      question is not avoidable by choosing a different input shape.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Best case the lane's intermediates are wrapper-internal, which removes N9 and N10 as separate
+      steps and folds the lane into one or two tool steps - legitimate, and it is the source's own
+      granularity argument reversed, so it must be argued from what a wrapper can hold rather than
+      from convenience. Settle at advance-galaxy-draft-step with the actual mmseqs wrappers in hand.
+
+      Phase 5: 0 of 133 workflows have a folder or list:list workflow input and none declares a nested
+      collection input, so the corpus holds no evidence either way about directory-shaped values. Recorded as a
+      negative result so nobody reads the corpus as permissive here; the lane still has to be settled with the
+      real mmseqs wrappers in hand.
+
+  - id: no-sample-sheet-input-precedent-in-corpus
+    status: open
+    kind: gap
+    raised_by: compare-against-iwc-exemplar
+    unmet: >-
+      Four aligned sample_sheet inputs carrying per-row metadata through map-over steps, as a launchable
+      Galaxy interface - interface brief sections 4-5 and
+      decisions/input-fans-out-to-parallel-sample-sheets
+    missing: >-
+      Across 133 IWC workflows and 45 distinct declared input formats there is no sample_sheet input at
+      all; every collection-typed input is list (87) or list:paired (37) with nested_collection_type
+      unset, and the exemplar's single collection input declares column_definitions: null. Nothing in
+      this corpus shows a column definition surviving a map-over, which is exactly what the gff_type
+      column must do (funcscan.nf:143 stamps it, cazyme.nf:44 skips a sample whose meta.gff_type is
+      missing).
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Absence of precedent in a legacy-.ga fixture snapshot, not evidence against the shape: the
+      sample_sheet input type is newer than most of this corpus and galaxy-sample-sheet-collections
+      attests it from the Galaxy side. Consequence for phase 6: the four-sheet interface cannot be
+      pattern-copied and must be checked with gxwf draft-validate, and the corpus's alternatives (one
+      nested collection, or one flat collection plus parameters) are what a template author reaches for
+      by default if this note is not read first. The corpus's own route for per-run tabular metadata is a
+      plain tabular/csv/tsv data_input (16 + 4 + 2 uses) with no schema validation behind it.
+
+  - id: sixteen-funcscan-tool-families-absent-from-iwc
+    status: open
+    kind: gap
+    raised_by: compare-against-iwc-exemplar
+    unmet: >-
+      A per-step corpus precedent for 16 of funcscan's 26 tools: ampcombi, ampir, amplify, antismash,
+      bigslice, dbcan, deepbgc, diamond, fargene, gecco, hamronization, hmmer, macrel, prokka, pyrodigal
+      and rgi
+    missing: >-
+      No IWC workflow uses any of them, so the AMP, BGC and CAZYME lanes - and RGI/HMMER inside the ARG
+      lane - have no exemplar for wrapper choice, parameter defaults, datatypes or output labels. The 10
+      that do appear are rare in it: seqkit 4 workflows, abricate 3, amrfinderplus 2, argnorm 2, and
+      bakta, interproscan, deeparg, prodigal, mmseqs2 and tabix 1 each.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Not a blocker: discover-shed-tool, not the IWC corpus, owns tool availability, and this phase is
+      explicitly not a tool-discovery phase. Recorded so the phase 7 loop starts expecting to author most
+      steps from wrapper evidence alone, and so nobody reads the exemplar's argument style as the house
+      style for steps it does not contain.
+
+  - id: promoted-output-count-far-above-corpus-norm
+    status: open
+    kind: gap
+    raised_by: compare-against-iwc-exemplar
+    unmet: >-
+      A usable workflow form for the 61 promoted result sets the interface brief lists from 61
+      publishDir sites - and the reason AMP, ARG, BGC and CAZYME being data sinks is survivable at all
+    missing: >-
+      Promoted outputs per IWC workflow: median 8, p90 25, max 81; the chosen exemplar promotes 23. 61
+      sits around the 95th percentile of this corpus, and no packaged note discusses what a large public
+      output list costs on the form, on the history page, or in test assertions.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Phase 5 does not recommend cutting the list - the source's users read those directories, and
+      discoveries/four-of-seven-screening-subworkflows-are-data-sinks makes promotion the only route a
+      result has to a user. It is a warning to phase 6 (a 61-label outputs: block is a review surface in
+      itself), to phases 9-10 (assert a subset, as the corpus does: the exemplar promotes 23 and its test
+      checks a handful), and to the operator, whose held
+      brief_change_recommendations/versions-output-has-no-producer and
+      brief_change_recommendations/interproscan-table-binds-to-the-rewrite-step both edit this list.
+
+  - id: multiqc-receives-no-lane-results-unlike-corpus-idiom
+    status: open
+    kind: gap
+    raised_by: compare-against-iwc-exemplar
+    unmet: >-
+      A report that shows what the pipeline found. funcscan's multiqc_report carries versions, a
+      parameter summary, a methods blurb and Prokka/Bakta stats, and nothing from any screening lane - see
+      discoveries/multiqc-report-carries-no-screening-results
+    missing: >-
+      The corpus convention is the reverse: 36 of 133 workflows run MultiQC, 7 route screening tables
+      through tooldistillator -> tooldistillator_summarize -> multiqc (amr_gene_detection promotes both of
+      those intermediates too), and 2 do both. Feeding a report is done through a fixed set of numbered
+      optional slots (seven results_N|software_cond|input in the exemplar's wrapper), so 61 result sets is
+      not one step, and no packaged note states the slot count for any MultiQC version.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Deliberately not written into any brief: adding lane tables to the report changes the promoted
+      output list and the step count, which is the operator's call and the same surface the held phase-3
+      recommendations touch. Filed as routed guidance for the template Mold instead
+      (iwc-comparison-notes.md section 6, finding 9). The two-step Tooldistillator route is the
+      corpus-attested way to turn N per-tool screening tables into one MultiQC input.
+
+      Phase 6 read this entry as the operator's call and did not act on it: the report lane
+      wires four nested slots from the two ANNOTATION picks and no lane table, so funcscan
+      keeps the thin report and the Tooldistillator route stays un-taken. What this phase did
+      add is the other half of why the report is thin - entries/multiqc-input-fragments-have-
+      no-producer, which shows the three fragments the source *does* put in the report have no
+      producer either, so the gap is wider than the lane tables alone.
+
+  - id: arm-coverage-needs-one-test-doc-per-gate-combination
+    status: open
+    kind: gap
+    raised_by: compare-against-iwc-exemplar
+    unmet: >-
+      A Galaxy test plan that exercises both arms of the gates the data-flow brief counts, measured
+      against a corpus whose own gated workflows mostly do not
+    missing: >-
+      Of the 29 gated corpus workflows, 16 ship a single test document (one arm) and 2 ship none. The
+      closest lane analog does it properly: functional-annotation-of-sequences carries 4 documents that
+      flip Run InterProScan and Run eggNOG + completeness across true/false and assert a different output
+      set in each (4, 5, 2 and 3 outputs). The chosen exemplar ships 1 document which, by passing
+      Full genes catalogue: false, exercises the false arm of its catalogue gate and the true arm of its
+      inverted ARG gate - a choice that test nowhere states. No packaged note says how many documents a
+      gated workflow owes.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Routed to nextflow-test-to-galaxy-test-plan / implement-galaxy-workflow-test with two numbers:
+      funcscan has 11 gates but only 2 change which outputs exist at all (run_taxa_classification and the
+      annotation tool switch), so a defensible plan is one document per output-shape-changing gate arm,
+      3-4 documents, not the full product of the gates. The fixture shape has to change too: the corpus
+      addresses 146 Collection and 196 File fixtures by promoted output label with content asserts
+      (has_text 258, has_line 82, has_n_lines 79, has_n_columns 56), while funcscan's selected nf-test
+      candidate lists its 12 expected outputs as publishDir paths
+      (amp/ampir/sample_1/sample_1.ampir.faa), which a Galaxy test cannot address.
+
+  - id: db-or-rebuild-fork-cannot-gate
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-template
+    unmet: >-
+      The source's "use the uploaded database, or build/download it if none was uploaded"
+      fork, for eleven database-consuming steps plus AMP_DATABASE_DOWNLOAD,
+      INTERPROSCAN_DATABASE, antiSMASH's --download-only path and the CARD build at
+      arg.nf:109-117.
+    missing: >-
+      `when:` is an expression over workflow inputs and there is no way to state "this
+      optional input arrived": emptiness is not an operator, and phase 5 measured zero
+      dataset-derived gates in 133 corpus workflows. The fork therefore cannot be a gate on a
+      step, and the two shapes that could carry it - a builder step plus pick_value, or two
+      consumer steps plus pick_value - both add steps the interface brief never budgeted. What
+      the draft does instead is move the decision inside each consumer wrapper (reference-data
+      v1 posture) and drop the builder steps, the pick_*_db slots and the db_echo_* outputs
+      the data-flow brief listed.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Blocking for advance-galaxy-draft-step. Twelve steps now *require* a wrapper that
+      rebuilds or downloads on absence, which is precisely the capability entries/wrapper-
+      rebuild-capability-unverified says nobody has verified. If a wrapper cannot do it, the
+      repair is not to drop the database support but to surface the fork as two steps plus a
+      pick_value, which changes the step count and arguably the interface - so bring it back
+      here rather than resolving it silently inside one step. Cited from the draft:
+      ampcombi_parsetables, arg_amrfinderplus, arg_abricate, arg_rgi, arg_deeparg,
+      bgc_antismash, bgc_bigslice, bgc_deepbgc, bgc_bigslice hmm inputs, cazyme_annotate,
+      taxa_createdb, interproscan.
+
+  - id: directory-output-has-no-dataset-carrier
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-template
+    unmet: >-
+      An `out:` port for a source output that is a directory rather than a file: UNTAR's
+      ${prefix} directory, the MMseqs2 database directories behind MMSEQS_CREATETSV's inputs,
+      and the unpacked antiSMASH/dbCAN/Bakta database trees.
+    missing: >-
+      No packaged note gives a datatype or a collection shape for a directory output; phase 5
+      measured that no corpus workflow passes a directory anywhere and that collection-typed
+      workflow inputs exist only as list and list:paired. So the draft can name these ports
+      (TODO_out sentinels plus _plan_out saying "DIRECTORY") but cannot say what Galaxy object
+      they are, and a consumer step's `in:` edge inherits the same ambiguity.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Sits between entries/db-directory-input-shape-unsettled (the input side, which phase 5
+      already ruled the corpus silent on) and entries/directory-collection-semantics-
+      unattested (the collection side). Resolves itself if the wrapper turns the tree into a
+      single dataset, which is the common Tool Shed shape; needs a real answer at advance-
+      galaxy-draft-step because it decides whether three of the untar steps have one output
+      port or a collection.
+
+  - id: arg-summary-producer-is-input-dependent
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-template
+    unmet: >-
+      Three promoted outputs whose producing step depends on a form input:
+      arg_hamronization_table, bgc_combgc_table and amp_cluster_table, each of which is the
+      taxonomy-merged bgzip dataset when run_taxa_classification is on and the tool's own tsv
+      when it is off.
+    missing: >-
+      An `outputSource` cannot be conditional, so the draft routes all three through identity-
+      pinned pick_value steps (pick_arg_summary, pick_bgc_summary, pick_amp_cluster_table).
+      Nothing in this bundle says a promoted output may change datatype between runs - the two
+      slots are tabular.gz and tabular - nor what a test asserts when the answer depends on a
+      form input. The interface brief saw the problem (its 10.1(3)) and offered two shapes;
+      the draft took the pick, so the datatype question is now live instead of hypothetical.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Blocking for nextflow-test-to-galaxy-test-plan and implement-galaxy-workflow-test: a
+      test document that turns taxa classification on must expect .tsv.gz for these three
+      labels and a different document must expect .tsv, which is the per-arm test cost
+      entries/arm-coverage-needs-one-test-doc-per-gate-combination already counts. Also the
+      entry the operator's held versions-output-has-no-producer recommendation interacts with,
+      since both touch the promoted-output list.
+
+  - id: preannotated-complement-reading-diverges-from-source
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-template
+    unmet: >-
+      A settled answer to which sample-sheet rows ANNOTATION runs over, given that a row can
+      carry both a FASTA and its own GBK/GFF annotation.
+    missing: >-
+      Nothing in this checkout, in the read-only funcscan clone, or in this bundle settles
+      Nextflow's branch map semantics, and the pipeline's own test fixtures for the pre-
+      annotated profiles live in pipelines-testdata (not fetched here, and no downloads were
+      permitted). The source comment argues for the complement reading, the operator's
+      documented branch semantics argue against it, and Galaxy has no construct that forgives
+      the difference: two elements with the same identifier in one collection is not a thing.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Blocking for test-data-resolution and nextflow-test-to-galaxy-test-plan. The draft
+      implements the complement reading in two Deferred steps (select_to_annotate,
+      select_to_annotate_long) and states the divergence in their _plan_context, so the
+      cheapest discharge is a fixture row that carries fasta+protein+gbk (schema-legal:
+      dependentRequired couples protein<->gbk and fasta is required) run under -profile
+      test_preannotated semantics. If the non-exclusive reading wins, this becomes a topology
+      repair, not a predicate flip: one collapse step per lane before the four unions, which
+      is a repair-galaxy-draft-topology visit.
+
+  - id: multiqc-input-fragments-have-no-producer
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-template
+    unmet: >-
+      report_multiqc's three non-dataset inputs: the versions YAML, the parameter-summary YAML
+      and the methods-description text, plus the 23 log.warn messages the source surfaces in
+      the report.
+    missing: >-
+      The source builds all three in workflow-level Groovy (softwareVersionsToYAML over 70
+      ch_versions.mix() sites at funcscan.nf:414-421, a params dump, a methods tuple), which
+      has no Galaxy producer in this workflow and no packaged recipe. The draft therefore
+      wires four nested MultiQC slots only (results_0|software_cond|input and results_1|...
+      from the two ANNOTATION picks) and names the three fragments in report_multiqc's
+      _plan_state, so the step as drawn is implementable but is not the report the source
+      publishes.
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Blocking for advance-galaxy-draft-step, and it is the computability gap the mold asks to
+      be raised here rather than met at the per-step loop. Three ways out, all someone else's
+      call: (a) accept the thinner report, which is the draft's posture and the same surface
+      as the held brief_change_recommendations/versions-output-has-no-producer; (b) a MultiQC-
+      side config asset, which the workflow cannot express and which decisions/multiqc-config-
+      assets-omitted-by-default already declines; (c) an aggregation step for which no recipe
+      exists. Recorded with the step, the uncomputable outputs and the missing evidence, per
+      the ledger contract. Related to entries/multiqc-receives-no-lane-results-unlike-corpus-
+      idiom, which is the *lane* half of the same thin report and which this phase
+      deliberately did not extend.
+
+  - id: no-step-reached-resolved-tier
+    status: open
+    kind: gap
+    raised_by: nextflow-summary-to-galaxy-template
+    unmet: >-
+      The tier this mold expects for an operation a pattern page or a corpus exemplar covers:
+      Resolved, with concrete tool_id, state and port names and no _plan_* fields.
+    missing: >-
+      The evidence this run could read stops short of authored state. The corpus excerpt in
+      iwc-exemplar.gxwf.yml shows the *shape* of a pick_value cascade and of MultiQC's nested
+      results_N|software_cond|input slots, and probe drafts established which expressions and
+      sentinel forms gxformat2 accepts, but it does not show the __current_case__ index values
+      a concrete `state:` block needs, and the collection and tabular pattern pages the recipe
+      names in this draft's notes link to are not in the bundle (filed at phases 4 and 5).
+    resolved_by: null
+    supersedes: null
+    note: >-
+      Honest count for the record: 0 Resolved, 23 identity-pinned (9 outer, 14 inner), 108
+      Deferred, out of 133 steps in 95 outer + 38 inner + 2 subworkflow containers. Every
+      identity-pinned step carries a _plan_state that says what the state must *do* and no
+      literal values, which is what identity-pinned means here. This is not a defect of the
+      draft - it is the boundary of what the run directory attests - but it does mean the
+      phase 7 loop starts with 505 TODO sentinels and no step that can be copied verbatim from
+      a corpus file.
+
+decisions:
+  - id: no-galaxy-reference-data-tables
+    decided_by: nextflow-summary-to-galaxy-reference-data
+    decision: "No dbkey-keyed and no from_data_table/.loc reference tables anywhere in the translated workflow."
+    rationale: >-
+      Both kinds need an admin install plus tool_data_table_conf.xml and .loc files, which breaks
+      the portability-first posture the mapping note pins for v1; a translated workflow must run on
+      a stock Galaxy with user-uploaded inputs.
+
+  - id: dbs-are-optional-explicit-inputs
+    decided_by: nextflow-summary-to-galaxy-reference-data
+    decision: >-
+      One optional, not-required workflow input per reference database (11 total), named after its
+      source param, with no data-table fallback.
+    rationale: >-
+      Mirrors the source's own if (params.X_db) { use } else { build } shape exactly, so the
+      translated interface neither adds nor hides a choice the Nextflow user already had.
+    evidence:
+      - funcscan-pulls-every-db-from-the-network
+
+  - id: per-sample-consumers-take-an-explicit-db-input
+    decided_by: nextflow-summary-to-galaxy-reference-data
+    confidence: medium
+    decision: >-
+      For the ten per-sample database consumers the database is supplied explicitly, or built once
+      by a single workflow-tier step; the design must not rely on each job's wrapper rebuilding it.
+    rationale: >-
+      The mapping note deviates from in-tool rebuild above roughly three rebuilds, and a Galaxy step
+      mapping over a sample collection is one wrapper invocation per sample. The source itself hoists
+      every download into a standalone process and first()-s the result for the same reason.
+    evidence:
+      - ten-of-eleven-db-consumers-run-per-sample
+
+  - id: bigslice-keeps-one-shot-rebuild
+    decided_by: nextflow-summary-to-galaxy-reference-data
+    decision: "bgc_bigslice_db keeps the in-tool / single-invocation rebuild default."
+    rationale: >-
+      BIGSLICE_BIGSLICE is the only consumer whose input is collected first, so it runs once per
+      workflow and stays under the note's rebuild threshold.
+    evidence:
+      - ten-of-eleven-db-consumers-run-per-sample
+
+  - id: db-selectors-are-select-options
+    decided_by: nextflow-summary-to-galaxy-reference-data
+    decision: >-
+      amp_ampcombi_db_id, annotation_bakta_db_downloadtype, arg_abricate_db_id,
+      arg_fargene_hmmmodel, arg_rgi_data, arg_deeparg_model and amp_ampir_model become
+      select/multi-select parameters, not data inputs.
+    rationale: >-
+      Each is a closed (or near-closed) string enum the tool consumes; three of them are filed as
+      tool_reference_database in reference_assets[] purely because of their names. Enumerating them
+      as options is the mapping note's "if a reference table is only ever keyed on a single input,
+      make the columns direct inputs" instruction applied here.
+    evidence:
+      - funcscan-declares-almost-no-path-types
+
+  - id: db-inputs-as-uploaded-archives
+    decided_by: nextflow-summary-to-galaxy-reference-data
+    confidence: low
+    decision: >-
+      Provisional shape for each database input: one uploaded archive dataset (tarball/zip as the
+      user holds it), documented as upload-as-is.
+    rationale: >-
+      It is the shape the source's own builders produce and consume (tarballs and unpacked
+      directories), and it is the only one of the three candidate shapes a user can create without
+      admin rights. Marked low confidence and carried as entries/db-directory-input-shape-unsettled
+      because no packaged note or cited exemplar supports it.
+    evidence:
+      - funcscan-declares-almost-no-path-types
+
+  - id: multiqc-config-assets-omitted-by-default
+    decided_by: nextflow-summary-to-galaxy-reference-data
+    decision: >-
+      multiqc_config, multiqc_logo and multiqc_methods_description are not reference data and are
+      not exposed by default; the wrapper's bundled config stands in.
+    rationale: >-
+      The pipeline itself falls back to assets/multiqc_config.yml and
+      assets/methods_description_template.yml inside the repo when they are unset, so the
+      equivalent Galaxy fallback is a bundled default, not a user input. Phase 3 keeps multiqc_title
+      as an optional text input - it is a plain string the report consumes, not a bundled asset -
+      and excludes max_multiqc_email_size as email transport.
+
+  - id: input-fans-out-to-parallel-sample-sheets
+    decided_by: nextflow-summary-to-galaxy-interface
+    confidence: medium
+    decision: >-
+      params.input becomes four sample_sheet collection inputs - required input_fasta plus optional
+      input_protein, input_gbk and input_gff - all keyed by element_identifier, with gff_type a
+      restricted string column on the GFF sheet only.
+    rationale: >-
+      Three of the four path columns are per-row optional and the row shape therefore varies, which
+      sample_sheet:record cannot express; record is also the one variant with
+      allow_implicit_mapping False, which would force a slot extraction in front of every mapped
+      step. The source already splits the row into fastas|faas|gffs|gbks via multiMap and hands each
+      consumer only the slot stream it needs, so parallel collections mirror the existing structure.
+      gff_type rides with the file it describes because it is passed as val(gff_type) into
+      RUNDBCAN_EASYCGC and RUNDBCAN_EASYSUBSTRATE.
+    evidence:
+      - samplesheet-per-row-optional-slots
+
+  - id: gating-by-when-not-by-requiredness
+    decided_by: nextflow-summary-to-galaxy-interface
+    decision: >-
+      Every database, model and tool-branch input stays optional and the real gating lives in when:
+      expressions on the steps; requiredness expresses only the one unconditional requirement
+      (input_fasta).
+    rationale: >-
+      Galaxy has no required-only-when-X affordance, and the source's own semantics are
+      "meaningful under this toggle", not "always required". Marking an input required would break
+      runs that leave its branch off, which is the common case: all six run_* stage switches
+      default to false.
+    evidence:
+      - hmm-models-required-when-branch-enabled
+
+  - id: save-flags-kept-only-when-they-change-command-output
+    decided_by: nextflow-summary-to-galaxy-interface
+    decision: >-
+      Of the 14 *_save* params, the 8 that change a command or its file set are exposed as booleans
+      (six hmmsearch write_* flags and the two mmseqs *_savetmp flags that toggle
+      --remove-tmp-files); save_db, save_annotations, bgc_savefilteredcontigs, arg_rgi_savejson,
+      arg_rgi_savetmpfiles and arg_fargene_savetmpfiles are excluded as publish-only.
+    rationale: >-
+      The params note's effect test: a save_ name is not enough, keep it only if it changes which
+      files a command creates. A flag whose whole effect is publishDir enabled has no Galaxy
+      analogue, because step outputs are in the history whether or not anything publishes them - so
+      its effect is already the Galaxy default, and what it gated becomes a promotion decision
+      instead (entries/published-only-results-need-explicit-promotion).
+    evidence:
+      - funcscan-publishes-through-config-not-emits
+
+  - id: per-collection-mapping-replaces-split-and-reassemble
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    confidence: high
+    decision: >-
+      The transpose / groupTuple / extension-sniffing cycle at funcscan.nf:70-96, the seven
+      multiMap{} fan-outs, and 13 of the 15 joins get no Galaxy node at all: each slot keeps its own
+      identifier-aligned collection from the input sheet to the consuming step, and a consumer binds
+      the several slot collections it needs as several inputs of one step.
+    rationale: >-
+      The reshape exists in the source only because Nextflow flattens the row into per-slot streams
+      and then has to put it back together; under four aligned collections membership is the slot
+      label, so there is nothing to reassemble. Justified from the source's own structure, not from
+      tool availability: the split at :70-71 and the reassembly at :83-96 are the two halves of one
+      round trip. Secondary gain: the extension tests at :86-89 are ambiguous when a filename appears
+      in two columns, and per-collection mapping removes the ambiguity rather than reproducing it.
+    evidence:
+      - most-of-the-edge-list-is-a-split-then-reassemble-cycle
+
+  - id: optional-inputs-replace-empty-channel-idiom
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    confidence: high
+    decision: >-
+      Each of the 25 channel.empty() sites and each [meta, []] else-arm becomes an optional input on
+      the consuming step, not a step and not an empty dataset. In particular AMP's taxonomy and
+      interproscan inputs, ARG's annotations input and ANNOTATION's prokka/bakta slots must be declared
+      optional typed inputs.
+    rationale: >-
+      The idiom's whole purpose in the source is to satisfy a take: that the caller does not want to
+      fill; the sibling arm that fabricates one empty file per sample (:225-227) exists only because
+      Nextflow offers nothing else. Galaxy already has the affordance. Translating it literally would
+      add steps that produce empty datasets for their own sake, and would then need the emptiness
+      filters of discoveries/emptiness-is-tested-per-consumer-and-the-warning-dies-there to undo them.
+    evidence:
+      - emptiness-is-tested-per-consumer-and-the-warning-dies-there
+
+  - id: taxa-conditional-pairs-collapse-to-three-gates
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    confidence: high
+    decision: >-
+      The six workflow.conditionals[] rows that pair each screening stage with and without
+      run_taxa_classification (AMP :238/:253, ARG :277/:299, BGC :335/:354) become three when: gates on
+      run_amp_screening, run_arg_screening and run_bgc_screening, with run_taxa_classification moved to
+      the optional taxonomy input of the three merge_taxonomy_* steps and to which table a promoted
+      summary label binds to.
+    rationale: >-
+      Verified arm by arm: the two arms of each pair invoke the same subworkflow with the same
+      arguments, and differ only by whether the taxonomy channel arrives filtered for emptiness. One
+      if/else-if pair in Nextflow is not a branch in the data-flow sense, and duplicating three
+      subworkflows to mirror it would triple the step count of the three heaviest lanes to express a
+      filter. Phase 3 section 5 read those pairs as branches; the correction is recorded in the
+      interface's favour too, because it removes work rather than adding it.
+    evidence:
+      - most-of-the-edge-list-is-a-split-then-reassemble-cycle
+
+  - id: annotation-instantiated-per-contig-variant
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    confidence: medium
+    decision: >-
+      The full-FASTA and long-contig annotation streams become two invocations of one ANNOTATION
+      subworkflow (one additionally gated on run_bgc_screening), each keyed by the plain sample id,
+      rather than one invocation over a relabelled union or a list:list.
+    rationale: >-
+      funcscan.nf:106-115 puts the same sample into the annotation stream twice under one id, and
+      :140/:166 separate the two copies again for different consumers, so something has to distinguish
+      them - and a Galaxy element identifier cannot hold two elements. Relabelling to {sample}_long
+      matches what the source already writes into filenames (ext.prefix = "${meta.id}_long") but leaks
+      into every promoted BGC output and forces a strip-back relabel on each; a list:list whose outer
+      axis is the category degenerates to a single member whenever run_bgc_screening is off and has no
+      valid partition, because pre-annotated rows belong to both streams. Two subworkflow instances
+      cost a step, not a body - which is the source's own granularity argument: ANNOTATION is already a
+      subworkflow boundary with a narrow four-slot interface. Confidence medium only because it assumes
+      one subworkflow may be invoked as two steps, which no packaged note states.
+    evidence:
+      - two-gating-decisions-are-channel-level-not-process-level
+
+  - id: fargene-class-axis-becomes-a-tool-parameter
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    confidence: medium-high
+    decision: >-
+      The .combine(ch_fargene_classes) fan-out at arg.nf:71 and the .transpose() that undoes it at
+      :87 become one fARGene step per sample carrying the selected classes as a tool parameter; no
+      collection axis is created. The two HMM-file cross-products (amp.nf:86, bgc.nf:168) keep a real
+      second axis.
+    rationale: >-
+      arg_fargene_hmmmodel is a comma-joined string of ten class names
+      (channel.fromList(params.arg_fargene_hmmmodel.tokenize(','))), i.e. a value list, not a set of
+      uploaded files, and phase 3 already exposes it as a multi-select input - so the fan-out is a
+      per-(sample,class) job explosion that the source performs only to call one tool ten times. Telling
+      the two shapes of .combine() apart is exactly what the summary's operator-name-only via[] list
+      cannot do, which is why the decision is recorded against the site and not the operator.
+    evidence:
+      - most-of-the-edge-list-is-a-split-then-reassemble-cycle
+
+  - id: gz-inputs-kept-with-pass-through-unpack-steps
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    confidence: medium
+    decision: >-
+      The four sample-sheet columns keep their optional .gz suffix and the workflow pays four
+      unconditional inflate-or-pass-through steps (N1-N4), instead of narrowing the column patterns to
+      uncompressed types and asking the user to decompress first.
+    rationale: >-
+      It preserves the accepted input set the source ships (every path column allows an optional .gz
+      suffix), and puts the complexity in one wrapper whose behaviour is testable, rather than in a
+      form field that rejects files a Nextflow user can submit today. Narrowing the pattern would
+      delete four steps and change the interface for every user to spare the workflow four steps, which
+      is the wrong direction of cost. Revisit per tool at advance-galaxy-draft-step: any wrapper that
+      reads a registered .gz datatype natively makes its step redundant, and if that turns out to be
+      the common case this decision reverts at zero cost to the interface.
+    evidence:
+      - per-element-branch-has-no-galaxy-carrier
+
+  - id: heterogeneous-fan-in-uses-named-optional-slots-plus-pick-value
+    decided_by: compare-against-iwc-exemplar
+    confidence: medium
+    decision: >-
+      Where a step must gather results from lanes the user may switch off, prefer the corpus's shape -
+      one consuming step with fixed named optional inputs, plus a pick_value cascade where a value has to
+      fall through from a gated producer to a fallback - and reserve collapse_dataset for genuinely
+      homogeneous contributors, rather than the relabel-and-__MERGE_COLLECTIONS__ zip the data-flow brief
+      listed first.
+    rationale: >-
+      It is the only one of phase 4's three candidates that a corpus workflow demonstrably runs at
+      comparable heterogeneity: the exemplar's gated subworkflow takes five named inputs of three
+      different shapes, two of them produced by steps a gate can skip, and its MultiQC takes seven
+      optional slots. collapse_dataset appears in 29 workflows but always over a single collection, and
+      the Apply-Rules/zip candidate appears nowhere with a defined behaviour for a skipped input.
+      Confidence medium, not high, because fixed slots reintroduce the fixed input count that variable
+      arity was meant to avoid - a lane added later is an edit to the consuming step - and no corpus
+      example carries a per-sample collection axis through the fan-in, which is this run's actual case.
+    evidence:
+      - corpus-gates-live-in-parameter-space
+
+  - id: reference-fork-resolved-inside-consumer-wrappers
+    decided_by: nextflow-summary-to-galaxy-template
+    confidence: medium
+    decision: >-
+      Settle every database-or-rebuild fork inside the consuming wrapper: one optional
+      uploaded-database input per asset, no builder steps, no pick_*_db fan-in slots and no
+      db_echo_* outputs, so the fork is a wrapper obligation rather than workflow topology.
+    rationale: >-
+      `when:` cannot test whether an optional input arrived (entries/db-or-rebuild-fork-
+      cannot-gate), the corpus has no dataset-derived gate at all, and the v1 reference-data
+      posture is explicitly "optional input plus in-tool rebuild". The alternative costs at
+      least twelve extra steps and the interface brief has no budget for them. Confidence
+      medium because it trades a topology problem for a capability problem the run cannot
+      verify: entries/wrapper-rebuild-capability-unverified becomes load-bearing for twelve
+      steps the moment this is chosen.
+    evidence:
+      - db-or-rebuild-fork-cannot-gate
+      - wrapper-rebuild-capability-unverified
+      - input-datatype-cannot-gate-a-step
+
+  - id: variable-arity-fan-in-materialised-as-a-reshape-quartet
+    decided_by: nextflow-summary-to-galaxy-template
+    confidence: low
+    decision: >-
+      Materialise merge points M1 (AMPcombi2 parsetables) and M3 (comBGC calls) as four
+      placeholder steps each - relabel to {sample}__{tool}, __MERGE_COLLECTIONS__, split the
+      identifier, nest into list:list, merging rather than zipping - and M2/M4 as one named
+      bundle step each.
+    rationale: >-
+      Source evidence pins the target shape (discoveries/ampcombi2-parsetables-takes-a-six-
+      argument-tuple) and rules out the flat `multiple: true` option for AMPcombi2, while the
+      corpus-attested alternatives do not carry a per-sample collection axis: collapse_dataset
+      always collapses one collection and collection_column_join merges tables, not axes. So
+      the construction is the one the data-flow brief listed first, now drawn as steps.
+      Confidence low: the four steps name recipes (P2 collection-cleanup-after-mapover-
+      failure, P6 collection-flatten-after-fanout, collection-split-identifier-via-rules,
+      collection-build-named-bundle) whose pages are not packaged, so each is Deferred with a
+      recipe name in _plan_context and no attested tool.
+      [Correction added after phase 6: the statement above that the pages are not packaged was overstated. See phase6-progress.md section 6. The two overview pages are packaged and name tools, their operation pages are dead links, and galaxy-sequence-patterns is absent.]
+    evidence:
+      - variable-arity-fan-in-has-no-attested-galaxy-recipe
+      - nested-collection-dot-product-unattested
+
+  - id: annotation-instantiated-as-two-draft-subworkflow-steps
+    decided_by: nextflow-summary-to-galaxy-template
+    confidence: medium
+    decision: >-
+      Emit ANNOTATION once as a body of 19 inner steps and instantiate it twice as `type:
+      subworkflow` steps with `run: {class: GalaxyWorkflowDraft, ...}` - annotation_full over
+      the whole FASTA and annotation_long over the long-contig variant - rather than
+      duplicating 38 tool steps at the top level.
+    rationale: >-
+      The source calls the subworkflow twice (funcscan.nf:127 over a channel that already
+      mixes the two contig variants), and a draft subworkflow step is legal: a probe in
+      /tmp/gxy-scratch confirmed gxwf draft-validate accepts nested `when:` over inner inputs
+      and that gxwf draft-next-step returns a nested path like [container, deep], so nesting
+      does not hide the 38 inner steps from the phase 7 loop. Confidence medium on the
+      remaining half: this is two steps carrying a copy of the body text, not one body invoked
+      twice, so a repair to the annotation logic has to be applied twice until the workflow is
+      concrete.
+    evidence:
+      - annotation-instantiated-per-contig-variant
+
+  - id: draft-steps-carry-id-and-no-label
+    decided_by: nextflow-summary-to-galaxy-template
+    confidence: high
+    decision: >-
+      Give every step an `id` and no `label`, and put the intended UI label in the first line
+      of each _plan_context instead.
+    rationale: >-
+      Measured rule: in list form gxformat2 addresses a labelled step by its label, so a draft
+      that mixes ids and labels silently misroutes every edge that names the id. With 232
+      edges in this file the failure would be invisible until a real import. The cost is
+      cosmetic and belongs to phase 7: the UI shows snake_case ids until labels are set, and
+      the label text is already written down per step.
+    evidence:
+      - no-step-reached-resolved-tier
+
+  - id: when-expressions-limited-to-the-probe-verified-operator-set
+    decided_by: nextflow-summary-to-galaxy-template
+    confidence: high
+    decision: >-
+      Emit only `&&`, `||`, parentheses, `== "string"`, `== false` and bare `$(inputs.x)`
+      truthiness in `when:`, writing every negation as `== false` or expanding it by De
+      Morgan, and never `!`.
+    rationale: >-
+      Those operators are what probe drafts in this run showed draft-validate accepts; `!` was
+      never in the probe set, and a rejected guard would silently un-gate a step. The cost is
+      legibility: funcscan's inverted skip_* knobs appear as `$(inputs.bgc_skip_antismash) ==
+      false` in eleven guards, which is the shape discoveries/the-multiqc-guard-is-not-the-
+      annotation-guard and the corpus measurement (no gate in 133 workflows is written as a
+      negation) both point at.
+    evidence:
+      - corpus-gates-live-in-parameter-space
+
+  - id: input-fasta-unpacked-promoted-and-versions-still-not
+    decided_by: nextflow-summary-to-galaxy-template
+    confidence: medium
+    decision: >-
+      Promote input_fasta_unpacked, which the interface brief left open, and keep `versions`
+      out of the promoted set pending the operator's held decision, giving 14 promoted outputs
+      against the brief's 13 plus versions.
+    rationale: >-
+      The unpack step is the cheapest thing in the trunk to get wrong and the only place a
+      test can see a gzipped-input bug, so promoting it buys a checkpoint for one edge. The
+      versions row has no producer at all (brief_change_recommendations/versions-output-has-
+      no-producer, still held-for-operator-decision), and promoting a step's own versions
+      output per step would multiply one row across the pipeline. The promoted set is
+      therefore the brief's list with those two edits, and both are stated in the draft's own
+      doc block rather than buried.
+    evidence:
+      - published-only-results-need-explicit-promotion
+      - versions-output-has-no-producer
+
+brief_change_recommendations:
+  # Held, not applied. Phase 4 (data flow) found four places where the phase 3 interface brief is
+  # wrong or incomplete. The operator is reviewing that brief by hand and asked (2026-11-10) that it
+  # not be amended until they have decided, so nothing below has been written into
+  # nextflow-galaxy-interface.md and phase 5 is deliberately not started. Full reasoning lives in
+  # nextflow-galaxy-data-flow.md sections 14, 15 and 17.
+  - id: versions-output-has-no-producer
+    target: nextflow-galaxy-interface.md
+    target_section: "10.2 promoted outputs"
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    status: held-for-operator-decision
+    found: >-
+      The versions row of the promoted-output list cannot be wired. The source builds that file from
+      70 ch_versions.mix() sites through softwareVersionsToYAML(...).collectFile(storeDir:
+      "${outdir}/pipeline_info", ...) at funcscan.nf:414-421, i.e. a workflow-level versions channel
+      fed by every module. Galaxy keeps versions per job, has no such channel, and the same
+      funcscan.nf:397-402 site also mixes file paths with (process, tool, version) triples and routes
+      them by instanceof - a distinction that exists only because the Nextflow helper accepts both.
+    options: >-
+      (a) drop versions from the promoted set and say so in the brief; (b) promote the per-step
+      versions outputs, which multiplies that row by the number of steps that have one; (c) add one
+      custom "collect versions" step, for which no packaged recipe exists. Recommendation is (a) or
+      (b); (c) should not be chosen without seeing what advance-galaxy-draft-step can actually build.
+    evidence:
+      - versions-collation-and-parameter-summary-have-no-galaxy-producer
+
+  - id: promote-bgc-mincontiglength
+    target: nextflow-galaxy-interface.md
+    target_section: "5/6 shape controls and the pinned set"
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    status: held-for-operator-decision
+    found: >-
+      bgc_mincontiglength is one of the 133 pinned tool knobs, which is correct under the brief's
+      effect test as written - it adds no input, no output and no step. But it is consumed as
+      ext.args = "--min-len ${params.bgc_mincontiglength}" (conf/modules.config:103-105) and decides
+      which contigs survive into the long-contig variant, hence which samples have any element in the
+      BGC lane at all: funcscan.nf:109-114 then drops a sample with no long contigs entirely. That is a
+      branch-membership effect, which is the brief's own criterion for exposing a control.
+    options: >-
+      Promote it as a numeric input carrying the nextflow.config default (61 inputs becomes 62, 133
+      pinned becomes 132), and widen the promotion rule from "adds an input, output or step" to
+      "changes what runs, what data is needed, or which samples a lane covers". The sibling flag
+      bgc_savefilteredcontigs stays out, because its only effect is publishDir enabled.
+    evidence:
+      - bgc-mincontiglength-affects-lane-membership
+
+  - id: interproscan-table-binds-to-the-rewrite-step
+    target: nextflow-galaxy-interface.md
+    target_section: "10.2 promoted outputs"
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    status: held-for-operator-decision
+    found: >-
+      The interproscan_table row names INTERPROSCAN / tsv as its producer, which is the wrong step.
+      protein_annotation.nf:37-44 reads the tool's tsv back with new File(tsv_path).readLines() and
+      appends two literal NA fields to every line, because (source comment) "INTERPROSCAN 5.72-103.0
+      only includes 13 columns and not 15 which ampcombi expects", and it is the rewritten file the
+      subworkflow emits. Promoting the tool's own output would publish a table that AMPcombi rejects.
+    options: >-
+      Rebind the row to the rewrite step (N16 in the data-flow brief). Worth noting for the test plan:
+      that step is the only Groovy closure in the pipeline that transforms file bytes, so it needs its
+      own tabular tool step and its own test, and it is invisible in summary-nextflow.json.
+    evidence:
+      - interproscan-output-is-rewritten-by-groovy-before-anyone-uses-it
+
+  - id: annotation-tool-override-belongs-on-the-form
+    target: nextflow-galaxy-interface.md
+    target_section: "4/5 annotation_tool"
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    status: held-for-operator-decision
+    found: >-
+      annotation.nf:29 computes a gate the user did not choose - annotation_tool == "pyrodigal", or
+      prodigal with BGC screening and any of the three BGC sub-screens on, or prodigal with AMP
+      screening - and :32-37 announces the override in a log.warn. Keeping that test in the workflow
+      means re-typing it on every gated step: 12 when: strings per ANNOTATION instance (6 pyrodigal
+      steps carry it, 6 prodigal steps carry its negation conjoined with the equality test), 24 across
+      the two instances the data-flow brief recommends.
+    options: >-
+      Three, in ascending order of honesty cost: repeat the expression on all 24 steps; hoist it into
+      the interface (drop prodigal from the enum, or state on annotation_tool that it runs as pyrodigal
+      during BGC/AMP screening) so no gate encodes it; or leave the switch alone and accept a derived
+      gate whose construction the packaged notes do not attest. The interface route loses the
+      log.warn, which is the same loss the data-flow brief already records for 23 other warnings. This
+      one is the only recommendation of the four that changes what the user sees.
+    evidence:
+      - annotation-tool-switch-changes-the-step-count
+
+  - id: add-arg-rgi-db-is-processed-input
+    target: nextflow-galaxy-interface.md
+    target_section: 5/6 inputs (CARD) and the pinned set
+    raised_by: nextflow-summary-to-galaxy-template
+    status: held-for-operator-decision
+    found: >-
+      The draft needs one boolean the brief does not have. arg.nf:109 decides whether to
+      process the uploaded CARD database with !rgi_db.contains("card_processed"), a substring
+      of the uploaded filename, and neither a filename nor a datatype is visible to `when:`
+      (entries/input-datatype-cannot-gate-a-step). The data-flow brief proposed the
+      replacement in its section 17.4 but did not add it to the input list, so the draft
+      declares arg_rgi_db_is_processed itself: 62 inputs against the brief's 61.
+    options: >-
+      (a) Add the boolean to the interface with the label the draft uses and the false
+      default, which makes the artifact and the brief agree again; (b) instead move the CARD
+      fork inside the RGI wrapper, which deletes the input and the two producer steps but
+      makes this the thirteenth use of the unverified rebuild capability entries/wrapper-
+      rebuild-capability-unverified; (c) leave the brief as the record of a superseded count.
+      Recommendation (a): it is one labelled checkbox, and the fork is a question the user can
+      actually answer.
+    evidence:
+      - input-datatype-cannot-gate-a-step
+      - db-or-rebuild-fork-cannot-gate
+
+  - id: preannotated-rows-must-say-whether-they-are-re-annotated
+    target: nextflow-galaxy-interface.md
+    target_section: 4 the four parallel sample-sheet inputs
+    raised_by: nextflow-summary-to-galaxy-template
+    status: held-for-operator-decision
+    found: >-
+      The four-sheet shape the interface brief settled on cannot express which rows are
+      already annotated. funcscan.nf:97-100 splits rows on gff/gbk being non-empty, and
+      whether the second label (`fastas: true`) also carries those rows depends on Nextflow
+      branch semantics that readings of the source disagree about (discoveries/branch-label-
+      readings-conflict-for-preannotated-rows). The draft implements the complement reading -
+      a row in the GBK or GFF sheet is not annotated - which is a user-visible promise the
+      brief never makes.
+    options: >-
+      (a) State it on the sheet inputs: "a sample listed in input_gbk is used as-is and is not
+      re-annotated", which costs one help-text line and makes the draft's behaviour the
+      documented one; (b) follow the non-exclusive reading instead, which needs a collapse
+      step per lane before the four unions because Galaxy cannot hold the resulting duplicate
+      identifiers, and reopens the topology; (c) ask nf-core upstream which reading the pre-
+      annotated profiles intend. Recommendation (a) now, with (c) as a separate issue, and a
+      fixture row carrying fasta+protein+gbk in the test plan to keep the two readings
+      observable.
+    evidence:
+      - preannotated-complement-reading-diverges-from-source
