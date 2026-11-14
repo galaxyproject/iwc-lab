@@ -114,17 +114,17 @@ alphabetical collection order and once in the order Sample_D, Sample_B, Sample_A
 the direction of each pair to collection order rather than to the isolate names. Expected
 outputs come from running upstream's own Nextflow pipeline (`CSP2.nf --runmode align`) in the
 CSP2 image on the same assemblies, and the two pairs against Sample_A also match the
-`.snpdiffs` files CSP2's authors publish with that data. For the reversed all-vs-all case the
-expected files come from an upstream run in which CSP2's order-dependent choice gave the same
-three directions. The `.snpdiffs`
+`.snpdiffs` files CSP2's authors publish with that data. In those three cases the `.snpdiffs`
 files are compared in full apart from the assembly paths in their header line, and every row of
-the two tables is checked.
+the two tables is checked. The reversed all-vs-all case checks only which pairs come out and in
+which direction, with the assembly metrics of both isolates.
 
-MUMmer `dnadiff` in the CSP2 image does not always return the same alignments for one of the
-test pairs, Sample_A as the query against Sample_B: repeated runs sometimes keep an extra 228 bp
-alignment, which adds one aligned region to the `.snpdiffs` file and moves
-`Median_Alignment_Length` from 51097 to 50330. That pair's test accepts either result. The other
-pairs gave the same alignments on every repeat.
+That case does not compare alignment content because MUMmer `dnadiff` does not return the same
+alignments for its three directions on every host. Sample_A as the query against Sample_B came
+out two ways in repeated runs on one machine (an extra 228 bp alignment in 7 runs of 9), and
+Sample_A against Sample_D gave a `Median_Alignment_Length` of 42490 on an emulated amd64 host
+and 40058 on GitHub's runners. The directions the other three cases compare gave the same
+alignments in every run so far.
 
 The rejection of isolate IDs outside the rules above, and of reference IDs that name no isolate,
 is not covered by the tests: Planemo's workflow tests report a failed run as an error and cannot
