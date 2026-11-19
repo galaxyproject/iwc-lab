@@ -1,0 +1,88 @@
+class: GalaxyUserTool
+id: ampliseq_core_metrics
+version: 1.0.0
+name: QIIME2 diversity core metrics (ampliseq)
+description: Rarefy at the derived sampling depth and compute phylogenetic diversity core metrics, publishing an alpha significance plot and the weighted UniFrac distance matrix
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core/ampliseq QIIME2_DIVERSITY_CORE process
+    (modules/local/qiime2_diversity_core/main.nf, container qiime2/qiime2:2026.4 kept,
+    the draft's standing qiime2 pin). Command core verbatim: UNIFRAC_USE_GPU=N and the
+    XDG/MPL/NUMBA exports, sampling depth = minimum per-sample count raised to the
+    diversity_rarefaction_depth floor (the module's count_table_minmax_reads.py minimum
+    vs params.diversity_rarefaction_depth rule; awk column sums over the wide count
+    table give the same minimum - taxa filtering drops features, never samples), then
+    qiime diversity core-metrics-phylogenetic --output-dir with --p-n-jobs-or-threads 1
+    (Galaxy single-core; upstream ${task.cpus}). Galaxy adaptations. (1) Published
+    outputs: the module emits all vectors/matrices/pcoa qzas; this tool publishes ONE
+    alpha visualization - alpha-group-significance on the shannon vector (the
+    QIIME2_DIVERSITY_ALPHA module's pattern, ${baseName}-vis.qzv with a fixed name) - as
+    div_plots, and ONE distance matrix - weighted_unifrac copied to a fixed name - as
+    distance_matrix for the adonis step (upstream flattens ALL four matrices into
+    beta-group-significance/adonis; the draft has single ports and weighted UniFrac is
+    the standard primary metric - v1 choice). The remaining diversity_core artifacts
+    stay in the working directory. (2) The rarefaction-depth WARNING display files
+    (log.warn echo upstream) and versions.yml are dropped (precedent). (3) The beta and
+    ordination visualizers (QIIME2_DIVERSITY_BETA/BETAORD per metacolumn) have no
+    counterpart - no equivalent draft step.
+container: quay.io/qiime2/qiime2:2026.4
+inputs:
+- name: table
+  type: data
+  label: Feature table artifact
+  help: QIIME2 FeatureTable[Frequency] qza (import_table).
+- name: phylogeny
+  type: data
+  label: Rooted phylogeny artifact
+  help: QIIME2 rooted tree qza (qiime2_tree).
+- name: metadata
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: Sample metadata
+  help: Tab-separated sample metadata (filtered metadata, source ch_metadata rebind).
+- name: stats
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: Wide count table (depth derivation)
+  help: ASV x sample counts (asv_table_knot) - minimum per-sample column sum derives --p-sampling-depth.
+- name: min_depth
+  type: integer
+  label: Sampling depth floor
+  value: 500
+  help: Floor for the derived minimum (params.diversity_rarefaction_depth; the module raises the sample minimum to this when smaller).
+outputs:
+- name: div_plots
+  type: data
+  from_work_dir: alpha-shannon.qzv
+  label: Shannon diversity group significance (qzv)
+- name: distance_matrix
+  type: data
+  from_work_dir: weighted-unifrac-distance-matrix.qza
+  label: Weighted UniFrac distance matrix (qza)
+shell_command: |
+  export UNIFRAC_USE_GPU=N
+  export XDG_CONFIG_HOME="./xdgconfig"
+  export XDG_CACHE_HOME="./xqcache"
+  export MPLCONFIGDIR="./mplconfigdir"
+  export NUMBA_CACHE_DIR="./numbacache"
+  mindepth=$(awk -F'\t' 'NR>1 {for (i=2; i<=NF; i++) s[i]+=$i} END {m=""; for (i in s) if (m=="" || s[i]<m) m=s[i]; printf "%d", m}' "$(inputs.stats.path)")
+  if [ "$mindepth" -lt "$(inputs.min_depth)" ]; then mindepth="$(inputs.min_depth)"; fi
+  qiime diversity core-metrics-phylogenetic \
+      --m-metadata-file "$(inputs.metadata.path)" \
+      --i-phylogeny "$(inputs.phylogeny.path)" \
+      --i-table "$(inputs.table.path)" \
+      --p-sampling-depth "$mindepth" \
+      --output-dir diversity_core \
+      --p-n-jobs-or-threads 1 \
+      --verbose
+  qiime diversity alpha-group-significance \
+      --i-alpha-diversity diversity_core/shannon_vector.qza \
+      --m-metadata-file "$(inputs.metadata.path)" \
+      --o-visualization alpha-shannon.qzv
+  cp diversity_core/weighted_unifrac_distance_matrix.qza weighted-unifrac-distance-matrix.qza

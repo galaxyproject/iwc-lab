@@ -1,0 +1,386 @@
+{
+  "id": "kraken2",
+  "version": "2.17.1+galaxy0",
+  "name": "Kraken2",
+  "description": "assign taxonomic labels to sequencing reads",
+  "inputs": [
+    {
+      "name": "single_paired",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "single_paired_selector",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Single or paired reads",
+        "help": "--paired",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Paired",
+            "value": "collection",
+            "selected": false
+          },
+          {
+            "label": "Single",
+            "value": "no",
+            "selected": true
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "collection",
+          "parameters": [
+            {
+              "name": "input_pair",
+              "parameter_type": "gx_data_collection",
+              "hidden": false,
+              "label": "Collection of paired reads",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data_collection",
+              "collection_type": "paired",
+              "extensions": [
+                "fasta",
+                "fasta.gz",
+                "fasta.bz2",
+                "fastqsanger",
+                "fastqsanger.gz",
+                "fastqsanger.bz2"
+              ],
+              "value": null
+            }
+          ],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "no",
+          "parameters": [
+            {
+              "name": "input_sequences",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Input sequences",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fasta",
+                "fasta.gz",
+                "fasta.bz2",
+                "fastqsanger",
+                "fastqsanger.gz",
+                "fastqsanger.bz2"
+              ],
+              "multiple": false,
+              "min": null,
+              "max": null,
+              "url_default": null
+            }
+          ],
+          "is_default_when": true
+        }
+      ]
+    },
+    {
+      "name": "use_names",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Print scientific names instead of just taxids",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": "--use-names",
+      "falsevalue": ""
+    },
+    {
+      "name": "confidence",
+      "parameter_type": "gx_float",
+      "hidden": false,
+      "label": "Confidence",
+      "help": "Confidence score threshold. Must be in [0, 1]",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "float",
+      "value": 0,
+      "min": 0,
+      "max": 1,
+      "validators": []
+    },
+    {
+      "name": "min_base_quality",
+      "parameter_type": "gx_integer",
+      "hidden": false,
+      "label": "Minimum Base Quality",
+      "help": "Minimum base quality used in classification (only effective with FASTQ input)",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "integer",
+      "value": 0,
+      "min": null,
+      "max": null,
+      "validators": []
+    },
+    {
+      "name": "minimum_hit_groups",
+      "parameter_type": "gx_integer",
+      "hidden": false,
+      "label": "Minimum hit groups",
+      "help": "Number of overlapping k-mers sharing the same minimizer needed to make a call",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "integer",
+      "value": 2,
+      "min": null,
+      "max": null,
+      "validators": []
+    },
+    {
+      "name": "quick",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Enable quick operation",
+      "help": "Quick operation (use first hit)",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": "--quick",
+      "falsevalue": ""
+    },
+    {
+      "name": "split_reads",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Split classified and unclassified outputs?",
+      "help": "Sets --unclassified-out and --classified-out",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": null,
+      "falsevalue": null
+    },
+    {
+      "name": "report",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "create_report",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Print a report with aggregrate counts/clade to file",
+        "help": "Can be used as input for bracken",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Yes",
+            "value": "true",
+            "selected": false
+          },
+          {
+            "label": "No",
+            "value": "false",
+            "selected": true
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "true",
+          "parameters": [
+            {
+              "name": "use_mpa_style",
+              "parameter_type": "gx_boolean",
+              "hidden": false,
+              "label": "Format report output like Kraken 1's kraken-mpa-report",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "boolean",
+              "value": false,
+              "truevalue": "--use-mpa-style",
+              "falsevalue": ""
+            },
+            {
+              "name": "report_zero_counts",
+              "parameter_type": "gx_boolean",
+              "hidden": false,
+              "label": "Report counts for ALL taxa, even if counts are zero",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "boolean",
+              "value": false,
+              "truevalue": "--report-zero-counts",
+              "falsevalue": ""
+            },
+            {
+              "name": "report_minimizer_data",
+              "parameter_type": "gx_boolean",
+              "hidden": false,
+              "label": "Report minimizer data",
+              "help": "Report minimizer and distinct minimizer count information in addition to normal Kraken report",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "boolean",
+              "value": false,
+              "truevalue": "--report-minimizer-data",
+              "falsevalue": ""
+            }
+          ],
+          "is_default_when": false
+        },
+        {
+          "discriminator": "false",
+          "parameters": [],
+          "is_default_when": true
+        }
+      ]
+    },
+    {
+      "name": "kraken2_database",
+      "parameter_type": "gx_select",
+      "hidden": false,
+      "label": "Select a Kraken2 database",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "select",
+      "options": null,
+      "multiple": false,
+      "validators": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "out_unclassified_paired",
+      "label": "${tool.name} on ${on_string}: Unclassified read pairs",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "paired",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": []
+    },
+    {
+      "name": "out_classified_paired",
+      "label": "${tool.name} on ${on_string}: Classified read pairs",
+      "hidden": false,
+      "type": "collection",
+      "collection_type": "paired",
+      "collection_type_source": null,
+      "collection_type_from_rules": null,
+      "structured_like": null,
+      "discover_datasets": []
+    },
+    {
+      "name": "classified_out_s",
+      "label": "${tool.name} on ${on_string}: Classified reads",
+      "hidden": false,
+      "type": "data",
+      "format": "data",
+      "format_source": "input_sequences",
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    },
+    {
+      "name": "unclassified_out_s",
+      "label": "${tool.name} on ${on_string}: Unclassified reads",
+      "hidden": false,
+      "type": "data",
+      "format": "data",
+      "format_source": "input_sequences",
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    },
+    {
+      "name": "report_output",
+      "label": "${tool.name} on ${on_string}: Report",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    },
+    {
+      "name": "output",
+      "label": "${tool.name} on ${on_string}: Classification",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1186/gb-2014-15-3-r46"
+    }
+  ],
+  "license": null,
+  "profile": "24.2",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "kraken2",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\n        \n**What it does**\n\nKraken2 is a taxonomic sequence classifier that assigns taxonomic labels to short DNA reads. It does this by examining the k-mers within a read and querying a database with those k-mers. This database contains a mapping of every k-mer in Kraken's genomic library to the lowest common ancestor (LCA) in a taxonomic tree of all genomes that contain that k-mer. The set of LCA taxa that correspond to the k-mers in a read are then analyzed to create a single taxonomic label for the read; this label can be any of the nodes in the taxonomic tree. Kraken is designed to be rapid, sensitive, and highly precise.\n\n-----\n\n**Output Format**\n\nEach sequence classified by Kraken results in a single line of output. Output lines contain five tab-delimited fields; from left to right, they are::\n\n    1. \"C\"/\"U\": a one letter code indicating that the sequence was either classified or unclassified.\n    2. The sequence ID, obtained from the FASTA/FASTQ header.\n    3. The taxonomy ID Kraken 2 used to label the sequence; this is 0 if the sequence is unclassified.\n    4. The length of the sequence in bp.\n    5. A space-delimited list indicating the LCA mapping of each k-mer in the sequence. For example, \"562:13 561:4 A:31 0:1 562:3\" would indicate that:\n            a) the first 13 k-mers mapped to taxonomy ID #562\n            b) the next 4 k-mers mapped to taxonomy ID #561\n            c) the next 31 k-mers contained an ambiguous nucleotide\n            d) the next k-mer was not in the database\n            e) the last 3 k-mers mapped to taxonomy ID #562\n        \n    "
+  }
+}

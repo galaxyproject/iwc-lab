@@ -1,0 +1,167 @@
+{
+  "id": "qiime2__phylogeny__align_to_tree_mafft_fasttree",
+  "version": "2026.1.0+q2galaxy.2026.1.0",
+  "name": "qiime2 phylogeny align-to-tree-mafft-fasttree",
+  "description": "Build a phylogenetic tree using fasttree and mafft alignment",
+  "inputs": [
+    {
+      "name": "sequences",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "sequences: FeatureData[Sequence]",
+      "help": "[required]  The sequences to be used for creating a fasttree based rooted phylogenetic tree.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data",
+      "extensions": [
+        "qza"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "__q2galaxy__GUI__section__extra_opts__",
+      "parameter_type": "gx_section",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "section",
+      "parameters": [
+        {
+          "name": "mask_max_gap_frequency",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "mask_max_gap_frequency: Float % Range(0, 1, inclusive_end=True)",
+          "help": "[default: 1.0]  The maximum relative frequency of gap characters in a column for the column to be retained. This relative frequency must be a number between 0.0 and 1.0 (inclusive), where 0.0 retains only those columns without gap characters, and 1.0 retains all columns  regardless of gap character frequency. This value is used when masking the aligned sequences.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 1,
+          "min": 0,
+          "max": 1,
+          "validators": []
+        },
+        {
+          "name": "mask_min_conservation",
+          "parameter_type": "gx_float",
+          "hidden": false,
+          "label": "mask_min_conservation: Float % Range(0, 1, inclusive_end=True)",
+          "help": "[default: 0.4]  The minimum relative frequency of at least one non-gap character in a column for that column to be retained. This relative frequency must be a number between 0.0 and 1.0 (inclusive). For example, if a value of  0.4 is provided, a column will only be retained  if it contains at least one character that is present in at least 40% of the sequences. This value is used when masking the aligned sequences.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "float",
+          "value": 0.4,
+          "min": 0,
+          "max": 1,
+          "validators": []
+        },
+        {
+          "name": "parttree",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "parttree: Bool",
+          "help": "[default: No]  This flag is required if the number of sequences being aligned are larger than 1000000. Disabled by default.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "__q2galaxy__::literal::True",
+          "falsevalue": "__q2galaxy__::literal::False"
+        },
+        {
+          "name": "large",
+          "parameter_type": "gx_boolean",
+          "hidden": false,
+          "label": "large: Bool",
+          "help": "[default: No]  This flag is required when aligning very large datasets that do not otherwise fit into memory. Temporary data is then stored in files, instead of RAM. The temporary files are stored in the QIIME 2 Artifact cache. The default location of the cache is $TMP/qiime2/<uname>.",
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "boolean",
+          "value": false,
+          "truevalue": "__q2galaxy__::literal::True",
+          "falsevalue": "__q2galaxy__::literal::False"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "alignment",
+      "label": "${tool.name} on ${on_string}: alignment.qza",
+      "hidden": false,
+      "type": "data",
+      "format": "qza",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "alignment.qza",
+      "precreate_directory": false
+    },
+    {
+      "name": "masked_alignment",
+      "label": "${tool.name} on ${on_string}: masked_alignment.qza",
+      "hidden": false,
+      "type": "data",
+      "format": "qza",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "masked_alignment.qza",
+      "precreate_directory": false
+    },
+    {
+      "name": "tree",
+      "label": "${tool.name} on ${on_string}: tree.qza",
+      "hidden": false,
+      "type": "data",
+      "format": "qza",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "tree.qza",
+      "precreate_directory": false
+    },
+    {
+      "name": "rooted_tree",
+      "label": "${tool.name} on ${on_string}: rooted_tree.qza",
+      "hidden": false,
+      "type": "data",
+      "format": "qza",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "rooted_tree.qza",
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1038/s41587-019-0209-9"
+    }
+  ],
+  "license": "BSD-3-Clause",
+  "profile": "22.05",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "qiime2",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\nQIIME 2: phylogeny align-to-tree-mafft-fasttree\n===============================================\nBuild a phylogenetic tree using fasttree and mafft alignment\n\n\nOutputs:\n--------\n:alignment.qza: The aligned sequences.\n:masked_alignment.qza: The masked alignment.\n:tree.qza: The unrooted phylogenetic tree.\n:rooted_tree.qza: The rooted phylogenetic tree.\n\n|  \n\nDescription:\n------------\nThis pipeline will start by creating a sequence alignment using MAFFT, after which any alignment columns that are phylogenetically uninformative or ambiguously aligned will be removed (masked). The resulting masked alignment will be used to infer a phylogenetic tree and then subsequently rooted at its midpoint. Output files from each step of the pipeline will be saved. This includes both the unmasked and masked MAFFT alignment from q2-alignment methods, and both the rooted and unrooted phylogenies from q2-phylogeny methods.\n\nExamples:\n---------\n\nalign_to_tree_mafft_fasttree\n****************************\nUsing the ``qiime2 phylogeny align-to-tree-mafft-fasttree`` tool:\n #. Set *\"sequences\"* to ``#: rep-seqs.qza``\n #. Press the ``Execute`` button.\n\nOnce completed, for each new entry in your history, use the ``Edit`` button to set the name as follows:\n (Renaming is optional, but it will make any subsequent steps easier to complete.)\n\n .. list-table::\n    :align: left\n    :header-rows: 1\n\n    * - History Name\n      - *\"Name\"* to set (be sure to press ``Save``)\n    * - ``#: qiime2 phylogeny align-to-tree-mafft-fasttree [...] : alignment.qza``\n      - ``aligned-rep-seqs.qza``\n    * - ``#: qiime2 phylogeny align-to-tree-mafft-fasttree [...] : masked_alignment.qza``\n      - ``masked-aligned-rep-seqs.qza``\n    * - ``#: qiime2 phylogeny align-to-tree-mafft-fasttree [...] : tree.qza``\n      - ``unrooted-tree.qza``\n    * - ``#: qiime2 phylogeny align-to-tree-mafft-fasttree [...] : rooted_tree.qza``\n      - ``rooted-tree.qza``\n\n\n|  \n\n"
+  }
+}

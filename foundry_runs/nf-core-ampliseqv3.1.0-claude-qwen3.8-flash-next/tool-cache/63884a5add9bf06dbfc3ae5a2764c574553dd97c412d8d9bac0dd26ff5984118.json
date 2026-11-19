@@ -1,0 +1,270 @@
+{
+  "id": "epa_ng",
+  "version": "0.3.8+galaxy0",
+  "name": "EPA-ng",
+  "description": "place aligned sequences onto a reference phylogeny",
+  "inputs": [
+    {
+      "name": "query",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "Aligned query sequences",
+      "help": "Queries must use the same alignment columns as the reference alignment.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data",
+      "extensions": [
+        "fasta"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "reference",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "Reference sequence alignment",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data",
+      "extensions": [
+        "fasta"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "tree",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "Reference tree",
+      "help": "Tip labels must match the reference sequence identifiers.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data",
+      "extensions": [
+        "newick"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "model",
+      "parameter_type": "gx_text",
+      "hidden": false,
+      "label": "Substitution model",
+      "help": "RAxML-NG model description, for example GTR+F+I+I+R3.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "text",
+      "area": false,
+      "value": "GTR+G",
+      "default_options": [],
+      "validators": [
+        {
+          "type": "regex",
+          "message": "Use a model description containing letters, numbers, and model punctuation only.",
+          "implicit": false,
+          "negate": false,
+          "expression": "^[A-Za-z0-9+._{},/=-]+$"
+        }
+      ]
+    },
+    {
+      "name": "retention",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "mode",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Likelihood-weight retention rule",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Minimum individual placement weight",
+            "value": "minimum",
+            "selected": true
+          },
+          {
+            "label": "Accumulated placement weight",
+            "value": "accumulated",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "minimum",
+          "parameters": [
+            {
+              "name": "threshold",
+              "parameter_type": "gx_float",
+              "hidden": false,
+              "label": "Minimum likelihood weight",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "float",
+              "value": 0.01,
+              "min": 0,
+              "max": 1,
+              "validators": []
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "accumulated",
+          "parameters": [
+            {
+              "name": "threshold",
+              "parameter_type": "gx_float",
+              "hidden": false,
+              "label": "Accumulated likelihood weight",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "float",
+              "value": 0.99,
+              "min": 0,
+              "max": 1,
+              "validators": []
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "filter_min",
+      "parameter_type": "gx_integer",
+      "hidden": false,
+      "label": "Minimum placements per query",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "integer",
+      "value": 1,
+      "min": 1,
+      "max": null,
+      "validators": []
+    },
+    {
+      "name": "filter_max",
+      "parameter_type": "gx_integer",
+      "hidden": false,
+      "label": "Maximum placements per query",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "integer",
+      "value": 7,
+      "min": 1,
+      "max": null,
+      "validators": []
+    },
+    {
+      "name": "precision",
+      "parameter_type": "gx_integer",
+      "hidden": false,
+      "label": "Decimal precision of placement output",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "integer",
+      "value": 10,
+      "min": 1,
+      "max": 17,
+      "validators": []
+    },
+    {
+      "name": "output_log",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Output run log",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": null,
+      "falsevalue": null
+    }
+  ],
+  "outputs": [
+    {
+      "name": "placements",
+      "label": "${tool.name} on ${on_string}: placements (jplace JSON)",
+      "hidden": false,
+      "type": "data",
+      "format": "json",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "epa_result.jplace",
+      "precreate_directory": false
+    },
+    {
+      "name": "log",
+      "label": "${tool.name} on ${on_string}: run log",
+      "hidden": false,
+      "type": "data",
+      "format": "txt",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": "epa_info.log",
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1093/sysbio/syy054"
+    }
+  ],
+  "license": null,
+  "profile": "25.0",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "epa-ng",
+      "type": "bio.tools"
+    }
+  ],
+  "help": {
+    "format": "markdown",
+    "content": "\nEPA-ng places aligned query sequences onto a fixed reference phylogeny using maximum likelihood. All query and reference sequences must have the same alignment columns. Reference tree tips must match the reference alignment identifiers.\n\nThe output is a jplace JSON document containing candidate placement edges, likelihood weights and branch lengths. It can be used by GAPPA to graft query sequences, assign taxonomy, or visualize placement mass. The tool retains multiple placements by default (minimum weight 0.01, maximum seven) so uncertainty remains available downstream. A maximum of one retains only the best placement.\n\nThe model input accepts a RAxML-NG model description, including fixed parameters in braces (for example, `GTR+G{0.5}`). This tool does not estimate a reference tree or align sequences.\n    "
+  }
+}

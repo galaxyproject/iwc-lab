@@ -1,0 +1,43 @@
+class: GalaxyUserTool
+id: ampliseq_duckdb_table2parquet
+version: 1.0.0
+name: Table to Parquet converter (ampliseq, duckdb)
+description: Convert one delimited summary table to Parquet with duckdb COPY read_csv
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core DUCKDB_TABLE2PARQUET process
+    (modules/nf-core/duckdb/table2parquet), one table per job like the module, pinning its
+    exact community wave image community.wave.seqera.io/library/duckdb-cli:1.5.5--9c6d18d9f687a45d
+    (registry manifest probe: anonymously pullable; conda env duckdb=1.5.5). The SQL is the
+    module's: COPY (SELECT * FROM read_csv(path, delim, header=true)) TO parquet
+    (FORMAT PARQUET). Galaxy adaptations. (1) The output file name: the module derives the
+    parquet stem from the input filename (prefix = meta.id / filename stem), but a user-tool
+    output must be declared statically, so the file is the fixed name table.parquet and the
+    consuming step/workflow-output labels carry the identity. (2) The delimiter derivation
+    from the filename suffix (.tsv -> tab, .csv -> comma, error otherwise) is fixed to tab:
+    both draft consumers feed .tsv/.tsv.gz tables, for which the module's derivation always
+    yields tab; duckdb's read_csv auto-decompresses .gz inputs. (3) The SET threads /
+    SET memory_limit lines (from task.cpus / task.memory, no Galaxy equivalent) are dropped;
+    SET temp_directory='.' is kept. (4) The task.ext.args/args2 extension points and the
+    versions topic line (eval duckdb --version) are dropped (pipeline_info precedent). SQL
+    string literals escape an embedded single quote by doubling; paths are inlined as-is,
+    safe for dataset file names.
+container: community.wave.seqera.io/library/duckdb-cli:1.5.5--9c6d18d9f687a45d
+inputs:
+- name: table
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: Delimited summary table
+  help: Tab-separated table (optionally gzipped) to convert, header row required.
+outputs:
+- name: table_parquet
+  type: data
+  format: data
+  from_work_dir: table.parquet
+  label: Parquet table
+shell_command: |
+  duckdb -c "SET temp_directory='.'; COPY (SELECT * FROM read_csv('$(inputs.table.path)', delim='\t', header=true)) TO 'table.parquet' (FORMAT PARQUET);"

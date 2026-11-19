@@ -1,0 +1,124 @@
+class: GalaxyUserTool
+id: ampliseq_tse
+version: 1.0.0
+name: TreeSummarizedExperiment builder (ampliseq)
+description: Build and save the TreeSummarizedExperiment RDS from the ASV table, taxonomy, optional metadata and optional Newick tree
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core/ampliseq TREESUMMARIZEDEXPERIMENT process
+    (modules/local/treesummarizedexperiment/main.nf, container
+    bioconductor-treesummarizedexperiment:2.10.0--r43hdfd78af_0 kept; conda env
+    bioconductor-treesummarizedexperiment=2.10.0 + r-base=4.3.2 matches, tag verified on
+    quay). The R body is the module's inline script verbatim - counts assay from the ASV
+    table (integer cast), rowData from the taxonomy table with the module's own
+    *_confidence / classifier / database column drop, rownames match to the abundance
+    matrix, sequence column (if present) moved to the referenceSeq slot, optional colData
+    and rowTree behind the file.exists guards, saveRDS at the end. Galaxy adaptations.
+    (1) The Nextflow tuple path variables become positional args (otu, tax, sam, tree -
+    the module's tuple is tax,otu; only the binding order changes); the versions.yml
+    writeLines block (which embeds task.process) is dropped (pipeline_info artifacts
+    dropped precedent). (2) The optional metadata and tree ports reproduce the source's
+    .ifEmpty('EMPTY') staging (subworkflows/local/robject_workflow/main.nf:30-43) - a
+    skipped optional input substitutes empty and file.exists("") is FALSE, exactly the
+    EMPTY-path branch. (3) The source prefix (classifier name, one rds per classifier
+    channel) collapses to the fixed output name TreeSummarizedExperiment.rds since the
+    draft consolidates a single taxonomy table upstream - same deviation as ampliseq_phyloseq.
+    (4) The tree arrives as Newick (ape::read.tree) - the draft's tree producer is a QIIME2
+    qza exported by ampliseq_export_tree, mirroring the source where the tree channel
+    reaching ROBJECT_WORKFLOW is already tree_nwk.
+container: quay.io/biocontainers/bioconductor-treesummarizedexperiment:2.10.0--r43hdfd78af_0
+inputs:
+- name: otu
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: ASV count table
+  help: Tab-separated counts keyed by ASV sequence in the first column (asv_table_knot).
+- name: tax
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: ASV taxonomy table
+  help: Tab-separated taxonomy keyed by ASV sequence in the first column (tax_table_knot; the module drops _confidence/classifier/database columns and matches rows to the count table itself).
+- name: sam
+  type: data
+  format:
+  - tabular
+  - tsv
+  optional: true
+  label: Sample metadata
+  help: Optional sample-keyed metadata tsv merged as colData (source ch_meta.ifEmpty('EMPTY')).
+- name: tree
+  type: data
+  format:
+  - newick
+  optional: true
+  label: Rooted tree (Newick)
+  help: Optional Newick tree set as rowTree (source ch_robject_intree.ifEmpty('EMPTY')).
+outputs:
+- name: rds
+  type: data
+  format: rdata
+  from_work_dir: TreeSummarizedExperiment.rds
+  label: TreeSummarizedExperiment object (RDS)
+configfiles:
+- filename: tse.R
+  content: |
+    #!/usr/bin/env Rscript
+    # Verbatim modules/local/treesummarizedexperiment/main.nf script body (tuple vars ->
+    # positional args; versions.yml writeLines block dropped - deviations in the tool help).
+    suppressPackageStartupMessages(library(TreeSummarizedExperiment))
+
+    a <- commandArgs(trailingOnly = TRUE)
+    otu_tsv <- a[1]; tax_tsv <- a[2]; sam_tsv <- a[3]; tree <- a[4]
+
+    # Read otu table. It must be in a SimpleList as a matrix where rows
+    # represent taxa and columns samples.
+    otu_mat  <- read.table(otu_tsv, sep="\t", header=TRUE, row.names=1)
+    otu_mat <- as.matrix(otu_mat)
+    storage.mode(otu_mat) <- "integer"
+    assays <- SimpleList(counts = otu_mat)
+    # Read taxonomy table. Correct format for it is DataFrame.
+    taxonomy_table  <- read.table(tax_tsv, sep="\t", header=TRUE, row.names=1, comment.char = "")
+    # per-rank confidences and the source classifier and database are not ranks
+    taxonomy_table  <- taxonomy_table[, !grepl("_confidence$", colnames(taxonomy_table)) & !colnames(taxonomy_table) %in% c("classifier", "database"), drop=FALSE]
+    taxonomy_table <- DataFrame(taxonomy_table)
+
+    # Match rownames between taxonomy table and abundance matrix.
+    taxonomy_table <- taxonomy_table[match(rownames(otu_mat), rownames(taxonomy_table)), ]
+
+    # Create TreeSE object.
+    tse <- TreeSummarizedExperiment(
+        assays = assays,
+        rowData = taxonomy_table
+    )
+
+    # If taxonomy table contains sequences, move them to referenceSeq slot
+    if (!is.null(rowData(tse)[["sequence"]])) {
+        referenceSeq(tse) <- DNAStringSet( rowData(tse)[["sequence"]] )
+        rowData(tse)[["sequence"]] <- NULL
+    }
+
+    # If provided, we add sample metadata as DataFrame object. rownames of
+    # sample metadata must match with colnames of abundance matrix.
+    if (file.exists(sam_tsv)) {
+        sample_meta  <- read.table(sam_tsv, sep="\t", header=TRUE, row.names=1)
+        sample_meta <- sample_meta[match(colnames(tse), rownames(sample_meta)), ]
+        sample_meta  <- DataFrame(sample_meta)
+        colData(tse) <- sample_meta
+    }
+
+    # If provided, we add phylogeny. The rownames in abundance matrix must match
+    # with node labels in phylogeny.
+    if (file.exists(tree)) {
+        phylogeny <- ape::read.tree(tree)
+        rowTree(tse) <- phylogeny
+    }
+
+    saveRDS(tse, file = "TreeSummarizedExperiment.rds")
+shell_command: |
+  Rscript tse.R "$(inputs.otu.path)" "$(inputs.tax.path)" "$(inputs.sam.path)" "$(inputs.tree.path)"

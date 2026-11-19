@@ -1,0 +1,108 @@
+class: GalaxyUserTool
+id: ampliseq_ancombc
+version: 1.0.0
+name: QIIME2 ANCOM-BC / ANCOM-BC2 (ampliseq)
+description: Run QIIME2 ANCOM-BC or ANCOM-BC2 differential abundance on the ASV table for one metadata category or formula
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core/ampliseq QIIME2_ANCOMBC_ASV / QIIME2_ANCOMBC2_ASV
+    modules (both pinned to container qiime2/qiime2:2026.4 - ancombc2 ships in
+    q2-composition 2026.4, no q2-miyabi plugin needed), one tool covering both branches
+    via the use_ancombc2 switch. Command cores are the modules': XDG/MPL/NUMBA exports,
+    composition ancombc --p-formula <f> --o-differentials / miyabi-free
+    composition ancombc2 --p-fixed-effects-formula <f> --o-ancombc2-output, then
+    composition tabulate -> qzv (the emitted result). v1 simplifications (draft step
+    plan: single category/formula, flags folded into one step). (1) Default formula:
+    upstream an empty formula falls back to the table qza's baseName, which for the
+    per-category filter-samples products IS the metadata category
+    (qiime2_filtersamples writes ${category}.qza); here the empty formula resolves to
+    the category input, and an empty category leaves the basename as last resort.
+    (2) Category where-filter (upstream filtersamples with ''<category><>""'' per
+    column) is applied first when a category is given - same clause as the ancom tool.
+    (3) Fixed output names replace formula-templated ones (differentials.qza /
+    result.qzv) - static from_work_dir constraint. (4) Dropped: qza/qzv tools-export
+    folders (full-report inputs), da-barplot + ancombc2-visualizer qzvs and the
+    ancombc_volcanoplot.r volcano (per-branch extra visualizations with formula-named
+    outputs; the draft publishes one result), --p-num-processes ${task.cpus} runs at 1,
+    versions.yml (pipeline_info precedent), the error_ignore-label warning echo
+    (q2 errors surface). Booleans render True/False in text ports; the switch matches
+    either case.
+container: quay.io/qiime2/qiime2:2026.4
+inputs:
+- name: table
+  type: data
+  label: Feature table artifact
+  help: QIIME2 FeatureTable[Frequency] qza (import_table).
+- name: metadata
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: Sample metadata
+  help: Tab-separated sample metadata (filtered metadata, source ch_metadata rebind).
+- name: category
+  type: text
+  label: Metadata category
+  value: ""
+  help: Metadata column used for the sample where-filter and as the default formula (params.metadata_category).
+- name: formula1
+  type: text
+  label: ANCOM-BC formula
+  value: ""
+  help: Fixed-effects formula for the ancombc branch (params.ancombc_formula; empty falls back to the category).
+- name: formula2
+  type: text
+  label: ANCOM-BC2 formula
+  value: ""
+  help: Fixed-effects formula for the ancombc2 branch (params.ancombc2_formula; empty falls back to the category).
+- name: use_ancombc2
+  type: text
+  label: Use ANCOM-BC2
+  value: "false"
+  help: Set to the ancombc2 boolean to run composition ancombc2 instead of composition ancombc.
+outputs:
+- name: result
+  type: data
+  from_work_dir: result.qzv
+  label: ANCOM-BC differentials tabulation (qzv)
+shell_command: |
+  export XDG_CONFIG_HOME="./xdgconfig"
+  export XDG_CACHE_HOME="./xqcache"
+  export MPLCONFIGDIR="./mplconfigdir"
+  export NUMBA_CACHE_DIR="./numbacache"
+  case "$(inputs.use_ancombc2)" in [Tt]rue) mode=2 ;; *) mode=1 ;; esac
+  if [ "$mode" = "2" ]; then formula="$(inputs.formula2)"; else formula="$(inputs.formula1)"; fi
+  category="$(inputs.category)"
+  [ -z "$formula" ] && formula="$category"
+  [ -z "$formula" ] && formula=$(basename "$(inputs.table.path)" .qza)
+  if [ -n "$category" ]; then
+    qiime feature-table filter-samples \
+        --i-table "$(inputs.table.path)" \
+        --m-metadata-file "$(inputs.metadata.path)" \
+        --p-where "\"$category\"<>\"\"" \
+        --o-filtered-table filtered.qza
+    table=filtered.qza
+  else
+    table="$(inputs.table.path)"
+  fi
+  if [ "$mode" = "2" ]; then
+    qiime composition ancombc2 \
+        --i-table "$table" \
+        --m-metadata-file "$(inputs.metadata.path)" \
+        --p-fixed-effects-formula "$formula" \
+        --o-ancombc2-output differentials.qza \
+        --p-num-processes 1 \
+        --verbose
+  else
+    qiime composition ancombc \
+        --i-table "$table" \
+        --m-metadata-file "$(inputs.metadata.path)" \
+        --p-formula "$formula" \
+        --o-differentials differentials.qza \
+        --verbose
+  fi
+  qiime composition tabulate \
+      --i-data differentials.qza \
+      --o-visualization result.qzv

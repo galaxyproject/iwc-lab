@@ -1,0 +1,60 @@
+class: GalaxyUserTool
+id: ampliseq_picrust
+version: 1.0.0
+name: PICRUST2 functional prediction (ampliseq)
+description: Predict functional profiles from an ASV fasta and abundance table with picrust2_pipeline.py and add METACYC pathway descriptions
+license: BSD-3-Clause
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core/ampliseq PICRUST process
+    (modules/local/picrust/main.nf, container biocontainers/picrust2:2.6.3--pyhdfd78af_0
+    kept from the module directive). Command core verbatim: picrust2_pipeline.py -s seq
+    -i abund -o all_output -p 1 (upstream $task.cpus; Galaxy single-core) --in_traits
+    EC,KO --verbose, then add_descriptions.py over the EC, KO and METACYC unstratified
+    predictions. Galaxy adaptations. (1) Branch: the source calls PICRUST with either the
+    QIIME2 taxon-filtered exports (source=QIIME2, which first strips the biom header line)
+    or the DADA2 channels (ch_fasta, rebound ch_asv_table). This tool realizes the DADA2
+    branch only - the draft wires the unfiltered ASV fasta knot and the
+    post-filter-samples wide table, and has no QIIME2 abs-export producer - so the
+    tail-strip branch is dropped. (2) Published output: the single result port emits
+    METACYC_path_abun_unstrat_descrip.tsv (the pathways emit corresponds to the three
+    *_descrip.tsv files; pathway abundance with descriptions is the interpretable
+    result and Galaxy from_work_dir is static). The all_output folder, EC/KO descrip
+    files, the provenance message txt and picrust.args.txt (all MultiQC/full-report
+    inputs upstream) and versions.yml are dropped (precedent). (3) $args (task.ext.args,
+    unset at the call site) is dropped.
+container: quay.io/biocontainers/picrust2:2.6.3--pyhdfd78af_0
+inputs:
+- name: seq
+  type: data
+  format:
+  - fasta
+  label: ASV fasta
+  help: Representative sequences (asv_fasta_knot; DADA2-branch ch_fasta, not metadata-filtered upstream).
+- name: abund
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: ASV abundance table
+  help: Wide ASV x sample counts TSV (asv_table_for_import = post-filter-samples ch_asv_table rebind).
+outputs:
+- name: result
+  type: data
+  from_work_dir: METACYC_path_abun_unstrat_descrip.tsv
+  label: METACYC pathway abundance with descriptions
+shell_command: |
+  picrust2_pipeline.py \
+      -s "$(inputs.seq.path)" \
+      -i "$(inputs.abund.path)" \
+      -o all_output \
+      -p 1 \
+      --in_traits EC,KO \
+      --verbose
+  add_descriptions.py -i all_output/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC \
+      -o EC_pred_metagenome_unstrat_descrip.tsv
+  add_descriptions.py -i all_output/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO \
+      -o KO_pred_metagenome_unstrat_descrip.tsv
+  add_descriptions.py -i all_output/pathways_out/path_abun_unstrat.tsv.gz -m METACYC \
+      -o METACYC_path_abun_unstrat_descrip.tsv

@@ -1,0 +1,136 @@
+class: GalaxyUserTool
+id: ampliseq_summary_report
+version: 1.0.0
+name: Summary report renderer (ampliseq, simplified)
+description: Render the HTML summary report from the long counts table and the consolidated taxonomy table, with optional markdown abstract and title
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of the nf-core/ampliseq SUMMARY_REPORT process
+    (modules/local/summary_report/main.nf) pinning its exact mulled container
+    biocontainers/mulled-v2-b2ec1fea...:a447f6b7...-1 (tag verified on quay; conda env
+    r-base=4.2.3 + r-rmarkdown/knitr/data.table). The module renders the pipeline's bundled
+    template.Rmd with ~70 params assembled from every pipeline output and its css/logo
+    assets; the draft interface excluded those assets and this plan's scope is the
+    counts + taxonomy summary (simplified-report decision). This tool therefore SHIPS ITS
+    OWN simplified Rmd: title + abstract passthrough, abundance overview (ASV / sample /
+    read totals from the long counts table) and taxonomy overview (per-column taxon counts
+    plus head of the consolidated table) - the same two summary tables the Parquet exports
+    and MultiQC custom-content stats cover. Deviations from the module. (1) Bundled
+    template/css/logo assets not carried (excluded-params note): the module's file.copy
+    workaround for the staged template symlink is moot for a configfile. (2) Params absent
+    in the draft (qc/plot paths, reference-database titles, diversity/ANCOM sections...)
+    simply have no section. (3) The *.svg passthrough output is dropped (a simplified
+    report writes no standalone svgs); versions.yml writeLines dropped (pipeline_info
+    precedent). (4) Optional inputs substitute the empty path and file.exists("") is
+    FALSE - the module's per-entry channel-presence guards. Output keeps the module's
+    summary_report.html name.
+container: quay.io/biocontainers/mulled-v2-b2ec1fea5791d428eebb8c8ea7409c350d31dada:a447f6b7a6afde38352b24c30ae9cd6e39df95c4-1
+inputs:
+- name: counts
+  type: data
+  format:
+  - tabular
+  - tsv
+  optional: true
+  label: Long-format counts
+  help: Long counts table (asv_id, sample, count; may be gzipped) from the counts checkpoint; section skipped when absent (source skip_abundance_tables).
+- name: tax
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: Consolidated taxonomy table
+  help: Tab-separated taxonomy keyed by ASV sequence in the first column (tax_table_knot).
+- name: abstract
+  type: data
+  format:
+  - txt
+  - markdown
+  optional: true
+  label: Report abstract
+  help: Optional markdown abstract shown under the title (source report_abstract file input).
+- name: report_title
+  type: text
+  label: Report title
+  value: "Summary of analysis results"
+  help: Title line (params.report_title passthrough).
+outputs:
+- name: report
+  type: data
+  format: html
+  from_work_dir: summary_report.html
+  label: Summary report (HTML)
+configfiles:
+- filename: template.Rmd
+  content: |
+    ---
+    title: "`r params$report_title`"
+    output: html_document
+    editor_options: { chunk_range_type: card }
+    params:
+      counts_path: ""
+      tax_path: ""
+      abstract_path: ""
+      report_title: "Summary of analysis results"
+    ---
+
+    ```{r setup, include=FALSE}
+    knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+    suppressPackageStartupMessages(library(data.table))
+    ```
+
+    `r if (nzchar(params$abstract_path) && file.exists(params$abstract_path)) paste(readLines(params$abstract_path, warn = FALSE), collapse = "\n")`
+
+    ## Abundance overview
+
+    ```{r abundance}
+    if (file.exists(params$counts_path) && nzchar(params$counts_path)) {
+        counts <- data.table::fread(params$counts_path)
+        setnames(counts, 1:3, c("asv_id", "sample", "count"))
+        cat("- ASVs observed (in at least one sample):", format(data <- uniqueN(counts$asv_id), big.mark = ","), "\n")
+        cat("- Samples:", format(uniqueN(counts$sample), big.mark = ","), "\n")
+        cat("- Total counts:", format(sum(counts$count), big.mark = ","), "\n")
+        cat("- Mean counts per ASV:", formatC(mean(counts$count), format = "f", digits = 1), "\n")
+    } else {
+        cat("*Abundance table skipped (skip_abundance_tables).*\n")
+    }
+    ```
+
+    ## Taxonomy overview
+
+    ```{r taxonomy}
+    tax <- data.table::fread(params$tax_path)
+    first <- colnames(tax)[1]
+    cat("- ASVs with taxonomy:", format(uniqueN(tax[[first]]), big.mark = ","), "\n\n")
+    ranks <- colnames(tax)[-1]
+    if (length(ranks)) {
+        per_rank <- data.table(rank = ranks,
+                               unique_taxa = sapply(ranks, function(r) uniqueN(tax[[r]][nzchar(tax[[r]]) & tax[[r]] != ""])))
+        print(knitr::kable(per_rank, col.names = c("Column", "Unique entries")))
+        cat("\n```{r head}\n")
+    }
+    ```
+
+    ```{r taxhead}
+    print(knitr::kable(head(as.data.frame(tax), 20)))
+    ```
+- filename: run_report.R
+  content: |
+    #!/usr/bin/env Rscript
+    # Mirrors SUMMARY_REPORT's render call (bundled template replaced by the simplified
+    # configfile template - tool help; versions.yml dropped).
+    suppressPackageStartupMessages(library(rmarkdown))
+
+    a <- commandArgs(trailingOnly = TRUE)
+    counts_path <- a[1]; tax_path <- a[2]; abstract_path <- a[3]; report_title <- a[4]
+    if (!nzchar(counts_path)) counts_path <- ""
+    if (!nzchar(abstract_path)) abstract_path <- ""
+
+    rmarkdown::render("template.Rmd", output_file = "summary_report.html",
+        params = list(counts_path = counts_path, tax_path = tax_path,
+                      abstract_path = abstract_path, report_title = report_title),
+        envir = new.env())
+shell_command: |
+  Rscript run_report.R "$(inputs.counts.path)" "$(inputs.tax.path)" "$(inputs.abstract.path)" "$(inputs.report_title.value)"

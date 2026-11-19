@@ -1,0 +1,42 @@
+class: GalaxyUserTool
+id: ampliseq_import_table
+version: 1.0.0
+name: QIIME2 feature-table importer (ampliseq)
+description: Convert the pipeline ASV count table to BIOM and import it as FeatureTable[Frequency]
+license: GPL-3.0-or-later
+help:
+  format: markdown
+  content: >-
+    Galaxy replica of nf-core/ampliseq QIIME2_INASV (modules/local/qiime2_inasv/main.nf,
+    container qiime2/qiime2:2026.4 kept as quay.io/qiime2/qiime2:2026.4): the sed header strip,
+    biom convert --table-type="OTU table" --to-hdf5 and the verbatim qiime tools import command
+    (FeatureTable[Frequency], BIOMV210Format) are the source script lines; the XDG/MPL/NUMBA
+    cache exports match the source and the sibling import_taxonomy UDT. The pinned q2d2
+    qiime2_core__tools__import cannot perform the tsv-to-biom pre-conversion (same identity
+    correction as import_taxonomy). Adaptation: the source's ch_asv_table is DADA2 biom text
+    (hence the "# Constructed from biom file" sed, kept for header-carrying inputs), while this
+    draft's ASV tables are plain tab-separated with the ASV sequence in the first column -
+    biom-format's load_table accepts that as a simple BIOM text table, so no pre-conversion is
+    needed. Deviation: versions.yml is not published (pipeline_info artifacts dropped precedent).
+container: quay.io/qiime2/qiime2:2026.4
+inputs:
+- name: table
+  type: data
+  format:
+  - tabular
+  - tsv
+  label: ASV count table
+  help: Tab-separated table keyed by ASV sequence, first column then one column per sample (biom-text headers tolerated).
+outputs:
+- name: qza
+  type: data
+  from_work_dir: table.qza
+  label: QIIME2 feature table artifact
+shell_command: |
+  export XDG_CONFIG_HOME="./xdgconfig";
+  export XDG_CACHE_HOME="./xqcache";
+  export MPLCONFIGDIR="./mplconfigdir";
+  export NUMBA_CACHE_DIR="./numbacache";
+  sed '/^# Constructed from biom file/d' "$(inputs.table.path)" > biom-table.txt;
+  biom convert -i biom-table.txt -o table.biom --table-type="OTU table" --to-hdf5;
+  qiime tools import --input-path table.biom --type 'FeatureTable[Frequency]' --input-format BIOMV210Format --output-path table.qza

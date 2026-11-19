@@ -1,0 +1,459 @@
+{
+  "id": "dada2_assignTaxonomyAddspecies",
+  "version": "1.38.0+galaxy2",
+  "name": "dada2: assignTaxonomy and addSpecies",
+  "description": "Learn Error rates",
+  "inputs": [
+    {
+      "name": "seqs",
+      "parameter_type": "gx_data",
+      "hidden": false,
+      "label": "sequences to be assigned",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "data",
+      "extensions": [
+        "dada2_dada",
+        "dada2_mergepairs",
+        "dada2_sequencetable",
+        "dada2_uniques"
+      ],
+      "multiple": false,
+      "min": null,
+      "max": null,
+      "url_default": null
+    },
+    {
+      "name": "reference_cond",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "reference_select",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Select a reference dataset your history or use a built-in?",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "Use a built-in reference",
+            "value": "builtin",
+            "selected": false
+          },
+          {
+            "label": "Use reference data from the history",
+            "value": "history",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "builtin",
+          "parameters": [
+            {
+              "name": "refFasta",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Select reference data set",
+              "help": "If a reference data set of interest is not listed, contact the Galaxy administrators",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": null,
+              "multiple": false,
+              "validators": []
+            }
+          ],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "history",
+          "parameters": [
+            {
+              "name": "refFasta",
+              "parameter_type": "gx_data",
+              "hidden": false,
+              "label": "Reference data set",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "data",
+              "extensions": [
+                "fasta",
+                "fasta.gz"
+              ],
+              "multiple": false,
+              "min": null,
+              "max": null,
+              "url_default": null
+            },
+            {
+              "name": "taxLevels",
+              "parameter_type": "gx_text",
+              "hidden": false,
+              "label": "Names of the taxonomic levels in the data set",
+              "help": "comma separated list",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": true,
+              "type": "text",
+              "area": false,
+              "value": null,
+              "default_options": [],
+              "validators": []
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "minBoot",
+      "parameter_type": "gx_integer",
+      "hidden": false,
+      "label": "Minimum bootstrap confidence",
+      "help": "for assigning a taxonomic level",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "integer",
+      "value": 50,
+      "min": 0,
+      "max": null,
+      "validators": []
+    },
+    {
+      "name": "tryRC",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Try reverse complement",
+      "help": "the reverse-complement of each sequence will be used for classification if it is a better match to the reference sequences than the forward sequence",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": "TRUE",
+      "falsevalue": "FALSE"
+    },
+    {
+      "name": "outputBootstraps",
+      "parameter_type": "gx_boolean",
+      "hidden": false,
+      "label": "Output bootstrap values",
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "boolean",
+      "value": false,
+      "truevalue": "TRUE",
+      "falsevalue": "FALSE"
+    },
+    {
+      "name": "addSpecies_cond",
+      "parameter_type": "gx_conditional",
+      "hidden": false,
+      "label": null,
+      "help": null,
+      "argument": null,
+      "is_dynamic": false,
+      "optional": false,
+      "type": "conditional",
+      "test_parameter": {
+        "name": "addSpecies_select",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Add genus-species binomials to the taxonomic table",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "No",
+            "value": "FALSE",
+            "selected": false
+          },
+          {
+            "label": "Yes",
+            "value": "TRUE",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      "whens": [
+        {
+          "discriminator": "FALSE",
+          "parameters": [],
+          "is_default_when": true
+        },
+        {
+          "discriminator": "TRUE",
+          "parameters": [
+            {
+              "name": "speciesreference_cond",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "speciesreference_select",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Select a reference dataset your history or use a built-in?",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Use a built-in reference",
+                    "value": "builtin",
+                    "selected": false
+                  },
+                  {
+                    "label": "Use reference data from the history",
+                    "value": "history",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "builtin",
+                  "parameters": [
+                    {
+                      "name": "speciesrefFasta",
+                      "parameter_type": "gx_select",
+                      "hidden": false,
+                      "label": "Select reference data set",
+                      "help": "If a reference data set of interest is not listed, contact the Galaxy administrators",
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "select",
+                      "options": null,
+                      "multiple": false,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": true
+                },
+                {
+                  "discriminator": "history",
+                  "parameters": [
+                    {
+                      "name": "speciesrefFasta",
+                      "parameter_type": "gx_data",
+                      "hidden": false,
+                      "label": "Reference data set",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "data",
+                      "extensions": [
+                        "fasta",
+                        "fasta.gz"
+                      ],
+                      "multiple": false,
+                      "min": null,
+                      "max": null,
+                      "url_default": null
+                    }
+                  ],
+                  "is_default_when": false
+                }
+              ]
+            },
+            {
+              "name": "allowMultiple_cond",
+              "parameter_type": "gx_conditional",
+              "hidden": false,
+              "label": null,
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "conditional",
+              "test_parameter": {
+                "name": "allowMultiple",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "reporting options",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "only unambiguous identifications",
+                    "value": "FALSE",
+                    "selected": false
+                  },
+                  {
+                    "label": "all exactly matched species",
+                    "value": "TRUE",
+                    "selected": false
+                  },
+                  {
+                    "label": "specify the maximal number of reported exactly matched species",
+                    "value": "num",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              },
+              "whens": [
+                {
+                  "discriminator": "FALSE",
+                  "parameters": [],
+                  "is_default_when": true
+                },
+                {
+                  "discriminator": "TRUE",
+                  "parameters": [],
+                  "is_default_when": false
+                },
+                {
+                  "discriminator": "num",
+                  "parameters": [
+                    {
+                      "name": "num",
+                      "parameter_type": "gx_integer",
+                      "hidden": false,
+                      "label": "Number of matched species",
+                      "help": null,
+                      "argument": null,
+                      "is_dynamic": false,
+                      "optional": false,
+                      "type": "integer",
+                      "value": null,
+                      "min": 1,
+                      "max": null,
+                      "validators": []
+                    }
+                  ],
+                  "is_default_when": false
+                }
+              ]
+            },
+            {
+              "name": "tryRC",
+              "parameter_type": "gx_boolean",
+              "hidden": false,
+              "label": "Try reverse complement",
+              "help": "the reverse-complement of each sequence will be used for classification if it is a better match to the reference sequences than the forward sequence",
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "boolean",
+              "value": false,
+              "truevalue": "TRUE",
+              "falsevalue": "FALSE"
+            }
+          ],
+          "is_default_when": false
+        }
+      ]
+    },
+    {
+      "name": "seed",
+      "parameter_type": "gx_integer",
+      "hidden": false,
+      "label": "Seed",
+      "help": "Seed for the random number renerator. Set it in order to reproduce exactly the same results.",
+      "argument": null,
+      "is_dynamic": false,
+      "optional": true,
+      "type": "integer",
+      "value": null,
+      "min": null,
+      "max": null,
+      "validators": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output",
+      "label": "${tool.name} on ${on_string}",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    },
+    {
+      "name": "bootstraps",
+      "label": "${tool.name} on ${on_string}: bootstraps",
+      "hidden": false,
+      "type": "data",
+      "format": "tabular",
+      "format_source": null,
+      "metadata_source": null,
+      "discover_datasets": [],
+      "from_work_dir": null,
+      "precreate_directory": false
+    }
+  ],
+  "citations": [
+    {
+      "type": "doi",
+      "content": "10.1038/nmeth.3869"
+    },
+    {
+      "type": "doi",
+      "content": "10.1128/AEM.00062-07"
+    }
+  ],
+  "license": null,
+  "profile": "24.2",
+  "edam_operations": [],
+  "edam_topics": [],
+  "xrefs": [
+    {
+      "value": "dada2",
+      "type": "bio.tools"
+    },
+    {
+      "value": "dada2",
+      "type": "bioconductor"
+    }
+  ],
+  "help": {
+    "format": "restructuredtext",
+    "content": "\nDescription\n...........\n\nThis tool implements dada2's assignTaxonomy and assignSpecies functions.\n\n- assignTaxonomy assigns taxonomy to the sequence variants. The DADA2 package provides a native implementation of the naive Bayesian classifier method for this purpose (see Wang et al. 2007, kmer size 8 and 100 bootstrap replicates). The assignTaxonomy function takes as input a set of sequences to be classified and a training set of reference sequences with known taxonomy, and outputs taxonomic assignments with at least minBoot bootstrap confidence. Properly formatted reference files for several popular taxonomic databases are available http://benjjneb.github.io/dada2/training.html\n- assignSpecies makes species level assignments based on exact matching between ASVs and sequenced reference strains. Recent analysis suggests that exact matching (or 100% identity) is the only appropriate way to assign species to 16S gene fragments. Currently, species-assignment training fastas are available for the Silva and RDP 16S databases.\n\nUsage\n.....\n\n**Input**\n\n- A list of sequences contained in the results of removeBimeraDenovo or sequenceTable (note that also the results of dada, and mergePairs are accepted).\n- Reference data bases for taxonomic and species/genus level assignment. Several cached data bases can be chosen (ask your Galaxy admin if they are missing). For using custom data bases see below.\n\n**Output**\n\n- A table containing the assigned taxonomies exceeding the minBoot level of bootstrapping confidence. Rows correspond to the provided sequences, columns to the taxonomic levels. NA indicates that the sequence was not consistently classified at that level at the minBoot threshold.\n- Optionally two columns for the genus and species taxonomic levels can be added. NA indicates that the sequence was not classified at that level.\n- If outputBootstraps checked, a table containing the assigned taxonomies (named \"taxa\") and the bootstrap values (named \"boot\") will be returned.\n\n\nOverview\n........\n\nThe intended use of the dada2 tools for paired sequencing data is shown in the following image.\n\n.. image:: pairpipe.png\n\nNote: In particular for the analysis of paired collections the collections should be sorted lexicographical\nbefore the analysis.\n\nFor single end data you the steps \"Unzip collection\" and \"mergePairs\" are not necessary.\n\nMore information may be found on the dada2 homepage:: https://benjjneb.github.io/dada2/index.html (in particular tutorials) or the documentation of dada2's R package https://bioconductor.org/packages/release/bioc/html/dada2.html (in particular the pdf which contains the full documentation of all parameters)\n    \n\nCustom Reference data sets\n..........................\n\nFor ** taxonomy assignment ** the following is needed:\n\n- a reference fasta data base\n- a comma separated list of taxonomic ranks present in the reference data base\n\nThe reference fasta data base for taxonomic assignment (fasta or compressed fasta) needs to encode the taxonomy corresponding to each sequence in the fasta header lines in the following fashion (note, the second sequence is not assigned down to level 6):\n\n::\n\n    >Level1;Level2;Level3;Level4;Level5;Level6;\n    ACCTAGAAAGTCGTAGATCGAAGTTGAAGCATCGCCCGATGATCGTCTGAAGCTGTAGCATGAGTCGATTTTCACATTCAGGGATACCATAGGATAC\n    >Level1;Level2;Level3;Level4;Level5;\n    CGCTAGAAAGTCGTAGAAGGCTCGGAGGTTTGAAGCATCGCCCGATGGGATCTCGTTGCTGTAGCATGAGTACGGACATTCAGGGATCATAGGATAC\n\nThe list of required taxonomic ranks could be for instance: \"Kingdom,Phylum,Class,Order,Family,Genus\"\n\nThe reference data base for ** species assignment ** is a fasta file (or compressed fasta file), with the id line formatted as follows:\n\n::\n\n    >ID Genus species\n    ACCTAGAAAGTCGTAGATCGAAGTTGAAGCATCGCCCGATGATCGTCTGAAGCTGTAGCATGAGTCGATTTTCACATTCAGGGATACCATAGGATAC\n    >ID Genus species\n    CGCTAGAAAGTCGTAGAAGGCTCGGAGGTTTGAAGCATCGCCCGATGGGATCTCGTTGCTGTAGCATGAGTACGGACATTCAGGGATCATAGGATAC\n\n\n    "
+  }
+}
