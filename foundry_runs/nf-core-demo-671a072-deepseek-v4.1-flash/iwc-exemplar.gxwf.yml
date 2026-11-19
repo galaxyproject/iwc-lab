@@ -1,0 +1,75 @@
+class: GalaxyWorkflow
+label: MGnify amplicon QC SE — collection → FastQC → MultiQC subgraph
+doc: Relevant subgraph extracted from iwc workflows/amplicon/amplicon-mgnify/mgnify-amplicon-pipeline-v5-quality-control-single-end (steps 0, 8, 21; the per-FastQC Replace step is elided).
+inputs:
+  - id: Single-end reads
+    type: collection
+    collection_type: list
+    optional: false
+    fields: null
+    column_definitions: null
+    doc: Single-end reads collection.
+outputs:
+  - id: Single-end MultiQC statistics
+    outputSource: _unlabeled_step_21/stats
+  - id: Single-end MultiQC report
+    outputSource: _unlabeled_step_21/html_report
+steps:
+  - id: _unlabeled_step_8
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      - id: input_file
+        source: Single-end reads
+    out:
+      - id: html_file
+        hide: true
+      - id: text_file
+        hide: true
+    state:
+      nogroup: false
+      kmers: 7
+    tool_state: null
+    uuid: 0ef7f04f-c955-4909-81d0-51665f07604f
+  - id: _unlabeled_step_21
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+    tool_version: 1.35+galaxy5
+    tool_shed_repository:
+      changeset_revision: 94b6bea727ae
+      name: multiqc
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      - id: results_0|software_cond|output_0|input
+        source: _unlabeled_step_8/text_file
+    out:
+      - id: html_report
+        rename: Single-end MultiQC report
+      - id: stats
+        rename: Single-end MultiQC statistics
+    state:
+      results:
+        - software_cond:
+            software: fastqc
+            output:
+              - type: data
+      title: ""
+      comment: ""
+      flat: false
+      export: false
+      png_plots: false
+    tool_state: null
+    uuid: 640f4f45-c12a-47e0-846b-9b150ed8beca
+tags:
+  - MGnify_Amplicon
+  - amplicon
+  - metagenomics
+  - name:microgalaxy
+uuid: 837c1f8e-381c-44e8-84db-28bebc39655c
+license: Apache-2.0
+release: "0.11"

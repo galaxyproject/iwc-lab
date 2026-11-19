@@ -1,0 +1,169 @@
+class: GalaxyWorkflow
+label: "nf-core/demo \u2014 FASTQ QC, trimming and MultiQC"
+doc: 'Galaxy draft for nf-core/demo (v1.2.0, source 671a0726). FASTQC over a flat
+
+  per-file FASTQ list, SEQTK trim gated by skip_trim, MultiQC over the FastQC
+
+  raw-data collection, plus the cowpy text artifact.
+
+  `flatten_inputs` (__FLATTEN__) turns the paired-or-unpaired sample
+
+  collection into a flat per-file list; FastQC, seqtk trim and MultiQC map over
+
+  it. Trimming is skipped when `skip_trim` is set. The cowpy artifact is an
+
+  embedded user-defined tool.
+
+  '
+uuid: 6f3c2b1e-8b7a-4a2f-9c1d-2e5a7b9c0d11
+tags:
+- nf-core/demo
+- fastq
+- quality-control
+inputs:
+- id: input_samples
+  type: collection
+  collection_type: list
+  optional: false
+  doc: 'Per-file FASTQ list (one element per R1/R2 file). The nf-core samplesheet''s rows are flattened to files at import: sample identity is carried in the element identifier.'
+- id: skip_trim
+  type: boolean
+  optional: false
+  default: false
+  doc: Skip the SEQTK trimming step (nf-core `--skip_trim`).
+- id: multiqc_title
+  type: string
+  optional: true
+  doc: Title passed to MultiQC (nf-core `--multiqc_title`).
+outputs:
+- id: fastqc_html
+  outputSource: fastqc/html_file
+- id: trimmed_reads
+  outputSource: trim/default
+- id: multiqc_report
+  outputSource: multiqc/html_report
+- id: cowpy_text
+  outputSource: cowpy/cowpy_txt
+steps:
+- id: flatten_inputs
+  tool_id: __FLATTEN__
+  tool_version: 1.0.0
+  in:
+    input: input_samples
+  out:
+  - id: output
+  state:
+    join_identifier: _
+- id: fastqc
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+  tool_version: 0.74+galaxy1
+  tool_shed_repository:
+    changeset_revision: 2c64fded1286
+    name: fastqc
+    owner: devteam
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+    input_file: flatten_inputs/output
+  out:
+  - id: html_file
+  - id: text_file
+  state:
+    nogroup: false
+    kmers: 7
+- id: trim
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/seqtk/seqtk_trimfq/1.4+galaxy0
+  tool_version: 1.4+galaxy0
+  tool_shed_repository:
+    changeset_revision: a019807f4e67
+    name: seqtk
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  when: $(!inputs.skip_trim)
+  in:
+    in_file: flatten_inputs/output
+  out:
+  - id: default
+  state:
+    mode:
+      mode_select: quality
+      q: 0.05
+      l: 30
+- id: multiqc
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+  tool_version: 1.35+galaxy5
+  tool_shed_repository:
+    changeset_revision: 94b6bea727ae
+    name: multiqc
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+    results_0|software_cond|output_0|input: fastqc/text_file
+    title: multiqc_title
+  out:
+  - id: html_report
+  - id: stats
+  state:
+    results:
+    - software_cond:
+        software: fastqc
+        output:
+        - type: data
+    flat: false
+    export: false
+    png_plots: false
+- id: cowpy
+  in: {}
+  out:
+  - id: cowpy_txt
+  run:
+    class: GalaxyUserTool
+    id: cowpy
+    version: 1.1.5
+    name: cowpy ASCII art generator
+    description: Generates a cow-themed ASCII art message (nf-core/demo local module).
+    container: community.wave.seqera.io/library/cowpy:1.1.5--3db457ae1977a273
+    shell_command: echo "nf-core rules!" | cowpy > cowpy.txt
+    inputs: []
+    outputs:
+    - name: cowpy_txt
+      type: data
+      format: txt
+      from_work_dir: cowpy.txt
+      label: cowpy output text
+    help:
+      format: markdown
+      content: 'Runs the nf-core/demo `COWPY` step: pipes the fixed message
+
+        `nf-core rules!` into `cowpy` and writes the ASCII-art result to
+
+        `cowpy.txt`. The step takes no inputs and has no parameters.
+
+        '
+comments:
+  stage-qc:
+    type: frame
+    position:
+    - 0
+    - 0
+    size:
+    - 900
+    - 400
+    color: blue
+    title: QC and trimming
+    contains_steps:
+    - flatten_inputs
+    - fastqc
+    - trim
+  stage-report:
+    type: frame
+    position:
+    - 950
+    - 0
+    size:
+    - 500
+    - 300
+    color: green
+    title: Reporting
+    contains_steps:
+    - multiqc
+    - cowpy

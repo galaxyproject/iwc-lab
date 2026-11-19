@@ -1,0 +1,75 @@
+- doc: 'nf-core/demo test profile: two paired-end samples and one single-end sample (6 FASTQ files total) through FastQC, seqtk trimming, MultiQC and cowpy. Input is a flat per-file list; the nf-core samplesheet rows are flattened at import. Translated from tests/default.nf.test::-profile test.'
+  job:
+    input_samples:
+      class: Collection
+      collection_type: list
+      elements:
+      - identifier: SAMPLE1_PE_1
+        class: File
+        location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample1_R1.fastq.gz
+        filetype: fastqsanger.gz
+        hashes:
+        - hash_function: SHA-1
+          hash_value: eaf6537837437b69412285bf1a2a542f571e9336
+      - identifier: SAMPLE1_PE_2
+        class: File
+        location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample1_R2.fastq.gz
+        filetype: fastqsanger.gz
+        hashes:
+        - hash_function: SHA-1
+          hash_value: cbb92e7ed652d5b4008c588b318a6a12a3f0bfd5
+      - identifier: SAMPLE2_PE_1
+        class: File
+        location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample2_R1.fastq.gz
+        filetype: fastqsanger.gz
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 7b090121cfa3caa51d9051d01e5f8e7bd2babb5d
+      - identifier: SAMPLE2_PE_2
+        class: File
+        location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample2_R2.fastq.gz
+        filetype: fastqsanger.gz
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 56e48ae352b0dcbe2297fd8831ba506c19435cdc
+      - identifier: SAMPLE3_SE_1
+        class: File
+        location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample1_R1.fastq.gz
+        filetype: fastqsanger.gz
+        hashes:
+        - hash_function: SHA-1
+          hash_value: eaf6537837437b69412285bf1a2a542f571e9336
+      - identifier: SAMPLE3_SE_2
+        class: File
+        location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample2_R1.fastq.gz
+        filetype: fastqsanger.gz
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 7b090121cfa3caa51d9051d01e5f8e7bd2babb5d
+    skip_trim: false
+    multiqc_title: nf-core/demo test
+  outputs:
+    fastqc_html:
+      class: Collection
+      collection_type: list
+      element_count: 6
+      element_tests:
+        SAMPLE1_PE_1:
+          ftype: html
+    trimmed_reads:
+      class: Collection
+      collection_type: list
+      element_count: 6
+      element_tests:
+        SAMPLE1_PE_1:
+          ftype: fastqsanger.gz
+    multiqc_report:
+      class: File
+      ftype: html
+    cowpy_text:
+      class: File
+      ftype: txt
+      checksum: md5$9c8be9f4550989b40901f379cb1a605f
+      asserts:
+      - that: has_text
+        text: nf-core rules!

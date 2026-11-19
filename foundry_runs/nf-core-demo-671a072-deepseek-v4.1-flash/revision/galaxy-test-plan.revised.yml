@@ -1,0 +1,179 @@
+plan_version: "1"
+source:
+  kind: nextflow
+  name: nf-core/demo v1.2.0 (671a0726)
+  derived_from: test-evidence
+  notes: |
+    Translated from tests/default.nf.test::-profile test (whole-pipeline nf-test,
+    scope primary, execution real, assert workflow.success + snapshot). Snapshot
+    captures: versions_yml, stable_paths (all published paths), stable_content
+    (md5 for every file not listed in tests/.nftignore).
+
+workflow:
+  title: nf-core/demo — FASTQ QC, trimming and MultiQC
+  label_source: draft
+  notes: |
+    Labels read from the extracted galaxy-workflow.gxwf.yml
+    (inputs: input_samples, skip_trim, multiqc_title; outputs: fastqc_html,
+    trimmed_reads, multiqc_report, cowpy_text).
+
+test_cases:
+  - id: nf-core-demo-profile-test
+    doc: >
+      Whole-pipeline nf-core/demo test profile: three samples (two paired-end,
+      one single-end with two read files) through FastQC, seqtk trimming and
+      MultiQC, plus the cowpy artifact.
+    derived_from: mixed
+    provenance: "tests/default.nf.test::-profile test"
+    job_inputs:
+      - workflow_label: input_samples
+        label_status: resolved
+        description: >
+          Paired-or-unpaired FASTQ collection built from the nf-core test
+          samplesheet (viralrecon/amplicon reads). 6 files across 4 elements;
+          inner identifiers are explicit so flattened names are deterministic.
+        collection_shape: list:paired_or_unpaired
+        datatype: fastqsanger.gz
+        fixture:
+          storage: null
+          location: null
+          checksum: null
+          provenance: "Resolved by test-data-refs.json (nextflow-to-test-data): nf-core test-datasets viralrecon amplicon FASTQs, SHA-1 recorded per element."
+      - workflow_label: skip_trim
+        label_status: resolved
+        description: Boolean switch; false so the SEQTK_TRIM step runs, matching the nf-core test profile.
+        collection_shape: null
+        datatype: null
+        fixture:
+          storage: generated-toy
+          location: "false"
+          checksum: null
+          provenance: "nf-core --skip_trim default (unset => trimming on)."
+      - workflow_label: multiqc_title
+        label_status: resolved
+        description: Optional report title; set to exercise the string connection into MultiQC.
+        collection_shape: null
+        datatype: null
+        fixture:
+          storage: generated-toy
+          location: "nf-core/demo test"
+          checksum: null
+          provenance: "Chosen value; no upstream equivalent (nf-core --multiqc_title unset)."
+    expected_outputs:
+      - workflow_label: fastqc_html
+        label_status: resolved
+        description: One FastQC HTML report per input FASTQ file (6 after flatten).
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element_count
+            intent: The FastQC step ran once per FASTQ file and produced one HTML per file.
+            expected_value: 6
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: high
+          - family: ftype
+            intent: Reports are HTML.
+            expected_value: html
+            tolerance: null
+            element_identifier: "SAMPLE1_PE_forward"
+            evidence: intent
+            confidence: medium
+      - workflow_label: trimmed_reads
+        label_status: resolved
+        description: One trimmed FASTQ per input file (6), published upstream under fq/<sample>/.
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element_count
+            intent: Every input FASTQ was trimmed; the source snapshot lists six fq/ outputs.
+            expected_value: 6
+            tolerance: null
+            element_identifier: null
+            evidence: test-evidence
+            confidence: high
+          - family: ftype
+            intent: Trimmed outputs are gzipped FASTQ.
+            expected_value: fastqsanger.gz
+            tolerance: null
+            element_identifier: "SAMPLE1_PE_forward"
+            evidence: intent
+            confidence: medium
+      - workflow_label: multiqc_report
+        label_status: resolved
+        description: Single MultiQC HTML report aggregating all FastQC outputs.
+        output_kind: dataset
+        collection_shape: null
+        assertion_intent:
+          - family: ftype
+            intent: MultiQC produced an HTML report.
+            expected_value: html
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: high
+      - workflow_label: cowpy_text
+        label_status: resolved
+        description: Cow ASCII-art text artifact; byte-identical to the nf-core snapshot.
+        output_kind: dataset
+        collection_shape: null
+        assertion_intent:
+          - family: checksum
+            intent: The cowpy output matches the upstream snapshot md5 exactly (same cowpy 1.1.5 container, fixed message).
+            expected_value: "md5:9c8be9f4550989b40901f379cb1a605f"
+            tolerance: null
+            element_identifier: null
+            evidence: test-evidence
+            confidence: high
+          - family: has_text
+            intent: The fixed message appears in the output.
+            expected_value: "nf-core rules!"
+            tolerance: null
+            element_identifier: null
+            evidence: test-evidence
+            confidence: high
+
+unresolved:
+  - kind: collection-shape
+    description: >
+      Element identifiers of fastqc_html/trimmed_reads depend on the inner
+      identifiers chosen when staging the paired_or_unpaired input
+      (forward/reverse vs 1/2); __FLATTEN__ joins them as <sample>_<inner>.
+    blocking: false
+    suggested_resolution: "Stage the collection with forward/reverse (or 1/2) explicitly in the tests-format file and assert the resulting identifiers."
+  - kind: assertion
+    description: >
+      The upstream snapshot prunes fastqc HTML and multiqc HTML content
+      (tests/.nftignore), so no byte-level expectation exists for them.
+    blocking: false
+    suggested_resolution: "Assert counts/datatypes only, or capture a local baseline on first run."
+
+omissions:
+  - target: trimmed_reads content checksums
+    reason: "Source md5s were computed on `gzip --no-name` output; Galaxy's seqtk wrapper compresses differently, so byte equality is not expected. Assert count/type instead."
+    category: nondeterministic
+  - target: multiqc_report size
+    reason: "Report size varies with the MultiQC version and embedded plots; only its datatype is asserted."
+    category: weak-output
+  - target: fastqc_html and multiqc_report content
+    reason: "Pruned by tests/.nftignore upstream; no stable expected content exists."
+    category: nondeterministic
+  - target: pipeline_info/*, versions.yml, workflow summary YAML
+    reason: "nf-core reporting plumbing dropped in translation (see data-flow brief)."
+    category: out-of-scope
+
+warnings:
+  - code: fixture-split
+    message: >
+      The nf-core samplesheet has two SAMPLE3_SE rows (fastq_1 only) which
+      samplesheetToList merges into one sample with two files; a Galaxy
+      paired_or_unpaired element holds one dataset, so the test stages two
+      unpaired elements. __FLATTEN__ makes the difference invisible downstream.
+    path: "test-data-refs.json#/refs/0/prep"
+  - code: version-drift
+    message: >
+      The Galaxy FastQC wrapper is 0.74 whereas the source module pins
+      fastqc 0.12.1; report content therefore cannot be compared byte-wise
+      with the source snapshot.
+    path: "galaxy-workflow.gxwf.yml#steps/fastqc"

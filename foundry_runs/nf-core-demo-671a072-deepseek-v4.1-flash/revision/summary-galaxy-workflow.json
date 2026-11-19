@@ -1,0 +1,415 @@
+{
+  "summary_version": "1",
+  "source": {
+    "ecosystem": "galaxy",
+    "workflow": "nf-core/demo \u2014 FASTQ QC, trimming and MultiQC",
+    "url": "https://github.com/nf-core/demo",
+    "version": "671a0726",
+    "license": "MIT",
+    "slug": "nf-core-demo",
+    "format": "gxformat2",
+    "original_format": "gxformat2",
+    "release": null,
+    "annotation": null
+  },
+  "documents": {
+    "entrypoint": "galaxy-workflow.gxwf.yml",
+    "converted_path": null,
+    "validation": {
+      "command": "gxwf validate galaxy-workflow.gxwf.yml --strict",
+      "status": "valid",
+      "diagnostics": []
+    }
+  },
+  "workflow_inputs": [
+    {
+      "id": "input_samples",
+      "label": "input_samples",
+      "type": "collection",
+      "collection_type": "list",
+      "optional": false,
+      "default": null,
+      "format": null,
+      "doc": "Per-file FASTQ list (one element per R1/R2 file). The nf-core samplesheet's rows are flattened to files at import: sample identity is carried in the element identifier."
+    },
+    {
+      "id": "skip_trim",
+      "label": "skip_trim",
+      "type": "parameter",
+      "collection_type": null,
+      "optional": false,
+      "default": false,
+      "format": null,
+      "doc": "Skip the SEQTK trimming step (nf-core `--skip_trim`)."
+    },
+    {
+      "id": "multiqc_title",
+      "label": "multiqc_title",
+      "type": "parameter",
+      "collection_type": null,
+      "optional": true,
+      "default": null,
+      "format": null,
+      "doc": "Title passed to MultiQC (nf-core `--multiqc_title`)."
+    }
+  ],
+  "workflow_outputs": [
+    {
+      "id": "fastqc_html",
+      "label": "fastqc_html",
+      "source": "fastqc/html_file",
+      "type": null,
+      "doc": null
+    },
+    {
+      "id": "trimmed_reads",
+      "label": "trimmed_reads",
+      "source": "trim/default",
+      "type": null,
+      "doc": null
+    },
+    {
+      "id": "multiqc_report",
+      "label": "multiqc_report",
+      "source": "multiqc/html_report",
+      "type": null,
+      "doc": null
+    },
+    {
+      "id": "cowpy_text",
+      "label": "cowpy_text",
+      "source": "cowpy/cowpy_txt",
+      "type": null,
+      "doc": null
+    }
+  ],
+  "steps": [
+    {
+      "id": "flatten_inputs",
+      "label": "flatten_inputs",
+      "type": "tool",
+      "tool_id": "__FLATTEN__",
+      "tool_version": "1.0.0",
+      "tool_shed_repository": null,
+      "tool_state": {
+        "join_identifier": "_"
+      },
+      "in": [
+        {
+          "name": "input",
+          "source": "input_samples",
+          "default": null,
+          "value_from": null
+        }
+      ],
+      "out": [
+        {
+          "id": "output",
+          "actions": null
+        }
+      ],
+      "when": null,
+      "annotation": null
+    },
+    {
+      "id": "fastqc",
+      "label": "fastqc",
+      "type": "tool",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1",
+      "tool_version": "0.74+galaxy1",
+      "tool_shed_repository": {
+        "changeset_revision": "2c64fded1286",
+        "name": "fastqc",
+        "owner": "devteam",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "nogroup": false,
+        "kmers": 7
+      },
+      "in": [
+        {
+          "name": "input_file",
+          "source": "flatten_inputs/output",
+          "default": null,
+          "value_from": null
+        }
+      ],
+      "out": [
+        {
+          "id": "html_file",
+          "actions": null
+        },
+        {
+          "id": "text_file",
+          "actions": null
+        }
+      ],
+      "when": null,
+      "annotation": null
+    },
+    {
+      "id": "trim",
+      "label": "trim",
+      "type": "tool",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/seqtk/seqtk_trimfq/1.4+galaxy0",
+      "tool_version": "1.4+galaxy0",
+      "tool_shed_repository": {
+        "changeset_revision": "a019807f4e67",
+        "name": "seqtk",
+        "owner": "iuc",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "mode": {
+          "mode_select": "quality",
+          "q": 0.05,
+          "l": 30
+        }
+      },
+      "in": [
+        {
+          "name": "in_file",
+          "source": "flatten_inputs/output",
+          "default": null,
+          "value_from": null
+        }
+      ],
+      "out": [
+        {
+          "id": "default",
+          "actions": null
+        }
+      ],
+      "when": "$(!inputs.skip_trim)",
+      "annotation": null
+    },
+    {
+      "id": "multiqc",
+      "label": "multiqc",
+      "type": "tool",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5",
+      "tool_version": "1.35+galaxy5",
+      "tool_shed_repository": {
+        "changeset_revision": "94b6bea727ae",
+        "name": "multiqc",
+        "owner": "iuc",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "results": [
+          {
+            "software_cond": {
+              "software": "fastqc",
+              "output": [
+                {
+                  "type": "data"
+                }
+              ]
+            }
+          }
+        ],
+        "flat": false,
+        "export": false,
+        "png_plots": false
+      },
+      "in": [
+        {
+          "name": "results_0|software_cond|output_0|input",
+          "source": "fastqc/text_file",
+          "default": null,
+          "value_from": null
+        },
+        {
+          "name": "title",
+          "source": "multiqc_title",
+          "default": null,
+          "value_from": null
+        }
+      ],
+      "out": [
+        {
+          "id": "html_report",
+          "actions": null
+        },
+        {
+          "id": "stats",
+          "actions": null
+        }
+      ],
+      "when": null,
+      "annotation": null
+    },
+    {
+      "id": "cowpy",
+      "label": "cowpy",
+      "type": "tool",
+      "tool_id": null,
+      "tool_version": null,
+      "tool_shed_repository": null,
+      "tool_state": null,
+      "in": [],
+      "out": [
+        {
+          "id": "cowpy_txt",
+          "actions": null
+        }
+      ],
+      "when": null,
+      "annotation": null
+    }
+  ],
+  "graph": {
+    "nodes": [
+      {
+        "id": "input_samples",
+        "kind": "workflow-input",
+        "label": "input_samples"
+      },
+      {
+        "id": "skip_trim",
+        "kind": "workflow-input",
+        "label": "skip_trim"
+      },
+      {
+        "id": "multiqc_title",
+        "kind": "workflow-input",
+        "label": "multiqc_title"
+      },
+      {
+        "id": "flatten_inputs",
+        "kind": "step",
+        "label": "flatten_inputs"
+      },
+      {
+        "id": "fastqc",
+        "kind": "step",
+        "label": "fastqc"
+      },
+      {
+        "id": "trim",
+        "kind": "step",
+        "label": "trim"
+      },
+      {
+        "id": "multiqc",
+        "kind": "step",
+        "label": "multiqc"
+      },
+      {
+        "id": "cowpy",
+        "kind": "step",
+        "label": "cowpy"
+      },
+      {
+        "id": "fastqc_html",
+        "kind": "workflow-output",
+        "label": "fastqc_html"
+      },
+      {
+        "id": "trimmed_reads",
+        "kind": "workflow-output",
+        "label": "trimmed_reads"
+      },
+      {
+        "id": "multiqc_report",
+        "kind": "workflow-output",
+        "label": "multiqc_report"
+      },
+      {
+        "id": "cowpy_text",
+        "kind": "workflow-output",
+        "label": "cowpy_text"
+      }
+    ],
+    "edges": [
+      {
+        "from": "input_samples",
+        "to": "flatten_inputs",
+        "via": []
+      },
+      {
+        "from": "flatten_inputs",
+        "to": "fastqc",
+        "via": []
+      },
+      {
+        "from": "flatten_inputs",
+        "to": "trim",
+        "via": []
+      },
+      {
+        "from": "fastqc",
+        "to": "multiqc",
+        "via": []
+      },
+      {
+        "from": "multiqc_title",
+        "to": "multiqc",
+        "via": []
+      },
+      {
+        "from": "fastqc",
+        "to": "fastqc_html",
+        "via": []
+      },
+      {
+        "from": "trim",
+        "to": "trimmed_reads",
+        "via": []
+      },
+      {
+        "from": "multiqc",
+        "to": "multiqc_report",
+        "via": []
+      },
+      {
+        "from": "cowpy",
+        "to": "cowpy_text",
+        "via": []
+      }
+    ]
+  },
+  "tests": [
+    {
+      "name": "nf-core/demo test profile: two paired-end samples and one single-end sample (6 FASTQ files total) through FastQC, seqtk trimming, MultiQC and cowpy. Input is a flat per-file list; the nf-core samplesheet rows are flattened at import. Translated from tests/default.nf.test::-profile test.",
+      "job_path": "galaxy-workflow.gxwf-tests.yml",
+      "expected_outputs": [
+        {
+          "id": "fastqc_html",
+          "path": null,
+          "url": null,
+          "filetype": null,
+          "checksum": null,
+          "assertions": []
+        },
+        {
+          "id": "trimmed_reads",
+          "path": null,
+          "url": null,
+          "filetype": null,
+          "checksum": null,
+          "assertions": []
+        },
+        {
+          "id": "multiqc_report",
+          "path": null,
+          "url": null,
+          "filetype": null,
+          "checksum": null,
+          "assertions": []
+        },
+        {
+          "id": "cowpy_text",
+          "path": null,
+          "url": null,
+          "filetype": null,
+          "checksum": null,
+          "assertions": []
+        }
+      ],
+      "provenance": "existing tests file (regression baseline)"
+    }
+  ],
+  "warnings": []
+}
