@@ -1,0 +1,469 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-bamtofastq-glm
+  status: complete
+phases:
+  - n: 1
+    skill: summarize-nextflow
+    status: done
+    iterations: 1
+    feedback_checked: true
+  - n: 2
+    skill: nextflow-summary-to-galaxy-reference-data
+    status: done
+    iterations: 1
+    feedback_checked: true
+  - n: 3
+    skill: nextflow-summary-to-galaxy-interface
+    status: done
+    iterations: 1
+    feedback_checked: true
+  - n: 4
+    skill: nextflow-summary-to-galaxy-data-flow
+    status: done
+    iterations: 1
+    feedback_checked: true
+  - n: 5
+    skill: compare-against-iwc-exemplar
+    status: done
+    iterations: 1
+    feedback_checked: true
+  - n: 6
+    skill: nextflow-summary-to-galaxy-template
+    status: done
+    iterations: 1
+    feedback_checked: true
+  - n: 7
+    skill: advance-galaxy-draft-step
+    status: done
+    iterations: 1
+    feedback_checked: true
+  - n: 8
+    skill: test-data-resolution
+    status: done
+    iterations: 1
+    feedback_checked: true
+  - n: 9
+    skill: nextflow-test-to-galaxy-test-plan
+    status: done
+    iterations: 1
+    feedback_checked: true
+  - n: 10
+    skill: implement-galaxy-workflow-test
+    status: done
+    iterations: 1
+    feedback_checked: true
+  - n: 11
+    skill: validate-galaxy-workflow
+    status: done
+    iterations: 1
+    feedback_checked: true
+  - n: 12
+    skill: run-workflow-test
+    status: done
+    iterations: 1
+    feedback_checked: true
+  - n: 13
+    skill: debug-galaxy-workflow-output
+    status: done
+    iterations: 1
+    feedback_checked: true
+entries:
+  - id: summary-nextflow-profile-signals-enum-undocumented-in-skill
+    raised_by: summarize-nextflow
+    observed_in:
+      mold: summarize-nextflow
+      path: content/molds/summarize-nextflow/index.md
+      revision: 18
+      content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+      foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+    subject:
+      kind: schema
+      label: summary-nextflow schema
+      locator: package://summarize-nextflow#summary-nextflow.schema.json
+      content_hash: 839e11b1892af74df3158377027e7d340a67dafdb9b5965d79e9715a1a109d54
+    kind: friction
+    severity: minor
+    what: The mold's profiles[] prose lists free-text signals like 'container-keys' and 'dev-profile-name'
+      as body-derived evidence strings, but the schema pins signals[] items to a 7-value enum; a first
+      emit using the prose's own signal names failed validation with 22 errors.
+    expected: Either state the signals enum in the profiles[] section of the mold (it is only discoverable
+      by reading the schema), or relax the enum.
+    evidence: First summary-nextflow.json emit failed foundry validate-summary-nextflow on 22 enum errors
+      across profiles[].signals; fixed by mapping every free-text signal onto the 7 enum values.
+    status: open
+    issue: null
+  - id: t6-draft-inputs-map-form
+    phase: 6
+    timestamp: 00:12:00
+    subject:
+      kind: mold
+      label: nextflow-summary-to-galaxy-template
+      locator: package://nextflow-summary-to-galaxy-template#references/notes/galaxy-workflow-draft-format.md
+    kind: friction
+    severity: minor
+    what: The draft-format note's sketch example emits workflow `inputs` as an array of {id, ...} objects,
+      but gxwf draft-validate requires the map form (id-keyed); the array form fails schema validation
+      with an opaque type-mismatch dump whose actual/payload are identical-looking.
+    expected: The example in galaxy-workflow-draft-format.md should use the map form (or the note should
+      state which form draft-validate accepts).
+    evidence: First draft-validate run returned one structure error at <workflow>.inputs showing expected
+      object-vs-array; converting to map form fixed it immediately.
+    status: open
+    issue: null
+  - id: t7-output-rename-consumer-invisible
+    phase: 7
+    timestamp: 01:53:49
+    subject:
+      kind: mold
+      label: advance-galaxy-draft-step
+      locator: package://advance-galaxy-draft-step#references/notes/galaxy-workflow-draft-format.md
+    kind: friction
+    severity: minor
+    what: "gxformat2 step output `rename:` is consumer-invisible \u2014 after a step declares `out: [{id:\
+      \ X, rename: Y}]`, every downstream connection must still reference `step/X`, not `step/Y`; draft-validate\
+      \ rejects `step/Y` as an unknown port. Hit 5+ times this run (merge_mered_reads/merged_reads_flat,\
+      \ merge_fastqutils/fastqutils_reports, merge_reads_post_qc/reads_post_qc, fastqutils arms); the\
+      \ implement-galaxy-tool-step and draft-format docs never warn about it, so each occurrence cost\
+      \ a validate-fix-revalidate cycle."
+    expected: The draft-format note (or implement-galaxy-tool-step procedure) should state that renames
+      are display-only and consumer references use the original output id.
+    evidence: Repeated draft-validate unknown-port errors resolved each time by switching the consumer
+      ref back to the original id while keeping the rename in `out:`.
+    status: open
+    issue: null
+  - id: t10-validate-tests-id-keys
+    phase: 10
+    timestamp: 02:03:16
+    subject:
+      kind: mold
+      label: implement-galaxy-workflow-test
+      locator: package://implement-galaxy-workflow-test#references/cli/validate-tests.json
+    kind: friction
+    severity: minor
+    what: gxwf validate-tests --workflow cross-checks job/output keys against the workflow's input/output
+      *ids*, not their human-readable labels. The validate-tests.json sidecar says \"missing input labels
+      / missing output labels\" without stating which key form is expected, and the schema description
+      for TestJob.outputs says \"Each key corresponds to a labeled output\". First authoring pass used
+      labels and failed with 19 workflow_input_undefined/workflow_output_undefined errors.
+    expected: The sidecar should state that keys are ids (or that either works and which is canonical),
+      and the tests-format note/examples should show id-keyed job/outputs maps for gxformat2 workflows.
+    evidence: "Label-keyed file \u2192 19 errors; id-keyed rewrite of the same content \u2192 errors:\
+      \ 0, no other change."
+    status: open
+    issue: null
+  - id: t12-gxwf-label-wins-over-id
+    phase: 12
+    timestamp: 02:07:19
+    subject:
+      kind: mold
+      label: advance-galaxy-draft-step
+      locator: package://advance-galaxy-draft-step#references/notes/galaxy-workflow-draft-format.md
+    kind: friction
+    severity: major
+    what: "gxformat2's planemo-side conversion (_register_labels, gxformat2/normalized/_conversion.py:1129)\
+      \ uses `label = step.label or step.id` \u2014 a step's human-readable label SHADOWS its map key\
+      \ id, so any connection/outputSource/comment contains_steps referencing the id fails at import with\
+      \ `ValueError: invalid literal for int() with base 10` when the id is non-numeric. gxwf draft-validate\
+      \ and gxwf validate both pass green on the same file, so the failure first surfaces inside planemo\
+      \ at workflow-import time, after the run has already booted Galaxy. Costed two full planemo launches\
+      \ (import crash before any structured output, per the architecture note)."
+    expected: "Either gxwf validate should reject id/label shadowing (a step with both a label and references\
+      \ to its id), or the draft-format note should state that once steps carry labels, ALL references\
+      \ (connections, outputSources, comment contains_steps) must use labels \u2014 and that the simplest\
+      \ safe convention is to not emit top-level labels at all."
+    evidence: planemo-test-1.log (step-id refs vs labels) and planemo-test-2.log (comment contains_steps
+      titles); both crashed at import; removing the 47 label fields and rewriting contains_steps to ids
+      made both imports succeed.
+    status: open
+    issue: null
+  - id: t12-merge-collection-tool-state-needs-repeat-instance-array
+    phase: 12
+    timestamp: 03:23:36
+    subject:
+      kind: note
+      label: galaxy-workflow-draft-format / planemo-workflow-test-architecture
+      locator: package://advance-galaxy-draft-step#references/notes/galaxy-workflow-draft-format.md
+    kind: gap
+    severity: major
+    what: "gxformat2 connections into repeat parameters (e.g. `in: {inputs_0|input: ..., inputs_1|input:\
+      \ ...}` on __MERGE_COLLECTION__ or MultiQC) do NOT populate the tool's repeat instances at invocation\
+      \ time. `augment_tool_state_for_input_connections` (lib/galaxy/workflow/modules.py:3077) \u2014\
+      \ the code that grows repeat arrays from connections \u2014 only runs via `recover_state` with `fill_defaults=True`\
+      \ (the from_dict import path), not the `from_workflow_step` invocation path, and the format2 converter\
+      \ does not synthesize repeat instances into tool_state either. Result: the step's collection output\
+      \ fails with \\\"Output collection 'output' has type_source 'inputs_0|input', which does not name\
+      \ a collection input\\\" (tools/actions/__init__.py:1233) because `collect_input_dataset_collections`\
+      \ never visits the un-instantiated repeat. IWC exemplar tool_state (metagenomic-assembly.ga) carries\
+      \ the full repeat array with `__class__: ConnectedValue` placeholders \u2014 that is the required\
+      \ authoring idiom, and it is nowhere in the packaged notes. Costed one full planemo run (attempt\
+      \ 6)."
+    expected: 'The draft-format note (and/or the __MERGE_COLLECTION__ wiring guidance) should state that
+      any step with repeat connections MUST carry a matching `inputs:` array in its state (`[{__index__:
+      0, input: {__class__: ConnectedValue}}, ...]`), matching the number of connected instances. The
+      multiqc corpus step is a good in-bundle example.'
+    evidence: planemo-test-6.log (step 15 merge_fastqc_pre); fix verified green on attempt 7.
+    status: open
+    issue: null
+  - id: t12-rules-dsl-rows-start-empty-add-column-before-filter
+    phase: 12
+    timestamp: 03:23:36
+    subject:
+      kind: note
+      label: rules DSL usage in __APPLY_RULES__ state
+      locator: package://implement-galaxy-tool-step#references/notes/galaxy-workflow-draft-format.md
+    kind: gap
+    severity: major
+    what: "When authoring __APPLY_RULES__ state whose rules filter on sample_sheet columns (e.g. add_filter_matches\
+      \ target_column: 1 over a sample_sheet input), the rule rows start EMPTY \u2014 `__init_rule_data`\
+      \ appends `[]` per row (lib/galaxy/managers/collections.py:918-958); column values ride in `sources[i][\\\
+      \"columns\\\"]` and are NOT in the row arrays. Any filter that reads `row[target_column]` fails\
+      \ with \\\"list index out of range\\\" unless a `add_column_from_sample_sheet_index` rule runs first\
+      \ to materialize each needed column into the row (then `remove_columns` to restore shape). Neither\
+      \ the packaged notes nor the rules-DSL guidance records this; it costed one full planemo run (attempt\
+      \ 4)."
+    expected: "Document the canonical idiom \u2014 add_column_from_sample_sheet_index per needed column\
+      \ BEFORE any column-reading rule, then remove_columns to restore the intended shape \u2014 for sample_sheet-filtered\
+      \ __APPLY_RULES__ steps."
+    evidence: planemo-test-4.log (step 7 filter_bam_rows IndexError); fix verified in attempts 5-6.
+    status: open
+    issue: null
+  - id: t12-when-expression-must-produce-bool-not-string
+    phase: 12
+    timestamp: 03:23:36
+    subject:
+      kind: note
+      label: when-expression authoring on gated steps
+      locator: package://nextflow-summary-to-galaxy-template#references/notes/galaxy-workflow-draft-format.md
+    kind: gap
+    severity: major
+    what: "A step `when:` gate wired as a bare pass-through of a string input (`when: $(inputs.when)`\
+      \ where `when` is a string workflow input) fails at invocation with `FailWorkflowEvaluation(when_not_boolean)`\
+      \ \u2014 \\\"Type is: str\\\" \u2014 because `evaluate_value_from_expressions` (lib/galaxy/workflow/modules.py:480-517)\
+      \ requires isinstance(when_value, bool) after do_eval. The ivar corpus idiom of feeding a string-to-boolean\
+      \ helper is one option, but the lighter canonical fix is a boolean-producing expression directly\
+      \ on the string input, e.g. `when: $(inputs.when != \\\"\\\")`. The packaged notes do not record\
+      \ either the bool requirement or the `!= \\\"\\\"` idiom. Costed one full planemo run (attempt 5)."
+    expected: Document that when-expression results must be bool (isinstance check at modules.py:513-517),
+      with `$(inputs.x != \"\")` as the standard optional-string gate and `== false` for boolean gates.
+    evidence: planemo-test-5.log (when_not_boolean at samtools_chr_view); fix verified attempt 6.
+    status: open
+    issue: null
+  - id: t12-shed-tool-ids-require-version-suffix-for-invocation
+    phase: 12
+    timestamp: 03:23:36
+    subject:
+      kind: mold
+      label: implement-galaxy-tool-step / advance-galaxy-draft-step
+      locator: package://implement-galaxy-tool-step
+    kind: friction
+    severity: major
+    what: "Steps carrying version-less Tool Shed tool_ids (e.g. tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view)\
+      \ import fine and pass gxwf validate, but the invocation's tool-install check returns 400 \\\"tools\
+      \ not installed\\\" for every shed tool \u2014 the install resolution appears to require the full\
+      \ version-suffixed guid (\u2026/samtools_view/1.22+galaxy2). gxwf draft-validate does not flag this.\
+      \ Costed one full planemo run (attempt 3)."
+    expected: The draft-format note should require version-suffixed tool_ids for all tool_shed_repository
+      steps (matching what the workflow editor saves), not just a tool_version field.
+    evidence: planemo-test-3.log (all 11 shed tools \"not installed\" at invocation submit); version-suffixed
+      ids verified working in attempts 4-7.
+    status: open
+    issue: null
+  - id: t12-udt-collection-inputs-need-data-collection-type-not-multiple-data
+    phase: 12
+    timestamp: 03:32:04
+    subject:
+      kind: note
+      label: galaxy-user-tool-authoring (input types section)
+      locator: package://author-galaxy-tool-wrapper#references/notes/galaxy-user-tool-authoring.md
+    kind: gap
+    severity: major
+    what: "The authoring note's input-types section documents `data` with `multiple: true` but never mentions\
+      \ `type: data_collection` for collection inputs. Feeding a list collection into a `multiple: true`\
+      \ data input does NOT expand it: the job receives the HDCA dict and `runtimeify`'s adapt_dict (tool_util/parameters/convert.py:832-862)\
+      \ fails with `pydantic ValidationError for DataRequestInternalHda \u2014 Input should be 'hda' [input_value='hdca']`.\
+      \ The correct declaration is `type: data_collection, collection_type: list`, whose runtime shape\
+      \ exposes `inputs.NAME.elements[]` (each element a file object with path/basename/ element_identifier,\
+      \ runtime.py:314-334); the script then iterates `inputs.NAME.elements.map(...)` instead of `inputs.NAME.map(...)`.\
+      \ Also: a data output/collection input with `format` works, but the elements accessor is only documented\
+      \ for paired collections in the schema example, not for plain lists. Costed one full planemo run\
+      \ (attempt 7, job 18)."
+    expected: 'The input-types section should add a `data_collection` bullet with the `elements[]` accessor
+      idiom and an explicit warning that `data multiple: true` + a collection input fails at job-preparation
+      time (post-validation, expensive to discover).'
+    evidence: planemo-test-7.log (job 18 pydantic traceback); fix verified green statically, runtime verdict
+      in attempt 8.
+    status: open
+    issue: null
+  - id: t12-multiqc-fastqc-entry-requires-raw-data-not-html
+    phase: 12
+    timestamp: 03:32:04
+    subject:
+      kind: mold
+      label: implement-galaxy-tool-step (multiqc wiring guidance)
+      locator: package://implement-galaxy-tool-step
+    kind: gap
+    severity: minor
+    what: "The iuc/multiqc fastqc software entry's input param is format txt with a validator \\\"MultiQC\
+      \ does not accept the HTML report generated by FastQC, only the Raw Data\\\" (fastqc_plugin.xml).\
+      \ Wiring fastqc html_file (the natural report artifact) into the fastqc entry fails at job preparation\
+      \ with \\\"(N) job rejected while preparing\\\". FastQC's devteam wrapper exposes text_file (fastqc_data.txt)\
+      \ as the RawData output \u2014 that is what the multiqc fastqc entry consumes. The plan/assert idioms\
+      \ notes do not flag this wiring constraint. Costed one full planemo run (attempt 7, job 19)."
+    expected: Record that multiqc's fastqc entries take fastqc text_file (raw data), and that html feeds
+      nothing but display outputs.
+    evidence: planemo-test-7.log (job 19 \"job rejected while preparing\"); fix verified statically, runtime
+      verdict in attempt 8.
+    status: open
+    issue: null
+  - id: t13-udt-configfile-all-dollar-parens-are-js-expressions
+    phase: 12
+    timestamp: 04:09:57
+    subject:
+      kind: note
+      label: galaxy-user-tool-authoring (configfiles section, escape rule)
+      locator: package://author-galaxy-tool-wrapper#references/notes/galaxy-user-tool-authoring.md
+    kind: gap
+    severity: major
+    what: "The configfiles escape guidance says \\\"Escape shell variables that are not Galaxy expressions:\
+      \ `\\\\$(date)`\\\" \u2014 a single example that reads as covering only `$(date)`-style tokens.\
+      \ In fact EVERY `$(...)` in a configfile is interpolated as a CWL/JS expression by cwl_utils (via\
+      \ js_engine), so ALL shell command substitutions must be escaped: `SAMTOOLS= \\\\$(command -v samtools)`,\
+      \ `head_lines=\\\\$(\\\"$SAMTOOLS\\\" view ... | wc -l)`, pipeline substitutions, etc. Bare shell\
+      \ substitutions fail at job preparation (config-file templating stage) with `SyntaxError: Unexpected\
+      \ identifier 'samtools'` \u2014 a JS parse error whose message names a random token from the substituted\
+      \ shell text and does not mention config files or expressions, making it hard to map back to the\
+      \ authoring rule. Costed one full planemo run (attempt 9, job 18)."
+    expected: "The configfiles section should state the rule as \\\"every `$(...)` is a CWL/JS expression\
+      \ \u2014 escape every shell command substitution as `\\\\$(...)`\\\", list the common shell patterns\
+      \ (command substitution into a variable, substitution in an assignment, pipelines), and note the\
+      \ diagnostic signature (SyntaxError naming an arbitrary identifier or token, raised while building\
+      \ config files). Attempts 10 and 12 pinned the exact semantics via probes of cwl_utils.expression.interpolate\
+      \ (escaping_behavior=2): the backslash is CONSUMED before `(` and `{` \u2014 so only `\\\\$(` and\
+      \ `\\\\${` are valid escapes and render as real shell constructs \u2014 but RETAINED before a plain\
+      \ identifier, so `\\\\$SAMTOOLS` reaches bash as the literal text `$SAMTOOLS` (\\\"command not found\\\
+      \"; \\\"invalid number '$LINES_TO_CHECK'\\\"). The correct rule is therefore: escape ONLY `\\\\\
+      $(` and `\\\\${`; bare `$var` references pass interpolation through unchanged and must NEVER carry\
+      \ the backslash (my v1.0.4 attempt-10 \\\"escape everything\\\" blanket rule was wrong and costed\
+      \ attempt 12)."
+    evidence: "planemo-test-9.log (job 18 ToolTemplatingException + SyntaxError at <input>:63); planemo-test-12.log\
+      \ (split_pairedness.sh line 16: $SAMTOOLS: command not found); direct probe of cwl_utils.expression.interpolate\
+      \ with heredoc'd python confirmed all three behaviors (`\\\\$(`\u2192`$(`, `\\\\${`\u2192`${`, `\\\
+      \\$VAR`\u2192`\\\\$VAR`, `$VAR`\u2192`$VAR`). Runtime verdict of the de-escape fix: attempt 13."
+    status: open
+    issue: null
+  - id: t13-udt-interpolated-values-wrap-in-shell-quotes
+    phase: 12
+    timestamp: 05:12:57
+    subject:
+      kind: note
+      label: galaxy-user-tool-authoring (configfiles section, quoting)
+      locator: package://author-galaxy-tool-wrapper#references/notes/galaxy-user-tool-authoring.md
+    kind: gap
+    severity: major
+    what: "Interpolated expressions in a configfile are substituted TEXTUALLY into the shell script, so\
+      \ an assignment whose expression produces a value-bearing phrase \u2014 e.g. `REFERENCE_ARG=$(inputs.reference\
+      \ ? `--reference '${inputs.reference.path}'` : \\\"\\\")` \u2014 becomes `REFERENCE_ARG=--reference\
+      \ '/path/dat'` after templating. Bash then parses the line as the VAR=value command-prefix syntax\
+      \ and tries to EXECUTE the first \\\"word\\\" \u2014 the dataset file \u2014 failing with exit 126\
+      \ \\\"Permission denied\\\". The fix is to quote the whole expression at the assignment site (`REFERENCE_ARG='$(...)'`)\
+      \ so the templated value always lands inside a quoted word. The authoring note documents quoting\
+      \ for paths in commands (`.map(...).join(\\\" \\\")`) but never the assignment-with-interpolation\
+      \ pattern. Costed one full planemo run (attempt 11, job 18 \u2014 and it was the LAST failing job;\
+      \ everything else was green)."
+    expected: The configfiles/command section should add an assignment-quoting bullet with this exact
+      trap (VAR=$(...) producing multi-word values -> env-prefix misparse -> exit 126 executing a dataset)
+      and the quoted-expression fix.
+    evidence: planemo-test-11.log (job 18 exit 126 Permission denied at split_pairedness.sh line 5); fix
+      verified statically, runtime verdict in attempt 12.
+    status: open
+    issue: null
+  - id: t12-udt-discover-pattern-matches-plain-filename-not-relpath
+    phase: 12
+    timestamp: 07:04:11
+    subject:
+      kind: note
+      label: galaxy-user-tool-authoring (discover_datasets pattern)
+      locator: package://author-galaxy-tool-wrapper#references/notes/galaxy-user-tool-authoring.md
+    kind: gap
+    severity: major
+    what: "The authoring note gives no guidance on what string a discover_datasets pattern is matched\
+      \ against. I assumed the `.bam` suffix was needed to type the discovered files and wrote `pattern:\
+      \ (?P<name>.+)\\\\.bam`. Two independent wrong assumptions collided: (1) DatasetCollector.match\
+      \ (galaxy/job_execution/output_collect.py:659) runs re.match(pattern, filename) against the PLAIN\
+      \ basename of each file in the collector's `directory` \u2014 the subdirectory is already scoped\
+      \ by `directory:` \u2014 so a `.bam` requirement is only meaningful if the copies actually have\
+      \ that suffix; (2) copying inputs as `paired/$base` with base = `input.basename` preserves the collection\
+      \ element's IDENTIFIER (sample-sheet ids \\\"test\\\"/\\\"test2\\\", extensionless, per set_basename_and_derived_properties\
+      \ semantics), NOT a filename with extension. Result: pattern matched nothing, both UDT output collections\
+      \ were created EMPTY, every downstream map-over silently created zero jobs, and the failure surfaced\
+      \ far away as samtools_merge \\\"You must specify at least one input file\\\". Costed attempts 18\
+      \ (misdiagnosed as fastq2fq output naming) and 21 (correctly diagnosed)."
+    expected: "The note should document (a) that patterns match the plain filename within `directory:`,\
+      \ (b) that `input.basename` for collection elements is the element identifier (typically extensionless),\
+      \ and (c) the failure signature of an empty UDT output collection \u2014 downstream map-over steps\
+      \ produce ZERO jobs with no error and the invocation fails (or silently produces nothing) at a distant\
+      \ step \u2014 so authors check discovery coverage immediately after the UDT job, not three layers\
+      \ downstream."
+    evidence: 'planemo-test-21.log (zero job setups for steps 17-22/24-25/29-32/36; samtools_merge job
+      21 command line with zero inputs); per-step job table from workflow-test-output.json; source read
+      of output_collect.py:659 match(); UDT v1.0.12 fix = pattern `(?P<name>.+)` relying on the output''s
+      `format: bam` for typing.'
+    status: open
+    issue: null
+  - id: t12-empty-collection-map-over-is-silent-zero-jobs
+    phase: 12
+    timestamp: 07:04:11
+    subject:
+      kind: note
+      label: galaxy-workflow-testability-design / Galaxy runtime (map-over over empty collections)
+      locator: package://implement-galaxy-workflow-test#references/notes/galaxy-workflow-testability-design.md
+    kind: gap
+    severity: major
+    what: "A Galaxy tool step whose collection input is an EMPTY (but populated) HDCA maps over zero slices\
+      \ and creates ZERO jobs \u2014 silently. No validation error, no warning, no DelayedWorkflowEvaluation\
+      \ (empty \u2260 unpopulated: populated returns True on a zero-element collection), and the invocation\
+      \ continues happily through __MERGE_COLLECTION__ (which merges empty ICJs into an empty pooled HDCA)\
+      \ until a step with an optional=false input finally fails (samtools_merge: \\\"You must specify\
+      \ at least one (and usually two or more) input files\\\") \u2014 or worse, the workflow completes\
+      \ with everything downstream missing. My UDT produced empty output collections and the symptom appeared\
+      \ three layers of indirection away."
+    expected: Either a warning when a map-over step receives a populated-but-empty collection, or debug/test
+      guidance to assert element_count > 0 on intermediate UDT outputs when a workflow's downstream step
+      count unexpectedly drops to zero. The debug reference for \"invocation failed at a step with correct
+      connections but zero rendered inputs\" should name \"empty upstream collection\" as a first-class
+      cause.
+    evidence: "planemo-test-21.log steps 17-20 validated mapped_over=True with zero job setups; attempt-18\
+      \ log shows identical zero-job pattern; run.py:543-660 populated checks treat empty as ready; source\
+      \ read of map_over.py MapOverPlanner (direct_match \u2192 no collections_to_match \u2192 no expansion,\
+      \ zero slices \u2192 zero jobs)."
+    status: open
+    issue: null
+  - id: galaxy-editor-renders-absent-optional-data-key-as-runtimevalue-finding
+    raised_by: apply-galaxy-workflow-changeset
+    observed_in:
+      mold: apply-galaxy-workflow-changeset
+      path: content/molds/apply-galaxy-workflow-changeset/index.md
+      revision: 6
+      content_hash: null
+      foundry_head: null
+    subject:
+      kind: related-project
+      label: galaxy-workflow-editor-issues-dialog
+      locator: https://github.com/galaxyproject/galaxy (workflow modules import recovery, populate_module_and_state
+        / check_and_update_param_values)
+    kind: friction
+    severity: minor
+    what: Galaxy's 'Issues loading this workflow' dialog reports every absent optional-data-input key
+      in gxformat2 step state as a missing parameter whose default is 'RuntimeValue', which reads as a
+      defect although the absent key is the canonical unset representation in format2 (gxwf's converter
+      deliberately omits RuntimeValue markers on optional params when converting native to format2, and
+      gxwf validate rejects the marker).
+    expected: Galaxy's import recovery could recognize absent optional data-input keys in format2 state
+      as intentionally-unset (the same encoding its own editor saves for native workflows) and not surface
+      them as loading issues.
+    evidence: 'Revision round on an already-green workflow: 16 flagged steps, every finding an absent
+      optional key; adding the marker fails gxwf validate, leaving it absent keeps Galaxy''s dialog listing.
+      Run directory prefix replaced with <run>/.'
+    status: open
+    issue: null

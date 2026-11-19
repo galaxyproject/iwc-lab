@@ -1,0 +1,157 @@
+- doc: |
+    Whole-workflow default-parameter run translated from nf-core/bamtofastq's
+    own nf-test (tests/default.nf.test::-profile test + tests/default.nf.test.snap):
+    2 paired-end BAM samples (test, test2) from the published samplesheet,
+    no chr restriction, QC and stats on, standard collate.
+    Checksum assertions are translated from the snapshot's path:md5 tokens
+    (test-evidence); FastQC html/text and MultiQC are asserted at
+    element-count/size level only because the snapshot records names, not
+    content hashes, for those outputs (logged deviation: the Galaxy fastqc
+    wrapper has no zip output, so text reports are exposed in its place).
+    Logged deviation (attempt 24): merged_reads and fastqutils_reports
+    snapshot md5s are non-portable across implementations — the merged gz
+    md5 depends on the BGZF/gzip stream bytes (source container
+    htslib_samtools:1.23.1--5b6bb4e vs the Galaxy fastx wrapper build) and
+    the fastq_utils report md5 embeds per-run /tmp dataset UUID paths
+    (report lines "Scanning and indexing all reads from
+    /tmp/.../dataset_<uuid>.dat"). Both outputs are asserted on portable
+    content instead: per-element FASTQ record counts (has_n_lines on the
+    decompressed gz) and report lines (Reads processed / Number of reads /
+    Quality encoding / OK). The asserted numbers are derived from the
+    snapshot itself (stats: test 5642 sequences / 2 unmapped, test2 5436 /
+    0) plus the source module logic (alignment_to_fastq joins mapped and
+    unmapped R1/R2 via CAT_FASTQ; collatefastq routes mate-unmapped reads
+    to the optional, unconsumed singleton bucket, so R1=R2=(sequences-
+    unmapped)/2: 2820/2820/2718/2718).
+  job:
+    input_samplesheet:
+      class: Collection
+      collection_type: sample_sheet
+      elements:
+        - identifier: test
+          class: File
+          location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam
+          filetype: bam
+        - identifier: test2
+          class: File
+          location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam
+          filetype: bam
+      rows:
+        test: [test, bam]
+        test2: [test2, bam]
+    fasta_reference:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      filetype: fasta
+    chr: ""
+    no_read_QC: false
+    no_stats: false
+    samtools_collate_fast: false
+    reads_in_memory: 100000
+  outputs:
+    merged_reads:
+      class: Collection
+      collection_type: list
+      element_count: 4
+      element_tests:
+        test_1:
+          decompress: true
+          asserts:
+            - has_n_lines: {n: 11280}
+        test_2:
+          decompress: true
+          asserts:
+            - has_n_lines: {n: 11280}
+        test2_1:
+          decompress: true
+          asserts:
+            - has_n_lines: {n: 10872}
+        test2_2:
+          decompress: true
+          asserts:
+            - has_n_lines: {n: 10872}
+    flagstat_reports:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          checksum: md5$a53f3d26e2e9851f7d528442bbfe9781
+        test2:
+          checksum: md5$acbd95030a362a7e6491faa87d1b9c2c
+    idxstats_reports:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          checksum: md5$e179601fa7b8ebce81ac3765206f6c15
+        test2:
+          checksum: md5$90f01313bc89c7fd096aad051cd71b66
+    stats_reports:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+            - has_line: {line: "SN\tsequences:\t5642"}
+            - has_line: {line: "SN\treads unmapped:\t2"}
+        test2:
+          asserts:
+            - has_line: {line: "SN\tsequences:\t5436"}
+            - has_line: {line: "SN\treads unmapped:\t0"}
+    fastqutils_reports:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+            - has_line: {line: "Reads processed: 2820"}
+            - has_line: {line: "Number of reads: 2820"}
+            - has_line: {line: "Quality encoding: 33"}
+            - has_line: {line: "OK"}
+        test2:
+          asserts:
+            - has_line: {line: "Reads processed: 2718"}
+            - has_line: {line: "Number of reads: 2718"}
+            - has_line: {line: "Quality encoding: 33"}
+            - has_line: {line: "OK"}
+    unmapped_other_reads:
+      class: Collection
+      collection_type: list
+      element_count: 0
+      element_tests: {}
+    fastqc_pre_conversion_html:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+            - has_size:
+                min: 1000
+        test2:
+          asserts:
+            - has_size:
+                min: 1000
+    fastqc_pre_conversion_zip:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests: {}
+    fastqc_post_conversion_html:
+      class: Collection
+      collection_type: list
+      element_count: 4
+      element_tests: {}
+    fastqc_post_conversion_zip:
+      class: Collection
+      collection_type: list
+      element_count: 4
+      element_tests: {}
+    multiqc_report:
+      asserts:
+        - has_size:
+            min: 1000

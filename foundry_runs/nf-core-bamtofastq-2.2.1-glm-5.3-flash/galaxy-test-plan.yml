@@ -1,0 +1,435 @@
+plan_version: "1"
+source:
+  kind: nextflow
+  name: nf-core/bamtofastq
+  derived_from: test-evidence
+  notes: >
+    Translated from the selected nf-test candidate tests/default.nf.test::-profile test
+    (sole primary whole-pipeline case, real execution) and its sidecar
+    tests/default.nf.test.snap. The snap carries pipeline-level captures:
+    stable_names (path list, no content), stable_paths (path:md5 for 13 files),
+    succeeded_task_count (32), tool-versions map, and the BAM/CRAM reads-md5
+    helper placeholders ("No BAM files"/"No CRAM files" — the readsMD5 helpers
+    recorded nothing for this run shape). Bootstrap-only candidates (chr, cram,
+    collate_fast, fai, no_bai, no_crai, no_qc, no_stats, test_full) are NOT
+    translated into additional test cases; they stay eligible branch evidence
+    (see omissions).
+workflow:
+  title: nf-core/bamtofastq
+  label_source: draft
+  notes: >
+    Labels read verbatim from the concrete extracted workflow
+    galaxy-workflow.gxwf.yml (input labels: Input samplesheet, Fasta reference,
+    Restrict to chromosome(s), Skip read QC, Skip samtools stats, Collate fast
+    mode, Reads in memory (collate fast mode); output labels: Merged reads,
+    Unmapped/other reads (single-end extraction), Samtools flagstat reports,
+    Samtools idxstats reports, Samtools stats reports, FastQC pre-conversion
+    HTML reports, FastQC pre-conversion text reports, FastQC post-conversion
+    HTML reports, FastQC post-conversion text reports, fastq_utils info
+    reports, MultiQC report).
+test_cases:
+  - id: default-test
+    doc: >
+      Whole-workflow default-parameter run over the source pipeline's own test
+      fixtures: 2 paired-end BAM samples (test, test2) from the published
+      samplesheet, no chr restriction, QC and stats on, standard collate.
+      Asserts per-element md5 checksums translated from the nf-test snapshot
+      stable_paths for the merged reads, samtools flagstat/idxstats/stats, and
+      fastqutils info reports; FastQC html and MultiQC report asserted at
+      name/element level only (their content is timestamp-nondeterministic and
+      the snapshot records no content hash for them).
+    derived_from: test-evidence
+    provenance: "tests/default.nf.test::-profile test + tests/default.nf.test.snap"
+    job_inputs:
+      - workflow_label: Input samplesheet
+        label_status: resolved
+        description: >
+          Samplesheet-driven collection with one BAM alignment per row. The
+          published samplesheet CSV (test, test2 rows with .bai) expands to a
+          list collection of 2 BAM elements with identifiers test and test2
+          (sample_id column); each element's file is the samplesheet's own
+          'mapped' URL fetched at staging.
+        collection_shape: list
+        datatype: bam
+        fixture:
+          storage: remote-url
+          location: https://raw.githubusercontent.com/nf-core/test-datasets/bamtofastq/samplesheet/test_bam_samplesheet.csv
+          checksum: null
+          provenance: tests/default.nf.test params.input; element files are the samplesheet's mapped URLs (test.bam/test2.bam under nf-core/test-datasets/bamtofastq)
+      - workflow_label: Fasta reference
+        label_status: resolved
+        description: >
+          Reference FASTA (used by samtools stats/index rebuilds and required
+          by the conversion path for index building).
+        collection_shape: null
+        datatype: fasta
+        fixture:
+          storage: remote-url
+          location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta
+          checksum: null
+          provenance: tests/default.nf.test params_delta.fasta
+      - workflow_label: Restrict to chromosome(s)
+        label_status: resolved
+        description: Empty string — whole-genome run (no chr restriction).
+        collection_shape: null
+        datatype: null
+        fixture:
+          storage: cvmfs-string
+          location: ""
+          checksum: null
+          provenance: default parameter surface of tests/default.nf.test (no chr)
+      - workflow_label: Skip read QC
+        label_status: resolved
+        description: "false — QC enabled."
+        collection_shape: null
+        datatype: null
+        fixture:
+          storage: cvmfs-string
+          location: "false"
+          checksum: null
+          provenance: default parameter surface
+      - workflow_label: Skip samtools stats
+        label_status: resolved
+        description: "false — stats enabled."
+        collection_shape: null
+        datatype: null
+        fixture:
+          storage: cvmfs-string
+          location: "false"
+          checksum: null
+          provenance: default parameter surface
+      - workflow_label: Collate fast mode
+        label_status: resolved
+        description: "false — standard collate."
+        collection_shape: null
+        datatype: null
+        fixture:
+          storage: cvmfs-string
+          location: "false"
+          checksum: null
+          provenance: default parameter surface
+      - workflow_label: Reads in memory (collate fast mode)
+        label_status: resolved
+        description: "100000 — schema default, inert without collate fast mode."
+        collection_shape: null
+        datatype: null
+        fixture:
+          storage: cvmfs-string
+          location: "100000"
+          checksum: null
+          provenance: schema default
+    expected_outputs:
+      - workflow_label: Merged reads
+        label_status: resolved
+        description: >
+          Per-sample concatenated FASTQ per mate (CAT_FASTQ reads). Snapshot
+          carries md5 for all 4 elements (test_1/test_2/test2_1/test2_2) but
+          those md5s are BGZF-stream non-portable across implementations
+          (samtools/zlib build of the source container vs Galaxy wrapper) —
+          deviated to per-element decompressed record counts derived from the
+          snapshot itself (stats sequences minus unmapped, /2: 2820/2820/
+          2718/2718 reads = 11280/11280/10872/10872 4-line records).
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element_count
+            intent: Collection has 4 elements (2 samples x 2 mates).
+            expected_value: 4
+            tolerance: null
+            element_identifier: null
+            evidence: test-evidence
+            confidence: high
+          - family: count
+            intent: test_1 decompressed FASTQ record count (=(5642-2)/2 records
+              = 11280 4-line records; snapshot stats + source cat semantics).
+            expected_value: has_n_lines 11280
+            tolerance: null
+            element_identifier: test_1
+            evidence: test-evidence
+            confidence: high
+          - family: count
+            intent: test_2 decompressed FASTQ record count (same derivation).
+            expected_value: has_n_lines 11280
+            tolerance: null
+            element_identifier: test_2
+            evidence: test-evidence
+            confidence: high
+          - family: count
+            intent: test2_1 decompressed FASTQ record count (=(5436-0)/2 = 10872).
+            expected_value: has_n_lines 10872
+            tolerance: null
+            element_identifier: test2_1
+            evidence: test-evidence
+            confidence: high
+          - family: count
+            intent: test2_2 decompressed FASTQ record count (same derivation).
+            expected_value: has_n_lines 10872
+            tolerance: null
+            element_identifier: test2_2
+            evidence: test-evidence
+            confidence: high
+      - workflow_label: Samtools flagstat reports
+        label_status: resolved
+        description: Per-sample flagstat txt; snapshot md5 for both samples.
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: checksum
+            intent: test flagstat matches snapshot md5.
+            expected_value: md5$a53f3d26e2e9851f7d528442bbfe9781
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: high
+          - family: checksum
+            intent: test2 flagstat matches snapshot md5.
+            expected_value: md5$acbd95030a362a7e6491faa87d1b9c2c
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: high
+      - workflow_label: Samtools idxstats reports
+        label_status: resolved
+        description: Per-sample idxstats txt; snapshot md5 for both samples.
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: checksum
+            intent: test idxstats matches snapshot md5.
+            expected_value: md5$e179601fa7b8ebce81ac3765206f6c15
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: high
+          - family: checksum
+            intent: test2 idxstats matches snapshot md5.
+            expected_value: md5$90f01313bc89c7fd096aad051cd71b66
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: high
+      - workflow_label: Samtools stats reports
+        label_status: resolved
+        description: Per-sample stats txt; snapshot md5 for both samples.
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: checksum
+            intent: test stats matches snapshot md5.
+            expected_value: md5$3c3f8fa56674fa987fd912b530f49c3c
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: high
+          - family: checksum
+            intent: test2 stats matches snapshot md5.
+            expected_value: md5$7e6537bde51ee4bb4a50562014ae2cd4
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: high
+      - workflow_label: fastq_utils info reports
+        label_status: resolved
+        description: >
+          Per-sample fastq_utils info txt (one per sample over both mates).
+          Snapshot md5: test.txt db31682c…, test2.txt 0222a414…. NOTE
+          (naming deviation, ledger fastqutils-per-sample-invocation): wrapper
+          output naming may differ from snapshot basenames (test.txt);
+          checksum semantics preserved regardless of element naming.
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: has_line
+            intent: >
+              test report carries the per-run-invariant lines (snapshot md5
+              db31682c… is non-portable because the fastq_utils report embeds
+              per-run /tmp dataset UUID paths in lines "Scanning and indexing
+              all reads from …", "File … processed", "Next file …"). Portable
+              content lines are Reads processed 2820 (=(5642−2)/2,
+              snapshot-derived), Number of reads 2820, Quality encoding 33, OK.
+            expected_value: "has_line 'Reads processed: 2820'; 'Number of reads: 2820';
+              'Quality encoding: 33'; 'OK'"
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: high
+          - family: has_line
+            intent: test2 report, same derivation (2718 = (5436−0)/2).
+            expected_value: "has_line 'Reads processed: 2718'; 'Number of reads: 2718';
+              'Quality encoding: 33'; 'OK'"
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: high
+      - workflow_label: Unmapped/other reads (single-end extraction)
+        label_status: resolved
+        description: >
+          Other bucket of single-end collatefastq. Both default-test samples
+          are paired, so this is the 0-element empty-collection case (snapshot
+          stable_names contain no *other.fq.gz for this profile). Count-only
+          check; the md5 assertion would be vacuous.
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element_count
+            intent: Empty collection (0 elements) for the all-paired default test.
+            expected_value: 0
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: high
+      - workflow_label: FastQC pre-conversion HTML reports
+        label_status: resolved
+        description: >
+          Per-alignment FastQC html (2 elements). Snapshot records names only
+          (no content hash for fastqc html); name-level assertion.
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element_count
+            intent: 2 pre-conversion html elements (one per alignment).
+            expected_value: 2
+            tolerance: null
+            element_identifier: null
+            evidence: fixture-derived
+            confidence: medium
+      - workflow_label: FastQC pre-conversion text reports
+        label_status: resolved
+        description: >
+          Wrapper produces text summaries instead of zips (devteam fastqc
+          0.74+galaxy1 has no zip output; naming deviation recorded in
+          phase 7 and carried to the test plan as a documented deviation).
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element_count
+            intent: "2 pre-conversion text elements (deviation: text in place of zip)."
+            expected_value: 2
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: medium
+      - workflow_label: FastQC post-conversion HTML reports
+        label_status: resolved
+        description: >
+          Post-conversion FastQC over the mixed reads_post_qc flat list.
+          Snapshot names: test.post_conversion_1_fastqc.html /
+          test.post_conversion_2_fastqc.html (mate-level naming) — the flat
+          list shape yields per-mate elements; snapshot records names only.
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element_count
+            intent: 4 post-conversion html elements (2 samples x 2 mates).
+            expected_value: 4
+            tolerance: null
+            element_identifier: null
+            evidence: fixture-derived
+            confidence: medium
+      - workflow_label: FastQC post-conversion text reports
+        label_status: resolved
+        description: Wrapper text summaries in place of zips (deviation, as above).
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element_count
+            intent: 4 post-conversion text elements.
+            expected_value: 4
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: medium
+      - workflow_label: MultiQC report
+        label_status: resolved
+        description: >
+          MultiQC html report; snapshot asserts the name only (content hash
+          exists only for multiqc_citations.txt inside multiqc_data/, which the
+          Galaxy wrapper does not expose as a workflow output). Smoke check.
+        output_kind: dataset
+        collection_shape: null
+        assertion_intent:
+          - family: has_size
+            intent: Non-trivial html report produced (smoke check).
+            expected_value: 1000
+            tolerance:
+              kind: delta_frac
+              magnitude: 1
+              rationale: Existence/size smoke; content is nondeterministic across MultiQC runs.
+            element_identifier: null
+            evidence: intent
+            confidence: low
+unresolved:
+  - kind: assertion
+    description: >
+      fastqutils element identifiers: the snapshot basenames are test.txt /
+      test2.txt (per sample), but the Galaxy merge_fastqutils output element
+      names depend on the fastq_info wrapper's output naming and the
+      __MERGE_COLLECTION__ keep_first idiom; expected checksums are solid but
+      the element_identifier keys above (test/test2) are assumed, not verified
+      against a run.
+    blocking: true
+    suggested_resolution: >
+      Implement-galaxy-workflow-test should set element_identifier via
+      --from_invocation bootstrap or a planemo dry inspection of the produced
+      collection, then keep the snapshot md5 values.
+  - kind: other
+    description: >
+      no_read_QC gating semantics: the source's no_qc.nf.test sets a
+      case-different, unused param (no_read_qc vs no_read_QC), so its snapshot
+      still contains QC outputs; not translatable as a branch test. The chr
+      gate's string-truthiness runtime behavior (ledger
+      chr-gate-needs-nonempty-string-evaluation) is verified at execution, not
+      asserted from snapshot evidence.
+    blocking: false
+    suggested_resolution: null
+omissions:
+  - target: multiqc_citations.txt (md5 4c806e63a283ec1b7e78cdae3a923d4f)
+    reason: >
+      Lives inside the multiqc_data/ directory output, which the Galaxy MultiQC
+      wrapper does not expose as a workflow output; runner boilerplate inputs
+      (workflow_summary_mqc.yaml etc.) are dropped from the Galaxy translation
+      (ledger multiqc-runner-boilerplate-dropped), so the content diverges by
+      design.
+    category: no-stable-checkpoint
+  - target: software versions YAML / multiqc_data/* / pipeline_info/*
+    reason: nf-core runner artifacts (removeNextflowVersion capture, Nextflow
+      runtime introspection) with no Galaxy equivalent; per the
+      nextflow-snapshot-to-galaxy-assertions note §2/§4 these do not translate.
+    category: out-of-scope
+  - target: FastQC zip outputs
+    reason: >
+      Snapshot asserts zip presence by name only (stable_names), and the
+      selected Galaxy wrapper has no zip output; text reports are exposed
+      instead as a documented deviation. Asserted at element-count level only.
+    category: weak-output
+  - target: bootstrap-only test branches (chr, cram, collate_fast, fai, no_bai,
+      no_crai, no_qc, no_stats, test_full)
+    reason: >
+      Each toggles one parameter branch; the primary case covers the default
+      surface. Branch tests are deferred (would multiply runtime); the branch
+      wiring is verified structurally by draft-validate and, where evidence
+      exists, by the default run (e.g. QC outputs present).
+    category: out-of-scope
+  - target: reads md5 helper placeholders (bam.readsMD5 / cram.readsMD5)
+    reason: >
+      The snapshot's "No BAM files"/"No CRAM files" entries record that the
+      helpers captured nothing for this run; nothing to translate.
+    category: other
+warnings:
+  - code: no-upstream-expected-outputs
+    message: >
+      FastQC html/text and MultiQC report have no content-hash evidence in the
+      snapshot (names only); their assertions are element-count/size smoke
+      checks, not checksum translations.
+    path: tests/default.nf.test.snap stable_names
+  - code: untranslatable-snapshot
+    message: >
+      succeeded_task_count (32) is an invocation-level signal and is dropped
+      per the snapshot-translation note §2b.
+    path: tests/default.nf.test.snap content[0]
+  - code: expression-derived-shape
+    message: >
+      unmapped_other_reads element_count 0 is intent evidence (derived from
+      the source's pairedness semantics for this fixture), not a snapshot
+      value; logged per the test-quality rule as a type/count-only check.
+    path: nextflow-galaxy-interface.md checkpoint outputs

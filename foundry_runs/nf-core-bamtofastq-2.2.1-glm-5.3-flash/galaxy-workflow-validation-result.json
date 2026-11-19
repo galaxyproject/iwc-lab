@@ -1,0 +1,28 @@
+{
+  "command": "npx --yes --package @galaxy-tool-util/cli@1.15.0 gxwf validate galaxy-workflow.gxwf.yml --json --connections --strict --cache-dir tool-cache",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "diagnostics": [],
+  "residual_runtime_risks": [
+    {
+      "risk": "chr gate truthiness: samtools_chr_view wires when: $(inputs.where == chr-input) — a non-boolean string input gating a when expression is unverified runtime behavior (ledger chr-gate-needs-nonempty-string-evaluation). If a non-empty chr fails to activate the branch, or an empty chr blocks it, the pick_value fallback still selects the raw samplesheet, but the filtered path would never run.",
+      "proving_artifact": "planemo run invocation — set chr to a non-empty chromosome and check samtools_chr_view executes"
+    },
+    {
+      "risk": "pairedness_split UDT: the authored GalaxyUserTool's shell script depends on samtools availability in the job container (container: quay.io/biocontainers/samtools:1.23.1--ha83d96e_0) and on JS-style template expressions in a bash configfile (inputs.reference ? ... ternary, inputs.alignments.map(...)). Template-expression support inside user-tool configfiles is runtime behavior the static validator does not exercise.",
+      "proving_artifact": "planemo run — the pairedness_split job's stdout/stderr in the invocation"
+    },
+    {
+      "risk": "sample_sheet collection staging via rows: the tests file supplies rows {test: [test,bam], test2: [test2,bam]}; the Galaxy API requires rows when column_definitions are set (sample_sheet.py generate_elements) — verified from source, but end-to-end staging through planemo's galactic_job_json is runtime behavior.",
+      "proving_artifact": "planemo run — input staging step of the invocation"
+    },
+    {
+      "risk": "empty-collection flow: unmapped_other_reads is expected 0-element; fastq_single arm consumes pairedness_split/single_alignments (empty for the all-paired default test). Whether the __MERGE_COLLECTION__/fastqc steps tolerate an empty operand collection is runtime semantics.",
+      "proving_artifact": "planemo run — merge_fastqutils and merge_reads_post_qc job outcomes"
+    },
+    {
+      "risk": "fastqutils arm element naming: fastqutils_reports element identifiers are assumed test/test2 (plan unresolved item); snapshot md5s are solid but element-key mismatch would surface only at runtime assertion time.",
+      "proving_artifact": "planemo run — fastqutils_reports collection element identifiers"
+    }
+  ]
+}
