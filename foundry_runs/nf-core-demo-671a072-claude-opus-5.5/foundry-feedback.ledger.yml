@@ -1,0 +1,133 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-demo
+  status: complete
+  phases:
+  - {n: 1, kind: mold, skill: summarize-nextflow, status: done, feedback_checked: true}
+  - {n: 2, kind: mold, skill: nextflow-summary-to-galaxy-reference-data, status: done, feedback_checked: true}
+  - {n: 3, kind: mold, skill: nextflow-summary-to-galaxy-interface, status: done, feedback_checked: true}
+  - {n: 4, kind: mold, skill: nextflow-summary-to-galaxy-data-flow, status: done, feedback_checked: true}
+  - {n: 5, kind: mold, skill: compare-against-iwc-exemplar, status: done, feedback_checked: true}
+  - {n: 6, kind: mold, skill: nextflow-summary-to-galaxy-template, status: done, feedback_checked: true}
+  - {n: 7, kind: mold, skill: advance-galaxy-draft-step, status: done, iterations: 4, feedback_checked: true}
+  - {n: 8, kind: branch, pattern: test-data-resolution, status: done, selected: nextflow-to-test-data, feedback_checked: true}
+  - {n: 9, kind: mold, skill: nextflow-test-to-galaxy-test-plan, status: done, feedback_checked: true}
+  - {n: 10, kind: mold, skill: implement-galaxy-workflow-test, status: done, feedback_checked: true}
+  - {n: 11, kind: mold, skill: validate-galaxy-workflow, status: done, feedback_checked: true}
+  - {n: 12, kind: mold, skill: run-workflow-test, status: done, feedback_checked: true}
+  - {n: 13, kind: mold, skill: debug-galaxy-workflow-output, status: done, feedback_checked: true}
+entries:
+- id: summarize-nextflow-local-remote-url-fails-schema
+  raised_by: summarize-nextflow
+  observed_in: {mold: summarize-nextflow, path: content/molds/summarize-nextflow/index.md, revision: 18, content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37, foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100}
+  subject: {kind: implementation, label: summarize-nextflow source provenance, locator: packages/summarize-nextflow}
+  kind: defect
+  severity: major
+  what: On a Nextflow-managed clone (~/.nextflow/assets/.repos/<org>/<repo>/clones/<sha>), `git remote get-url origin` is a local bare-repo path; the CLI copies it into source.url and then fails its own
+    schema check (/source/url must match format uri), emitting nothing.
+  expected: Fall back to manifest.homePage (or skip the remote) when the git remote is not a URI, instead of failing validation.
+  evidence: 'foundry summarize-nextflow <nextflow-assets-clone> exited 1 with ''/source/url: must match format "uri"''; rerun with --no-validate and manual url rewrite to https://github.com/nf-core/demo
+    validated.'
+  status: open
+  issue: null
+- id: summarize-nextflow-multiline-closure-edges-fragmented
+  raised_by: summarize-nextflow
+  observed_in: {mold: summarize-nextflow, path: content/molds/summarize-nextflow/index.md, revision: 18, content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37, foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100}
+  subject: {kind: implementation, label: summarize-nextflow workflow edge extraction, locator: packages/summarize-nextflow}
+  kind: defect
+  severity: major
+  what: A process call whose single argument is a multi-line operator chain with a closure (MULTIQC(ch_multiqc_files.flatten().collect().map { files -> [ ... ] })) is split per line into 12 bogus edges
+    with from values like '[', ']', '}', '[]', '? file(...)'; FASTQC.out.zip -> MULTIQC is never emitted.
+  expected: Treat the balanced argument expression as one edge source and record its operators in via; at minimum flag low confidence instead of emitting line fragments.
+  evidence: nf-core/demo workflows/demo.nf MULTIQC call; the cast skill replaced workflow.edges by hand.
+  status: open
+  issue: null
+- id: summarize-nextflow-cli-profile-silent-default
+  raised_by: summarize-nextflow
+  observed_in: {mold: summarize-nextflow, path: content/molds/summarize-nextflow/index.md, revision: 18, content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37, foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100}
+  subject: {kind: cli-command, label: foundry summarize-nextflow --profile, locator: content/cli/foundry/index.md}
+  kind: defect
+  severity: minor
+  what: 'The CLI help documents `--profile <name> (default: "test")`, while the Mold says a profile override is optional and ''when omitted, there is no silent profile default''.'
+  expected: Make --profile default to none (or document why the CLI deviates) so the CLI matches the Mold's candidate-selection contract.
+  evidence: foundry summarize-nextflow --help output in this run.
+  status: open
+  issue: null
+- id: discovery-schema-forces-score-on-confirmed-pin
+  raised_by: advance-galaxy-draft-step
+  observed_in: {mold: advance-galaxy-draft-step, path: content/molds/advance-galaxy-draft-step/index.md, revision: 10, content_hash: cd510f127a0f2a88980737c5e3bf04b860c6591ae70500c1cae078104c9e8eef, foundry_head: 9678dfba7293f01d34bb755adbb6dbfa7913dea0}
+  subject: {kind: schema, label: galaxy-tool-discovery ToolCandidate.score, locator: 'package://@galaxy-foundry/gxwf-foundry#galaxyToolDiscoverySchema'}
+  kind: friction
+  severity: minor
+  what: Confirming a template identity pin (multiqc) via tool-versions/tool-revisions involves no tool-search, yet ToolCandidate requires score, matched_terms and match_fields; the run had to write score
+    0.0.
+  expected: Allow score null (or a 'confirmed-pin' match source) when the candidate comes from an identity pin rather than a search hit.
+  evidence: <run>/steps/multiqc/galaxy-tool-pin.json
+  status: open
+  issue: null
+- id: snapshot-md5-gz-decompressed-semantics-missing
+  raised_by: nextflow-test-to-galaxy-test-plan
+  observed_in: {mold: nextflow-test-to-galaxy-test-plan, path: content/molds/nextflow-test-to-galaxy-test-plan/index.md, revision: 8, content_hash: fa769216f621ef25470c9fb907df1278635c0a1e022b647b9462ff7b92469291,
+    foundry_head: 47aa5c1cf419386ea72929c8ee34aec0db65588f}
+  subject: {kind: research, label: nextflow-snapshot-to-galaxy-assertions, locator: content/research/nextflow-snapshot-to-galaxy-assertions/index.md}
+  kind: gap
+  severity: major
+  what: The note never says that nf-test md5 tokens for *.gz files are computed over decompressed content, so a direct translation to Galaxy `checksum` on a fastqsanger.gz output compares against compressed
+    bytes and fails.
+  expected: 'State the nf-test gz md5 semantics and prescribe the Galaxy equivalent (decompress: true + checksum, or content asserts) for compressed outputs.'
+  evidence: nf-core/demo snap token for SAMPLE1_PE_sample1_R1.fastq.gz (7dd2fd...) equals md5 of zcat output, not of the file (a1af53...); grep for gz/decompress in the packaged note finds nothing.
+  status: open
+  issue: null
+- id: implement-test-run-green-duplicates-run-workflow-test
+  raised_by: implement-galaxy-workflow-test
+  observed_in: {mold: implement-galaxy-workflow-test, path: content/molds/implement-galaxy-workflow-test/index.md, revision: 11, content_hash: 34855691581889d36265e00178088b8a52a51ee72119329261bca186f7cb480e,
+    foundry_head: a59d6025d612ce7013b09fa1ccb58f60507ccc6a}
+  subject: {kind: pipeline, label: nextflow-to-galaxy phases 10/12, locator: content/pipelines/nextflow-to-galaxy/index.md}
+  kind: friction
+  severity: minor
+  what: implement-galaxy-workflow-test step 5 requires a green planemo run and step 1 prefers bootstrapping from a real invocation, but the pipeline orders run-workflow-test (phase 12) after it, so following
+    both means two managed-Galaxy runs or deferring one.
+  expected: Either let phase 10 hand off statically validated tests and leave execution to run-workflow-test, or have the pipeline skip the separate run when phase 10 already ran green.
+  evidence: This run deferred the planemo run from phase 10 to phase 12.
+  status: open
+  issue: null
+- id: planemo-embedded-udt-config-undocumented
+  raised_by: run-workflow-test
+  observed_in: {mold: run-workflow-test, path: content/molds/run-workflow-test/index.md, revision: 8, content_hash: 6e312c6ee27ef6e45a6ace74087cd28a6509ade11f788a51ee478efce58971b6, foundry_head: 0b06389d693ff56e7892349d90052de33156734c}
+  subject: {kind: research, label: galaxy-user-tool-workflow-binding (open question), locator: content/research/galaxy-user-tool-workflow-binding/index.md}
+  kind: gap
+  severity: major
+  what: The binding note leaves open whether a Planemo-managed Galaxy runs a workflow with an embedded GalaxyUserTool, and run-workflow-test gives no way to enable enable_beta_tool_formats; planemo test
+    has no flag for it.
+  expected: 'Document the working recipe: export GALAXY_CONFIG_OVERRIDE_ENABLE_BETA_TOOL_FORMATS=true before planemo test. In this run no extra role setup was needed for the planemo bootstrap user. Have
+    run-workflow-test apply it when the workflow embeds a run: GalaxyUserTool.'
+  evidence: With that env var, planemo 0.75.48 on Galaxy dev eaa885328b8 imported the workflow and ran the embedded cowpy tool to state ok.
+  status: open
+  issue: null
+- id: planemo-test-json-missing-invocation-ids
+  raised_by: run-workflow-test
+  observed_in: {mold: run-workflow-test, path: content/molds/run-workflow-test/index.md, revision: 8, content_hash: 6e312c6ee27ef6e45a6ace74087cd28a6509ade11f788a51ee478efce58971b6, foundry_head: 0b06389d693ff56e7892349d90052de33156734c}
+  subject: {kind: related-project, label: planemo test structured output (invocation_details), locator: 'https://github.com/galaxyproject/planemo'}
+  kind: friction
+  severity: minor
+  what: For a failed workflow test the test-output.json invocation_details.details was empty, so invocation/history/workflow ids that run-workflow-test must hand to the debug phase were unavailable.
+  expected: Planemo should record invocation, history and workflow ids in the structured output for every executed workflow test; meanwhile run-workflow-test should say where else to recover them (e.g.
+    --no_cleanup plus the Galaxy API).
+  evidence: <run>/planemo-run/test-output.json
+  status: open
+  issue: null
+- id: checksum-ignores-decompress-silently
+  raised_by: debug-galaxy-workflow-output
+  observed_in: {mold: debug-galaxy-workflow-output, path: content/molds/debug-galaxy-workflow-output/index.md, revision: 6, content_hash: 0ea72a26de30b8086e4d11fea09bc269e94320ec97fb317f6c0232cd92841009,
+    foundry_head: eec35c4bdb6f486a98372cbf022cced5b84e6556}
+  subject: {kind: related-project, label: Galaxy tool_util verify checksum + decompress; gxwf validate-tests, locator: 'https://github.com/galaxyproject/galaxy/blob/dev/lib/galaxy/tool_util/verify/__init__.py'}
+  kind: defect
+  severity: major
+  what: 'An output test with decompress: true and checksum validates statically (gxwf validate-tests, foundry validate-tests-format) but Galaxy''s verify hashes the raw stored bytes; decompress applies
+    only to asserts and compare, so gz outputs can never match a content checksum.'
+  expected: Galaxy should honor decompress for checksum (or reject the combination); until then gxwf validate-tests should warn on checksum+decompress, and the Foundry assertion notes should say checksum
+    is byte-level.
+  evidence: verify/__init__.py _verify_checksum(output_content,...) vs verify_assertions(..., decompress); run failed with md5 df27878f... vs decompressed-content md5 7dd2fd..., which the same seqtk 1.4
+    container reproduces exactly.
+  status: open
+  issue: null

@@ -1,0 +1,149 @@
+- doc: 'nf-core/demo -profile test (tests/default.nf.test): 2 paired-end samples + 1 single-end sample with 2 runs; FastQC, seqtk trimfq, cowpy, MultiQC.'
+  job:
+    reads:
+      class: Collection
+      collection_type: list:paired_or_unpaired
+      elements:
+      - class: Collection
+        collection_type: paired_or_unpaired
+        identifier: SAMPLE1_PE
+        elements:
+        - class: File
+          identifier: forward
+          location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample1_R1.fastq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: eaf6537837437b69412285bf1a2a542f571e9336
+        - class: File
+          identifier: reverse
+          location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample1_R2.fastq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: cbb92e7ed652d5b4008c588b318a6a12a3f0bfd5
+      - class: Collection
+        collection_type: paired_or_unpaired
+        identifier: SAMPLE2_PE
+        elements:
+        - class: File
+          identifier: forward
+          location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample2_R1.fastq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: 7b090121cfa3caa51d9051d01e5f8e7bd2babb5d
+        - class: File
+          identifier: reverse
+          location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample2_R2.fastq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: 56e48ae352b0dcbe2297fd8831ba506c19435cdc
+      - class: Collection
+        collection_type: paired_or_unpaired
+        identifier: SAMPLE3_SE_run1
+        elements:
+        - class: File
+          identifier: unpaired
+          location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample1_R1.fastq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: eaf6537837437b69412285bf1a2a542f571e9336
+      - class: Collection
+        collection_type: paired_or_unpaired
+        identifier: SAMPLE3_SE_run2
+        elements:
+        - class: File
+          identifier: unpaired
+          location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample2_R1.fastq.gz
+          filetype: fastqsanger.gz
+          hashes:
+          - hash_function: SHA-1
+            hash_value: 7b090121cfa3caa51d9051d01e5f8e7bd2babb5d
+    skip_trim: false
+  outputs:
+    cowpy_output:
+      checksum: md5$9c8be9f4550989b40901f379cb1a605f
+      asserts:
+      - that: has_text
+        text: nf-core rules!
+    trimmed_reads:
+      class: Collection
+      collection_type: list:paired_or_unpaired
+      element_tests:
+        SAMPLE1_PE:
+          element_tests:
+            forward:
+              decompress: true
+              asserts:
+              - that: has_n_lines
+                n: 110884
+              file: test-data/expected/SAMPLE1_PE_sample1_R1.fastq.gz
+              compare: diff
+            reverse:
+              decompress: true
+              asserts:
+              - that: has_n_lines
+                n: 110884
+          class: Collection
+        SAMPLE2_PE:
+          element_tests:
+            forward:
+              decompress: true
+              asserts:
+              - that: has_n_lines
+                n: 85924
+            reverse:
+              decompress: true
+              asserts:
+              - that: has_n_lines
+                n: 85924
+          class: Collection
+        SAMPLE3_SE_run1:
+          element_tests:
+            unpaired:
+              decompress: true
+              asserts:
+              - that: has_n_lines
+                n: 110884
+          class: Collection
+        SAMPLE3_SE_run2:
+          element_tests:
+            unpaired:
+              decompress: true
+              asserts:
+              - that: has_n_lines
+                n: 85924
+          class: Collection
+      element_count: 4
+    fastqc_html:
+      class: Collection
+      collection_type: list
+      element_count: 6
+      element_tests:
+        SAMPLE1_PE_forward:
+          asserts:
+          - that: has_text
+            text: FastQC
+        SAMPLE3_SE_run2_unpaired:
+          asserts:
+          - that: has_text
+            text: FastQC
+    multiqc_stats:
+      asserts:
+      - that: has_n_lines
+        n: 7
+      - that: has_text
+        text: '0.027721'
+      - that: has_text
+        text: '0.021481'
+      - that: has_text
+        text: SAMPLE1_PE_forward
+      - that: has_text
+        text: SAMPLE3_SE_run1_unpaired
+    multiqc_report:
+      asserts:
+      - that: has_text
+        text: MultiQC

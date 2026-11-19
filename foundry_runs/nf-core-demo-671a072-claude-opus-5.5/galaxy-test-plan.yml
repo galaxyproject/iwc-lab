@@ -1,0 +1,193 @@
+plan_version: '1'
+source:
+  kind: nextflow
+  name: nf-core/demo
+  derived_from: test-evidence
+  notes: Translated from tests/default.nf.test::-profile test and tests/default.nf.test.snap at 671a0726. Snapshot stable_content md5 tokens are nf-test md5s, which are computed over decompressed content
+    for .gz files (verified locally against the NF run).
+workflow:
+  title: nf-core/demo (Galaxy translation)
+  label_source: draft
+  notes: Labels read from galaxy-workflow.gxwf.yml.
+test_cases:
+- id: default-profile-test
+  doc: 'nf-core/demo -profile test: two paired-end samples and one single-end sample with two runs; FastQC, seqtk trimming, cowpy and MultiQC.'
+  derived_from: mixed
+  provenance: tests/default.nf.test test("-profile test")
+  job_inputs:
+  - workflow_label: reads
+    label_status: resolved
+    description: Mixed SE/PE read collection expanded from samplesheet_test_illumina_amplicon.csv (see test-data-refs.json elements).
+    collection_shape: list:paired_or_unpaired
+    datatype: fastqsanger.gz
+    fixture:
+      storage: remote-url
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/refs/heads/viralrecon/samplesheet/samplesheet_test_illumina_amplicon.csv
+      checksum: SHA-1:e6f9a75ba16fae0372f5e64dd204911abba8597a
+      provenance: selected candidate tests/default.nf.test::-profile test, params.input samplesheet; expanded into collection elements
+  - workflow_label: skip_trim
+    label_status: resolved
+    description: Left at default false, as in the NF test profile.
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: params.skip_trim default (not set in conf/test.config)
+  expected_outputs:
+  - workflow_label: cowpy_output
+    label_status: resolved
+    description: cowpy ASCII art, deterministic.
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: checksum
+      intent: md5 of cowpy.txt equals the snapshot token
+      expected_value: md5$9c8be9f4550989b40901f379cb1a605f
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: high
+    - family: has_text
+      intent: message text present
+      expected_value: nf-core rules!
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: trimmed_reads
+    label_status: resolved
+    description: seqtk-trimmed reads per element; snapshot md5 of decompressed content.
+    output_kind: collection
+    collection_shape: list:paired_or_unpaired
+    assertion_intent:
+    - family: element_count
+      intent: four outer elements
+      expected_value: 4
+      tolerance: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: high
+    - family: checksum
+      intent: decompressed content md5 of SAMPLE1_PE/forward equals snapshot token (NF file SAMPLE1_PE_..fastq.gz)
+      expected_value: md5$7dd2fd0d542d9259d9aed53550907fae
+      tolerance: null
+      element_identifier: SAMPLE1_PE/forward
+      evidence: test-evidence
+      confidence: medium
+    - family: checksum
+      intent: decompressed content md5 of SAMPLE1_PE/reverse equals snapshot token (NF file SAMPLE1_PE_..fastq.gz)
+      expected_value: md5$1995fe8488384d801807805f26ceca8a
+      tolerance: null
+      element_identifier: SAMPLE1_PE/reverse
+      evidence: test-evidence
+      confidence: medium
+    - family: checksum
+      intent: decompressed content md5 of SAMPLE2_PE/forward equals snapshot token (NF file SAMPLE2_PE_..fastq.gz)
+      expected_value: md5$05dba9c26396cbdbe0e6da26f037106e
+      tolerance: null
+      element_identifier: SAMPLE2_PE/forward
+      evidence: test-evidence
+      confidence: medium
+    - family: checksum
+      intent: decompressed content md5 of SAMPLE2_PE/reverse equals snapshot token (NF file SAMPLE2_PE_..fastq.gz)
+      expected_value: md5$63d5e4ac37927c2ecec4b74d2ff99a10
+      tolerance: null
+      element_identifier: SAMPLE2_PE/reverse
+      evidence: test-evidence
+      confidence: medium
+    - family: checksum
+      intent: decompressed content md5 of SAMPLE3_SE_run1/unpaired equals snapshot token (NF file SAMPLE3_SE_..fastq.gz)
+      expected_value: md5$7dd2fd0d542d9259d9aed53550907fae
+      tolerance: null
+      element_identifier: SAMPLE3_SE_run1/unpaired
+      evidence: test-evidence
+      confidence: medium
+    - family: checksum
+      intent: decompressed content md5 of SAMPLE3_SE_run2/unpaired equals snapshot token (NF file SAMPLE3_SE_..fastq.gz)
+      expected_value: md5$05dba9c26396cbdbe0e6da26f037106e
+      tolerance: null
+      element_identifier: SAMPLE3_SE_run2/unpaired
+      evidence: test-evidence
+      confidence: medium
+  - workflow_label: fastqc_html
+    label_status: resolved
+    description: FastQC HTML per read file. Snapshot ignores *_fastqc.html content (.nftignore); only names were snapshotted.
+    output_kind: collection
+    collection_shape: list:paired_or_unpaired
+    assertion_intent:
+    - family: element_count
+      intent: four outer elements
+      expected_value: 4
+      tolerance: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: report is a FastQC report
+      expected_value: FastQC
+      tolerance: null
+      element_identifier: SAMPLE1_PE/forward
+      evidence: intent
+      confidence: medium
+  - workflow_label: multiqc_stats
+    label_status: resolved
+    description: MultiQC general stats table; NF md5 not reusable because Galaxy sample names come from element identifiers.
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_text
+      intent: FastQC total-sequences metric for sample1 read files
+      expected_value: '0.027721'
+      tolerance: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: medium
+    - family: has_text
+      intent: FastQC total-sequences metric for sample2 read files
+      expected_value: '0.021481'
+      tolerance: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: medium
+    - family: has_n_lines
+      intent: header plus one row per FastQC run (6 read files)
+      expected_value: 7
+      tolerance: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: medium
+  - workflow_label: multiqc_report
+    label_status: resolved
+    description: MultiQC HTML report (.nftignore excludes its content).
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_text
+      intent: HTML is a MultiQC report
+      expected_value: MultiQC
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+unresolved:
+- kind: assertion
+  description: Galaxy checksum on a fastqsanger.gz output hashes the stored bytes; the snapshot md5 is over decompressed content. Needs a decompress-aware comparison.
+  blocking: false
+  suggested_resolution: 'Use decompress: true with checksum if supported; otherwise has_n_lines (4*27721=110884 / 4*21481=85924) with has_text on the first read header.'
+- kind: output-label
+  description: MultiQC sample naming in Galaxy (element identifiers e.g. SAMPLE1_PE_forward or file names) is not known until a run.
+  blocking: false
+  suggested_resolution: Inspect run output and add sample-name has_text asserts afterwards.
+omissions:
+- target: pipeline_info / software versions YAML snapshot
+  reason: Nextflow runtime provenance; not carried into Galaxy (ledger nf-runtime-provenance-not-carried).
+  category: out-of-scope
+- target: MultiQC plot/data txt md5 tokens (fastqc_*_plot.txt, multiqc_fastqc.txt, multiqc_general_stats.txt)
+  reason: Not exposed as workflow outputs or contain sample names that differ in Galaxy.
+  category: no-stable-checkpoint
+- target: skip_trim=true branch
+  reason: No upstream test exercises it.
+  category: out-of-scope
+warnings: []
