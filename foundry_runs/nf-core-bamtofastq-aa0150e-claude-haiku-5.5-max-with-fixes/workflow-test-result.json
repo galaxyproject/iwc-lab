@@ -1,0 +1,130 @@
+{
+  "artifact": "workflow-test-result",
+  "phase": 12,
+  "skill": "run-workflow-test",
+  "status": "pass",
+  "not_run_reason": null,
+  "workflow": {
+    "file": "galaxy-workflow.gxwf.yml",
+    "absolute_path": "~/Galaxy/biohackathon-31/runs/nf-core-bamtofastq-haiku-max-fixed/galaxy-workflow.gxwf.yml",
+    "galaxy_workflow_id": "6b883b20fe85b665",
+    "tool_steps": 20,
+    "inputs": ["alignments", "multiqc_title"],
+    "outputs": ["reads_paired", "reads_single", "multiqc_report", "fastqc_pre_conversion_html", "fastqc_post_conversion_html", "samtools_flagstat", "samtools_stats", "samtools_idxstats", "fastqutils_info"]
+  },
+  "test_file": "galaxy-workflow.gxwf-tests.yml",
+  "planemo": {
+    "version": "0.75.48",
+    "command": "flock /tmp/galaxy-arash-planemo.lock -c 'planemo test galaxy-workflow.gxwf.yml --biocontainers --test_output planemo-attempt5.html --test_output_json planemo-attempt5.json'",
+    "exit_code": 0,
+    "result_line": "All 2 test(s) executed passed.",
+    "tests": [
+      {
+        "id": "default-paired",
+        "status": "passed",
+        "invocation_id": "716c95874166f012",
+        "history_id": "716c95874166f012",
+        "invocation_state": "scheduled",
+        "skipped_steps": ["single_collate", "single_fastx"],
+        "output_problems": []
+      },
+      {
+        "id": "no_bai-mixed",
+        "status": "passed",
+        "invocation_id": "6b883b20fe85b665",
+        "history_id": "6b883b20fe85b665",
+        "invocation_state": "scheduled",
+        "skipped_steps": [],
+        "output_problems": []
+      }
+    ],
+    "id_note": "Galaxy encodes integer ids the same way in every table, so an invocation and a history (or the workflow) with the same integer id share one string. Planemo's JSON reports the same value for invocation_id and history_id."
+  },
+  "galaxy": {
+    "mode": "planemo-managed",
+    "engine": "galaxy (planemo default)",
+    "galaxy_root": "~/Galaxy/galaxy-arash",
+    "galaxy_revision": "eaa885328b8 (v26.1.2-5974-geaa885328b8)",
+    "galaxy_branch_pinned": null,
+    "container_mode": "--biocontainers (docker daemon reachable)",
+    "no_cleanup": false,
+    "staging": "Test BAMs are fetched by Galaxy from the GitHub raw URLs in the test file and checked against the SHA-1 hashes there. Tools come from the workflow's Tool Shed pins and biocontainers. Galaxy builds the BAM index as dataset metadata; the samtools commands read it as infile.bai."
+  },
+  "artifacts": {
+    "planemo_json": "planemo-attempt5.json",
+    "planemo_html": "planemo-attempt5.html",
+    "planemo_log": "planemo-attempt5.log",
+    "earlier_attempts": {
+      "1": "planemo-attempt1.log (no report: the test did not start)",
+      "2": "planemo-attempt2.log, planemo-attempt2.json, planemo-attempt2.html",
+      "3": "planemo-attempt3.log, planemo-attempt3.json, planemo-attempt3.html",
+      "4": "planemo-attempt4.log, planemo-attempt4.json, planemo-attempt4.html"
+    }
+  },
+  "attempts": [
+    {
+      "n": 1,
+      "lock_acquired": "19:25:49",
+      "ended": "19:30:03",
+      "exit_code": 1,
+      "result": "fail",
+      "modality": "workflow-import-rejected",
+      "cause": "Stage-frame comments used hex colours and had no position or size. Galaxy's WorkflowCommentModel returned HTTP 400, err_code 400007.",
+      "change": "Each frame got a named Galaxy colour, plus position and size."
+    },
+    {
+      "n": 2,
+      "lock_acquired": "19:40:18",
+      "ended": "19:46:07",
+      "exit_code": 1,
+      "result": "fail",
+      "modality": "job-failure-in-stock-tool",
+      "cause": "cut_paired_count (Cut1 1.0.2) was given columnList '1', which the tool rejects: columns must be preceded by 'c'. Its dependents could not be scheduled (dataset_failed at single_collate).",
+      "change": "columnList '1' changed to 'c1'."
+    },
+    {
+      "n": 3,
+      "lock_acquired": "19:47:32",
+      "ended": "19:59:33",
+      "exit_code": 1,
+      "result": "fail",
+      "modality": "missing-outputs-label-drift",
+      "cause": "Galaxy registers a workflow output under output.label or output.id. The outputs carried long label texts, but the test file keys by id, so all nine outputs were reported 'not found' in both tests. No job failed.",
+      "change": "Each output's label set to its id; the descriptions moved to comments."
+    },
+    {
+      "n": 4,
+      "lock_acquired": "20:01:36",
+      "ended": "20:14:13",
+      "exit_code": 1,
+      "result": "fail",
+      "modality": "expected-output-mis-declared-in-test-file",
+      "cause": "default-paired reads_single had no element_tests, so planemo checked it as a file: 'No path specified for expected output file [reads_single]'. no_bai-mixed passed.",
+      "change": "element_tests: {} added to default-paired reads_single."
+    },
+    {
+      "n": 5,
+      "lock_acquired": "20:20:40",
+      "ended": "20:31:26",
+      "exit_code": 0,
+      "result": "pass",
+      "modality": null,
+      "cause": null,
+      "change": null
+    }
+  ],
+  "verified_in_attempt_5": [
+    "Both invocations ran every executed job to exit 0. default-paired skipped only the two single-end steps (single_collate, single_fastx), as its gates require. no_bai-mixed ran all 20 tool steps.",
+    "Output registration: all nine workflow outputs were found in both tests.",
+    "Checksums (samtools flagstat and idxstats, test-evidence) matched in both tests, including test3 in no_bai-mixed.",
+    "Line counts (has_n_lines, decompress) and the raw total sequences text checks matched the fixture-derived values in no_bai-mixed."
+  ],
+  "unverified_or_limited": [
+    "Planemo 0.75.48 does not enforce element_count 0. Its verify_collection checks count, min and max by truthiness (galaxy tool-util verify/interactor.py), so the default-paired reads_single expectation is a type check only.",
+    "No fixture is a mixed-file sample (paired and single-end reads in one sample), and no test covers a single-end-only job.",
+    "samtools_stats has no checksum. The raw total text checks passed for test2 and test3, and test is presence only.",
+    "FASTQ content is checked by line counts only, not by content."
+  ],
+  "diagnostics": [],
+  "next_command": "none required for a pass. Phase 13 (debug-galaxy-workflow-output) has no failing run to triage."
+}

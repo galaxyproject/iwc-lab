@@ -1,0 +1,544 @@
+# Galaxy workflow draft for nf-core/bamtofastq (aa0150e). Topology is settled here.
+# Tool identities are pinned from IWC evidence where it exists; other tool steps are deferred.
+# Step labels equal step ids so that source references resolve. Descriptions are in doc.
+# Repair 1 (phase 7, escalation 1) closed the index, fai, sample-sheet record, unmapped-merge, qc_merge and fastq_info blocking entries.
+# Repair 2 (phase 7, escalation 2) removed the chr path under blocking entry chr-label-table-uncomputable.
+# Repair 3 (phase 7, escalation 3) replaced the paired-end classifier with a flagstat chain and restored fastq_info.
+# Repair 4 (phase 7, escalation 4) folded paired_identifiers into the flatten join identifier.
+# Repair 5 (phase 7, escalation 5 of cap 5) removed multiqc_config and multiqc_logo: MultiQC 1.35+galaxy5 has no such parameter.
+class: GalaxyWorkflowDraft
+label: nf-core-bamtofastq (aa0150e) draft
+doc: |
+  Draft Galaxy workflow for nf-core/bamtofastq at aa0150e (repairs 1 to 3, phase 7). Converts BAM alignments per sample into single-end or paired-end FASTQ, with pre- and post-conversion QC, a per-sample layout from the flagstat paired count, and one MultiQC report. The chromosome extraction, CRAM input, reference indexing, the sample sheet and the MultiQC methods input are not carried; see open-requirements.ledger.yml.
+license: MIT
+release: aa0150e
+inputs:
+- id: alignments
+  type: collection
+  collection_type: list
+  label: Aligned reads per sample (BAM)
+  doc: 'Element identifier is the sample id, unique per element. BAM only in v1: CRAM is not carried (decision reference-dropped-with-cram), and
+    the per-row file type and index columns are not carried (decision samplesheet-as-alignment-list).'
+- id: multiqc_title
+  type: string
+  optional: true
+  label: MultiQC report title
+outputs:
+- id: reads_paired
+  outputSource: paired_zip/output
+  label: Converted paired reads per sample (list:paired)
+- id: reads_single
+  outputSource: single_filter_null/output
+  label: Converted single-end reads per sample
+- id: multiqc_report
+  outputSource: multiqc/html_report
+  label: MultiQC report
+- id: fastqc_pre_conversion_html
+  outputSource: fastqc_pre/html_file
+  label: FastQC of input alignments (pre-conversion, BAM rows)
+- id: fastqc_post_conversion_html
+  outputSource: fastqc_post/html_file
+  label: FastQC of converted reads (post-conversion)
+- id: samtools_flagstat
+  outputSource: flagstat/output1
+  label: samtools flagstat per sample
+- id: samtools_stats
+  outputSource: stats/output
+  label: samtools stats per sample
+- id: samtools_idxstats
+  outputSource: idxstats/output
+  label: samtools idxstats per sample
+- id: fastqutils_info
+  outputSource: fastq_info/output
+  label: fastq_info check per read file
+steps:
+- id: idxstats
+  label: idxstats
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats/2.0.8
+  tool_version: 2.0.8
+  in:
+  - id: input
+    source: alignments
+  out:
+  - id: output
+  doc: 'samtools idxstats per input alignment file (tabular, per-reference counts). Cached summary: input (bam, cram) and output (tabular); no
+    index port and no other parameter.'
+  tool_shed_repository:
+    name: samtools_idxstats
+    owner: devteam
+    changeset_revision: 13aad5cb9be4
+    tool_shed: toolshed.g2.bx.psu.edu
+- id: flagstat
+  label: flagstat
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8
+  tool_version: 2.0.8
+  in:
+  - id: input1
+    source: alignments
+  out:
+  - id: output1
+  doc: 'samtools flagstat per input alignment file (text). Feeds the paired-read count for the layout gates and MultiQC. Cached summary: input1
+    (bam, sam, cram); output_fmt txt, tsv or json (txt chosen: Grep1 and Cut1 read txt); output1 txt.'
+  tool_shed_repository:
+    name: samtools_flagstat
+    owner: devteam
+    changeset_revision: a0d8e49a018c
+    tool_shed: toolshed.g2.bx.psu.edu
+  state:
+    output_fmt: txt
+- id: grep_paired_line
+  label: grep_paired_line
+  tool_id: Grep1
+  tool_version: 1.0.4
+  in:
+  - id: input
+    source: flagstat/output1
+  out:
+  - id: out_file1
+  doc: 'Select the ''paired in sequencing'' line of the flagstat text for each sample (layout detection). Stock Grep1 1.0.4 (cached summary: input
+    txt; invert '''' or ''-v''; pattern text; keep_header boolean; output out_file1 data).'
+  state:
+    invert: ''
+    pattern: paired in sequencing
+    keep_header: false
+- id: cut_paired_count
+  label: cut_paired_count
+  tool_id: Cut1
+  tool_version: 1.0.2
+  in:
+  - id: input
+    source: grep_paired_line/out_file1
+  out:
+  - id: out_file1
+  doc: 'Field 1 of the ''paired in sequencing'' flagstat line: the paired read count per sample (layout detection). Stock Cut1 1.0.2 (cached summary:
+    columnList text; delimiter T, Sp, Dt, C, D, U, P, Whitespace chosen as Sp; input data; output out_file1 tabular).'
+  state:
+    columnList: '1'
+    delimiter: Sp
+- id: paired_count
+  label: paired_count
+  tool_id: param_value_from_file
+  tool_version: 0.1.0
+  in:
+  - id: input1
+    source: cut_paired_count/out_file1
+  out:
+  - id: integer_param
+  doc: 'Per-sample paired read count as an integer, mapped over the samples. Feeds the when gates: zero means single-end (single branch), above
+    zero means paired (paired branch). Built-in param_value_from_file 0.1.0 (cached summary: input1 data; outputs text_param, integer_param, float_param,
+    boolean_param). Integer per-element when is unverified in the packaged note (fallback: iuc compare_param_value to a boolean).'
+  state:
+    param_type: integer
+    remove_newlines: true
+- id: stats
+  label: stats
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.9
+  tool_version: 2.0.9
+  in:
+  - id: input
+    source: alignments
+  out:
+  - id: output
+  doc: 'samtools stats per input alignment file (text). No reference (CRAM not carried), no region, no coverage, no split, no flag filter, duplicates
+    kept. Cached summary: input (sam, bam, cram) required; output tabular. Version 2.0.9 matches the IWC pin (22 occurrences in 7 IWC workflows).'
+  tool_shed_repository:
+    name: samtools_stats
+    owner: devteam
+    changeset_revision: 8fca6e1eac98
+    tool_shed: toolshed.g2.bx.psu.edu
+  state:
+    addref_cond:
+      addref_select: 'no'
+      __current_case__: 0
+    cond_region:
+      select_region: 'no'
+      __current_case__: 0
+    coverage_cond:
+      coverage_select: 'no'
+      __current_case__: 0
+    split_output_cond:
+      split_output_selector: 'no'
+      __current_case__: 0
+    filter_by_flags:
+      filter_flags: nofilter
+      __current_case__: 1
+    remove_dups: false
+- id: fastqc_pre
+  label: fastqc_pre
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+  tool_version: 0.74+galaxy1
+  in:
+  - id: input_file
+    source: alignments
+  out:
+  - id: html_file
+  - id: text_file
+  doc: 'FastQC of input alignments (BAM), one report per sample. Ports from the cached FastQC 0.74+galaxy1 summary: input_file (bam accepted),
+    outputs html_file and text_file. Defaults nogroup false, kmers 7. IWC pin devteam fastqc 0.74+galaxy1 (40 occurrences in 5 IWC workflows).
+    Source args --quiet are not a wrapper parameter.'
+  tool_shed_repository:
+    name: fastqc
+    owner: devteam
+    changeset_revision: 2c64fded1286
+    tool_shed: toolshed.g2.bx.psu.edu
+  state:
+    nogroup: false
+    kmers: 7
+- id: single_collate
+  label: single_collate
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_sort/samtools_sort/2.0.8
+  tool_version: 2.0.8
+  when: $(inputs.when === 0)
+  in:
+  - id: input1
+    source: alignments
+  - id: when
+    source: paired_count/integer_param
+  out:
+  - id: output1
+  doc: Name order for the single-end export (samtools sort -n, the same tool as paired_name_sort). Runs only when the paired count is zero. The
+    step id keeps the collate name from the design; the collate fast mode and reads_in_memory are not carried (collate-options-not-carried). Decision
+    samtools-sort-name-order-replaces-collate.
+  tool_shed_repository:
+    name: samtools_sort
+    owner: devteam
+    changeset_revision: 2ce517eb9af2
+    tool_shed: toolshed.g2.bx.psu.edu
+  state:
+    prim_key_cond:
+      prim_key_select: -n
+      __current_case__: 1
+    minhash: false
+- id: single_fastx
+  label: single_fastx
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx/samtools_fastx/1.22+galaxy2
+  tool_version: 1.22+galaxy2
+  when: $(inputs.when === 0)
+  in:
+  - id: input
+    source: single_collate/output1
+  - id: when
+    source: paired_count/integer_param
+  out:
+  - id: output
+  doc: Single-end reads per single-end sample as FASTQ (the 'other' output, port output). Runs only when the paired count is zero. Cached samtools_fastx
+    1.22+galaxy2 summary, as for paired_fastx; outputs other. The source writes _other.fq.gz with -N (conf/modules.config). Decision paired-export-single-selection.
+  tool_shed_repository:
+    name: samtools_fastx
+    owner: iuc
+    changeset_revision: 4bde991b8037
+    tool_shed: toolshed.g2.bx.psu.edu
+  state:
+    output_fmt_cond:
+      output_fmt_select: fastqsanger.gz
+      __current_case__: 2
+      default_quality: null
+      output_quality: false
+      ilumina_casava: false
+    idxout_cond:
+      idxout_select: 'no'
+      __current_case__: 0
+    outputs:
+    - other
+    read_numbering: -N
+    exclusive_filter:
+    - '256'
+    - '2048'
+    inclusive_filter: null
+    exclusive_filter_all: null
+    copy_tags: false
+    copy_arb_tags: null
+- id: single_filter_null
+  label: single_filter_null
+  tool_id: __FILTER_NULL__
+  tool_version: 1.1.0
+  in:
+  - id: input
+    source: single_fastx/output
+  out:
+  - id: output
+  doc: 'Drops the null elements left by the single-end export for paired samples. Built-in __FILTER_NULL__ 1.1.0 (cached; summary: input data_collection
+    list or list:paired, optional replacement data, output collection).'
+- id: paired_name_sort
+  label: paired_name_sort
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_sort/samtools_sort/2.0.8
+  tool_version: 2.0.8
+  when: $(inputs.when > 0)
+  in:
+  - id: input1
+    source: alignments
+  - id: when
+    source: paired_count/integer_param
+  out:
+  - id: output1
+  doc: 'Name-sort the alignments of paired samples (queryname order), so samtools fastx can write read pairs. Runs only when the paired count
+    is above zero. Cached samtools_sort 2.0.8 summary: input1 (sam, unsorted.bam, cram; bam accepted in four IWC workflows fed by bowtie2 bam
+    output), prim_key_select -n (case 1), output1 bam. Decision samtools-sort-name-order-replaces-collate.'
+  tool_shed_repository:
+    name: samtools_sort
+    owner: devteam
+    changeset_revision: 2ce517eb9af2
+    tool_shed: toolshed.g2.bx.psu.edu
+  state:
+    prim_key_cond:
+      prim_key_select: -n
+      __current_case__: 1
+    minhash: false
+- id: paired_fastx
+  label: paired_fastx
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx/samtools_fastx/1.22+galaxy2
+  tool_version: 1.22+galaxy2
+  when: $(inputs.when > 0)
+  in:
+  - id: input
+    source: paired_name_sort/output1
+  - id: when
+    source: paired_count/integer_param
+  out:
+  - id: forward
+  - id: reverse
+  - id: singletons
+  doc: 'Paired reads per paired sample as FASTQ: READ1 (forward), READ2 (reverse) and singletons (not used; the source does not carry them). Runs
+    only when the paired count is above zero. Cached samtools_fastx 1.22+galaxy2 summary: input (sam, bam, cram); outputs forward, reverse, singletons,
+    output (other) and others; exclusive_filter default 256 and 2048 (matches samtools fastq -F 0x900); read numbering -N as in the source (conf/modules.config).
+    Decision paired-export-single-selection.'
+  tool_shed_repository:
+    name: samtools_fastx
+    owner: iuc
+    changeset_revision: 4bde991b8037
+    tool_shed: toolshed.g2.bx.psu.edu
+  state:
+    output_fmt_cond:
+      output_fmt_select: fastqsanger.gz
+      __current_case__: 2
+      default_quality: null
+      output_quality: false
+      ilumina_casava: false
+    idxout_cond:
+      idxout_select: 'no'
+      __current_case__: 0
+    outputs:
+    - r1
+    - r2
+    - s
+    read_numbering: -N
+    exclusive_filter:
+    - '256'
+    - '2048'
+    inclusive_filter: null
+    exclusive_filter_all: null
+    copy_tags: false
+    copy_arb_tags: null
+- id: paired_r1_filter
+  label: paired_r1_filter
+  tool_id: __FILTER_NULL__
+  tool_version: 1.1.0
+  in:
+  - id: input
+    source: paired_fastx/forward
+  out:
+  - id: output
+  doc: Drops the null READ1 elements of the paired export (single-end samples). Built-in __FILTER_NULL__ 1.1.0 (cached).
+- id: paired_r2_filter
+  label: paired_r2_filter
+  tool_id: __FILTER_NULL__
+  tool_version: 1.1.0
+  in:
+  - id: input
+    source: paired_fastx/reverse
+  out:
+  - id: output
+  doc: Drops the null READ2 elements of the paired export (single-end samples). Built-in __FILTER_NULL__ 1.1.0 (cached).
+- id: paired_zip
+  label: paired_zip
+  tool_id: __ZIP_COLLECTION__
+  tool_version: 1.0.0
+  in:
+  - id: input_forward
+    source: paired_r1_filter/output
+  - id: input_reverse
+    source: paired_r2_filter/output
+  out:
+  - id: output
+  doc: 'Pairs READ1 and READ2 per paired sample into list:paired (forward, reverse). Built-in __ZIP_COLLECTION__ 1.0.0 (cached; summary: input_forward
+    and input_reverse data, output collection). Positional pairing of the two filtered collections, which come from the same export jobs.'
+- id: paired_flatten
+  label: paired_flatten
+  tool_id: __FLATTEN__
+  tool_version: 1.0.0
+  in:
+  - id: input
+    source: paired_zip/output
+  out:
+  - id: output
+  doc: 'Flattens list:paired into one list of read files named <sample_id>_forward and <sample_id>_reverse (join identifier underscore). Built-in
+    __FLATTEN__ 1.0.0 (cached; summary: input data_collection, join_identifier select; help: forward and reverse joined with the separator). Replaces
+    paired_identifiers (Apply Rules), removed in repair 4.'
+  state:
+    join_identifier: _
+- id: read_files_merge
+  label: read_files_merge
+  tool_id: __MERGE_COLLECTION__
+  tool_version: 1.0.0
+  in:
+  - id: inputs_0|input
+    source: paired_flatten/output
+  - id: inputs_1|input
+    source: single_filter_null/output
+  out:
+  - id: output
+  doc: 'One list of read files for FastQC and fastq_info: the flattened paired read files (<sample_id>_forward, <sample_id>_reverse) and the single-end
+    reads (<sample_id>). Built-in __MERGE_COLLECTION__ 1.0.0 (cached; summary: repeat inputs min 2 of data_collection; advanced conflict duplicate_options
+    fail chosen, so a duplicate identifier is an error, not a dropped element).'
+  state:
+    inputs:
+    - __index__: 0
+    - __index__: 1
+    advanced:
+      conflict:
+        duplicate_options: fail
+        __current_case__: 5
+- id: fastqc_post
+  label: fastqc_post
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+  tool_version: 0.74+galaxy1
+  in:
+  - id: input_file
+    source: read_files_merge/output
+  out:
+  - id: html_file
+  - id: text_file
+  doc: 'FastQC of the converted read files (paired flattened and single-end), one report per read file. Cached FastQC 0.74+galaxy1 summary: input_file
+    (fastq, fastq.gz, fastq.bz2, bam, sam), outputs html_file and text_file. Defaults nogroup false, kmers 7. Naming: sample_forward and sample_reverse
+    for paired reads (divergence from the source''s _1 and _2).'
+  tool_shed_repository:
+    name: fastqc
+    owner: devteam
+    changeset_revision: 2c64fded1286
+    tool_shed: toolshed.g2.bx.psu.edu
+  state:
+    nogroup: false
+    kmers: 7
+- id: multiqc
+  label: multiqc
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+  tool_version: 1.35+galaxy5
+  in:
+  - id: results_0|software_cond|output_0|input
+    source: fastqc_pre/text_file
+  - id: results_0|software_cond|output_1|input
+    source: fastqc_post/text_file
+  - id: results_1|software_cond|output_0|type|input
+    source: stats/output
+  - id: results_1|software_cond|output_1|type|input
+    source: flagstat/output1
+  - id: results_1|software_cond|output_2|type|input
+    source: idxstats/output
+  - id: title
+    source: multiqc_title
+  out:
+  - id: html_report
+  doc: 'MultiQC report over the sample QC: FastQC raw data for the pre-conversion and post-conversion read files, and samtools stats, flagstat
+    and idxstats per sample. One repeat instance per software; each output entry takes one collection (MultiQC leaf inputs are multiple=True in
+    the cached summary). Title from multiqc_title. Config and logo are not carried (dropped entry multiqc-config-logo-not-carried); methods and
+    versions are not carried (software-versions-and-methods-text-dropped-v1). MultiQC 1.35+galaxy5, cached summary.'
+  tool_shed_repository:
+    name: multiqc
+    owner: iuc
+    changeset_revision: 94b6bea727ae
+    tool_shed: toolshed.g2.bx.psu.edu
+  state:
+    results:
+    - __index__: 0
+      software_cond:
+        software: fastqc
+        __current_case__: 9
+        output:
+        - __index__: 0
+          type: data
+        - __index__: 1
+          type: data
+    - __index__: 1
+      software_cond:
+        software: samtools
+        __current_case__: 25
+        output:
+        - __index__: 0
+          type:
+            type: stats
+            __current_case__: 0
+        - __index__: 1
+          type:
+            type: flagstat
+            __current_case__: 1
+        - __index__: 2
+          type:
+            type: idxstats
+            __current_case__: 2
+    flat: false
+    export: false
+    png_plots: false
+- id: fastq_info
+  label: fastq_info
+  tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/fastq_info/fastq_info/0.25.3+galaxy0
+  tool_version: 0.25.3+galaxy0
+  in:
+  - id: input_option|fastq_1
+    source: read_files_merge/output
+  out:
+  - id: output
+  doc: 'FASTQ integrity check per read file (paired flattened and single-end), one text per read file. Restored in phase 7 (repair 3). Tool Shed
+    bgruening fastq_info 0.25.3+galaxy0 (cached summary: input_option single with fastq_1; booleans q (default true) and r (default false); output
+    txt). Version matches the source''s fastq_utils 0.25.3. Granularity: one per read file, the source writes one per sample.'
+  tool_shed_repository:
+    name: fastq_info
+    owner: bgruening
+    changeset_revision: 2bca15e630a4
+    tool_shed: toolshed.g2.bx.psu.edu
+  state:
+    input_option:
+      input_type: single
+      __current_case__: 0
+    q: true
+    r: false
+comments:
+- type: frame
+  title: Pre-conversion QC (stats, idxstats and flagstat; FastQC on the input alignments)
+  color: '#e8f1df'
+  contains_steps:
+  - flagstat
+  - idxstats
+  - stats
+  - fastqc_pre
+- type: frame
+  title: Per-sample layout (paired read count per sample, as an integer)
+  color: '#efdff1'
+  contains_steps:
+  - grep_paired_line
+  - cut_paired_count
+  - paired_count
+- type: frame
+  title: Single-end conversion (gated on zero paired reads)
+  color: '#dff1ee'
+  contains_steps:
+  - single_collate
+  - single_fastx
+  - single_filter_null
+- type: frame
+  title: Paired-end conversion (gated on paired reads)
+  color: '#f1dfdf'
+  contains_steps:
+  - paired_name_sort
+  - paired_fastx
+  - paired_r1_filter
+  - paired_r2_filter
+  - paired_zip
+- type: frame
+  title: Post-conversion QC and report
+  color: '#f1f1df'
+  contains_steps:
+  - paired_flatten
+  - read_files_merge
+  - fastqc_post
+  - fastq_info
+  - multiqc

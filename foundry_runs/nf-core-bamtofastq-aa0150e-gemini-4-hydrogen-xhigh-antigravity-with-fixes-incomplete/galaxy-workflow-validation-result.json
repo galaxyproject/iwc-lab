@@ -1,0 +1,44 @@
+{
+  "command": "gxwf validate --strict --cache-dir ~/.galaxy/tool_info_cache --offline --connections --json ~/Galaxy/biohackathon-31/runs/nf-core-bamtofastq-gemini4-hydrogen-xhigh-fixed/galaxy-workflow.gxwf.yml",
+  "workflow_path": "~/Galaxy/biohackathon-31/runs/nf-core-bamtofastq-gemini4-hydrogen-xhigh-fixed/galaxy-workflow.gxwf.yml",
+  "tests_validation_command": "gxwf validate-tests ~/Galaxy/biohackathon-31/runs/nf-core-bamtofastq-gemini4-hydrogen-xhigh-fixed/galaxy-workflow.gxwf-tests.yml --workflow ~/Galaxy/biohackathon-31/runs/nf-core-bamtofastq-gemini4-hydrogen-xhigh-fixed/galaxy-workflow.gxwf.yml --json",
+  "status": "pass",
+  "summary": {
+    "tool_steps": {
+      "ok": 63,
+      "fail": 0,
+      "skip": 0
+    },
+    "connections": {
+      "ok": 135,
+      "invalid": 0,
+      "skip": 0
+    },
+    "structure_errors": [],
+    "encoding_errors": [],
+    "tests_valid": true
+  },
+  "diagnostics": [],
+  "residual_runtime_risks": [
+    {
+      "id": "cat-fastq-gzip-parity",
+      "risk": "Static validation cannot prove that cat1 concatenated bgzf/gzip R1 and R2 streams from samtools_collatefastq_paired are cleanly accepted by fastq_info (fastqutils_paired) and FastQC (fastqc_post) or match paired_reads line counts.",
+      "proven_by": "workflow-test-result.json (Planemo assertions on paired_reads, fastq_info_reports, fastqc_post_data)"
+    },
+    {
+      "id": "optional-reference-and-collate-fast",
+      "risk": "Static validation cannot execute has_reference (map_param_value type=data on omitted optional reference_fasta) or verify samtools_collatefastq_paired JS/shell expression evaluation with null reference and -f -r 100000.",
+      "proven_by": "workflow-test-result.json (Planemo test case 4: no_stats_collate_fast_no_ref)"
+    },
+    {
+      "id": "empty-collection-and-conditional-pick-runtime",
+      "risk": "Static validation cannot observe empty-collection propagation through __FILTER_EMPTY_DATASETS__ / sync_*_alignments or conditional when-skipping into pick_value (pick_samtools_stats, pick_samtools_chr, pick_multiqc) at Galaxy invocation time.",
+      "proven_by": "workflow-test-result.json across all 4 Planemo test cases"
+    },
+    {
+      "id": "snapshot-md5-wrapper-header-parity",
+      "risk": "Static validation cannot compare Galaxy tool stdout/file formatting (e.g. samtools stats command-line header comment or fastq_info report formatting) against nf-test snapshot md5s.",
+      "proven_by": "workflow-test-result.json checksum assertions on samtools_stats, samtools_flagstat, samtools_idxstats, fastq_info_reports"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "command": "gxwf validate galaxy-workflow.gxwf.yml --json --cache-dir tool-cache",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "not_run_reason": null,
+  "summary": {"tool_state_ok": 26, "fail": 0, "skip": 0, "structure_errors": 0, "encoding_errors": 0},
+  "supplementary_checks": [
+    {"command": "gxwf lint galaxy-workflow.gxwf.yml --cache-dir tool-cache", "result": "structural OK; 1 best-practice warning"},
+    {"command": "gxwf validate-tests galaxy-workflow.gxwf-tests.yml --workflow galaxy-workflow.gxwf.yml", "result": "OK"}
+  ],
+  "diagnostics": [
+    {"severity": "warning", "message": "Workflow does not specify a creator.", "addresses": "workflow.creator", "routes_to": "mature-galaxy-workflow-for-iwc (out of scope for this pipeline)"}
+  ],
+  "residual_runtime_risks": [
+    {"risk": "Embedded GalaxyUserTool (classify_alignment) needs enable_beta_tool_formats and its wave container must be pullable under --biocontainers.", "proof": "planemo job state of classify_alignment"},
+    {"risk": "__FILTER_FROM_FILE__ discarded output (alignments_single) is an empty list in the default test; mapped steps over an empty collection (collate_fastq_single, fastqc_post_single, fastq_info_single) must schedule as empty, not block the invocation.", "proof": "invocation scheduling state"},
+    {"risk": "__BUILD_LIST__ mapped over three parallel lists must yield list:list so samtools_merge reduces per sample.", "proof": "merge_unmapped job count (2) and inputs"},
+    {"risk": "tp_cat concatenation of two fastqsanger.gz members must keep datatype fastqsanger.gz for zip/fastqc/fastq_info.", "proof": "cat_r1 output ftype"},
+    {"risk": "collapse_dataset identifier column must equal element identifiers (test, test2) for awk/filter to keep elements.", "proof": "paired_ids output content; split_by_pairing element count"},
+    {"risk": "flagstat/idxstats md5 parity with nf-test depends on wrapper samtools version output format.", "proof": "checksum assertions"}
+  ]
+}

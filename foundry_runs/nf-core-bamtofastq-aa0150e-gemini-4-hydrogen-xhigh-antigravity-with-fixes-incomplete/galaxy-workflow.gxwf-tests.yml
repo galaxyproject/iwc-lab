@@ -1,0 +1,333 @@
+- doc: >
+    Primary nf-test -profile test: convert paired-end BAM samples (test, test2) with
+    reference FASTA, full samtools stats, pre/post FastQC, fastq_info validation, and MultiQC.
+  job:
+    input_alignments:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: test
+          location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam
+          filetype: bam
+          hashes:
+            - hash_function: SHA-1
+              hash_value: 0799f89638bddd570439115c606f425c22d189b1
+        - class: File
+          identifier: test2
+          location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam
+          filetype: bam
+          hashes:
+            - hash_function: SHA-1
+              hash_value: 522fb037cea05b9d41dd69647f27a644838bf507
+    reference_fasta:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      filetype: fasta
+      hashes:
+        - hash_function: SHA-1
+          hash_value: 56e7a0c035e2fce8ebe497d3704431d7586fd444
+    no_read_qc: false
+    no_stats: false
+    samtools_collate_fast: false
+    reads_in_memory: 100000
+  outputs:
+    paired_reads:
+      class: Collection
+      collection_type: "list:paired"
+      element_count: 2
+      element_tests:
+        test:
+          class: Collection
+          elements:
+            forward:
+              decompress: true
+              asserts:
+                - that: has_n_lines
+                  n: 11284
+                - that: has_text
+                  text: "@testN:1"
+            reverse:
+              decompress: true
+              asserts:
+                - that: has_n_lines
+                  n: 11284
+                - that: has_text
+                  text: "@testN:1"
+        test2:
+          class: Collection
+          elements:
+            forward:
+              decompress: true
+              asserts:
+                - that: has_n_lines
+                  n: 10872
+                - that: has_text
+                  text: "@testT:3"
+            reverse:
+              decompress: true
+              asserts:
+                - that: has_n_lines
+                  n: 10872
+    single_end_reads:
+      class: Collection
+      element_count: 0
+    fastq_info_reports:
+      class: Collection
+      element_count: 2
+      element_tests:
+        test:
+          checksum: md5$db31682c36cde02f1e8567d130537cac
+        test2:
+          checksum: md5$0222a414a69c92608af1580f3c6ce996
+    samtools_flagstat:
+      class: Collection
+      element_count: 2
+      element_tests:
+        test:
+          checksum: md5$a53f3d26e2e9851f7d528442bbfe9781
+        test2:
+          checksum: md5$acbd95030a362a7e6491faa87d1b9c2c
+    samtools_idxstats:
+      class: Collection
+      element_count: 2
+      element_tests:
+        test:
+          checksum: md5$e179601fa7b8ebce81ac3765206f6c15
+        test2:
+          checksum: md5$90f01313bc89c7fd096aad051cd71b66
+    samtools_stats:
+      class: Collection
+      element_count: 2
+      element_tests:
+        test:
+          checksum: md5$3c3f8fa56674fa987fd912b530f49c3c
+        test2:
+          checksum: md5$7e6537bde51ee4bb4a50562014ae2cd4
+    fastqc_pre_html:
+      class: Collection
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+            - that: has_text
+              text: "FastQC Report"
+    fastqc_pre_data:
+      class: Collection
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+            - that: has_text
+              text: "Total Sequences"
+    fastqc_post_html:
+      class: Collection
+      element_count: 4
+    fastqc_post_data:
+      class: Collection
+      element_count: 4
+      element_tests:
+        test_forward:
+          asserts:
+            - that: has_text
+              text: "Total Sequences\t2821"
+        test2_reverse:
+          asserts:
+            - that: has_text
+              text: "Total Sequences\t2718"
+    multiqc_report:
+      asserts:
+        - that: has_text
+          text: MultiQC
+        - that: has_text
+          text: Samtools
+        - that: has_text
+          text: FastQC
+
+- doc: >
+    Secondary nf-test tests/chr.nf.test: convert single-end BAM sample test3 with
+    chr region subsetting ('chrX chrY X Y') and reference FASTA.
+  job:
+    input_alignments:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: test3
+          location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test3.single_end.markduplicates.sorted.bam
+          filetype: bam
+          hashes:
+            - hash_function: SHA-1
+              hash_value: 072c537f5a850f0ae036fd0ef6906f767e9f28c1
+    reference_fasta:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      filetype: fasta
+      hashes:
+        - hash_function: SHA-1
+          hash_value: 56e7a0c035e2fce8ebe497d3704431d7586fd444
+    chr: "chrX chrY X Y"
+    no_read_qc: false
+    no_stats: false
+    samtools_collate_fast: false
+    reads_in_memory: 100000
+  outputs:
+    single_end_reads:
+      class: Collection
+      element_count: 1
+      element_tests:
+        test3:
+          decompress: true
+          asserts:
+            - that: has_text
+              text: "@K00233:65:HKTTVBBXX"
+    paired_reads:
+      class: Collection
+      element_count: 0
+    fastq_info_reports:
+      class: Collection
+      element_tests:
+        test3:
+          checksum: md5$228544370b1655729e7e94ff21832d31
+    samtools_flagstat:
+      class: Collection
+      element_tests:
+        test3:
+          checksum: md5$7b43b975b0a395040bf1ee3c48f058e7
+    samtools_idxstats:
+      class: Collection
+      element_tests:
+        test3:
+          checksum: md5$094096b6f303cc18892e1e027c87f273
+    fastqc_pre_html:
+      class: Collection
+      element_count: 1
+    fastqc_post_html:
+      class: Collection
+      element_count: 1
+    multiqc_report:
+      asserts:
+        - that: has_text
+          text: MultiQC
+
+- doc: >
+    Secondary nf-test tests/cram.nf.test: convert paired-end CRAM inputs (test, test2)
+    with reference FASTA and verify CRAM skips fastqc_pre while converting and QCing FASTQs.
+  job:
+    input_alignments:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: test
+          location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/cram/test.paired_end.sorted.cram
+          filetype: cram
+          hashes:
+            - hash_function: SHA-1
+              hash_value: 31306ae94a3bdac3a0f985d3e5a333b947753397
+        - class: File
+          identifier: test2
+          location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/cram/test2.paired_end.sorted.cram
+          filetype: cram
+          hashes:
+            - hash_function: SHA-1
+              hash_value: bbd8b98861b0c9978627abe0924431d11d5ac11b
+    reference_fasta:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      filetype: fasta
+      hashes:
+        - hash_function: SHA-1
+          hash_value: 56e7a0c035e2fce8ebe497d3704431d7586fd444
+    no_read_qc: false
+    no_stats: false
+    samtools_collate_fast: false
+    reads_in_memory: 100000
+  outputs:
+    paired_reads:
+      class: Collection
+      collection_type: "list:paired"
+      element_count: 2
+      element_tests:
+        test:
+          class: Collection
+          elements:
+            forward:
+              decompress: true
+              asserts:
+                - that: has_text
+                  text: "@testN:1"
+        test2:
+          class: Collection
+          elements:
+            forward:
+              decompress: true
+              asserts:
+                - that: has_text
+                  text: "@testT:3"
+    fastq_info_reports:
+      class: Collection
+      element_tests:
+        test:
+          checksum: md5$db31682c36cde02f1e8567d130537cac
+        test2:
+          checksum: md5$0222a414a69c92608af1580f3c6ce996
+    samtools_flagstat:
+      class: Collection
+      element_tests:
+        test:
+          checksum: md5$a53f3d26e2e9851f7d528442bbfe9781
+        test2:
+          checksum: md5$acbd95030a362a7e6491faa87d1b9c2c
+    fastqc_pre_html:
+      class: Collection
+      element_count: 0
+    fastqc_post_html:
+      class: Collection
+      element_count: 4
+    multiqc_report:
+      asserts:
+        - that: has_text
+          text: MultiQC
+
+- doc: >
+    Branch-coverage test combining omitted reference_fasta, no_stats=true
+    (exercising multiqc_readqc_only), and samtools_collate_fast=true on test BAM.
+  job:
+    input_alignments:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: test
+          location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam
+          filetype: bam
+          hashes:
+            - hash_function: SHA-1
+              hash_value: 0799f89638bddd570439115c606f425c22d189b1
+    no_read_qc: false
+    no_stats: true
+    samtools_collate_fast: true
+    reads_in_memory: 100000
+  outputs:
+    paired_reads:
+      class: Collection
+      collection_type: "list:paired"
+      element_tests:
+        test:
+          class: Collection
+          elements:
+            forward:
+              decompress: true
+              asserts:
+                - that: has_n_lines
+                  n: 11284
+    fastq_info_reports:
+      class: Collection
+      element_tests:
+        test:
+          checksum: md5$db31682c36cde02f1e8567d130537cac
+    multiqc_report:
+      asserts:
+        - that: has_text
+          text: FastQC

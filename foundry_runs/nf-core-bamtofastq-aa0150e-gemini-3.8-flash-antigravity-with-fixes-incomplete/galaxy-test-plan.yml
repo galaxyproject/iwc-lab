@@ -1,0 +1,202 @@
+plan_version: "1"
+source:
+  kind: nextflow
+  name: nf-core/bamtofastq
+  derived_from: test-evidence
+  notes: "Translated from nf-core/bamtofastq tests/default.nf.test and tests/default.nf.test.snap at commit aa0150e."
+workflow:
+  title: nf-core/bamtofastq
+  label_source: draft
+  notes: "Bound against galaxy-workflow.gxwf.yml extracted from validated draft."
+test_cases:
+  - id: default_paired_end
+    doc: "Default test profile converting paired-end BAM files to FASTQ with QC."
+    derived_from: test-evidence
+    provenance: "tests/default.nf.test::-profile test"
+    job_inputs:
+      - workflow_label: input_bams
+        label_status: resolved
+        description: "Input BAM alignment list collection containing samples test and test2."
+        collection_shape: list
+        datatype: bam
+        fixture:
+          storage: null
+          location: null
+          checksum: null
+          provenance: "Extracted from test_bam_samplesheet.csv"
+      - workflow_label: reference_fasta
+        label_status: resolved
+        description: "Reference genome FASTA used for decoding CRAM alignments."
+        collection_shape: null
+        datatype: fasta
+        fixture:
+          storage: remote-url
+          location: "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta"
+          checksum: "SHA-1:56e7a0c035e2fce8ebe497d3704431d7586fd444"
+          provenance: "Declared in test profile params.fasta"
+    expected_outputs:
+      - workflow_label: extracted_fastqs_r1
+        label_status: resolved
+        description: "Extracted R1 FASTQ reads per sample matching upstream snapshot MD5 checksums."
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: checksum
+            intent: "Assert exact MD5 checksum for test_1.merged.fastq.gz"
+            expected_value: "md5:9b0c08862a5e47e842a485ddad31b871"
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: high
+          - family: checksum
+            intent: "Assert exact MD5 checksum for test2_1.merged.fastq.gz"
+            expected_value: "md5:a4984fb5a60f80ccbfbfcf1cef9daaf3"
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: high
+      - workflow_label: extracted_fastqs_r2
+        label_status: resolved
+        description: "Extracted R2 FASTQ reads per sample matching upstream snapshot MD5 checksums."
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: checksum
+            intent: "Assert exact MD5 checksum for test_2.merged.fastq.gz"
+            expected_value: "md5:40e17982d1231e561d6420234ae29357"
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: high
+          - family: checksum
+            intent: "Assert exact MD5 checksum for test2_2.merged.fastq.gz"
+            expected_value: "md5:bde23801e2d60604afb3bd0b0ab014ab"
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: high
+      - workflow_label: samtools_stats
+        label_status: resolved
+        description: "Samtools stats reports per sample matching upstream snapshot MD5 checksums."
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: checksum
+            intent: "Assert exact MD5 checksum for test.stats"
+            expected_value: "md5:3c3f8fa56674fa987fd912b530f49c3c"
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: high
+          - family: checksum
+            intent: "Assert exact MD5 checksum for test2.stats"
+            expected_value: "md5:7e6537bde51ee4bb4a50562014ae2cd4"
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: high
+      - workflow_label: samtools_flagstat
+        label_status: resolved
+        description: "Samtools flagstat reports per sample matching upstream snapshot MD5 checksums."
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: checksum
+            intent: "Assert exact MD5 checksum for test.flagstat"
+            expected_value: "md5:a53f3d26e2e9851f7d528442bbfe9781"
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: high
+          - family: checksum
+            intent: "Assert exact MD5 checksum for test2.flagstat"
+            expected_value: "md5:acbd95030a362a7e6491faa87d1b9c2c"
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: high
+      - workflow_label: samtools_idxstats
+        label_status: resolved
+        description: "Samtools idxstats reports per sample matching upstream snapshot MD5 checksums."
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: checksum
+            intent: "Assert exact MD5 checksum for test.idxstats"
+            expected_value: "md5:e179601fa7b8ebce81ac3765206f6c15"
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: high
+          - family: checksum
+            intent: "Assert exact MD5 checksum for test2.idxstats"
+            expected_value: "md5:90f01313bc89c7fd096aad051cd71b66"
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: high
+      - workflow_label: fastqutils_info
+        label_status: resolved
+        description: "FastqUtils info verification reports matching upstream snapshot MD5 checksums."
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: checksum
+            intent: "Assert exact MD5 checksum for test.txt"
+            expected_value: "md5:db31682c36cde02f1e8567d130537cac"
+            tolerance: null
+            element_identifier: test
+            evidence: test-evidence
+            confidence: high
+          - family: checksum
+            intent: "Assert exact MD5 checksum for test2.txt"
+            expected_value: "md5:0222a414a69c92608af1580f3c6ce996"
+            tolerance: null
+            element_identifier: test2
+            evidence: test-evidence
+            confidence: high
+      - workflow_label: multiqc_report
+        label_status: resolved
+        description: "Aggregated MultiQC HTML report containing expected section tokens."
+        output_kind: dataset
+        collection_shape: null
+        assertion_intent:
+          - family: has_text
+            intent: "Verify presence of MultiQC report content"
+            expected_value: "MultiQC"
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: high
+      - workflow_label: pre_conversion_fastqc_html
+        label_status: resolved
+        description: "Pre-conversion FastQC HTML reports per sample."
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: has_text
+            intent: "Verify FastQC report header in pre-conversion HTML output"
+            expected_value: "FastQC"
+            tolerance: null
+            element_identifier: test
+            evidence: intent
+            confidence: high
+      - workflow_label: post_conversion_fastqc_html
+        label_status: resolved
+        description: "Post-conversion FastQC HTML reports per sample."
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: has_text
+            intent: "Verify FastQC report header in post-conversion HTML output"
+            expected_value: "FastQC"
+            tolerance: null
+            element_identifier: test
+            evidence: intent
+            confidence: high
+unresolved: []
+omissions:
+  - target: multiqc_data
+    reason: "MultiQC data directory and parquet exports are auxiliary artifacts; primary asserted output is multiqc_report HTML."
+    category: out-of-scope
+warnings: []

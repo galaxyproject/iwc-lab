@@ -1,0 +1,174 @@
+class: GalaxyWorkflow
+doc: 'Relevant subgraphs of two IWC workflows, converted with `gxwf convert --to format2 --compact`. NOT a runnable workflow: upstream steps are cut away. Part A: microbiome/host-contamination-removal/host-contamination-removal-long-reads
+  (BAM -> FASTQ with samtools_fastx, MultiQC, output promotion). Part B: virology/influenza-isolates-consensus-and-subtyping (collapse collection -> filter rows -> cut identifiers -> split a collection
+  by identifiers).'
+inputs:
+  Long-reads:
+    type: collection
+    collection_type: list
+outputs:
+- id: Reads without Host or Contamination
+  outputSource: _unlabeled_step_7
+- id: MultiQC HTML Report
+  outputSource: MultiQC/html_report
+steps:
+  A_split_bam:
+    label: Split BAM
+    doc: Split BAM into mapped and unmapped
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bamtools_split_mapped/bamtools_split_mapped/2.5.3+galaxy0
+    tool_version: 2.5.3+galaxy0
+    tool_shed_repository:
+      changeset_revision: 90af4f8f59af
+      name: bamtools_split_mapped
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: input_bam
+      source: minimap2/alignment_output
+    out:
+    - id: mapped
+      hide: true
+    - id: unmapped
+      hide: true
+    tool_state:
+      input_bam:
+        __class__: ConnectedValue
+  A_bam_to_fastq:
+    doc: Extractions of FastQ from the unmapped reads
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx/samtools_fastx/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 4bde991b8037
+      name: samtools_fastx
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: input
+      source: Split BAM/unmapped
+    out:
+    - id: output
+      rename: Reads without host or contamination reads
+    tool_state:
+      copy_arb_tags: null
+      copy_tags: false
+      exclusive_filter:
+      - '256'
+      - '2048'
+      exclusive_filter_all: null
+      idxout_cond:
+        idxout_select: 'no'
+        __current_case__: 0
+      inclusive_filter: null
+      input:
+        __class__: ConnectedValue
+      output_fmt_cond:
+        output_fmt_select: fastqsanger
+        __current_case__: 0
+        default_quality: null
+        output_quality: false
+        ilumina_casava: false
+      outputs: other
+      read_numbering: ''
+  A_multiqc:
+    label: MultiQC
+    doc: Aggregation of the mapping statistics for all samples
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy1
+    tool_version: 1.35+galaxy1
+    tool_shed_repository:
+      changeset_revision: fac2260bc88a
+      name: multiqc
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: results_0|software_cond|input
+      source: Flatten collection
+    out:
+    - id: stats
+      hide: true
+    - id: html_report
+      rename: MultiQC HTML report
+    tool_state:
+      comment: ''
+      export: false
+      flat: false
+      image_content_input:
+        __class__: RuntimeValue
+      png_plots: false
+      results:
+      - __index__: 0
+        software_cond:
+          software: qualimap
+          __current_case__: 21
+          input:
+            __class__: ConnectedValue
+      title: Host/Contamination Removal
+  B_collapse_with_identifiers:
+    tool_id: toolshed.g2.bx.psu.edu/repos/nml/collapse_collections/collapse_dataset/5.1.0
+    tool_version: 5.1.0
+    tool_shed_repository:
+      changeset_revision: 90981f86000f
+      name: collapse_collections
+      owner: nml
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+    - id: input_list
+      source: _unlabeled_step_42/out_file1
+    out:
+    - id: output
+      change_datatype: tabular
+      hide: true
+    tool_state:
+      filename:
+        add_name: true
+        __current_case__: 0
+        place_name: same_multiple
+      input_list:
+        __class__: ConnectedValue
+      one_header: false
+  B_filter_rows:
+    tool_id: Filter1
+    tool_version: 1.1.1
+    in:
+    - id: input
+      source: _unlabeled_step_44
+    out:
+    - id: out_file1
+      hide: true
+    tool_state:
+      cond: c2 > 1
+      header_lines: '0'
+      input:
+        __class__: ConnectedValue
+  B_cut_identifier_column:
+    tool_id: Cut1
+    tool_version: 1.0.2
+    in:
+    - id: input
+      source: _unlabeled_step_46/out_file1
+    out:
+    - id: out_file1
+      hide: true
+    tool_state:
+      columnList: c1
+      delimiter: T
+      input:
+        __class__: ConnectedValue
+  B_filter_collection_by_identifiers:
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.1.0
+    in:
+    - id: how|filter_source
+      source: _unlabeled_step_49/out_file1
+    - id: input
+      source: _unlabeled_step_48/outfile
+    out:
+    - id: output_discarded
+      hide: true
+    tool_state:
+      how:
+        how_filter: remove_if_absent
+        __current_case__: 0
+        filter_source:
+          __class__: ConnectedValue
+      input:
+        __class__: ConnectedValue

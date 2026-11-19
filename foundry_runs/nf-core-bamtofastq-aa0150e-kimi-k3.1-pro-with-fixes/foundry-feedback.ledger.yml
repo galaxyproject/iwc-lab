@@ -1,0 +1,254 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-bamtofastq-kimi-fixed
+  status: done
+  phases:
+  - phase: 1
+    kind: mold
+    skill: summarize-nextflow
+    cast_present: true
+    loop: false
+    status: done
+    feedback_checked: true
+  - phase: 2
+    kind: mold
+    skill: nextflow-summary-to-galaxy-reference-data
+    cast_present: true
+    loop: false
+    status: done
+    feedback_checked: true
+  - phase: 3
+    kind: mold
+    skill: nextflow-summary-to-galaxy-interface
+    cast_present: true
+    loop: false
+    status: done
+    feedback_checked: true
+  - phase: 4
+    kind: mold
+    skill: nextflow-summary-to-galaxy-data-flow
+    cast_present: true
+    loop: false
+    status: done
+    feedback_checked: true
+  - phase: 5
+    kind: mold
+    skill: compare-against-iwc-exemplar
+    cast_present: true
+    loop: false
+    status: done
+    feedback_checked: true
+  - phase: 6
+    kind: mold
+    skill: nextflow-summary-to-galaxy-template
+    cast_present: true
+    loop: false
+    status: done
+    feedback_checked: true
+  - phase: 7
+    kind: mold
+    skill: advance-galaxy-draft-step
+    cast_present: true
+    loop: true
+    status: done
+    iterations: 16
+    feedback_checked: true
+  - phase: 8
+    kind: branch
+    pattern: test-data-resolution
+    chain:
+    - nextflow-to-test-data
+    - find-test-data
+    - user-supplied
+    cast_present:
+    - true
+    - true
+    - null
+    status: done
+    selected: nextflow-to-test-data
+    feedback_checked: true
+  - phase: 9
+    kind: mold
+    skill: nextflow-test-to-galaxy-test-plan
+    cast_present: true
+    loop: false
+    status: done
+    feedback_checked: true
+  - phase: 10
+    kind: mold
+    skill: implement-galaxy-workflow-test
+    cast_present: true
+    loop: false
+    status: done
+    feedback_checked: true
+  - phase: 11
+    kind: mold
+    skill: validate-galaxy-workflow
+    cast_present: true
+    loop: false
+    status: done
+    feedback_checked: true
+  - phase: 12
+    kind: mold
+    skill: run-workflow-test
+    cast_present: true
+    loop: false
+    status: done
+    feedback_checked: true
+  - phase: 13
+    kind: mold
+    skill: debug-galaxy-workflow-output
+    cast_present: true
+    loop: false
+    status: done
+    feedback_checked: true
+entries:
+- id: nextflow-parameters-meta-rejects-current-nf-schema
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 21
+    content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+    foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+  subject:
+    kind: schema
+    label: nextflow-parameters-meta
+    locator: package://@galaxy-foundry/summarize-nextflow#nextflowParametersMetaSchema
+    content_hash: 4259c7beaf2b7d7279c7bf9025d0936cb65ee123f0d10433f3b0f5006f85ccad
+  kind: defect
+  severity: major
+  what: The bundled Draft 2020-12 meta-schema rejects the pinned nf-core/bamtofastq
+    nextflow_schema.json because parameter type arrays are disallowed and the $ref
+    pattern contains an unescaped dollar anchor.
+  expected: 'Permit the array-valued parameter types emitted by current nf-schema
+    and escape the dollar sign in the #/$defs/ reference pattern so valid allOf references
+    validate.'
+  evidence: Local Draft 2020-12 validation reported seven errors, including help.type=[boolean,string]
+    and allOf[0].$ref=#/$defs/input_output_options; the summary itself validated against
+    its required schema.
+  status: open
+  issue: null
+- id: nested-repeat-conditional-input-example-missing
+  raised_by: implement-galaxy-tool-step
+  observed_in:
+    mold: implement-galaxy-tool-step
+    path: content/molds/implement-galaxy-tool-step/index.md
+    revision: 15
+    content_hash: 2009d579cf2a68f8b31d1a69dd751f3f4d80fe3f19f3606f8cac2dda37aa343b
+    foundry_head: 61da115975d155a36face0e83d5c28f638da7fca
+  subject:
+    kind: mold
+    label: implement-galaxy-tool-step nested repeat conditional wiring
+    locator: content/molds/implement-galaxy-tool-step/index.md
+    content_hash: 2009d579cf2a68f8b31d1a69dd751f3f4d80fe3f19f3606f8cac2dda37aa343b
+  kind: gap
+  severity: minor
+  what: The step-binding guidance lacks a worked nested repeat-with-conditional example,
+    including conditional discriminator cases and their effect on input terminal availability.
+  expected: 'Show an output_N|type|input connection with nested type: {type, __current_case__}
+    state and note the discriminator-to-case-index mapping, distinguishing it from
+    output_N|input and case-name ports.'
+  evidence: MultiQC samtools inputs failed validation until an exported IWC workflow
+    showed output_0|type|input plus nested type and __current_case__; several plausible
+    alternatives produced no matching parameter terminal.
+  status: open
+  issue: null
+- id: collection-semantics-missing-udt-access-and-discovery-examples
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: debug-galaxy-workflow-output
+    path: content/molds/debug-galaxy-workflow-output/index.md
+    revision: 7
+    content_hash: 1cf77ea80a7caec9eb73fd41288387f1180969cac216eb3d53c4e99edeb1ca2c
+    foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+  subject:
+    kind: research
+    label: galaxy-collection-semantics UDT access and discovery
+    locator: content/research/galaxy-collection-semantics/index.md
+    content_hash: 4ddc7587e187cf38a3dca02d6966e2f6ea58f9faf9bd97034ad513eb4c4c638b
+  kind: gap
+  severity: major
+  what: The collection reference lacks GalaxyUserTool expression examples for record-style
+    member access and sample identity, and does not state that paired_or_unpaired discovery
+    requires a designation capture named forward, reverse, or unpaired.
+  expected: Include null-safe inputs.reads.elements.<designation>.path examples, distinguish
+    inputs.reads.name from null element_identifier at this nesting level, and show designation-based
+    paired_or_unpaired output discovery.
+  evidence: Direct member expressions evaluated empty during validation/QC, and identifier/pair
+    captures failed collection population. Runtime inspection and successful reruns established
+    the supported expressions and designation contract.
+  status: open
+  issue: null
+- id: planemo-asserts-nested-class-and-collection-verifier-guidance
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: debug-galaxy-workflow-output
+    path: content/molds/debug-galaxy-workflow-output/index.md
+    revision: 7
+    content_hash: 1cf77ea80a7caec9eb73fd41288387f1180969cac216eb3d53c4e99edeb1ca2c
+    foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+  subject:
+    kind: research
+    label: planemo-asserts nested collection guidance
+    locator: content/research/planemo-asserts-idioms/index.md
+    content_hash: 9a6363854dcbeb01e1e590dc5bc0f5d7d0ec9675c4828ad2a8be8fa8022a61df
+  kind: defect
+  severity: major
+  what: Section 5 says nested collection element assertions omit class, but the vendored schema
+    requires class=Collection to select the nested schema. It also does not explain that Planemo
+    chooses its collection verifier by the presence of element_tests, so class and element_count
+    alone enter file verification and report no path.
+  expected: Show class=Collection on nested subcollections and document that Planemo requires
+    element_tests for collection verification, including meaningful member assertions rather than
+    relying on class/count alone.
+  evidence: Omitting class produced 27 static validation errors. Count-only FastQC collection tests
+    passed static validation but failed at runtime with no path; adding member tests selected the
+    collection verifier.
+  status: open
+  issue: null
+- id: gxwf-stateful-export-mishandles-native-when-connections
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: debug-galaxy-workflow-output
+    path: content/molds/debug-galaxy-workflow-output/index.md
+    revision: 7
+    content_hash: 1cf77ea80a7caec9eb73fd41288387f1180969cac216eb3d53c4e99edeb1ca2c
+    foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+  subject:
+    kind: related-project
+    label: gxwf native-to-format2 conditional conversion
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts
+  kind: defect
+  severity: major
+  what: Stateful native-to-format2 conversion treats special scalar when input connections as
+    ordinary missing tool parameters and falls back for conditionally gated stock steps.
+  expected: Preserve native conditional control connections without converting them into tool
+    state parameters or reporting a post-validation fallback.
+  evidence: Three remaining stock conditional steps produced post_validation fallbacks and a
+    nonzero conversion exit even though both native and resulting format2 workflows validated all
+    14 tool states and native runtime conditionals executed.
+  status: open
+  issue: null
+- id: planemo-describe-outputs-crashes-on-unlabeled-native-output
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: debug-galaxy-workflow-output
+    path: content/molds/debug-galaxy-workflow-output/index.md
+    revision: 7
+    content_hash: 1cf77ea80a7caec9eb73fd41288387f1180969cac216eb3d53c4e99edeb1ca2c
+    foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+  subject:
+    kind: related-project
+    label: planemo Galaxy describe_outputs missing labels
+    locator: https://github.com/galaxyproject/planemo
+  kind: defect
+  severity: major
+  what: describe_outputs indexes workflow output label unconditionally after execution, causing
+    KeyError and suppressing structured results for a native workflow Galaxy accepted and ran.
+  expected: Handle an absent label safely or reject the workflow before expensive execution with a
+    targeted validation error instead of crashing during result collection.
+  evidence: Every job completed, then Planemo raised a KeyError for label in describe_outputs and wrote
+    no JSON or HTML test result; adding labels to all public outputs made result collection proceed.
+  status: open
+  issue: null

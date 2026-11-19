@@ -1,0 +1,33 @@
+{
+  "command": "gxwf validate galaxy-workflow.gxwf.yml --json --cache-dir tool-cache",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "not_run_reason": null,
+  "summary": {
+    "tool_steps_validated": 11,
+    "failed": 0
+  },
+  "diagnostics": [],
+  "residual_runtime_risks": [
+    {
+      "risk": "Skipped (when: false) QC steps feed MultiQC and workflow outputs; static validation does not check null-tolerant consumption.",
+      "proof": "planemo run with skip_stats/skip_read_qc true (not in the planned test)"
+    },
+    {
+      "risk": "FastQC and fastq_info mapped over list:paired / two parallel lists: collection mapping semantics are not statically checked.",
+      "proof": "planemo test invocation of the default test"
+    },
+    {
+      "risk": "samtools_fastx output datatype (fastqsanger.gz) and read-name suffix (-N) may differ from the nf-core files; paired reads zipped by element identifier.",
+      "proof": "has_n_lines / has_text assertions in galaxy-workflow.gxwf-tests.yml"
+    },
+    {
+      "risk": "Snapshot md5 checksums for flagstat/idxstats/stats/fastq_info may not reproduce with different wrapper versions.",
+      "proof": "planemo test result for those outputs"
+    },
+    {
+      "risk": "MultiQC nested repeat state (samtools x3 + fastqc x2 instances) validated only structurally.",
+      "proof": "MultiQC job in the planemo invocation"
+    }
+  ]
+}

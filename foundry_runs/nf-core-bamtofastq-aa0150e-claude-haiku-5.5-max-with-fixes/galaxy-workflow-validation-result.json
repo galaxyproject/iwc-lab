@@ -1,0 +1,94 @@
+{
+  "artifact": "galaxy-workflow-validation-result",
+  "phase": 11,
+  "later_revalidation": "After this phase the workflow changed three times in phase 12: stage-frame comments (attempt 1), the Cut1 columnList (attempt 2), and the output labels (attempt 3). Each change was re-validated with the same gxwf validate --strict --connections command, exit 0, 20 of 20 tool steps ok, connections valid. See model-test-log.md.",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "workflow_path_absolute": "~/Galaxy/biohackathon-31/runs/nf-core-bamtofastq-haiku-max-fixed/galaxy-workflow.gxwf.yml",
+  "command": "gxwf validate galaxy-workflow.gxwf.yml --json --connections --strict --cache-dir <tool-cache>",
+  "command_run_from": "~/Galaxy/biohackathon-31/runs/nf-core-bamtofastq-haiku-max-fixed",
+  "exit_code": 0,
+  "status": "pass",
+  "not_run_reason": null,
+  "checks": {
+    "tool_state": {
+      "steps": 20,
+      "ok": 20,
+      "fail": 0,
+      "skip": 0,
+      "note": "Resolved from the populated tool cache. --strict forbids skipped checks, and no step was skipped."
+    },
+    "structure_errors": 0,
+    "encoding_errors": 0,
+    "connections": {
+      "ok": 31,
+      "invalid": 0,
+      "skip": 0,
+      "step_results": 22,
+      "note": "--connections checks collection algebra and map-over, including the when inputs (mapped per element) and the MultiQC repeat reduction. This is a design-time model, not Galaxy's scheduler."
+    }
+  },
+  "companion_tests": {
+    "file": "galaxy-workflow.gxwf-tests.yml",
+    "command": "gxwf validate-tests galaxy-workflow.gxwf-tests.yml --workflow galaxy-workflow.gxwf.yml --json",
+    "status": "pass",
+    "exit_code": 0,
+    "recorded_in": "phase 10; the file has not changed since that run"
+  },
+  "diagnostics": [],
+  "residual_runtime_risks": [
+    {
+      "id": "tool-install-under-planemo",
+      "risk": "20 steps pin Tool Shed changesets (devteam fastqc 0.74+galaxy1, samtools_flagstat 2.0.8, samtools_idxstats 2.0.8, samtools_sort 2.0.8, samtools_stats 2.0.9; iuc samtools_fastx 1.22+galaxy2 and multiqc 1.35+galaxy5; bgruening fastq_info 0.25.3+galaxy0) and stock tools (Grep1 1.0.4, Cut1 1.0.2, param_value_from_file 0.1.0, __FILTER_NULL__ 1.1.0, __ZIP_COLLECTION__ 1.0.0, __FLATTEN__ 1.0.0, __MERGE_COLLECTION__ 1.0.0). Validation read cached metadata, not installed tools.",
+      "why_static_cannot_settle": "The cache holds tool summaries. It does not show that each changeset installs and runs under Planemo.",
+      "proving_artifact": "Phase 12 planemo run: job states and invocation_details messages in tool_test_output.json."
+    },
+    {
+      "id": "no-bam-index-staged",
+      "risk": "No BAM index is staged for any element, and v1 takes no index input. samtools_idxstats may need a .bai.",
+      "why_static_cannot_settle": "The port is wired. Whether the wrapper indexes internally is a runtime question.",
+      "proving_artifact": "Phase 12 samtools_idxstats job state and the low-confidence idxstats checksums in the test file."
+    },
+    {
+      "id": "when-gating-at-runtime",
+      "risk": "paired_name_sort and paired_fastx run when paired_count > 0, and single_collate and single_fastx when paired_count === 0. paired_count is a per-sample integer. The connection checker maps the when inputs per element, but Galaxy's runtime evaluation of a mapped when is not verified.",
+      "why_static_cannot_settle": "The checker models the gate; it does not run Galaxy's scheduler.",
+      "proving_artifact": "Phase 12 element membership: reads_paired holds test and test2 (no_bai-mixed reads_single holds test3), plus any when_not_boolean or expression_evaluation_failed message in invocation_details."
+    },
+    {
+      "id": "output-registration-when-skipped",
+      "risk": "reads_single comes from the gated single-end chain. In default-paired that chain is skipped for every sample, so the output may be unregistered (workflow_output_not_found) or empty, while the test expects element_count 0.",
+      "why_static_cannot_settle": "Output registration depends on the scheduler's handling of skipped steps.",
+      "proving_artifact": "Phase 12 default-paired output problems and invocation messages with reason workflow_output_not_found."
+    },
+    {
+      "id": "samtools-fastx-pairing",
+      "risk": "reads_paired depends on samtools_fastx pairing name-sorted reads (read numbering -N; 256 and 2048 excluded; singletons not exported). Line counts assume complete pairs.",
+      "why_static_cannot_settle": "Pairing is the tool's behaviour on the data.",
+      "proving_artifact": "Phase 12 has_n_lines on the forward and reverse elements: 11284 (test), 10872 (test2), 49892 (test3, single-end)."
+    },
+    {
+      "id": "multiqc-repeat-reduction",
+      "risk": "MultiQC receives FastQC outputs (results_0) and samtools outputs (results_1) through repeat instances with reduction. The checker validates the wiring, not how MultiQC handles the collections.",
+      "why_static_cannot_settle": "Repeat handling is a wrapper runtime behaviour.",
+      "proving_artifact": "Phase 12 multiqc job state and the multiqc_report output (existence and type only)."
+    },
+    {
+      "id": "read-element-naming",
+      "risk": "Read elements are <sample>_forward and <sample>_reverse after __FLATTEN__ (join _), with forward and reverse sub-elements in reads_paired. The source names them _1 and _2 (post_conversion_1 and _2 for FastQC). Identity assertions use the Galaxy names.",
+      "why_static_cannot_settle": "The names are decided by the tools at runtime.",
+      "proving_artifact": "Phase 12 element identity on fastqc_post_conversion_html, fastqutils_info and reads_paired."
+    },
+    {
+      "id": "checksum-transfer",
+      "risk": "The flagstat and idxstats checksums are upstream nf-test tokens. A mismatch can come from the wrapper's output bytes, not the workflow. The stats check uses has_text on the raw total sequences key, whose format is unverified.",
+      "why_static_cannot_settle": "Output bytes exist only after a run.",
+      "proving_artifact": "Phase 12 checksum and has_text results. Any mismatch is reported as a finding; the expected value is not changed."
+    },
+    {
+      "id": "remote-input-hashes",
+      "risk": "The three BAM inputs come from GitHub raw URLs. The SHA-1 hashes were computed by nextflow-to-test-data from those files, so the check depends on the remote bytes being unchanged.",
+      "why_static_cannot_settle": "Remote content is not checked by static validation.",
+      "proving_artifact": "Phase 12 upload of the BAM inputs. Planemo reports any hash mismatch."
+    }
+  ]
+}

@@ -1,0 +1,261 @@
+ledger_version: 1
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-bamtofastq-deepseek-fixed
+  status: complete
+phases:
+  - { n: 1, skill: summarize-nextflow, status: done, iterations: 1, feedback_checked: true }
+  - { n: 2, skill: nextflow-summary-to-galaxy-reference-data, status: done, iterations: 1, feedback_checked: true }
+  - { n: 3, skill: nextflow-summary-to-galaxy-interface, status: done, iterations: 1, feedback_checked: true }
+  - { n: 4, skill: nextflow-summary-to-galaxy-data-flow, status: done, iterations: 1, feedback_checked: true }
+  - { n: 5, skill: compare-against-iwc-exemplar, status: done, iterations: 1, feedback_checked: true }
+  - { n: 6, skill: nextflow-summary-to-galaxy-template, status: done, iterations: 1, feedback_checked: true }
+  - { n: 7, skill: advance-galaxy-draft-step, status: done, iterations: 21, feedback_checked: true }
+  - { n: 8, pattern: test-data-resolution, status: done, iterations: 1, selected: nextflow-to-test-data, feedback_checked: true }
+  - { n: 9, skill: nextflow-test-to-galaxy-test-plan, status: done, iterations: 1, feedback_checked: true }
+  - { n: 10, skill: implement-galaxy-workflow-test, status: done, iterations: 1, feedback_checked: true }
+  - { n: 11, skill: validate-galaxy-workflow, status: done, iterations: 1, feedback_checked: true }
+  - { n: 12, skill: run-workflow-test, status: done, iterations: 9, feedback_checked: true }
+  - { n: 13, skill: debug-galaxy-workflow-output, status: done, iterations: 1, feedback_checked: true }
+entries:
+  - id: summarize-nextflow-emits-garbage-edges-from-multiline-literals
+    raised_by: summarize-nextflow
+    observed_in:
+      mold: summarize-nextflow
+      path: content/molds/summarize-nextflow/index.md
+      revision: 21
+      content_hash: "12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499"
+      foundry_head: "df991d0d789b0a29618cbcdbe7eb6d9508f1f062"
+    subject:
+      kind: cli-tool
+      label: gxwf-foundry summarize-nextflow workflow-edge extraction
+      locator: "package://@galaxy-foundry/gxwf-foundry#summarize-nextflow"
+    kind: defect
+    severity: minor
+    what: >-
+      On nf-core/bamtofastq the deterministic workflow.edges list contains pseudo-edges
+      built from fragments of multi-line Groovy literals rather than channel expressions:
+      for example '[[:]' -> SAMTOOLS_CHR, '[id: 'bamtofastq']' -> MULTIQC, ']' -> MULTIQC and
+      '? file(multiqc_config, checkIfExists: true)' -> MULTIQC. 15 of 33 emitted edges were
+      such fragments.
+    expected: >-
+      Emit one edge per call argument expression, or omit edges whose source cannot be
+      resolved to a channel or process output, instead of splitting a literal on lines.
+    evidence: >-
+      foundry summarize-nextflow --pin aa0150e on nf-core/bamtofastq at aa0150e produced 33
+      edges, of which the MULTIQC and SAMTOOLS_CHR argument lists contributed 15 fragment
+      rows; the summary was hand-reconciled to 53 coherent edges before validation.
+    status: open
+    issue: null
+  - id: reference-rebuild-detector-misses-branch-on-meta-index
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    observed_in:
+      mold: nextflow-summary-to-galaxy-reference-data
+      path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+      revision: 5
+      content_hash: "b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f"
+      foundry_head: "77425ce07f69da2bdda1de21faea3abc4600ae00"
+    subject:
+      kind: research
+      label: nextflow-reference-data-classification compute-if-missing detection
+      locator: content/research/nextflow-reference-data-classification/index.md
+      content_hash: "2b33f3bddb635c9d700e506784b4bf16f8c387369bc66194a15cb75be9ad8a1f"
+    kind: gap
+    severity: minor
+    what: >-
+      The compute-if-missing section documents the negated-guard and fused-assignment idioms and one
+      positive-form gap, but not the branch-on-metadata idiom used by nf-core/bamtofastq: a FASTA
+      channel is branched on `meta.index` inside subworkflows/local/prepare_indices/main.nf and the
+      to_index branch runs SAMTOOLS_FAIDX, after which the rebuilt .fai is mixed back in. The summary's
+      reference_rebuilds[] is empty for this pipeline even though the rebuild is unambiguous in source.
+    expected: >-
+      Name the branch-on-meta rebuild idiom explicitly in the note's known-gaps list (alongside the
+      rnaseq positive-form gap) so a brief author knows to read the subworkflow instead of recording
+      "no rebuild" for a pipeline that clearly has one.
+    evidence: >-
+      summary-nextflow.json for nf-core/bamtofastq @aa0150e has reference_assets[] entries for fasta
+      and fasta_fai with reference_rebuilds[] empty; prepare_indices/main.nf lines 30-50 contain the
+      branch plus SAMTOOLS_FAIDX fallback.
+    status: open
+    issue: null
+  - id: sample-sheet-record-slots-not-declarable-on-workflow-inputs
+    raised_by: nextflow-summary-to-galaxy-interface
+    observed_in:
+      mold: nextflow-summary-to-galaxy-interface
+      path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+      revision: 6
+      content_hash: "43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0"
+      foundry_head: "61da115975d155a36face0e83d5c28f638da7fca"
+    subject:
+      kind: research
+      label: galaxy-sample-sheet-collections sample_sheet:record guidance
+      locator: content/research/galaxy-sample-sheet-collections/index.md
+      content_hash: "98736fdcd0c4f4698af4e0cd4c539b33e3d0db872de1e10487556b21033030ec"
+    kind: gap
+    severity: minor
+    what: >-
+      The mapping table routes "Heterogeneous typed per-row artifacts" to sample_sheet:record,
+      but the note's workflow-integration example only declares scalar column_definitions and
+      says nothing about declaring the record's dataset slots. In gxformat2 that is not
+      expressible for a workflow input: DatasetCollectionParameterModel has `fields` only for
+      tool parameters (lib/galaxy/tool_util_models/parameters.py), while workflow inputs carry
+      `column_definitions` alone.
+    expected: >-
+      State in the note that sample_sheet:record cannot declare named dataset slots at the
+      workflow-input level, and give the fallback the Mold should take when a source samplesheet
+      mixes several path columns per row (e.g. a plain list plus datatype-derived metadata).
+    evidence: >-
+      nf-core/bamtofastq assets/schema_input.json has `mapped` and optional `index` path columns;
+      the interface decision fell back to a plain `list` because the record slots could not be
+      declared. Recorded in nextflow-galaxy-interface.md section 2.
+    status: open
+    issue: null
+  - id: branch-recipe-misses-per-element-when-route
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    observed_in:
+      mold: nextflow-summary-to-galaxy-data-flow
+      path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+      revision: 8
+      content_hash: "f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247"
+      foundry_head: "61da115975d155a36face0e83d5c28f638da7fca"
+    subject:
+      kind: research
+      label: nextflow-operators-to-galaxy-collection-recipes branch row
+      locator: content/research/nextflow-operators-to-galaxy-collection-recipes/index.md
+      content_hash: "59d97f05e7839f78cb7f42e17299fe6bc373bde8a32eca506238633a3dff9282"
+    kind: friction
+    severity: minor
+    what: >-
+      The `branch` row says per-element conditional routing "usually needs explicit filters/classifiers
+      or user review" and the note never points at the per-element `when` route documented in
+      nextflow-to-galaxy-channel-shape-mapping (param_value_from_file -> mapped when -> pick_value).
+      A reader following only the operators note concludes no translation exists.
+    expected: >-
+      Cross-reference the channel-shape note's per-element `when` section from the `branch` row, and
+      say which of "explicit filter", "per-element when route", or "review" applies when.
+    evidence: >-
+      nf-core/bamtofastq branches each sample on CHECKPAIREDEND output into two different subgraphs;
+      the data-flow brief had to reconcile the operators note, the channel-shape note and the
+      conditional note to find the route, then chose a workflow-level select instead.
+    status: open
+    issue: null
+  - id: draft-validate-unknown-step-hides-label-resolution
+    raised_by: nextflow-summary-to-galaxy-template
+    observed_in:
+      mold: nextflow-summary-to-galaxy-template
+      path: content/molds/nextflow-summary-to-galaxy-template/index.md
+      revision: 10
+      content_hash: "77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab"
+      foundry_head: "77425ce07f69da2bdda1de21faea3abc4600ae00"
+    subject:
+      kind: cli-command
+      label: gxwf draft-validate step-reference diagnostics
+      locator: "package://@galaxy-tool-util/cli#draft-validate"
+    kind: friction
+    severity: minor
+    what: >-
+      When every step in a list-form draft carries a `label`, step references resolve by label,
+      not by `id`. A draft that is wired entirely with `id`-based sources produces 32
+      "references unknown step <id>" errors that read like missing steps rather than a naming
+      convention mismatch.
+    expected: >-
+      In the diagnostic, echo the step's effective name next to its id (e.g. "unknown step
+      'flagstat' (step id 'flagstat' is labelled 'samtools flagstat')"), or mention label resolution
+      in the message when the id exists but the label differs.
+    evidence: >-
+      galaxy-workflow-draft.gxwf.yml with 22 labelled steps produced 32 unknown-step errors; removing
+      the labels made the same topology validate clean.
+    status: open
+    issue: null
+  - id: tool-cache-nonexistent-repo-500
+    raised_by: advance-galaxy-draft-step
+    observed_in:
+      mold: advance-galaxy-draft-step
+      path: content/molds/advance-galaxy-draft-step/index.md
+      revision: 12
+      content_hash: "12f242ddbbfee7d9fe4ef8b6a2d701beceb71e4885cd19872c51041b04e08b27"
+      foundry_head: "db8801f2f0a31746e35cf399dd96cdbb8aa36dcf"
+    subject:
+      kind: cli-tool
+      label: galaxy-tool-cache add/summarize Tool Shed miss diagnostics
+      locator: "package://@galaxy-tool-util/cli#galaxy-tool-cache"
+    kind: friction
+    severity: minor
+    what: >-
+      When a Tool Shed owner/repo/tool path does not exist, `galaxy-tool-cache add` reports
+      "TRS versions request ... failed: 500 Internal Server Error" and "No version available".
+      The same 500 is produced by `/api/ga4gh/trs/v2/tools/<id>/versions` for any unknown repo,
+      so a wrong-owner guess (iuc/samtools_flagstat) looks like a server fault rather than a
+      miss; `discover-shed-tool` has to fall back to listing the owner's repositories via
+      `/api/repositories?owner=...&page=N` to tell the two apart.
+    expected: >-
+      Translate the Tool Shed 500 on an unknown tool id into an explicit "tool not found in
+      this repository" signal, or probe `/api/repositories?owner=..&name=..` first so a miss is
+      reported as a miss.
+    evidence: >-
+      iuc hosts samtools_view/merge/collate/fastx but not samtools_flagstat/idxstats/stats/index;
+      the first three guesses all returned 500 + "No version available", and the devteam fallback
+      (samtools_flagstat 2.0.8, samtools_stats 2.0.9) cached cleanly.
+    status: open
+    issue: null
+  - id: linked-state-rejects-tool-state-case-keys
+    raised_by: advance-galaxy-draft-step
+    observed_in:
+      mold: advance-galaxy-draft-step
+      path: content/molds/advance-galaxy-draft-step/index.md
+      revision: 12
+      content_hash: "12f242ddbbfee7d9fe4ef8b6a2d701beceb71e4885cd19872c51041b04e08b27"
+      foundry_head: "db8801f2f0a31746e35cf399dd96cdbb8aa36dcf"
+    subject:
+      kind: research
+      label: galaxy-workflow-draft-format state authoring guidance
+      locator: content/research/galaxy-workflow-draft-format/index.md
+    kind: gap
+    severity: minor
+    what: >-
+      The draft-format note tells the implementer to bind `state` from the wrapper summary but
+      does not say that a state copied verbatim from an IWC `.ga` `tool_state` is rejected by
+      `workflow_step_linked`: `__current_case__` markers and `{"__class__": "RuntimeValue"}`
+      placeholders for unconnected optional data are `additionalProperties` violations, while
+      they are legal in Galaxy's own tool_state. The same key that is rejected on one wrapper
+      (samtools_view `mode`) is accepted on another (samtools_stats conditionals).
+    expected: >-
+      Add a short "state copied from a `.ga` is not draft state" rule to the note: drop
+      `__current_case__`, drop `RuntimeValue` leaves for unconnected optional data, and let
+      `draft-validate --concrete --strict-state` report which keys are disallowed per wrapper.
+    evidence: >-
+      Devteam FastQC, iuc samtools_view and iuc samtools_merge all failed concrete validation on
+      exactly those keys; removing them (and converting `kmers` "7" to 7) cleared 21/21 states.
+    status: open
+    issue: null
+  - id: planemo-needs-tool-shed-changeset-on-resolved-steps
+    raised_by: implement-galaxy-workflow-test
+    observed_in:
+      mold: implement-galaxy-workflow-test
+      path: content/molds/implement-galaxy-workflow-test/index.md
+      revision: 11
+      content_hash: "34855691581889d36265e00178088b8a52a51ee72119329261bca186f7cb480e"
+      foundry_head: "df991d0d789b0a29618cbcdbe7eb6d9508f1f062"
+    subject:
+      kind: research
+      label: galaxy-workflow-draft-format resolved-tier tool_shed_repository guidance
+      locator: content/research/galaxy-workflow-draft-format/index.md
+    kind: gap
+    severity: major
+    what: >-
+      The draft-format note allows `tool_shed_repository` to be absent on a Tool Shed step once
+      `tool_id` and `tool_version` are pinned (the "Resolved" tier). A workflow built that way
+      validates with gxwf but cannot be tested: `planemo test` imports it, Galaxy reports every
+      Tool Shed tool as "missing", and the invocation fails with "required tools are not
+      installed". Planemo only installs tools when the step carries owner/name/changeset.
+    expected: >-
+      Require `tool_shed_repository` (with `changeset_revision`) on any Tool Shed step that a
+      planemo/run-workflow-test phase will execute, or state in the note that the resolved tier
+      is gxwf-valid but not planemo-runnable, and how to fill the changeset (Tool Shed
+      `/api/repositories/<id>/metadata` maps each tool version to its changeset).
+    evidence: >-
+      Attempt 1 of planemo test on galaxy-workflow.gxwf.yml failed with missing_tool_ids for all
+      seven Tool Shed repos; adding the changesets from the shed metadata endpoint made all tools
+      installable on the next run. `gxwf validate` had reported the workflow fully valid.
+    status: open
+    issue: null

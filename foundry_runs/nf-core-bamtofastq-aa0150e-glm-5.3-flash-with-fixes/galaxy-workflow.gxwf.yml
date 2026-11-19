@@ -1,0 +1,964 @@
+class: GalaxyWorkflow
+label: BAM/CRAM to FASTQ conversion (nf-core/bamtofastq)
+doc: 'Galaxy translation of nf-core/bamtofastq (paired-end path).
+
+  Indexes each alignment, optionally subsets to regions given in `chr`,
+
+  runs pre-conversion QC, then converts each sample inside a per-sample inline
+
+  subworkflow (splits alignments by pair status, merges the three unmapped bins
+
+  per sample, collates and converts each bin to FASTQ with samtools, concatenates
+
+  mapped+unmapped per mate). The mapped subworkflow output is repackaged as a
+
+  list:paired collection. Post-conversion QC (FastQC, fastq_info) and a MultiQC
+
+  aggregate close the workflow.
+
+  Single-end input is out of scope (dropped source path, ledger
+
+  single-end-path-dropped).
+
+  '
+inputs:
+  alignments:
+    label: Alignments (BAM/CRAM)
+    type: collection
+    collection_type: list
+    doc: 'One BAM or CRAM per sample; element identifiers are the sample ids.
+
+      Mixed bam/cram elements are permitted in principle (the source accepts
+
+      both); whether the chosen samtools wrappers accept CRAM is verified at
+
+      tool-implementation time (ledger mixed-bam-cram-wrapper-support-unverified).
+
+      '
+  fasta:
+    label: Reference FASTA
+    type: data
+    format: fasta
+    optional: true
+    doc: Required when converting CRAM files (samtools --reference); optional for BAM-only runs.
+  chr:
+    label: Region(s) to extract
+    type: string
+    optional: true
+    doc: Space-separated regions (e.g. "chrX chrY X Y"). When set, conversion runs on a region-subset
+      of each alignment.
+  read_qc:
+    label: Run read QC
+    type: boolean
+    default: true
+    doc: Inverse of the source's --no_read_QC. Gates pre/post-conversion FastQC, fastq_info and MultiQC.
+  stats:
+    label: Run alignment statistics
+    type: boolean
+    default: true
+    doc: Inverse of the source's --no_stats. Gates flagstat, idxstats and stats.
+  multiqc_title:
+    label: MultiQC report title
+    type: string
+    optional: true
+    doc: Title for the MultiQC report.
+  multiqc_config:
+    label: MultiQC config
+    type: data
+    format: yaml
+    optional: true
+    doc: Optional custom MultiQC configuration file.
+outputs:
+- id: paired_reads
+  doc: Concatenated mapped+unmapped FASTQ per mate, as a list:paired collection.
+  outputSource: Build paired read collection/output
+- id: fastqc_pre_html
+  outputSource: FastQC on alignments/html_file
+- id: fastqc_pre_zip
+  outputSource: FastQC on alignments/text_file
+- id: fastqc_post_html
+  outputSource: FastQC on converted reads/html_file
+- id: fastqc_post_zip
+  outputSource: FastQC on converted reads/text_file
+- id: flagstat
+  outputSource: Flagstat/output1
+- id: idxstats
+  outputSource: Idxstats/output
+- id: stats
+  outputSource: Samtools stats/output
+- id: fastq_info
+  outputSource: FastQ info/output
+- id: multiqc_report
+  outputSource: MultiQC report/html_report
+steps:
+  samtools_index:
+    label: Index alignments
+    doc: samtools index over every alignment (replaces the source's compute-if-missing PREPARE_INDICES).
+    tool_id: toolshed.g2.bx.psu.edu/repos/jackcurragh/ribogalaxy_samtools_index/samtools_index/2.0.4
+    tool_version: 2.0.4
+    tool_shed_repository:
+      changeset_revision: d90d874e1d9e
+      name: ribogalaxy_samtools_index
+      owner: jackcurragh
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input1: alignments
+    out:
+    - id: output1
+  samtools_view_chr:
+    label: Subset alignments to regions
+    doc: samtools view restricted to the regions in `chr` (source SAMTOOLS_CHR, ext.args -hb). Reference
+      not threaded (wrapper conditional takes a static select); CRAM region-subsetting needs an embedded
+      reference.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    when: $(inputs.chr != null)
+    in:
+      input: alignments
+      mode|filter_config|cond_region|regions: chr
+      when: chr
+    out:
+    - id: outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          inclusive_filter:
+          - '1'
+          exclusive_filter:
+          - '4'
+          - '8'
+          cond_region:
+            select_region: text
+        output_options:
+          reads_report_type: retained
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: 'no'
+  samtools_index_chr:
+    label: Index region subsets
+    doc: samtools index over the region-subset BAMs (same wrapper as samtools_index, default -b).
+    tool_id: toolshed.g2.bx.psu.edu/repos/jackcurragh/ribogalaxy_samtools_index/samtools_index/2.0.4
+    tool_version: 2.0.4
+    tool_shed_repository:
+      changeset_revision: d90d874e1d9e
+      name: ribogalaxy_samtools_index
+      owner: jackcurragh
+      tool_shed: toolshed.g2.bx.psu.edu
+    when: $(inputs.chr != null)
+    in:
+      input1: Subset alignments to regions/outputsam
+      when: chr
+    out:
+    - id: output1
+  pick_bam:
+    label: Pick conversion alignments
+    doc: Prefer the chr-subset BAMs when the chr branch ran, else the original alignments.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: 0.2.0
+    tool_shed_repository:
+      changeset_revision: b19e21af9c52
+      name: pick_value
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      style_cond|type_cond|pick_from_0|value: Subset alignments to regions/outputsam
+      style_cond|type_cond|pick_from_1|value: alignments
+    out:
+    - id: data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+          pick_from:
+          - {}
+          - {}
+  pick_index:
+    label: Pick conversion indexes
+    doc: Prefer the chr-subset indexes when the chr branch ran, else the original indexes.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+    tool_version: 0.2.0
+    tool_shed_repository:
+      changeset_revision: b19e21af9c52
+      name: pick_value
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      style_cond|type_cond|pick_from_0|value: Index region subsets/output1
+      style_cond|type_cond|pick_from_1|value: Index alignments/output1
+    out:
+    - id: data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+          pick_from:
+          - {}
+          - {}
+  samtools_flagstats:
+    label: Flagstat
+    doc: samtools flagstat on the original alignments (source SAMTOOLS_FLAGSTAT, gated by !no_stats).
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8
+    tool_version: 2.0.8
+    tool_shed_repository:
+      changeset_revision: a0d8e49a018c
+      name: samtools_flagstat
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    when: $(inputs.when)
+    in:
+      input1: alignments
+      when: stats
+    out:
+    - id: output1
+  samtools_idxstats:
+    label: Idxstats
+    doc: "samtools idxstats on the original alignments (gated by !no_stats). The wrapper locates the index\
+      \ itself (no index port), so samtools_index/output1 is not consumed here \u2014 it feeds pick_index\
+      \ instead."
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats/2.0.8
+    tool_version: 2.0.8
+    tool_shed_repository:
+      changeset_revision: 13aad5cb9be4
+      name: samtools_idxstats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    when: $(inputs.when)
+    in:
+      input: alignments
+      when: stats
+    out:
+    - id: output
+  samtools_stats:
+    label: Samtools stats
+    doc: samtools stats on the original alignments (gated by !no_stats). Reference threaded through addref_cond/history
+      to match the source's --reference $fasta (attempt-8 fidelity fix).
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.9
+    tool_version: 2.0.9
+    tool_shed_repository:
+      changeset_revision: 8fca6e1eac98
+      name: samtools_stats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    when: $(inputs.when)
+    in:
+      input: alignments
+      addref_cond|ref: fasta
+      when: stats
+    out:
+    - id: output
+    state:
+      addref_cond:
+        addref_select: history
+      cond_region:
+        select_region: 'no'
+      split_output_cond:
+        split_output_selector: 'no'
+      filter_by_flags:
+        filter_flags: nofilter
+  fastqc_pre:
+    label: FastQC on alignments
+    doc: Pre-conversion FastQC (source FASTQC_PRE_CONVERSION, gated by !no_read_QC).
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    when: $(inputs.when)
+    in:
+      input_file: alignments
+      when: read_qc
+    out:
+    - id: html_file
+    - id: text_file
+  convert_one_sample:
+    label: Convert one sample to FASTQ
+    doc: 'Inline subworkflow, run once per sample (mapped over the picked alignments).
+
+      Restores the source per-sample SAMTOOLS_MERGE grouping (attempt-8 fix: the
+
+      flattened merge over collected bin lists merged all samples into one) and
+
+      the source collate | fastq ordering (ledger samtools-collate-fast-dropped:
+
+      samtools collate restored as explicit steps before each samtools fastx; the
+
+      collate_fast toggle remains dropped).'
+    run:
+      class: GalaxyWorkflow
+      label: Convert one sample
+      doc: 'One sample: split by pair status (mapped-pair / unmapped-unmapped /
+
+        unmapped-mapped / mapped-unmapped), merge the three unmapped bins, collate
+
+        and convert the mapped and merged-unmapped BAMs to FASTQ, concatenate
+
+        mapped+unmapped per mate.'
+      inputs:
+        input_bam:
+          label: Sample alignment
+          type: data
+      outputs:
+      - id: forward
+        doc: Concatenated mate-1 FASTQ (mapped + unmapped), fastqsanger.gz.
+        outputSource: Concatenate mate-1 FASTQs/out_file1
+      - id: reverse
+        doc: Concatenated mate-2 FASTQ (mapped + unmapped), fastqsanger.gz.
+        outputSource: Concatenate mate-2 FASTQs/out_file1
+      steps:
+        view_map_map:
+          label: Extract mapped-pair records
+          doc: "samtools view -b -f1 -F12 (mapped pairs). Reference not threaded (wrapper conditional\
+            \ takes a static select); CRAM handling unverified \u2014 see ledger."
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+          tool_version: 1.22+galaxy2
+          tool_shed_repository:
+            changeset_revision: 5cf9fcc93508
+            name: samtools_view
+            owner: iuc
+            tool_shed: toolshed.g2.bx.psu.edu
+          in:
+            input: input_bam
+          out:
+          - id: outputsam
+          state:
+            mode:
+              outtype: selected_reads
+              filter_config:
+                cond_region:
+                  select_region: 'no'
+                cond_rg:
+                  select_rg: 'no'
+                cond_expr:
+                  select_expr: 'no'
+                inclusive_filter:
+                - '1'
+                exclusive_filter:
+                - '4'
+                - '8'
+                exclusive_filter_all: []
+                quality: null
+                library: null
+                cigarcons: null
+                tag: null
+                qname_file: null
+              subsample_config:
+                subsampling_mode:
+                  select_subsample: fraction
+                  factor: 1.0
+                  seed: null
+              output_options:
+                reads_report_type: retained
+                complementary_output: false
+                output_format:
+                  oformat: bam
+                adv_output:
+                  readtags: []
+                  collapsecigar: false
+            addref_cond:
+              addref_select: 'no'
+        view_unmap_unmap:
+          label: Extract unmapped-unmapped records
+          doc: samtools view -b -f12 -F256 (both mates unmapped).
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+          tool_version: 1.22+galaxy2
+          tool_shed_repository:
+            changeset_revision: 5cf9fcc93508
+            name: samtools_view
+            owner: iuc
+            tool_shed: toolshed.g2.bx.psu.edu
+          in:
+            input: input_bam
+          out:
+          - id: outputsam
+          state:
+            mode:
+              outtype: selected_reads
+              filter_config:
+                cond_region:
+                  select_region: 'no'
+                cond_rg:
+                  select_rg: 'no'
+                cond_expr:
+                  select_expr: 'no'
+                inclusive_filter:
+                - '4'
+                - '8'
+                exclusive_filter:
+                - '256'
+                exclusive_filter_all: []
+                quality: null
+                library: null
+                cigarcons: null
+                tag: null
+                qname_file: null
+              subsample_config:
+                subsampling_mode:
+                  select_subsample: fraction
+                  factor: 1.0
+                  seed: null
+              output_options:
+                reads_report_type: retained
+                complementary_output: false
+                output_format:
+                  oformat: bam
+                adv_output:
+                  readtags: []
+                  collapsecigar: false
+            addref_cond:
+              addref_select: 'no'
+        view_unmap_map:
+          label: Extract read1-unmapped records
+          doc: samtools view -b -f4 -F264 (read1 unmapped, mate mapped).
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+          tool_version: 1.22+galaxy2
+          tool_shed_repository:
+            changeset_revision: 5cf9fcc93508
+            name: samtools_view
+            owner: iuc
+            tool_shed: toolshed.g2.bx.psu.edu
+          in:
+            input: input_bam
+          out:
+          - id: outputsam
+          state:
+            mode:
+              outtype: selected_reads
+              filter_config:
+                cond_region:
+                  select_region: 'no'
+                cond_rg:
+                  select_rg: 'no'
+                cond_expr:
+                  select_expr: 'no'
+                inclusive_filter:
+                - '4'
+                exclusive_filter:
+                - '8'
+                - '256'
+                exclusive_filter_all: []
+                quality: null
+                library: null
+                cigarcons: null
+                tag: null
+                qname_file: null
+              subsample_config:
+                subsampling_mode:
+                  select_subsample: fraction
+                  factor: 1.0
+                  seed: null
+              output_options:
+                reads_report_type: retained
+                complementary_output: false
+                output_format:
+                  oformat: bam
+                adv_output:
+                  readtags: []
+                  collapsecigar: false
+            addref_cond:
+              addref_select: 'no'
+        view_map_unmap:
+          label: Extract read2-unmapped records
+          doc: samtools view -b -f8 -F260 (read2 unmapped, mate mapped).
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+          tool_version: 1.22+galaxy2
+          tool_shed_repository:
+            changeset_revision: 5cf9fcc93508
+            name: samtools_view
+            owner: iuc
+            tool_shed: toolshed.g2.bx.psu.edu
+          in:
+            input: input_bam
+          out:
+          - id: outputsam
+          state:
+            mode:
+              outtype: selected_reads
+              filter_config:
+                cond_region:
+                  select_region: 'no'
+                cond_rg:
+                  select_rg: 'no'
+                cond_expr:
+                  select_expr: 'no'
+                inclusive_filter:
+                - '8'
+                exclusive_filter:
+                - '4'
+                - '256'
+                exclusive_filter_all: []
+                quality: null
+                library: null
+                cigarcons: null
+                tag: null
+                qname_file: null
+              subsample_config:
+                subsampling_mode:
+                  select_subsample: fraction
+                  factor: 1.0
+                  seed: null
+              output_options:
+                reads_report_type: retained
+                complementary_output: false
+                output_format:
+                  oformat: bam
+                adv_output:
+                  readtags: []
+                  collapsecigar: false
+            addref_cond:
+              addref_select: 'no'
+        build_unmapped_bins:
+          label: Build list of unmapped bins
+          doc: 'Collect the three unmapped-bin BAMs of this sample into one list collection (__BUILD_LIST__
+            1.1.0). This restores per-sample grouping: a multiple=true merge input wired to a single build_list
+            output receives one list collection per sample and no longer flattens the cross-sample connections
+            (ledger multi-connection-flatten-fixed).'
+          tool_id: __BUILD_LIST__
+          tool_version: 1.1.0
+          in:
+            datasets_0|input: Extract unmapped-unmapped records/outputsam
+            datasets_1|input: Extract read1-unmapped records/outputsam
+            datasets_2|input: Extract read2-unmapped records/outputsam
+          out:
+          - id: output
+          state:
+            datasets:
+            - {}
+            - {}
+            - {}
+        build_cat_r1:
+          label: Build list of mate-1 FASTQs
+          doc: Collect mapped R1 + unmapped R1 of this sample into one list collection (__BUILD_LIST__
+            1.1.0) so the concatenation consumes a single per-sample list instead of a flattened cross-sample
+            set.
+          tool_id: __BUILD_LIST__
+          tool_version: 1.1.0
+          in:
+            datasets_0|input: Convert mapped pairs to FASTQ/forward
+            datasets_1|input: Convert unmapped reads to FASTQ/forward
+          out:
+          - id: output
+          state:
+            datasets:
+            - {}
+            - {}
+        build_cat_r2:
+          label: Build list of mate-2 FASTQs
+          doc: Collect mapped R2 + unmapped R2 of this sample into one list collection (__BUILD_LIST__
+            1.1.0) so the concatenation consumes a single per-sample list instead of a flattened cross-sample
+            set.
+          tool_id: __BUILD_LIST__
+          tool_version: 1.1.0
+          in:
+            datasets_0|input: Convert mapped pairs to FASTQ/reverse
+            datasets_1|input: Convert unmapped reads to FASTQ/reverse
+          out:
+          - id: output
+          state:
+            datasets:
+            - {}
+            - {}
+        merge_unmapped:
+          label: Merge unmapped bins
+          doc: "samtools merge over the three unmapped-bin BAMs of this sample (three single-dataset inputs\
+            \ \u2014 per-sample grouping restored)."
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_merge/samtools_merge/1.22+galaxy2
+          tool_version: 1.22+galaxy2
+          tool_shed_repository:
+            changeset_revision: 37c8eb55315d
+            name: samtools_merge
+            owner: iuc
+            tool_shed: toolshed.g2.bx.psu.edu
+          in:
+            bamfiles: Build list of unmapped bins/output
+          out:
+          - id: output
+          state:
+            bed_file: null
+            region: null
+            headerbam: null
+            idrg: false
+            idpg: false
+            seed: 1
+        collate_mapped:
+          label: Collate mapped pairs
+          doc: samtools collate on the mapped-pair BAM (source COLLATE_FASTQ mapped, collate_fast=false;
+            no_pg/fast_mode wrapper defaults match the source defaults). The collate output keeps the
+            unsorted.bam datatype; the downstream user-defined samtools_fastq_stream step declares it
+            in its accepted format list, so Galaxy inserts no automatic BAM converter and the collate
+            order flows straight into samtools fastq (source COLLATE_FASTQ chains collate -O straight
+            into fastq; any numeric name-sort or coordinate sort would reorder the reads and change
+            the FASTQ content md5).
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_collate/samtools_collate/1.22+galaxy1
+          tool_version: 1.22+galaxy1
+          tool_shed_repository:
+            changeset_revision: e7fa06931998
+            name: samtools_collate
+            owner: iuc
+            tool_shed: toolshed.g2.bx.psu.edu
+          in:
+            input: Extract mapped-pair records/outputsam
+          out:
+          - id: output_file
+          state:
+            no_pg: true
+            fast_mode: false
+        collate_unmapped:
+          label: Collate merged unmapped reads
+          doc: samtools collate on the merged unmapped BAM (source COLLATE_FASTQ unmap, collate_fast=false).
+            The collate output keeps the unsorted.bam datatype; the downstream user-defined
+            samtools_fastq_stream step declares it in its accepted format list, so Galaxy inserts no
+            automatic BAM converter and the collate order flows straight into samtools fastq.
+          tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_collate/samtools_collate/1.22+galaxy1
+          tool_version: 1.22+galaxy1
+          tool_shed_repository:
+            changeset_revision: e7fa06931998
+            name: samtools_collate
+            owner: iuc
+            tool_shed: toolshed.g2.bx.psu.edu
+          in:
+            input: Merge unmapped bins/output
+          out:
+          - id: output_file
+          state:
+            no_pg: true
+            fast_mode: false
+        fastq_mapped:
+          label: Convert mapped pairs to FASTQ
+          doc: >-
+            samtools fastq over the collated mapped-pair BAM with -N and no preparatory sort, no read
+            filters (source collate | fastq, ext.args2 -N). Author-defined user tool: the shed
+            samtools_fastx wrapper declares its input as format sam,bam,cram, which the collate
+            unsorted.bam output (BamNative) does not match, so Galaxy auto-inserts a coordinate-sort
+            converter that destroys the collate order; this embedded tool instead accepts
+            unsorted.bam directly and runs bare samtools fastq with no internal sort. R1/R2/singleton
+            bins to fastqsanger.gz; the -0 'other' stream is not emitted (single-end path dropped,
+            ledger single-end-path-dropped). No -F 2304 filter: the source applies no fastq-level
+            filter, so secondary/supplementary records stay in the output.
+          run:
+            class: GalaxyUserTool
+            id: samtools_fastq_stream
+            version: 1.0.0
+            name: Samtools fastq (stream, order-preserving)
+            description: Convert a collated BAM to FASTQ without re-sorting, preserving input record order.
+            container: quay.io/biocontainers/samtools:1.22--h96c455f_0
+            shell_command: >-
+              samtools fastq -N -1 forward.fastqsanger.gz -2 reverse.fastqsanger.gz -s singletons.fastqsanger.gz
+              '$(inputs.input.path)'
+            license: MIT
+            help:
+              format: markdown
+              content: |
+                Runs `samtools fastq` exactly once over the input BAM, with no preparatory
+                sort and no read filters. The record order of the input is preserved in the
+                outputs, so pairing a `samtools collate -O` output with this tool reproduces
+                the collated (queryname-grouped) read order in the FASTQ.
+
+                `-N` keeps read names unmodified (no `/1` `/2` suffixes). Reads with the
+                READ1 flag go to the forward file, READ2 to the reverse file, unpaired
+                reads to the singleton file. Reads with neither READ1 nor READ2 are
+                discarded (they would land in samtools' `-0` stream, which this tool does
+                not emit).
+
+                Input formats deliberately include the BAM datatypes that Galaxy does not
+                treat as subtypes of `bam` (`unsorted.bam`, `qname_input_sorted.bam`,
+                `qname_sorted.bam`): declaring them prevents Galaxy from inserting an
+                automatic `CONVERTER_bam_to_coodinate_sorted_bam` step, whose coordinate
+                sort would destroy the collated order this tool exists to preserve.
+            inputs:
+            - name: input
+              type: data
+              label: Collated BAM or SAM file
+              format:
+              - bam
+              - unsorted.bam
+              - qname_input_sorted.bam
+              - qname_sorted.bam
+              - sam
+              - cram
+              help: Input alignments; use the unsorted or queryname-collated output of samtools collate to keep read order.
+            outputs:
+            - name: forward
+              type: data
+              format: fastqsanger.gz
+              from_work_dir: forward.fastqsanger.gz
+              label: Forward reads (READ1)
+            - name: reverse
+              type: data
+              format: fastqsanger.gz
+              from_work_dir: reverse.fastqsanger.gz
+              label: Reverse reads (READ2)
+            - name: singletons
+              type: data
+              format: fastqsanger.gz
+              from_work_dir: singletons.fastqsanger.gz
+              label: Singleton reads
+          in:
+            input: Collate mapped pairs/output_file
+          out:
+          - id: forward
+          - id: reverse
+          - id: singletons
+        fastq_unmapped:
+          label: Convert unmapped reads to FASTQ
+          doc: >-
+            samtools fastq over the collated merged-unmapped BAM; same user tool and rationale as the
+            mapped step. The 'other' bin (single-end path) is dropped (ledger single-end-path-dropped).
+          run:
+            class: GalaxyUserTool
+            id: samtools_fastq_stream
+            version: 1.0.0
+            name: Samtools fastq (stream, order-preserving)
+            description: Convert a collated BAM to FASTQ without re-sorting, preserving input record order.
+            container: quay.io/biocontainers/samtools:1.22--h96c455f_0
+            shell_command: >-
+              samtools fastq -N -1 forward.fastqsanger.gz -2 reverse.fastqsanger.gz -s singletons.fastqsanger.gz
+              '$(inputs.input.path)'
+            license: MIT
+            help:
+              format: markdown
+              content: |
+                Runs `samtools fastq` exactly once over the input BAM, with no preparatory
+                sort and no read filters. The record order of the input is preserved in the
+                outputs, so pairing a `samtools collate -O` output with this tool reproduces
+                the collated (queryname-grouped) read order in the FASTQ.
+
+                `-N` keeps read names unmodified (no `/1` `/2` suffixes). Reads with the
+                READ1 flag go to the forward file, READ2 to the reverse file, unpaired
+                reads to the singleton file. Reads with neither READ1 nor READ2 are
+                discarded (they would land in samtools' `-0` stream, which this tool does
+                not emit).
+
+                Input formats deliberately include the BAM datatypes that Galaxy does not
+                treat as subtypes of `bam` (`unsorted.bam`, `qname_input_sorted.bam`,
+                `qname_sorted.bam`): declaring them prevents Galaxy from inserting an
+                automatic `CONVERTER_bam_to_coodinate_sorted_bam` step, whose coordinate
+                sort would destroy the collated order this tool exists to preserve.
+            inputs:
+            - name: input
+              type: data
+              label: Collated BAM or SAM file
+              format:
+              - bam
+              - unsorted.bam
+              - qname_input_sorted.bam
+              - qname_sorted.bam
+              - sam
+              - cram
+              help: Input alignments; use the unsorted or queryname-collated output of samtools collate to keep read order.
+            outputs:
+            - name: forward
+              type: data
+              format: fastqsanger.gz
+              from_work_dir: forward.fastqsanger.gz
+              label: Forward reads (READ1)
+            - name: reverse
+              type: data
+              format: fastqsanger.gz
+              from_work_dir: reverse.fastqsanger.gz
+              label: Reverse reads (READ2)
+            - name: singletons
+              type: data
+              format: fastqsanger.gz
+              from_work_dir: singletons.fastqsanger.gz
+              label: Singleton reads
+          in:
+            input: Collate merged unmapped reads/output_file
+          out:
+          - id: forward
+          - id: reverse
+          - id: singletons
+        cat_fastq_r1:
+          label: Concatenate mate-1 FASTQs
+          doc: Concatenate mapped R1 + unmapped R1 for this sample (source CAT_FASTQ mate 1). Inputs are
+            already fastqsanger.gz; plain concatenation yields a valid multi-member gzip.
+          tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_cat/9.11+galaxy0
+          tool_version: 9.11+galaxy0
+          tool_shed_repository:
+            changeset_revision: 30b60202d990
+            name: text_processing
+            owner: bgruening
+            tool_shed: toolshed.g2.bx.psu.edu
+          in:
+            inputs: Build list of mate-1 FASTQs/output
+          out:
+          - id: out_file1
+        cat_fastq_r2:
+          label: Concatenate mate-2 FASTQs
+          doc: Concatenate mapped R2 + unmapped R2 for this sample (source CAT_FASTQ mate 2).
+          tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_cat/9.11+galaxy0
+          tool_version: 9.11+galaxy0
+          tool_shed_repository:
+            changeset_revision: 30b60202d990
+            name: text_processing
+            owner: bgruening
+            tool_shed: toolshed.g2.bx.psu.edu
+          in:
+            inputs: Build list of mate-2 FASTQs/output
+          out:
+          - id: out_file1
+    in:
+      input_bam: Pick conversion alignments/data_param
+    out:
+    - id: forward
+    - id: reverse
+  build_paired:
+    label: Build paired read collection
+    doc: Zip the per-sample R1 and R2 lists (each mapped out of the conversion subworkflow) into a list:paired
+      collection (forward/reverse identifiers from element names).
+    tool_id: __ZIP_COLLECTION__
+    tool_version: 1.0.0
+    in:
+      input_forward: Convert one sample to FASTQ/forward
+      input_reverse: Convert one sample to FASTQ/reverse
+    out:
+    - id: output
+  fastqc_post:
+    label: FastQC on converted reads
+    doc: Post-conversion FastQC over the list:paired read collection (source FASTQC_POST_CONVERSION, gated
+      by !no_read_QC). Maps over every mate dataset.
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    when: $(inputs.when)
+    in:
+      input_file: Build paired read collection/output
+      when: read_qc
+    out:
+    - id: html_file
+    - id: text_file
+  unzip_paired:
+    label: Unzip paired reads
+    doc: Split the list:paired read collection into forward/reverse lists for paired-consumption tools.
+    tool_id: __UNZIP_COLLECTION__
+    tool_version: 1.0.0
+    in:
+      input: Build paired read collection/output
+    out:
+    - id: forward
+    - id: reverse
+  fastq_info:
+    label: FastQ info
+    doc: fastq-utils info sanity check per mate of the converted reads (gated by !no_read_QC).
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/fastq_info/fastq_info/0.25.3+galaxy0
+    tool_version: 0.25.3+galaxy0
+    tool_shed_repository:
+      changeset_revision: 2bca15e630a4
+      name: fastq_info
+      owner: bgruening
+      tool_shed: toolshed.g2.bx.psu.edu
+    when: $(inputs.when)
+    in:
+      input_option|fastq_1: Unzip paired reads/forward
+      input_option|fastq_2: Unzip paired reads/reverse
+      when: read_qc
+    out:
+    - id: output
+    state:
+      input_option:
+        input_type: paired
+  multiqc:
+    label: MultiQC report
+    doc: Aggregate the post-conversion FastQC reports into a MultiQC report. DEVIATION from source (source
+      MultiQC consumes only versions/params YAML); gated by read_qc (nothing to aggregate when FastQC
+      is skipped).
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+    tool_version: 1.35+galaxy5
+    tool_shed_repository:
+      changeset_revision: 94b6bea727ae
+      name: multiqc
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    when: $(inputs.when)
+    in:
+      results_0|software_cond|output_0|input: FastQC on converted reads/text_file
+      title: multiqc_title
+      when: read_qc
+    out:
+    - id: html_report
+    state:
+      results:
+      - software_cond:
+          software: fastqc
+          output:
+          - type: data
+      title: null
+comments:
+- type: frame
+  position:
+  - 100
+  - 60
+  size:
+  - 420
+  - 200
+  color: blue
+  title: Index alignments
+  contains_steps:
+  - Index alignments
+- type: frame
+  position:
+  - 100
+  - 300
+  size:
+  - 520
+  - 420
+  color: turquoise
+  title: Optional region subsetting
+  contains_steps:
+  - Subset alignments to regions
+  - Index region subsets
+  - Pick conversion alignments
+  - Pick conversion indexes
+- type: frame
+  position:
+  - 100
+  - 760
+  size:
+  - 620
+  - 420
+  color: green
+  title: Pre-conversion QC
+  contains_steps:
+  - Flagstat
+  - Idxstats
+  - Samtools stats
+  - FastQC on alignments
+- type: frame
+  position:
+  - 680
+  - 300
+  size:
+  - 720
+  - 700
+  color: yellow
+  title: BAM/CRAM to FASTQ conversion
+  contains_steps:
+  - Convert one sample to FASTQ
+  - Build paired read collection
+- type: frame
+  position:
+  - 680
+  - 1040
+  size:
+  - 620
+  - 360
+  color: pink
+  title: Post-conversion QC and reporting
+  contains_steps:
+  - FastQC on converted reads
+  - FastQ info
+  - MultiQC report

@@ -1,0 +1,153 @@
+- doc: 'Whole-pipeline conversion of two paired-end sorted BAMs (test, test2) with reference FASTA, read QC and stats enabled. Compares every converted FASTQ against the source pipeline''s own output
+    (staged under test-data/, compared with decompress: true so the gzip container bytes may differ while the decompressed read content must be identical — nf-test snapshot md5s are content md5s of the
+    decompressed files: test_1 9b0c0886..., test_2 40e17982..., test2_1 a4984fb5..., test2_2 bde23801..., all four verified against the local source-pipeline run of commit aa0150e). Also asserts the
+    samtools flagstat/idxstats reports, the samtools stats header counts (md5 replaced — byte identity is not stable across samtools builds/threads, the SN count lines are the snapshot''s meaningful
+    content), content-level checks on the fastq-utils info reports (md5 replaced — the report embeds absolute tmp paths, so only version/scan/error markers are asserted), and collection shapes plus
+    existence of the FastQC and MultiQC outputs. Translated from nf-core/bamtofastq tests/default.nf.test (-profile test) snapshot tests/default.nf.test.snap.'
+  job:
+    alignments:
+      class: Collection
+      collection_type: list
+      elements:
+      - class: File
+        identifier: test
+        location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam
+        filetype: bam
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 0799f89638bddd570439115c606f425c22d189b1
+      - class: File
+        identifier: test2
+        location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam
+        filetype: bam
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 522fb037cea05b9d41dd69647f27a644838bf507
+    fasta:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      filetype: fasta
+      hashes:
+      - hash_function: SHA-1
+        hash_value: 56e7a0c035e2fce8ebe497d3704431d7586fd444
+    read_qc: true
+    stats: true
+    multiqc_title: bamtofastq-glm-fixed-test
+  outputs:
+    paired_reads:
+      class: Collection
+      collection_type: list:paired
+      element_count: 2
+      element_tests:
+        test:
+          class: Collection
+          elements:
+            forward:
+              file: test-data/test_1.merged.fastq.gz
+              compare: diff
+              decompress: true
+            reverse:
+              file: test-data/test_2.merged.fastq.gz
+              compare: diff
+              decompress: true
+        test2:
+          class: Collection
+          elements:
+            forward:
+              file: test-data/test2_1.merged.fastq.gz
+              compare: diff
+              decompress: true
+            reverse:
+              file: test-data/test2_2.merged.fastq.gz
+              compare: diff
+              decompress: true
+    flagstat:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          checksum: md5$a53f3d26e2e9851f7d528442bbfe9781
+        test2:
+          checksum: md5$acbd95030a362a7e6491faa87d1b9c2c
+    idxstats:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          checksum: md5$e179601fa7b8ebce81ac3765206f6c15
+        test2:
+          checksum: md5$90f01313bc89c7fd096aad051cd71b66
+    stats:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+          - has_line:
+              line: "SN\traw total sequences:\t5642\t# excluding supplementary and secondary reads"
+          - has_line:
+              line: "SN\treads mapped:\t5640"
+          - has_line:
+              line: "SN\treads unmapped:\t2"
+          - has_line:
+              line: "SN\treads properly paired:\t5638\t# proper-pair bit set"
+          - has_line:
+              line: "SN\tnon-primary alignments:\t2"
+        test2:
+          asserts:
+          - has_line:
+              line: "SN\traw total sequences:\t5436\t# excluding supplementary and secondary reads"
+          - has_line:
+              line: "SN\treads mapped:\t5436"
+          - has_line:
+              line: "SN\treads unmapped:\t0"
+          - has_line:
+              line: "SN\treads properly paired:\t5434\t# proper-pair bit set"
+          - has_line:
+              line: "SN\tnon-primary alignments:\t0"
+    fastq_info:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+          - has_text_matching:
+              expression: "fastq_utils [0-9.]+"
+          - has_text_matching:
+              expression: "Scanning and indexing all reads from .*"
+          - not_has_text:
+              text: "ERROR"
+        test2:
+          asserts:
+          - has_text_matching:
+              expression: "fastq_utils [0-9.]+"
+          - has_text_matching:
+              expression: "Scanning and indexing all reads from .*"
+          - not_has_text:
+              text: "ERROR"
+    fastqc_post_zip:
+      class: Collection
+      collection_type: list:paired
+      element_count: 2
+      element_tests: {}
+    fastqc_post_html:
+      class: Collection
+      collection_type: list:paired
+      element_count: 2
+      element_tests: {}
+    fastqc_pre_zip:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests: {}
+    fastqc_pre_html:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests: {}
+    multiqc_report:
+      class: File

@@ -1,0 +1,257 @@
+# Bounded slice of IWC data-fetching/sra-manifest-to-concatenated-fastqs @ c07557f.
+# Produced from `gxwf convert --to format2 --compact` (full conversion kept outside the run
+# directory). Manifest-preparation steps are replaced by the inputs SRA_list and relabel_table.
+class: GalaxyWorkflow
+label: sra_manifest_to_concatenated_fastqs_slice
+doc: 'Bounded slice of the IWC workflow data-fetching/sra-manifest-to-concatenated-fastqs (commit c07557f): from
+  per-run split through FASTQ fetch, relabel, identifier grouping and per-read-type concatenation. Manifest preparation
+  is replaced by two inputs.'
+inputs:
+- id: SRA_list
+  type: data
+  optional: false
+  doc: 'Placeholder for the exemplar''s ''Cut to get only SRA'' output: one SRA accession per row.'
+- id: relabel_table
+  type: data
+  optional: false
+  doc: 'Placeholder for the exemplar''s ''generate table for relabelling'' output: SRA ID to sample label.'
+outputs:
+- id: paired_output
+  outputSource: _unlabeled_step_14/paired_output
+- id: single_output
+  outputSource: _unlabeled_step_15/out_file1
+steps:
+- id: split file to get one SRA per file + header
+  label: split file to get one SRA per file + header
+  tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/split_file_to_collection/split_file_to_collection/0.5.2
+  tool_version: 0.5.2
+  tool_shed_repository:
+    changeset_revision: 2dae863c8f42
+    name: split_file_to_collection
+    owner: bgruening
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: split_parms|input
+    source: SRA_list
+  out:
+  - id: list_output_tab
+    hide: true
+  state:
+    split_parms:
+      select_ftype: tabular
+      top: 1
+      split_by:
+        select_split_by: col
+        id_col: 1
+        match_regex: (.*)
+        sub_regex: \1
+  tool_state: null
+  uuid: 4a1ad675-4291-4001-a748-d009299f9d40
+- id: get Fastqs from SRA IDs
+  label: get Fastqs from SRA IDs
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/sra_tools/fasterq_dump/3.1.1+galaxy1
+  tool_version: 3.1.1+galaxy1
+  tool_shed_repository:
+    changeset_revision: 8848455c0270
+    name: sra_tools
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input|file_list
+    source: split file to get one SRA per file + header/list_output_tab
+  out:
+  - id: list_paired
+    hide: true
+  - id: log
+    hide: true
+  - id: output_collection
+    hide: true
+  - id: output_collection_other
+    hide: true
+  tool_state:
+    adv:
+      seq_defline: '@$sn/$ri'
+      minlen: null
+      split: --split-3
+      skip_technical: true
+    input:
+      input_select: file_list
+      __current_case__: 2
+      file_list:
+        __class__: ConnectedValue
+  uuid: fa409017-1eea-4426-83f6-22a10b9f762c
+- id: relabel pair collec to get SRA+sample
+  label: relabel pair collec to get SRA+sample
+  tool_id: __RELABEL_FROM_FILE__
+  tool_version: 1.1.0
+  in:
+  - id: how|labels
+    source: relabel_table
+  - id: input
+    source: get Fastqs from SRA IDs/list_paired
+  out:
+  - id: output
+    hide: true
+  tool_state:
+    how:
+      how_select: tabular
+      __current_case__: 1
+      labels:
+        __class__: ConnectedValue
+      strict: false
+    input:
+      __class__: ConnectedValue
+  uuid: ccdc51b2-444e-4b96-90a0-c7caba6a53e8
+- id: relabel single collec to get SRA+sample
+  label: relabel single collec to get SRA+sample
+  tool_id: __RELABEL_FROM_FILE__
+  tool_version: 1.1.0
+  in:
+  - id: how|labels
+    source: relabel_table
+  - id: input
+    source: get Fastqs from SRA IDs/output_collection
+  out:
+  - id: output
+    hide: true
+  tool_state:
+    how:
+      how_select: tabular
+      __current_case__: 1
+      labels:
+        __class__: ConnectedValue
+      strict: false
+    input:
+      __class__: ConnectedValue
+  uuid: 4efa4ed9-6768-4b1e-82f6-055e97af2d2d
+- id: _unlabeled_step_12
+  tool_id: __APPLY_RULES__
+  tool_version: 1.1.0
+  in:
+  - id: input
+    source: relabel pair collec to get SRA+sample
+  out:
+  - id: output
+    hide: true
+  state:
+    rules:
+      mapping:
+      - columns:
+        - 3
+        - 1
+        editing: false
+        type: list_identifiers
+      - columns:
+        - 2
+        type: paired_identifier
+      rules:
+      - error: null
+        type: add_column_metadata
+        value: identifier0
+        warn: null
+      - error: null
+        type: add_column_metadata
+        value: identifier1
+        warn: null
+      - error: null
+        type: add_column_metadata
+        value: identifier2
+        warn: null
+      - error: null
+        expression: (.*?)___(.*)
+        group_count: null
+        replacement: \2
+        target_column: 0
+        type: add_column_regex
+        warn: null
+  tool_state: null
+  uuid: 9d65a5a8-dedb-4d63-9164-47ceefc746b3
+- id: _unlabeled_step_13
+  tool_id: __APPLY_RULES__
+  tool_version: 1.1.0
+  in:
+  - id: input
+    source: relabel single collec to get SRA+sample
+  out:
+  - id: output
+    hide: true
+  state:
+    rules:
+      mapping:
+      - columns:
+        - 2
+        - 0
+        editing: false
+        type: list_identifiers
+      rules:
+      - error: null
+        type: add_column_metadata
+        value: identifier0
+        warn: null
+      - error: null
+        type: add_column_metadata
+        value: identifier1
+        warn: null
+      - error: null
+        expression: (.*?)___(.*)
+        group_count: null
+        replacement: \2
+        target_column: 0
+        type: add_column_regex
+        warn: null
+  tool_state: null
+  uuid: 3938066e-faa5-469e-96c0-d4ede1fb5f11
+- id: _unlabeled_step_14
+  tool_id: toolshed.g2.bx.psu.edu/repos/artbio/concatenate_multiple_datasets/cat_multi_datasets/1.4.3
+  tool_version: 1.4.3
+  tool_shed_repository:
+    changeset_revision: 5b1b635232ed
+    name: concatenate_multiple_datasets
+    owner: artbio
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: global_condition|inputs
+    source: _unlabeled_step_12
+  out:
+  - id: paired_output
+    rename: Concatenated paired-end
+  tool_state:
+    __input_ext: fastqsanger.gz
+    chromInfo: /opt/galaxy/tool-data/shared/ucsc/chrom/?.len
+    dataset_names: false
+    global_condition:
+      input_type: paired_collection
+      __current_case__: 1
+      inputs:
+        __class__: ConnectedValue
+      paired_cat_type: by_strand
+    headers: '0'
+  uuid: 37b6fecb-1c87-4c41-8598-95d43b418ee0
+- id: _unlabeled_step_15
+  tool_id: toolshed.g2.bx.psu.edu/repos/artbio/concatenate_multiple_datasets/cat_multi_datasets/1.4.3
+  tool_version: 1.4.3
+  tool_shed_repository:
+    changeset_revision: 5b1b635232ed
+    name: concatenate_multiple_datasets
+    owner: artbio
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: global_condition|inputs
+    source: _unlabeled_step_13
+  out:
+  - id: out_file1
+    rename: Concatenated Single-read
+  tool_state:
+    __input_ext: fastqsanger.gz
+    chromInfo: /opt/galaxy/tool-data/shared/ucsc/chrom/?.len
+    dataset_names: false
+    global_condition:
+      input_type: singles
+      __current_case__: 0
+      inputs:
+        __class__: ConnectedValue
+    headers: '0'
+  uuid: 49a70885-3374-4680-bbd2-ad57b8be543d
+tags: []
+license: MIT
+release: '0.11'

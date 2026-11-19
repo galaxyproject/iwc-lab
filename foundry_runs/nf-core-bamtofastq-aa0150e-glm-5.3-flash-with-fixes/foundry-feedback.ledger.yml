@@ -1,0 +1,681 @@
+entries:
+- id: rebuild-threshold-counts-ambiguous
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in:
+    mold: nextflow-summary-to-galaxy-reference-data
+    path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+    revision: 5
+    content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+    foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+  subject:
+    kind: research
+    label: nextflow-to-galaxy-reference-data-mapping
+    locator: content/research/nextflow-to-galaxy-reference-data-mapping/index.md
+    content_hash: 4676cdf3de4bcec6161b6102c9e842efa7b3c953f9c2f2787b4debea48e4a7eb
+  kind: friction
+  severity: minor
+  what: The 'when to deviate from in-tool rebuild' threshold says 'rebuild more than ~3 times' but its
+    example counts consumer steps (a bwa-mem2 index used by 200 alignment steps); for compute-if-missing
+    pipelines like bamtofastq the source rebuilds the .fai exactly once and then consumes it in ~7 downstream
+    samtools calls, so 'rebuild count' (1) and 'consumption count' (7) give opposite answers at the threshold.
+  expected: State whether the threshold counts rebuild invocations or consumer steps, or say 'index shared
+    by many consumer steps should be built once at workflow tier even if the source rebuilds it once'.
+  evidence: Reference-data brief had to reason past the note to choose between a workflow-tier samtools
+    faidx step and in-tool rebuild for a single-rebuild/many-consumer asset.
+  status: open
+  issue: null
+- id: sample-sheet-record-exemplar-gap
+  raised_by: nextflow-summary-to-galaxy-interface
+  observed_in:
+    mold: nextflow-summary-to-galaxy-interface
+    path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+    revision: 5
+    content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+    foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+  subject:
+    kind: research
+    label: galaxy-sample-sheet-collections
+    locator: content/research/galaxy-sample-sheet-collections/index.md
+    content_hash: 8558b5c48e994b1be0f39a09c887b4ad
+  kind: gap
+  severity: minor
+  what: The note documents the sample_sheet:record variant and its mapping rules but gives no worked example
+    of a record-shaped alignment input (bam+cram+index per row), and no guidance on how slots unzip into
+    per-tool inputs; the interface Mold had to invent the slot layout and flag tool-side consumption as
+    unverified.
+  expected: Add a record-variant worked example including how data-flow unzips record slots (Apply Rules
+    / __UNZIP_COLLECTION__) and which built-in tools accept sample_sheet:record inputs.
+  evidence: bamtofastq's samplesheet (mapped bam/cram + optional index) is a natural record case; the
+    brief had to mark slot consumption confidence medium with no corpus anchor.
+  status: open
+  issue: null
+- id: conditional-note-lacks-null-exposing-outputs-guidance
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  observed_in:
+    mold: nextflow-summary-to-galaxy-data-flow
+    path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+    revision: 5
+    content_hash: 5f8e3a24de4b2f6e2c02c09d3c5f1a7e
+    foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+  subject:
+    kind: research
+    label: nextflow-conditional-to-galaxy-subworkflow-when
+    locator: content/research/nextflow-conditional-to-galaxy-subworkflow-when/index.md
+    content_hash: 2c9e9d7e
+  kind: gap
+  severity: minor
+  what: 'The note covers when-gating and pick_value rejoin for consumed outputs but never says what happens
+    when a when-gated step''s output is itself a workflow output (QC toggles like no_stats/params.no_read_QC):
+    the typed null sentinel is surfaced to the user, and the brief had to decide to expose skipped-step
+    outputs as nulls with no guidance.'
+  expected: Add a short section on exposing when-gated steps' outputs as workflow outputs (null sentinel
+    behavior, user-facing consequence, alternatives).
+  evidence: bamtofastq has three when-gated QC/stats step groups whose outputs are the pipeline's main
+    published files; the rejoin machinery did not apply and the note was silent on this case.
+  status: open
+  issue: null
+- id: gxwf-convert-fails-without-tool-cache
+  raised_by: compare-against-iwc-exemplar
+  observed_in:
+    mold: compare-against-iwc-exemplar
+    path: content/molds/compare-against-iwc-exemplar/index.md
+    revision: 5
+    content_hash: 3f5e2c8a
+    foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+  subject:
+    kind: related-project
+    label: galaxy-tool-util-ts gxwf convert
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts/tree/main/packages/cli
+  kind: friction
+  severity: minor
+  what: gxwf convert --to format2 --compact exits 1 (after writing the output file) when any tool is not
+    in its local tool cache ('toolshed.g2.bx.psu.edu/... not in cache'), even though the conversion output
+    is usable for structural comparison; 4/7 steps fell back to unknown_tool.
+  expected: gxwf convert should treat uncacheable tools as a warning and exit 0 when the output file was
+    still produced, or document the cache dependency; the output written despite exit 1 is easy to miss.
+  evidence: 'IWC host-or-contamination-removal-on-short-reads.ga conversion: ''Stateful conversion: 3/7
+    steps converted, 4 fell back'', exit 1, but a 290-line valid YAML written to stdout.'
+  status: open
+  issue: null
+- id: shed-install-rejects-changesets-not-in-install-api
+  raised_by: run-workflow-test
+  observed_in:
+    mold: run-workflow-test
+    path: content/molds/run-workflow-test/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: related-project
+    label: Galaxy Tool Shed install API changeset gating
+    locator: https://github.com/galaxyproject/galaxy (lib/galaxy/tool_shed install, err 400008)
+  kind: friction
+  severity: major
+  what: Workflow tool_shed_repository pins carrying changeset revisions that the install API does not
+    expose are rejected at planemo's install_shed_repos step with err 400008 'No information is available
+    for the requested repository revision'. Two of the draft's pins (samtools_merge 1.22+galaxy2 @ 088f43b55525,
+    samtools_fastx 1.22+galaxy2 @ e3de92741d60) were non-installable changesets; TRS tool-revisions listed
+    the installable ones (37c8eb55315d, 4bde991b8037) that the install API accepts.
+  expected: discover-shed-tool resolves pins via TRS tool-revisions --latest, but that surface can disagree
+    with what the install API exposes; the skill's caveat list (component-tool-shed-search) should name
+    err 400008 and the recovery (re-resolve via TRS tool-revisions, not repo lineage browse), and validate-galaxy-workflow
+    could optionally probe pin installability.
+  evidence: 'Attempts 2-3: planemo install_shed_repos raised ''Failed to install one or more repositories'';
+    --no_cleanup Galaxy log showed the three 400008 errors naming the exact bad changesets.'
+  status: open
+  issue: null
+- id: shed-tool-id-unequal-repo-name-invisible-in-search
+  raised_by: run-workflow-test
+  observed_in:
+    mold: run-workflow-test
+    path: content/molds/run-workflow-test/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: related-project
+    label: Tool Shed repo-name vs tool-id mismatch
+    locator: https://toolshed.g2.bx.psu.edu/view/jackcurragh/ribogalaxy_samtools_index
+  kind: friction
+  severity: major
+  what: A wrapper's XML tool id can differ from its repository name (samtools_index lives in repo ribogalaxy_samtools_index),
+    and gxwf tool-search hits surface the repo name but not this divergence; a draft pin written as owner/repo/samtools_index
+    fails install with err 400008 because the repo does not exist. Repo search (api/repositories?q=samtools_index)
+    found the real repo, but nothing in the search output hinted the mismatch.
+  expected: discover-shed-tool should surface the (owner, repo, tool_id) triple explicitly per hit and
+    warn when tool_id != repo name, so downstream pin authoring does not silently substitute one for the
+    other.
+  evidence: Attempt 3 root cause for the samtools_index install error; fixed by renaming the repo to ribogalaxy_samtools_index
+    in 2 steps' tool_shed_repository blocks.
+  status: open
+  issue: null
+- id: versionless-shed-guid-incompatible-require-exact-versions
+  raised_by: run-workflow-test
+  observed_in:
+    mold: run-workflow-test
+    path: content/molds/run-workflow-test/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: related-project
+    label: Galaxy get_tool(exact=True) vs versionless shed GUIDs
+    locator: https://github.com/galaxyproject/galaxy (lib/galaxy/tool_util/toolbox/base.py get_tool; bioblend
+      invoke_workflow require_exact_tool_versions default True)
+  kind: friction
+  severity: major
+  what: 'gxformat2 drafts whose shed-tool steps carry a versionless tool_id (e.g. toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view)
+    install and validate fine, but planemo''s invocation fails with ''the following required tools are
+    not installed'' when bioblend''s require_exact_tool_versions=True (its default) reaches Galaxy get_tool(exact=True):
+    _tools_by_id keys are full versioned GUIDs, the exact branch has no lineage fallback (elif exact:
+    continue), so the versionless GUID resolves to nothing. Every versioned step passes, which makes the
+    error read as ''nothing installed'' when in fact only the versionless ids are unresolvable.'
+  expected: Either Galaxy should resolve versionless shed GUIDs under exact=True via the tool lineage,
+    or planemo/bioblend should downgrade to non-exact matching with a warning; short of that, advance-galaxy-draft-step
+    or validate-galaxy-workflow should flag versionless shed tool_ids as invocation-fatal under planemo
+    (draft-validate passes them silently today).
+  evidence: 'Attempts 4-5: all 11 shed tools ''not installed'' per the 400 response; DB showed all repos
+    Installed; versioned pick_value steps were absent from the error, isolating the cause. Fixed by rewriting
+    all 19 versionless tool_ids to full GUIDs <shed>/repos/<owner>/<repo>/<tool_id>/<version>.'
+  status: open
+  issue: null
+- id: when-on-optional-input-yields-nonetype
+  raised_by: run-workflow-test
+  observed_in:
+    mold: run-workflow-test
+    path: content/molds/run-workflow-test/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: related-project
+    label: Galaxy evaluate_when requires boolean
+    locator: https://github.com/galaxyproject/galaxy (lib/galaxy/workflow/modules.py evaluate_when; when_not_boolean)
+  kind: friction
+  severity: major
+  what: 'A gxformat2 ''when:'' clause written as $(inputs.chr) over an optional text workflow input evaluates
+    to None when the input is unset, and Galaxy''s evaluate_when raises when_not_boolean (''Type is: NoneType'')
+    at scheduling, failing the whole invocation. The conditional/when notes document when-gating but not
+    that the expression must itself coerce to a boolean for optional inputs.'
+  expected: 'The conditional-pattern note (or draft-validate) should state that when: expressions over
+    optional inputs must be explicit boolean coercions, e.g. $(inputs.chr != null), and ideally draft-validate
+    should flag identity when-expressions over optional inputs.'
+  evidence: 'Attempt 6: invocation failed at the first chr-gated step with when_not_boolean Type is: NoneType;
+    fixed by rewriting both chr-gated steps'' when to $(inputs.chr != null).'
+  status: open
+  issue: null
+phases:
+- n: 1
+  skill: summarize-nextflow
+  status: done
+  iterations: 0
+  feedback_checked: true
+- n: 2
+  skill: nextflow-summary-to-galaxy-reference-data
+  status: done
+  iterations: 0
+  feedback_checked: true
+- n: 3
+  skill: nextflow-summary-to-galaxy-interface
+  status: done
+  iterations: 0
+  feedback_checked: true
+- n: 4
+  skill: nextflow-summary-to-galaxy-data-flow
+  status: done
+  iterations: 0
+  feedback_checked: true
+- n: 5
+  skill: compare-against-iwc-exemplar
+  status: done
+  iterations: 0
+  feedback_checked: true
+- n: 6
+  skill: nextflow-summary-to-galaxy-template
+  status: done
+  iterations: 0
+  feedback_checked: true
+- n: 7
+  skill: advance-galaxy-draft-step
+  status: done
+  iterations: 14
+  feedback_checked: true
+- n: 8
+  pattern: test-data-resolution
+  status: done
+  iterations: 0
+  feedback_checked: true
+  selected: nextflow-to-test-data
+- n: 9
+  skill: nextflow-test-to-galaxy-test-plan
+  status: done
+  iterations: 0
+  feedback_checked: true
+- id: test-plan-jobinput-lacks-element-fixtures
+  raised_by: nextflow-test-to-galaxy-test-plan
+  observed_in:
+    mold: nextflow-test-to-galaxy-test-plan
+    path: content/molds/nextflow-test-to-galaxy-test-plan/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: research
+    label: galaxy-workflow-test-plan
+    locator: packages/gxwf-foundry/src/schemas/galaxy-workflow-test-plan/galaxy-workflow-test-plan.schema.json
+  kind: gap
+  severity: minor
+  what: JobInput in galaxy-workflow-test-plan has no per-element fixture slots, though the sibling test-data-refs
+    schema does carry Element fixtures (and tests-format job inputs accept collection element fixtures).
+    A collection input whose elements resolve from different declared fixtures must therefore squeeze
+    all element URLs+hashes into the free-text description, which implement-galaxy-workflow-test then
+    has to re-parse.
+  expected: Give JobInput an optional elements[] (identifier + fixture) mirroring test-data-refs Element,
+    so collection inputs bind element-level fixtures structurally.
+  evidence: 'alignments ref: two element fixtures with distinct SHA-1s; schema rejected the elements property
+    (additionalProperties) and the plan had to inline them in description text.'
+  status: open
+  issue: null
+- n: 10
+  skill: implement-galaxy-workflow-test
+  status: done
+  iterations: 0
+  feedback_checked: true
+- id: tests-file-must-be-array-undocumented
+  raised_by: implement-galaxy-workflow-test
+  observed_in:
+    mold: implement-galaxy-workflow-test
+    path: content/molds/implement-galaxy-workflow-test/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: research
+    label: tests-format
+    locator: packages/gxwf-foundry/src/schemas/tests-format/tests-format.schema.json
+  kind: friction
+  severity: minor
+  what: 'The tests-format schema''s top level is type: array (list of TestJob) with no title/description
+    saying so; authoring a single test object from the plan fails with only ''must be array''. The implement
+    skill''s procedure never states the file is a list of test cases.'
+  expected: State in the skill (or schema title) that galaxy-workflow.gxwf-tests.yml contains a YAML list
+    of test entries, one per planned test case.
+  evidence: First static validation failed 'must be array' for a single-object document.
+  status: open
+  issue: null
+- n: 11
+  skill: validate-galaxy-workflow
+  status: done
+  iterations: 0
+  feedback_checked: true
+- n: 12
+  skill: run-workflow-test
+  status: pending
+  iterations: 0
+  feedback_checked: false
+- n: 13
+  skill: debug-galaxy-workflow-output
+  status: pending
+  iterations: 0
+  feedback_checked: false
+feedback:
+- id: fb-001
+  phase: 1
+  subject: cast/skills/summarize-nextflow
+  observation: The skill says "summarize each process script_excerpt in one line into script_summary"
+    but also allows omitting it in deterministic runs; the schema requires no script_summary field at
+    all (Process.script_summary is optional, not in required list) yet the skill text says "Deterministic
+    runs omit script_summary" - we chose to emit LLM-written script_summary for all 13 processes since
+    the harness runs the skill itself. No conflict resolved by docs; ambiguity logged.
+  status: drafted
+- id: fb-006
+  phase: 6
+  subject: cast/skills/nextflow-summary-to-galaxy-template
+  observation: The data-flow brief carries the authoritative input amendments (sample_sheet:record ->
+    plain list, fasta_fai dropped, collate_fast dropped, single-end path dropped), but nothing in the
+    template skill's procedure tells the templating agent to re-read the interface brief against the data-flow
+    amendments before emitting workflow inputs; the interface brief's I1 `sample_sheet:record` shape was
+    superseded but never annotated as such, so the superseded artifact still reads as authoritative for
+    the input shape.
+  expected: Template skill should state explicitly that data-flow-brief input amendments supersede the
+    interface brief where they conflict, and the interface brief template should require an amendment
+    banner.
+  status: drafted
+- id: fb-007
+  phase: 6
+  subject: cast/skills/nextflow-summary-to-galaxy-template
+  observation: 'The conditionals pattern page says steps ''receive a boolean through an input named when
+    and declare when: $(inputs.when)'' — i.e. the boolean arrives via a connected step output. The IWC
+    exemplar confirms this (when fed from map_param_value/output_param_boolean). Gating directly on a
+    workflow-level boolean input with `when: $(inputs.chr)` is the natural translation for already-boolean
+    params (no map_param_value indirection needed), but no pattern page or exemplar shows that direct
+    form, so the template had to record a fallback (_plan_context: insert map_param_value if direct workflow-input
+    when fails at runtime).'
+  expected: A pattern page or note covering when-gating directly on workflow boolean inputs (and whether
+    the runtime supports it), so the template tier does not have to hedge.
+  status: drafted
+- id: fb-008
+  phase: 6
+  subject: cast/skills/nextflow-summary-to-galaxy-template
+  observation: The per-tool-step _plan_* families are free text; nothing constrains them to cover the
+    things the per-step loop actually needs (wrapper-port names, filter-flag binding for samtools view's
+    -f/-F, multiple-input merge linkage). Two drafts would plausibly record the same intent in disjoint
+    vocabulary. Open-work note in the draft-format doc admits this; surfaced here because this run wrote
+    18 _plan_state/_plan_context blocks by hand and the vocab drifted (e.g. 'TODO_input' vs 'TODO_input_1'
+    vs 'TODO_index' for the same semantic 'alignment index' role).
+  expected: A suggested _plan_in/_plan_out vocabulary (the draft-format doc's open-work candidates) so
+    _plan_* blocks are comparable across drafts.
+  status: drafted
+- id: conditional-state-grammar-undocumented
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: related-project
+    label: galaxy-tool-util-ts gxwf draft-validate connection keys
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts/tree/main/packages/cli
+  kind: gap
+  severity: major
+  what: 'The connection-key grammar for nested conditionals is nowhere documented: state and connection
+    keys must be FLAT within a conditional (branch params are siblings of the test parameter; case names
+    never appear), sections DO appear in the path, repeats get a _N suffix. I burned ~1h and 5 wrong spellings
+    (mode|selected_reads|filter_config|cond_region|regions etc.) before reading the validator source (schema/dist/workflow/walker.js,
+    state-merge.js) to derive it. The pick_value precedent (style_cond|type_cond|pick_from_0|value) misleadingly
+    suggests case names are skipped AND sections are skipped, but sections are in fact included — the
+    two examples share only the coincidence that both end in a leaf reached through conditionals/repeats.'
+  expected: 'The draft-format note or the advance skill should state the grammar explicitly (conditional:
+    flat sibling state; section: named in path; repeat: _N suffix) with a nested conditional+section worked
+    example (samtools_view is the canonical one).'
+  evidence: 'samtools_view_chr regions connection: 4 wrong spellings rejected with ''No parameter definition
+    matching connection key''; the correct mode|filter_config|cond_region|regions only fell out after
+    reading walker.js selectWhichWhen (case names are never in state).'
+  status: open
+  issue: null
+- id: wrapper-selects-use-individual-flag-bits
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: research
+    label: galaxy-tool-job-failure-reference
+    locator: content/research/galaxy-tool-job-failure-reference/index.md
+  kind: gap
+  severity: minor
+  what: Samtools wrapper filter selects (samtools_view inclusive/exclusive_filter, samtools_fastx inclusive/exclusive_filter)
+    are multi-selects of INDIVIDUAL flag bits (1,2,4,8,...), not numeric masks; a _plan_state carrying
+    the source's combined ext.args masks (-F12, -F264) drafts a state the validator rejects element-wise
+    ('Expected "1", actual "12"'). Nothing in the skill or notes warns that ext.args flag masks must be
+    bit-decomposed for Galaxy multi-selects.
+  expected: 'A note in the implement skill or job-failure reference: decompose samtools -f/-F masks into
+    individual bits for the wrappers'' multi-select ports (12 -> [4,8], 264 -> [4,256], etc.).'
+  evidence: Four view-split steps plus samtools_view_chr all needed bit-decomposition; first validation
+    failed with per-element 'Expected <bit>, actual <mask>' errors.
+  status: open
+  issue: null
+- id: builtin-collection-tool-versions-not-in-cache
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: related-project
+    label: galaxy-tool-util-ts gxwf draft-validate built-ins
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts/tree/main/packages/cli
+  kind: friction
+  severity: minor
+  what: __ZIP_COLLECTION__ with an invented tool_version 0.1.0 fails validation ('not in cache (fetch
+    failed)') but with 1.0.0 (read from an IWC exemplar .ga) validates; __UNZIP_COLLECTION__ likewise.
+    The draft-format note says stock-tool versions must not be hand-guessed but gives no source for built-in
+    tool versions other than hunting exemplars.
+  expected: Document the canonical versions of the built-in collection tools (e.g. __ZIP_COLLECTION__/__UNZIP_COLLECTION__
+    = 1.0.0) in the draft-format note or have the validator skip version resolution for built-ins.
+  evidence: 'build_paired: 0.1.0 -> skip_tool_not_found; 1.0.0 (exemplar-sourced) -> ok.'
+  status: open
+  issue: null
+- id: fb-title-runtime-template-rejected
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: related-project
+    label: galaxy-tool-util-ts gxwf draft-validate state templates
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts/tree/main/packages/cli
+  kind: friction
+  severity: minor
+  what: 'Putting a runtime template in tool state (title: ''{{ inputs.multiqc_title }}'') fails strict-state
+    validation (''Expected { string | filter }''), yet the in-connection (title: multiqc_title) is the
+    only documented mechanism; whether the runtime substitutes the connected string into an optional text
+    param is untested until planemo.'
+  expected: Guidance on how workflow string inputs bind to optional text params in state vs connection
+    (the validator's error message hints at a filter form but documents none).
+  evidence: 'multiqc title: template string rejected; connection-only accepted by draft-validate.'
+  status: open
+  issue: null
+- id: fb-idxstats-index-port-assumption
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: research
+    label: nextflow-to-galaxy-reference-data-mapping
+    locator: content/research/nextflow-to-galaxy-reference-data-mapping/index.md
+  kind: friction
+  severity: minor
+  what: The reference-data brief's compute-if-missing classification drove a planned index thread into
+    idxstats ('the wrapper needs the alignment index — bind the wired index dataset there'), but the actual
+    devteam samtools_idxstats 2.0.8 wrapper takes a single bam/cram input and no index port (it locates
+    the index itself). The _plan_in vocabulary encouraged port guesses that summarization then contradicts;
+    the pattern repeats for fasta_fai (dropped earlier for the same reason).
+  expected: Note that several samtools wrappers embed index handling internally (idxstats, fastx, merge)
+    — plan index threading only where the summary shows a reference/index input.
+  evidence: _plan_in predicted 'input/index conditional'; summary showed one gx_data input.
+  status: open
+  issue: null
+- id: gxformat2-connections-reference-labels-not-step-keys
+  raised_by: run-workflow-test
+  observed_in:
+    mold: run-workflow-test
+    path: content/molds/run-workflow-test/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: related-project
+    label: gxformat2 python_to_workflow label registration
+    locator: https://github.com/galaxyproject/gxformat2 (normalized/_conversion.py _register_labels)
+  kind: friction
+  severity: major
+  what: 'gxformat2''s _register_labels registers ''step.label or step.id'' — a draft whose connections
+    (and comments.contains_steps) reference step KEYS instead of labels passes every gxwf draft-validate/validate
+    gate and to_native-less checks, then planemo crashes at import with ValueError: invalid literal for
+    int() with base 10: ''<step_key>''. Step keys are not resolvable as connection sources; the whole
+    connection graph must be label-anchored before planemo can import it.'
+  expected: The draft-format note (or draft-validate itself) should state that connection sources and
+    outputSource must reference step labels (or numeric ids), not YAML step keys — and ideally draft-validate
+    should flag key-based sources so the failure surfaces before a planemo run.
+  evidence: '23-step draft: gxwf validate exit 0 (23/23 ok), to_native-less checks green, yet planemo
+    attempt 1 crashed in 24s at ctx.step_id(''samtools_view_chr''); after rewriting all sources to labels,
+    to_native converts cleanly (30 native steps).'
+  status: open
+  issue: null
+- id: multiple-data-input-multi-connection-flattens-in-mapped-subworkflow
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: related-project
+    label: galaxy workflow run.py replacement_for_input
+    locator: lib/galaxy/workflow/run.py (replacement_for_input, multiple=true dataset branch)
+  kind: gap
+  severity: major
+  what: 'A multiple=true data input wired to MULTIPLE upstream connections inside an inline subworkflow
+    mapped over a list does NOT group per sample: replacement_for_input returns a flat Python list of
+    HDCAs, which is not a DatasetCollectionInstance, so map_over skips it and the tool runs ONCE consuming
+    every cross-sample dataset (attempt 10: samtools_merge merged 6 BAMs from both samples in one job;
+    tp_cat likewise). Draft-validate and validate-tests cannot see this — the connection graph is shape-valid.'
+  expected: 'The draft-format or collection-semantics note should warn that per-sample grouping for
+    reduction tools (merge, cat, concat) inside mapped subworkflows requires a single-connection input —
+    and document the __BUILD_LIST__ pattern (build a list step inside the subworkflow, rewire the reduction
+    to its single output) as the fix. The pattern needs repeat-instance state declared explicitly
+    (datasets: [{},{}...]) because add_dummy_datasets only marks ConnectedValue for repeat instances already
+    present in state and the planemo import path skips fill_defaults.'
+  evidence: 'attempt-10 invocation c8a02c757cc9888e: merge job count 1 (expected 2), command linked
+    0.sam..5.sam; after __BUILD_LIST__ rewire the design verifies end-to-end against map_over/matching/
+    structure source (read-only).'
+  status: open
+  issue: null
+- id: empty-state-overrides-multiple-select-form-default
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: implement-galaxy-tool-step
+    path: content/molds/implement-galaxy-tool-step/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: related-project
+    label: galaxy tool form-default vs stored empty selection
+    locator: lib/galaxy/tools/parameters (select multiple with pre-selected default values)
+  kind: gap
+  severity: major
+  what: 'Writing an explicit EMPTY selection (exclusive_filter: []) for a multiple select whose wrapper
+    form pre-selects values (samtools_fastx exclusive_filter defaults to 256+2048) overrides the form
+    default with nothing: the executed command ran -F 0 instead of -F 0x900, emitting secondary/supplementary
+    reads into R1/R2 and producing duplicated sequence ids that fastq_utils rejected. The runtime-state
+    guidance ("declare every leaf to avoid upgrade messages") pushes authors toward enumerating ALL
+    parameters, including ones that should keep their form defaults.'
+  expected: The implement step guidance should distinguish "declare conditional/select CASES to satisfy
+    upgrade-message completeness" from "declare leaf VALUES" — for multiple selects with form defaults,
+    either omit the leaf (form default applies) or copy the wrapper''s pre-selected values explicitly;
+    an empty list is a meaningful, usually wrong, override.
+  evidence: attempt-10 fastx command line `-F 0`; fastq_info ERROR duplicated sequence testN:2775/;
+    after exclusive_filter ['256','2048'] the design matches the source -F 0x900.
+  status: open
+  issue: null
+- id: builtin-build-list-version-duality
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: related-project
+    label: planemo DISTRO_TOOLS_ID_TO_PATH __BUILD_LIST__
+    locator: planemo/galaxy/distro_tools.py (build_list.xml 1.1.0 + build_list_1.2.0.xml)
+  kind: friction
+  severity: minor
+  what: 'The __BUILD_LIST__ builtin ships as TWO versions with different input shapes (1.1.0: plain
+    repeat; 1.2.0: adds id_cond idx/identifier/manual), and gxwf tool-cache/draft tooling does not say
+    which one a bare tool_id resolves to. A workflow pinning tool_version 1.1.0 works in both planemo and
+    galaxy-arash, but pinning 1.2.0 state keys (id_cond) against an environment resolving to 1.1.0 fails
+    at runtime, and vice versa the 1.2.0 identifier mode is undocumented in most IWC workflows.'
+  expected: Note in the collection-ops guidance that __BUILD_LIST__ has a version duality and recommend
+    pinning 1.1.0 (idx identifiers, simpler state) unless identifier-mode control is needed; the stock-tool
+    version-resolution note should mention distro tools are version-pinned per environment.
+  evidence: gxwf tool-cache list showed no __BUILD_LIST__ entry by default; DISTRO_TOOLS_ID_TO_PATH maps
+    the id to both XMLs.
+  status: open
+  issue: null
+- id: samtools-fastx-internal-sort-defeats-upstream-collate-order
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: debug-galaxy-workflow-output
+    path: content/molds/debug-galaxy-workflow-output/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: related-project
+    label: iuc samtools_fastx wrapper internal samtools sort -n
+    locator: toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx changeset 4bde991b8037 (samtools_fastx.xml command block)
+  kind: friction
+  severity: major
+  what: 'The samtools_fastx wrapper silently prepends `samtools sort -n` unless its input dataset is
+    typed qname_sorted.bam or qname_input_sorted.bam. A workflow chaining samtools_collate (which
+    declares output unsorted.bam, header SO:unsorted) directly into samtools_fastx to reproduce a
+    `collate -O | fastq` source chain gets numeric name-sorted order instead of collate hash order —
+    a silent read-ordering divergence that changes FASTQ content md5s while leaving counts identical.
+    No packaged reference covers wrapper-internal reordering: it looks like a collection/mapping issue
+    but is neither, and the fix (output-level change_datatype to qname_input_sorted.bam, which never
+    sniffs and whose grooming check passes for SO:unsorted) is non-obvious.'
+  expected: A debugging reference on "wrapper-internal preprocessing vs upstream step ordering" —
+    tools that run their own sort/grooming based on input datatype — listing the is_of_type-gated
+    wrappers (fastx) and the change_datatype post-job-action remedy with its gxformat2 output-level
+    `change_datatype:` spelling.
+  evidence: attempt-11 forward md5 29e442f7 vs expected 9b0c0886 with identical read counts; collate
+    output header SO:unsorted GO:query; fastx.xml `#if not $input.is_of_type(...)` guard. (Correction
+    03:30: the "local replication reproduces the snapshot md5s exactly" claim was false — none of the
+    local chains produced the snapshot values; the real explanation is content-md5 semantics, see
+    nftest-md5-tokens-are-content-md5s below.)
+  status: open
+  issue: null
+- id: samtools-bamnative-not-bam-subclass-triggers-auto-converter
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: debug-galaxy-workflow-output
+    path: content/molds/debug-galaxy-workflow-output/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: related-project
+    label: Galaxy datatype registry auto-converter insertion on BamNative/Bam class gap
+    locator: lib/galaxy/datatypes/binary.py (BamNative 630, Bam 902), data.py matches_any 1027, registry.py find_conversion_destination 965
+  kind: friction
+  severity: major
+  what: 'samtools_collate declares its output unsorted.bam (class BamNative) while samtools_fastx
+    declares its input format sam,bam,cram (class Bam). In Galaxy''s datatype hierarchy `class Bam(BamNative)`
+    makes BamNative the PARENT of Bam, so the isinstance-based matches_any check fails for every collate
+    output, and Galaxy silently inserts a CONVERTER_bam_to_coodinate_sorted_bam job (a coordinate sort)
+    between the two steps, destroying the collate order before the wrapper ever runs. The downstream
+    remedy (output change_datatype to qname_input_sorted.bam) cannot prevent this — the converter runs
+    on the pre-PJA dataset — and the wrapper-side remedy is a catch-22 (plain bam typing re-enables the
+    wrapper''s internal sort -n; qname typing still triggers the converter). Diagnosis required reading
+    Galaxy source; the wrapper-level symptom (identical wrong md5s with identical counts) looks exactly
+    like a collection-ordering bug and no packaged reference names auto-converter insertion as a debug
+    surface.'
+  expected: A debugging reference on "Galaxy-inserted converter jobs" — how to spot them in planemo logs
+    (CONVERTER_* job entries), the matches_any/isinstance datatype-class gap as a cause (BamNative vs Bam,
+    and generally any parent-class-declared output feeding a child-class-declared input), and the UDT
+    remedy (declare the parent/alternate datatypes in the consuming tool''s accepted format list).
+  evidence: attempt-11 and attempt-12 planemo logs both show 4 CONVERTER_bam_to_coodinate_sorted_bam jobs;
+    converter command samtools sort --no-PG -O bam; fix (embedded UDT accepting unsorted.bam) removes them.
+  status: open
+  issue: null
+
+- id: nftest-md5-tokens-are-content-md5s
+  raised_by: run-workflow-test / debug-galaxy-workflow-output
+  observed_in:
+    mold: nextflow-test-to-galaxy-test-plan
+    path: content/molds/nextflow-test-to-galaxy-test-plan/index.md
+    revision: 5
+    foundry_head: f99f830e5cca9a46c3c02b7eb34e43f516702f11
+  subject:
+    kind: research
+    label: packaged snapshot-translation note does not state that nf-test md5 tokens for compressed files are content md5s
+  kind: gap
+  severity: major
+  what: 'The packaged note nextflow-snapshot-to-galaxy-assertions was used to translate nf-test snapshot
+    `path:md5,<value>` tokens into Galaxy `checksum: md5$<value>` assertions, but for compressed outputs
+    (merged.fastq.gz) the nf-test token is the md5 of the DECOMPRESSED content, not of the file bytes
+    (nf-test hashes logical content for compressed formats, the same family as bam(...).readsMD5). The
+    resulting Galaxy checksum assertion compared gzip file bytes against content md5s and failed
+    spuriously across attempts 10-13, launching a wrong hunt for an ordering divergence that did not
+    exist. Ground truth: a local source-pipeline run produced file md5s 15ab79e3/2c2dbdf1/d0fd4034/bcb8df2c
+    and content md5s 9b0c0886/40e17982/a4984fb5/bde23801 = exactly the four snapshot values.'
+  expected: The snapshot-translation note should state the semantics of `md5,` tokens for compressed
+    files (content, not container bytes) and the Galaxy-side remedy: stage the source-produced file in
+    test-data and assert with `file:` + `compare: diff` + `decompress: true` (tests-format schema) instead
+    of a file-byte checksum.
+  evidence: zcat of the source pipeline's four merged fastq.gz outputs gives exactly the snapshot md5s;
+    their file md5s differ; nf-core CI snapshot at c07661c (2026-11-12) carries identical FASTQ values.
+  status: open
+  issue: null

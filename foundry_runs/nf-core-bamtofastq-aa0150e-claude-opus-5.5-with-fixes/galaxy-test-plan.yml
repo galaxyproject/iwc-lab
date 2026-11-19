@@ -1,0 +1,323 @@
+plan_version: '1'
+source:
+  kind: nextflow
+  name: nf-core/bamtofastq @ aa0150e
+  derived_from: test-evidence
+  notes: 'Translated from tests/default.nf.test (-profile test) and tests/default.nf.test.snap. Snapshot captures: succeeded task count (32), versions YAML, stable_name list, stable_path md5s, BAM/CRAM readsMD5 (none present).'
+workflow:
+  title: nf-core/bamtofastq (Galaxy translation)
+  label_source: draft
+  notes: labels read from galaxy-workflow.gxwf.yml
+test_cases:
+- id: default-profile-test
+  doc: 'nf-core/bamtofastq -profile test: two paired-end BAMs (test, test2) + genome.fasta; defaults (run_read_qc and run_stats true).'
+  derived_from: mixed
+  provenance: 'tests/default.nf.test::-profile test (summary test_selection: selected, primary)'
+  job_inputs:
+  - workflow_label: alignments
+    label_status: resolved
+    description: list of 2 BAMs keyed by samplesheet sample_id
+    collection_shape: list
+    datatype: bam
+    fixture:
+      storage: remote-url
+      location: null
+      checksum: null
+      provenance: 'elements from test-data-refs.json (alignments): test=https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam (SHA-1:0799f89638bddd570439115c606f425c22d189b1), test2=https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam (SHA-1:522fb037cea05b9d41dd69647f27a644838bf507)'
+  - workflow_label: reference_fasta
+    label_status: resolved
+    description: reference genome FASTA (params.fasta)
+    collection_shape: null
+    datatype: fasta
+    fixture:
+      storage: remote-url
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/refs/heads/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      checksum: SHA-1:56e7a0c035e2fce8ebe497d3704431d7586fd444
+      provenance: params.fasta in tests/default.nf.test when{} block
+  - workflow_label: run_read_qc
+    label_status: resolved
+    description: default true (no --no_read_QC)
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: workflow default; scalar
+  - workflow_label: run_stats
+    label_status: resolved
+    description: default true (no --no_stats)
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: workflow default; scalar
+  expected_outputs:
+  - workflow_label: samtools_flagstat
+    label_status: resolved
+    description: samtools flagstat per sample; nf-test stable_path md5 (samtools/<id>.flagstat)
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: flagstat text identical to nf-test snapshot samtools/test.flagstat
+      expected_value: md5$a53f3d26e2e9851f7d528442bbfe9781
+      tolerance: null
+      element_identifier: test
+      evidence: test-evidence
+      confidence: medium
+    - family: checksum
+      intent: flagstat text identical to nf-test snapshot samtools/test2.flagstat
+      expected_value: md5$acbd95030a362a7e6491faa87d1b9c2c
+      tolerance: null
+      element_identifier: test2
+      evidence: test-evidence
+      confidence: medium
+  - workflow_label: samtools_idxstats
+    label_status: resolved
+    description: samtools idxstats per sample; nf-test stable_path md5 (samtools/<id>.idxstats)
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: idxstats table identical to nf-test snapshot samtools/test.idxstats
+      expected_value: md5$e179601fa7b8ebce81ac3765206f6c15
+      tolerance: null
+      element_identifier: test
+      evidence: test-evidence
+      confidence: medium
+    - family: checksum
+      intent: idxstats table identical to nf-test snapshot samtools/test2.idxstats
+      expected_value: md5$90f01313bc89c7fd096aad051cd71b66
+      tolerance: null
+      element_identifier: test2
+      evidence: test-evidence
+      confidence: medium
+  - workflow_label: samtools_stats
+    label_status: resolved
+    description: 'samtools stats per sample. nf-test md5 not translatable: the file embeds the samtools version and command line (Galaxy wrapper samtools differs from 1.23.1 and uses Galaxy dataset paths).'
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_text
+      intent: SN raw total sequences equals primary reads of the fixture BAM
+      expected_value: "raw total sequences:\t5642"
+      tolerance: null
+      element_identifier: test
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: SN raw total sequences equals primary reads of the fixture BAM
+      expected_value: "raw total sequences:\t5436"
+      tolerance: null
+      element_identifier: test2
+      evidence: fixture-derived
+      confidence: high
+  - workflow_label: fastq_paired
+    label_status: resolved
+    description: 'converted paired FASTQ (reads/<id>_{1,2}.merged.fastq.gz). nf-test md5 tokens hash decompressed content but read order differs (Galaxy samtools_fastx name-sorts; source collates) and Galaxy checksum hashes gzip bytes, so content is asserted by line count with decompress: true.'
+    output_kind: collection
+    collection_shape: list:paired
+    assertion_intent:
+    - family: has_n_lines
+      intent: forward mate FASTQ (decompressed) has 4 lines per read; reads = primary READ1 records in fixture BAM (2821)
+      expected_value: 11284
+      tolerance: null
+      element_identifier: test/forward
+      evidence: fixture-derived
+      confidence: high
+    - family: has_n_lines
+      intent: reverse mate FASTQ (decompressed) has 4 lines per read; reads = primary READ2 records in fixture BAM (2821)
+      expected_value: 11284
+      tolerance: null
+      element_identifier: test/reverse
+      evidence: fixture-derived
+      confidence: high
+    - family: has_line_matching
+      intent: first record header carries /1 (samtools fastq -N) on forward mate
+      expected_value: ^@.+/1$
+      tolerance: null
+      element_identifier: test/forward
+      evidence: intent
+      confidence: medium
+    - family: has_n_lines
+      intent: forward mate FASTQ (decompressed) has 4 lines per read; reads = primary READ1 records in fixture BAM (2718)
+      expected_value: 10872
+      tolerance: null
+      element_identifier: test2/forward
+      evidence: fixture-derived
+      confidence: high
+    - family: has_n_lines
+      intent: reverse mate FASTQ (decompressed) has 4 lines per read; reads = primary READ2 records in fixture BAM (2718)
+      expected_value: 10872
+      tolerance: null
+      element_identifier: test2/reverse
+      evidence: fixture-derived
+      confidence: high
+    - family: has_line_matching
+      intent: first record header carries /1 (samtools fastq -N) on forward mate
+      expected_value: ^@.+/1$
+      tolerance: null
+      element_identifier: test2/forward
+      evidence: intent
+      confidence: medium
+  - workflow_label: fastq_info_paired
+    label_status: resolved
+    description: fastq_info validation report per pair. nf-test md5 is of a pipeline echo line, not the report, so not translatable.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_line
+      intent: fastq_info reports the pair valid
+      expected_value: OK
+      tolerance: null
+      element_identifier: test
+      evidence: intent
+      confidence: medium
+    - family: has_line
+      intent: fastq_info read count matches fixture R1 count
+      expected_value: 'Number of reads: 2821'
+      tolerance: null
+      element_identifier: test
+      evidence: fixture-derived
+      confidence: medium
+    - family: has_line
+      intent: fastq_info reports the pair valid
+      expected_value: OK
+      tolerance: null
+      element_identifier: test2
+      evidence: intent
+      confidence: medium
+    - family: has_line
+      intent: fastq_info read count matches fixture R1 count
+      expected_value: 'Number of reads: 2718'
+      tolerance: null
+      element_identifier: test2
+      evidence: fixture-derived
+      confidence: medium
+  - workflow_label: fastqc_post_paired_raw
+    label_status: resolved
+    description: FastQC raw data per mate after conversion (nf-test lists fastqc/<id>.post_conversion_{1,2}_fastqc.{html,zip} names only; contents .nftignore-d)
+    output_kind: collection
+    collection_shape: list:paired
+    assertion_intent:
+    - family: has_text
+      intent: FastQC total sequences for forward mate equals fixture read count
+      expected_value: "Total Sequences\t2821"
+      tolerance: null
+      element_identifier: test/forward
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: FastQC total sequences for reverse mate equals fixture read count
+      expected_value: "Total Sequences\t2821"
+      tolerance: null
+      element_identifier: test/reverse
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: FastQC total sequences for forward mate equals fixture read count
+      expected_value: "Total Sequences\t2718"
+      tolerance: null
+      element_identifier: test2/forward
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: FastQC total sequences for reverse mate equals fixture read count
+      expected_value: "Total Sequences\t2718"
+      tolerance: null
+      element_identifier: test2/reverse
+      evidence: fixture-derived
+      confidence: high
+  - workflow_label: fastqc_pre_raw
+    label_status: resolved
+    description: FastQC on the input BAM (names only in nf-test)
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_text
+      intent: FastQC report header present (type check only)
+      expected_value: '##FastQC'
+      tolerance: null
+      element_identifier: test
+      evidence: intent
+      confidence: low
+    - family: has_text
+      intent: FastQC report header present (type check only)
+      expected_value: '##FastQC'
+      tolerance: null
+      element_identifier: test2
+      evidence: intent
+      confidence: low
+  - workflow_label: fastqc_pre_html
+    label_status: resolved
+    description: 'FastQC HTML report (nf-test: name only, .nftignore excludes content)'
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_text
+      intent: HTML report generated (type check only)
+      expected_value: FastQC Report
+      tolerance: null
+      element_identifier: test
+      evidence: intent
+      confidence: low
+    - family: has_text
+      intent: HTML report generated (type check only)
+      expected_value: FastQC Report
+      tolerance: null
+      element_identifier: test2
+      evidence: intent
+      confidence: low
+  - workflow_label: fastqc_post_paired_html
+    label_status: resolved
+    description: 'FastQC HTML report (nf-test: name only, .nftignore excludes content)'
+    output_kind: collection
+    collection_shape: list:paired
+    assertion_intent:
+    - family: has_text
+      intent: HTML report generated (type check only)
+      expected_value: FastQC Report
+      tolerance: null
+      element_identifier: test/forward
+      evidence: intent
+      confidence: low
+    - family: has_text
+      intent: HTML report generated (type check only)
+      expected_value: FastQC Report
+      tolerance: null
+      element_identifier: test2/forward
+      evidence: intent
+      confidence: low
+unresolved: []
+omissions:
+- target: fastq_single_end, fastqc_post_single_html, fastqc_post_single_raw, fastq_info_single
+  reason: single-end branch is empty for the default test (both samples paired); asserting empty collections is not supported cleanly. Covered upstream only by tests/no_bai.nf.test (test3 single-end), not translated.
+  category: out-of-scope
+- target: succeeded_task_count (32)
+  reason: Nextflow invocation metadata; Galaxy asserts invocation success at invocation level
+  category: other
+- target: pipeline_info/nf_core_bamtofastq_software_mqc_versions.yml
+  reason: versions YAML not produced in Galaxy (dropped)
+  category: out-of-scope
+- target: multiqc/* (multiqc_citations.txt md5 4c806e63...)
+  reason: MultiQC dropped from translation
+  category: out-of-scope
+- target: fastqutils/test.txt, test2.txt md5
+  reason: source file is an echo line written by the module script, not fastq_info output; replaced by report assertions
+  category: other
+- target: reads/*.merged.fastq.gz md5 (decompressed)
+  reason: read order differs (name sort vs collate) and Galaxy checksum hashes gzip bytes; replaced by fixture-derived line counts
+  category: nondeterministic
+- target: samtools/*.stats md5
+  reason: file embeds samtools version and command line; replaced by fixture-derived SN line
+  category: nondeterministic
+warnings:
+- code: untranslatable-snapshot
+  message: stats / fastq.gz / fastqutils snapshot md5s cannot be asserted byte-for-byte in Galaxy (see omissions); only flagstat and idxstats md5 are translated as checksums
+  path: tests/default.nf.test.snap
+- code: deferred-test-candidates
+  message: 8 other primary nf-test cases (chr, collate_fast, cram, fai, no_bai, no_crai, no_qc, no_stats) not translated; chr/collate_fast/fai features are dropped in the Galaxy workflow
+  path: summary-nextflow.json#test_candidates

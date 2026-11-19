@@ -1,0 +1,276 @@
+plan_version: '1'
+source:
+  kind: nextflow
+  name: nf-core/bamtofastq @ aa0150e
+  derived_from: test-evidence
+  notes: 'Translated from the nf-test case tests/default.nf.test ("-profile test")
+    and its
+
+    snapshot tests/default.nf.test.snap. Every expected value below is copied from
+
+    that snapshot, not measured from a Galaxy run.
+
+    '
+workflow:
+  title: "nf-core/bamtofastq \u2014 BAM/CRAM to FASTQ"
+  label_source: draft
+  notes: 'Labels come from galaxy-workflow.gxwf.yml (extracted from galaxy-workflow-draft.gxwf.yml).
+
+    Public input ids: input, fasta, layout, no_read_QC, no_stats, samtools_collate_fast,
+    multiqc_title.
+
+    Public output ids: reads_paired, reads_single, fastqc_pre_conversion,
+
+    fastqc_post_conversion_paired, fastqc_post_conversion_single, samtools_flagstat,
+
+    samtools_idxstats, samtools_stats, multiqc_report.
+
+    '
+test_cases:
+- id: default-profile-test
+  doc: 'nf-test case "-profile test": two paired-end BAMs (test, test2) converted
+    to FASTQ
+
+    against the small genome.fasta, with pre/post conversion QC and MultiQC.
+
+    '
+  derived_from: test-evidence
+  provenance: 'tests/default.nf.test :: test("-profile test") + tests/default.nf.test.snap'
+  job_inputs:
+  - workflow_label: input
+    label_status: resolved
+    description: Two paired-end BAM alignments, one list element per sample.
+    collection_shape: list
+    datatype: bam
+    fixture:
+      storage: in-repo
+      location: test-data/
+      checksum: null
+      provenance: samplesheet test_bam_samplesheet.csv from the selected nf-test case;
+        elements staged from test-data/
+  - workflow_label: fasta
+    label_status: resolved
+    description: Reference FASTA used for --reference by the conversion tool.
+    collection_shape: null
+    datatype: fasta
+    fixture:
+      storage: remote-url
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      checksum: SHA-1:56e7a0c035e2fce8ebe497d3704431d7586fd444
+      provenance: fasta parameter of the selected nf-test case; local copy test-data/genome.fasta
+  expected_outputs:
+  - workflow_label: reads_paired
+    label_status: resolved
+    description: Merged mapped+unmapped FASTQ pairs, one pair per sample.
+    output_kind: collection
+    collection_shape: list:paired
+    assertion_intent:
+    - family: structure
+      intent: decompressed FASTQ content of each mate (4-line records starting with
+        @); the snapshot md5 hashes decompressed content, and Galaxy checksum hashes
+        the stored gzip bytes, so an exact checksum is not expressible
+      expected_value: ^@
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: regex over decompressed content
+      element_identifier: test/forward
+      evidence: intent
+      confidence: medium
+    - family: structure
+      intent: decompressed FASTQ content of each mate (4-line records starting with
+        @); the snapshot md5 hashes decompressed content, and Galaxy checksum hashes
+        the stored gzip bytes, so an exact checksum is not expressible
+      expected_value: ^@
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: regex over decompressed content
+      element_identifier: test/reverse
+      evidence: intent
+      confidence: medium
+    - family: structure
+      intent: decompressed FASTQ content of each mate (4-line records starting with
+        @); the snapshot md5 hashes decompressed content, and Galaxy checksum hashes
+        the stored gzip bytes, so an exact checksum is not expressible
+      expected_value: ^@
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: regex over decompressed content
+      element_identifier: test2/forward
+      evidence: intent
+      confidence: medium
+    - family: structure
+      intent: decompressed FASTQ content of each mate (4-line records starting with
+        @); the snapshot md5 hashes decompressed content, and Galaxy checksum hashes
+        the stored gzip bytes, so an exact checksum is not expressible
+      expected_value: ^@
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: regex over decompressed content
+      element_identifier: test2/reverse
+      evidence: intent
+      confidence: medium
+  - workflow_label: samtools_flagstat
+    label_status: resolved
+    description: samtools flagstat text per sample.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: flagstat text equals the nf-test snapshot md5
+      expected_value: a53f3d26e2e9851f7d528442bbfe9781
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: snapshot md5; samtools 1.23.1 in the source container
+      element_identifier: test
+      evidence: test-evidence
+      confidence: medium
+    - family: checksum
+      intent: flagstat text equals the nf-test snapshot md5
+      expected_value: acbd95030a362a7e6491faa87d1b9c2c
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: snapshot md5; samtools 1.23.1 in the source container
+      element_identifier: test2
+      evidence: test-evidence
+      confidence: medium
+  - workflow_label: samtools_idxstats
+    label_status: resolved
+    description: samtools idxstats text per sample.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: idxstats text equals the nf-test snapshot md5
+      expected_value: e179601fa7b8ebce81ac3765206f6c15
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: snapshot md5; samtools 1.23.1 in the source container
+      element_identifier: test
+      evidence: test-evidence
+      confidence: medium
+    - family: checksum
+      intent: idxstats text equals the nf-test snapshot md5
+      expected_value: 90f01313bc89c7fd096aad051cd71b66
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: snapshot md5; samtools 1.23.1 in the source container
+      element_identifier: test2
+      evidence: test-evidence
+      confidence: medium
+  - workflow_label: samtools_stats
+    label_status: resolved
+    description: samtools stats text per sample.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: text
+      intent: the stats report is a real samtools stats output for this sample
+      expected_value: 'raw total sequences:'
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: the snapshot md5 is samtools-version dependent (the header records
+          the version), so only stable structure is asserted
+      element_identifier: test
+      evidence: intent
+      confidence: medium
+  - workflow_label: fastqc_post_conversion_paired
+    label_status: resolved
+    description: FastQC HTML reports on the converted reads.
+    output_kind: collection
+    collection_shape: list:paired
+    assertion_intent:
+    - family: existence
+      intent: FastQC produced a report for each converted mate
+      expected_value: true
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: HTML is nondeterministic; nf-test prunes fastqc/*_fastqc.{html,zip}
+          from its stable-path assertions
+      element_identifier: test/forward
+      evidence: intent
+      confidence: high
+  - workflow_label: multiqc_report
+    label_status: resolved
+    description: Aggregated MultiQC HTML report.
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: text
+      intent: the report aggregates the FastQC sections
+      expected_value: FastQC
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: nf-test ignores multiqc/multiqc_report.html entirely; this is a
+          smoke check only
+      element_identifier: null
+      evidence: intent
+      confidence: low
+unresolved: []
+omissions:
+- target: workflow.trace.succeeded().size() == 32
+  reason: Galaxy has no workflow-level synchronized task count; per-step datasets
+    cover the same intent
+  category: no-stable-checkpoint
+- target: samtools_stats md5 (3c3f8fa56674fa987fd912b530f49c3c / 7e6537bde51ee4bb4a50562014ae2cd4)
+  reason: samtools stats output embeds the samtools version in its header, so the
+    md5 is only valid for samtools 1.23.1; the Galaxy wrapper's samtools version is
+    not pinned to it
+  category: weak-output
+- target: fastqc/*_fastqc.html and *.zip md5s
+  reason: nf-test prunes them via tests/.nftignore (FastQC reports are not byte-stable);
+    no content assertion is possible
+  category: nondeterministic
+- target: multiqc/multiqc_data/* and multiqc_report.html
+  reason: pruned by tests/.nftignore; MultiQC content varies with the versions of
+    the tools it reports
+  category: nondeterministic
+- target: fastqutils/*.txt (FASTQUTILS_INFO)
+  reason: the FASTQUTILS_INFO step was dropped (no fastq_info wrapper); its output
+    has no Galaxy counterpart
+  category: out-of-scope
+warnings:
+- code: defered-candidates-not-translated
+  message: 'The nf-test suite has nine other whole-pipeline cases (cram, no_bai, no_crai,
+    fai, chr,
+
+    no_qc, no_stats, collate_fast). Only the default case is translated here. The
+    `chr` case
+
+    cannot be covered because the chr subsetting feature was dropped from the translation.
+
+    '
+  path: tests/
+- code: wrapper-version-mismatch
+  message: 'The source modules pin samtools 1.23.1; the selected Tool Shed wrappers
+    are
+
+    devteam samtools_flagstat/idxstats/stats (2.0.x wrappers over an older samtools)
+    and
+
+    iuc samtools_view/merge (1.22). Text md5s carried from the snapshot may differ
+    on those
+
+    wrappers even when the science is identical; a failure there is a wrapper-version
+
+    finding, not an assertion authoring error.
+
+    '
+  path: null
+- code: untranslatable-snapshot
+  message: reads_paired is a fastqsanger.gz output. The nf-test snapshot md5s (9b0c08862a5e47e842a485ddad31b871,
+    40e17982d1231e561d6420234ae29357, a4984fb5a60f80ccbfbfcf1cef9daaf3, bde23801e2d60604afb3bd0b0ab014ab)
+    hash the decompressed FASTQ, while Galaxy checksum hashes the stored gzip bytes,
+    so no checksum assertion is emitted; structural decompressed-content assertions
+    are used instead (galaxy#24808).
+  path: tests/default.nf.test.snap

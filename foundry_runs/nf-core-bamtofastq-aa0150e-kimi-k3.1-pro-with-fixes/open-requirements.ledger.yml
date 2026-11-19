@@ -1,0 +1,410 @@
+entries:
+- id: fasta-fai-rebuild-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: Rebuild a FASTA FAI index when the user supplies FASTA but no FAI.
+  missing: summary-nextflow has no reference_rebuilds entries and no Galaxy wrapper
+    has yet been checked for in-tool faidx support.
+  resolved_by: run-workflow-test
+  supersedes: null
+  note: Workflow-tier samtools_faidx builds the FAI, pick_value selects supplied-or-built
+    reference input, and conversion stages a writable FASTA/FAI pair. The default
+    build_fai planemo case executed this path successfully.
+- id: cram-fasta-conditional-requirement
+  status: open
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: Clear enforcement that CRAM processing receives its matching reference FASTA.
+  missing: Pure gxformat2 cannot express FASTA requiredness conditional on input alignment
+    datatype.
+  resolved_by: null
+  supersedes: null
+  note: Carry into interface labels and implementation; test or wrapper validation
+    should reject CRAM without the required reference.
+- id: igenomes-selector-not-portable
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  units: --genome iGenomes nickname resolution
+  because: The portability-first mapping prohibits introducing admin-managed Galaxy
+    data tables; explicit fasta/fasta_fai inputs are the portable substitute.
+  unmet: Automatic expansion of an iGenomes genome nickname into FASTA and FAI paths.
+  missing: A stock Galaxy instance has no guaranteed shared iGenomes lookup.
+  resolved_by: null
+  supersedes: null
+  note: Users supply the actual reference datasets instead.
+- id: single-paired-routing-and-identifiers
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: Correct conversion routing for mixed single-end and paired-end samples with
+    stable sample identifiers.
+  missing: CHECKPAIREDEND marker outputs, collection synchronization, branch semantics,
+    and sample_sheet metadata propagation are not yet implemented.
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+  supersedes: null
+  note: Designed keyed single/paired branches, exact four-class paired conversion,
+    mate-wise concatenation, and mixed-output assembly with sample_id preserved.
+- id: conditional-qc-output-routing
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: Skip pre/post FastQC and samtools statistics only when requested while preserving
+    converted reads.
+  missing: No concrete gxformat2 conditionals or empty-output behavior has been designed
+    yet.
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+  supersedes: null
+  note: Designed inline when gates for QC/stats, a BAM-only pre-QC filter, and skipped-input
+    cleanup before MultiQC reduction.
+- id: multiqc-data-and-version-producers
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: Expose the MultiQC data output and aggregated software version manifest.
+  missing: Concrete Galaxy producers and the MultiQC directory/archive representation
+    are not yet known.
+  resolved_by: run-workflow-test
+  supersedes: null
+  note: MultiQC general stats and a single reduced versions YAML are public outputs and were
+    collected successfully. Conversion/runtime versions are observed; direct FastQC/samtools
+    versions are pinned; unknown wrapper packages remain null. The actual CAT 9.4 versus source
+    9.5 discrepancy is tracked separately in cat-fastq-coreutils-version-not-preserved.
+- id: nextflow-runtime-controls-replaced
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: outdir/publish_dir_mode; email controls; monochrome/validation/trace controls;
+    custom profile parameters; help/version CLI parameters
+  because: Galaxy owns history outputs, notifications, job logs, input validation,
+    site configuration, and workflow documentation; these parameters do not alter
+    scientific conversion results.
+  unmet: A literal Nextflow CLI runtime/control surface.
+  missing: No one-to-one Galaxy equivalents for Nextflow-specific execution controls.
+  resolved_by: null
+  supersedes: null
+  note: Scientific parameters and report customization remain exposed.
+- id: no-bam-to-fastq-iwc-exemplar
+  status: open
+  raised_by: compare-against-iwc-exemplar
+  unmet: Corpus-backed Galaxy pattern for the BAM/CRAM sample record and four-flag-class
+    FASTQ conversion DAG.
+  missing: IWC corpus c07557fbb01b5bf0b7d18a5d2473c1f1ef838f60 contains no bamtofastq,
+    collatefastq, fastq_info or samtools_fastq workflow.
+  resolved_by: null
+  supersedes: null
+  note: Template and per-step implementation must follow retained source evidence
+    rather than a forced cross-domain exemplar.
+- id: literal-samplesheet-interface-replaced
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-template
+  units: Literal CSV sample_sheet:record launch interface (sample_id, file_type, mapped
+    and index slots)
+  because: Galaxy sample_sheet:record does not implicitly map over ordinary tools;
+    native list identifiers, BAM/CRAM datatypes and index metadata carry the same
+    per-sample evidence with fewer fragile projections.
+  unmet: Launching the Galaxy workflow by uploading the original nf-core samplesheet
+    as a structured record collection.
+  missing: No direct literal samplesheet input is exposed; users supply a list of
+    BAM/CRAM datasets instead.
+  resolved_by: null
+  supersedes: null
+  note: Interface simplification, not loss of scientific conversion behavior; missing
+    indices are still rebuilt and sample identifiers retained.
+- id: prepare-alignments-index-log-not-produced
+  status: resolved
+  blocking: true
+  raised_by: implement-galaxy-tool-step
+  step: prepare_alignments
+  unmet: Declared auxiliary index_log output for downstream version aggregation.
+  missing: Selected wrapper jackcurragh/ribogalaxy_samtools_index/samtools_index 2.0.4
+    exposes only output1 in its parsed tool summary and no log/version output.
+  resolved_by: repair-galaxy-draft-topology
+  supersedes: null
+  note: 'Applied remove-output and rewire: removed auxiliary index_log and its aggregate_versions
+    connection; indexing behavior retained.'
+- id: alignment-index-log-dropped
+  status: open
+  kind: dropped
+  raised_by: repair-galaxy-draft-topology
+  step: prepare_alignments
+  units: Auxiliary index_log dataset and its aggregate_versions connection
+  because: Parsed tool summary for samtools_index 2.0.4 exposes only output1; no log/version
+    output can be bound truthfully.
+  unmet: Dedicated alignment-index execution log for version aggregation.
+  missing: The selected indexing wrapper emits only its indexed alignment output.
+  resolved_by: null
+  supersedes: null
+  note: Samtools indexing itself and all scientific outputs remain.
+- id: reference-wrapper-missing-passthrough-and-fai-input
+  status: resolved
+  blocking: true
+  raised_by: implement-galaxy-tool-step
+  step: prepare_reference
+  unmet: Prepared FASTA passthrough and selection of a user-supplied FAI versus rebuilt
+    FAI.
+  missing: IUC samtools_faidx 1.22+galaxy1 accepts only input FASTA and emits only
+    output FAI; it has no FAI input or FASTA passthrough output.
+  resolved_by: repair-galaxy-draft-topology
+  supersedes: null
+  note: 'Applied change-parameter, rewire and add-step: conditional faidx, direct
+    FASTA connections, and deferred select_reference_fai preserve supplied-or-built
+    FAI behavior.'
+- id: stats-optional-reference-mode-not-representable
+  status: resolved
+  blocking: true
+  raised_by: implement-galaxy-tool-step
+  step: alignment_stats
+  unmet: Optional reference behavior and removal of unused FAI input for samtools
+    stats.
+  missing: devteam samtools_stats 2.0.9 accepts FASTA only inside addref_cond=history
+    and has no FAI input; binding history makes FASTA mandatory for BAM-only runs.
+  resolved_by: repair-galaxy-draft-topology
+  supersedes: null
+  note: 'Applied change-parameter, remove-input and add-step: mutually exclusive reference/no-reference
+    stats branches joined by deferred select_alignment_stats; unused FAI port removed.'
+- id: fastqc-zip-output-not-produced
+  status: resolved
+  blocking: true
+  raised_by: implement-galaxy-tool-step
+  step: pre_conversion_fastqc
+  unmet: Published FastQC ZIP archive output promised by the source-derived draft.
+  missing: devteam fastqc 0.74+galaxy1 exposes only html_file and text_file; it has
+    no ZIP output.
+  resolved_by: repair-galaxy-draft-topology
+  supersedes: null
+  note: 'Applied remove-output, add-output and rewire to both twin steps: raw FastQC
+    text replaces ZIP for public outputs and MultiQC; archive loss recorded.'
+- id: fastqc-zip-archives-replaced-with-raw-data
+  status: resolved
+  raised_by: repair-galaxy-draft-topology
+  units: Pre- and post-conversion FastQC ZIP archive outputs
+  because: devteam FastQC hardcoded -f fastq and produced only HTML/raw text; native
+    FastQC UDT supplies html/raw text/native ZIP.
+  unmet: Published FastQC ZIP archives from the source pipeline.
+  missing: The selected wrapper does not produce ZIP files; raw tabular FastQC data
+    is exposed instead.
+  resolved_by: implement-galaxy-tool-step
+  supersedes: null
+  note: Superseded by source-direct bamtofastq_fastqc UDT producing native archives;
+    see resolution fastqc-native-zip-restored.
+- id: fastqc-quiet-flag-not-exposed
+  status: resolved
+  raised_by: implement-galaxy-tool-step
+  step: pre_conversion_fastqc
+  unmet: Explicit control of the source FastQC --quiet argument.
+  missing: devteam fastqc 0.74+galaxy1 input schema has no quiet parameter.
+  resolved_by: implement-galaxy-tool-step
+  supersedes: null
+  note: Native FastQC UDTs pass --quiet on both pre- and post-conversion invocations,
+    matching the source module configuration. No separate workflow option was invented
+    for this logging-only setting.
+- id: package-versions-incomplete-outside-conversion
+  status: open
+  raised_by: implement-galaxy-tool-step
+  step: aggregate_versions
+  unmet: Exact package versions for FastQC, fastqutils, MultiQC and QC/index/stat
+    utilities in the aggregated manifest.
+  missing: Cached ParsedTool summaries expose wrapper release IDs but not authoritative
+    package-version requirements for every selected wrapper.
+  resolved_by: null
+  supersedes: null
+  note: Unknown package versions are explicit nulls with wrapper identities recorded
+    separately. Only conversion-log runtime versions are verified.
+- id: fastq-validation-report-shape-and-single-selector
+  status: resolved
+  blocking: true
+  raised_by: implement-galaxy-tool-step
+  step: validate_fastq
+  unmet: Source-compatible short success text and validation for single-end elements.
+  missing: fastq_info 0.25.3+galaxy0 returns detailed statistics and requires paired/single
+    mode selection, unlike the source echo report and mixed per-element behavior.
+  resolved_by: repair-galaxy-draft-topology
+  supersedes: null
+  note: Superseded in runtime repair by one direct FASTQUTILS_INFO UDT per
+    paired_or_unpaired sample. It invokes fastq_info on forward+reverse or unpaired
+    reads and emits the source success text only after exit 0.
+- id: single-end-fastq-info-validation-dropped
+  status: resolved
+  raised_by: repair-galaxy-draft-topology
+  step: validate_fastq
+  units: fastq_info validation of single-end converted elements
+  because: fastq_info 0.25.3+galaxy0 requires a paired/single conditional test parameter
+    that cannot vary per mixed element safely; default is paired.
+  unmet: Validation report for single-end reads.
+  missing: Per-element conditional selector semantics and mixed paired/single validation.
+  resolved_by: debug-galaxy-workflow-output
+  supersedes: null
+  note: The stock-wrapper/formatter split was replaced by a direct UDT consuming each
+    whole paired_or_unpaired collection. Designation-keyed elements select paired or
+    unpaired fastq_info execution without a per-element conditional parameter. Paired
+    behavior and source-checksummed reports passed at runtime; the single-end branch is
+    implemented but remains untested by the paired-only default fixture.
+- id: multiqc-directory-and-custom-config-unavailable
+  status: surrendered
+  blocking: true
+  raised_by: implement-galaxy-tool-step
+  step: multiqc
+  unmet: Full MultiQC data directory plus arbitrary YAML config, methods-description
+    input, fastq_info and version files in aggregation.
+  missing: IUC multiqc 1.34+galaxy0 provides html_report/stats only and has no config/methods
+    data input or fastq_info/version-aware cases.
+  resolved_by: null
+  supersedes: null
+  note: Repair cap reached at 5/5; final narrowed wrapper preserves HTML and general
+    stats plus supported QC inputs. Unsupported inputs/config remain labelled gaps.
+- id: multiqc-customization-and-auxiliary-inputs-dropped
+  status: open
+  kind: dropped
+  raised_by: implement-galaxy-tool-step
+  step: multiqc
+  units: multiqc_config and multiqc_methods_description options; fastq_info and versions
+    YAML as MultiQC inputs; full multiqc_data directory
+  because: Parsed IUC multiqc 1.34+galaxy0 exposes no corresponding config methods/custom
+    data ports and only html_report/stats; supported fastq_info/version file cases
+    are absent.
+  unmet: Source-equivalent MultiQC customization and aggregation surface.
+  missing: General stats replaces the data directory; fastq_info and versions remain
+    separate workflow outputs; title/logo and supported FastQC/samtools reports remain.
+  resolved_by: null
+  supersedes: null
+  note: Dropped after actual wrapper inspection, not inferred from tool name.
+- id: cat-fastq-coreutils-version-not-preserved
+  status: open
+  kind: dropped
+  raised_by: debug-galaxy-workflow-output
+  step: convert_alignments
+  units: Separate CAT_FASTQ coreutils 9.5 execution environment and its source version assertion
+  because: The tightly coupled conversion UDT performs final concatenation inside the pinned
+    samtools container, whose coreutils is 9.4. Splitting CAT_FASTQ would require a new mixed
+    paired/single mapped/unmapped join and collection merge late in this run.
+  unmet: Exact CAT_FASTQ cat=9.5 manifest value from the source nf-test snapshot.
+  missing: A separate coreutils 9.5 CAT_FASTQ step consuming both mapped and unmapped read streams
+    for paired samples while retaining the direct single-end branch.
+  resolved_by: null
+  supersedes: null
+  note: The manifest truthfully records the actual cat 9.4 runtime and the test deliberately
+    retains cat=9.5, leaving one known assertion failure. Read concatenation itself succeeds;
+    no source expected value was replaced with an observed Galaxy value.
+- id: cram-preconversion-fastqc-not-filtered
+  status: open
+  kind: dropped
+  raised_by: debug-galaxy-workflow-output
+  units: BAM-only subset selection before pre-conversion FastQC
+  because: The authored collection filter repeatedly produced no valid expression
+    commands; it blocked all conversion. CRAM is out of pre-QC scope for this runnable
+    test instead of being excluded by a working filter.
+  unmet: Explicit CRAM exclusion from pre-conversion FastQC.
+  missing: A verified datatype-filtering operation available in the native Galaxy
+    runtime.
+  resolved_by: null
+  supersedes: null
+  note: Direct BAM pre-conversion FastQC remains; the removed filter was not needed
+    for the selected paired-BAM fixture.
+- id: fastqc-native-zip-restored
+  status: resolved
+  raised_by: implement-galaxy-tool-step
+  unmet: Native FastQC HTML and ZIP outputs for BAM/CRAM and converted FASTQ.
+  missing: No suitable existing wrapper supports required BAM; replacement UDT runs
+    native FastQC 0.12.1 directly.
+  resolved_by: implement-galaxy-tool-step
+  supersedes: fastqc-zip-archives-replaced-with-raw-data
+  note: Restored pre/post zip outputs with html_file, text_file, zip_file.
+discoveries:
+- id: bamtofastq-single-fasta-with-index
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: summary-nextflow declares optional fasta and fasta_fai reference params
+    and no key-expanded params.
+  impact: Expose one optional FASTA and one optional companion FAI rather than a reference
+    bundle or genome-key selector.
+- id: alignment-sample-sheet-is-record
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: assets/schema_input.json contains required mapped BAM/CRAM, optional BAI/CRAI
+    index, sample_id and file_type fields.
+  impact: Use sample_sheet:record and keyed synchronization, not paired-read or flat
+    CSV input.
+- id: paired-conversion-four-flag-classes
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: ALIGNMENT_TO_FASTQ invokes four samtools_view filters, merges three unmapped
+    classes, collates mapped/unmapped separately, then concatenates corresponding
+    mates.
+  impact: The Galaxy DAG must retain this exact scientific spine rather than substituting
+    one generic samtools fastq step.
+- id: iwc-has-no-direct-conversion-exemplar
+  raised_by: compare-against-iwc-exemplar
+  evidence: Content searches of pinned IWC corpus found no BAM/CRAM-to-FASTQ or required
+    specific tool-family workflow.
+  impact: No nearest exemplar; preserve source DAG and use only generic Galaxy collection/test
+    idioms.
+- id: record-input-is-not-implicitly-mappable
+  raised_by: nextflow-summary-to-galaxy-template
+  evidence: The sample-sheet semantics note states allow_implicit_mapping is false
+    for record collections, while the conversion requires ordinary per-sample tool
+    map-over.
+  impact: Settled on native BAM/CRAM list inputs and grouped tightly coupled samtools
+    modules into one authored per-sample conversion step.
+decisions:
+- id: explicit-reference-inputs
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: Use optional fasta and fai data inputs; prefer in-tool faidx rebuild only
+    after wrapper capability is verified.
+  rationale: This preserves portability on stock Galaxy and avoids an unnecessary
+    conditional workflow-tier branch.
+  evidence:
+  - bamtofastq-single-fasta-with-index
+- id: sample-sheet-record-interface
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Represent alignment_samples as sample_sheet:record keyed by sample_id,
+    and converted_reads as paired_or_unpaired.
+  rationale: The BAM/index inputs are heterogeneous while converted outputs may be
+    single or paired; these shapes preserve both distinctions.
+  evidence:
+  - alignment-sample-sheet-is-record
+- id: snapshot-checkpoint-outputs
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Expose converted reads, fastq_info text, flagstat, idxstats, stats, MultiQC
+    outputs and a version manifest with stable public names.
+  rationale: The selected nf-test snapshot carries content checksums for the first
+    five classes and version assertions, enabling meaningful Galaxy tests.
+  evidence: []
+- id: workflow-tier-shared-index-builders
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Build missing BAM/CRAM indices and FASTA FAI in keyed workflow-tier steps
+    and fan them out.
+  rationale: Each index has many downstream consumers, satisfying the repeated-use
+    exception to in-tool rebuild.
+  evidence:
+  - paired-conversion-four-flag-classes
+- id: full-conversion-spine
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Retain BAM-only pre-QC, pairing classification, optional region filtering,
+    single-end conversion, four-class paired conversion, post-QC and aggregation.
+  rationale: These steps are source scientific behavior, not publishing or runtime
+    plumbing.
+  evidence:
+  - paired-conversion-four-flag-classes
+- id: native-list-and-grouped-conversion
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: Use native BAM/CRAM list input and one authored conversion step containing
+    CHECKPAIREDEND, region filtering, four-class paired conversion, single conversion
+    and mate concatenation.
+  rationale: This has a complete computable input set, preserves sample identifiers
+    and all scientific behavior, and avoids unverified record-slot and per-element
+    conditional wiring.
+  evidence:
+  - record-input-is-not-implicitly-mappable
+- id: mixed-read-output-collection
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: Expose one paired_or_unpaired converted_reads output from the conversion
+    step.
+  rationale: The wrapper can emit the native mixed type directly, avoiding lossy merge/filter
+    topology for sparse paired and single outputs.
+  evidence:
+  - record-input-is-not-implicitly-mappable
+brief_change_recommendations: []
+topology_repair:
+  escalations: 5
+  cap: 5
+  open_history:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0

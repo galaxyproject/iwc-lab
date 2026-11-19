@@ -1,0 +1,431 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-bamtofastq-haiku-fixed
+  status: failed
+  phases:
+  - n: 1
+    kind: mold
+    skill: summarize-nextflow
+    status: done
+    feedback_checked: true
+  - n: 2
+    kind: mold
+    skill: nextflow-summary-to-galaxy-reference-data
+    status: done
+    feedback_checked: true
+  - n: 3
+    kind: mold
+    skill: nextflow-summary-to-galaxy-interface
+    status: done
+    feedback_checked: true
+  - n: 4
+    kind: mold
+    skill: nextflow-summary-to-galaxy-data-flow
+    status: done
+    feedback_checked: true
+  - n: 5
+    kind: mold
+    skill: compare-against-iwc-exemplar
+    status: done
+    feedback_checked: true
+  - n: 6
+    kind: mold
+    skill: nextflow-summary-to-galaxy-template
+    status: done
+    feedback_checked: true
+  - n: 7
+    kind: mold
+    skill: advance-galaxy-draft-step
+    status: failed
+    iterations: 1
+    feedback_checked: false
+  - n: 8
+    kind: branch
+    pattern: test-data-resolution
+    status: pending
+    selected: null
+    feedback_checked: false
+  - n: 9
+    kind: mold
+    skill: nextflow-test-to-galaxy-test-plan
+    status: pending
+    feedback_checked: false
+  - n: 10
+    kind: mold
+    skill: implement-galaxy-workflow-test
+    status: pending
+    feedback_checked: false
+  - n: 11
+    kind: mold
+    skill: validate-galaxy-workflow
+    status: pending
+    feedback_checked: false
+  - n: 12
+    kind: mold
+    skill: run-workflow-test
+    status: pending
+    feedback_checked: false
+  - n: 13
+    kind: mold
+    skill: debug-galaxy-workflow-output
+    status: pending
+    feedback_checked: false
+entries:
+- id: summarize-nextflow-subworkflow-kind-utility-not-applied
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 21
+    content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+    foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+  subject:
+    kind: mold
+    label: summarize-nextflow
+    locator: content/molds/summarize-nextflow/index.md
+    content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+  kind: defect
+  severity: major
+  what: The deterministic output marked PIPELINE_INITIALISATION, PIPELINE_COMPLETION and UTILS_NFSCHEMA_PLUGIN as kind 'pipeline' and gave them non-empty calls, although the procedure names PIPELINE_INITIALISATION and PIPELINE_COMPLETION as utility and says utility subworkflows have empty calls.
+  expected: Classify subworkflows that invoke no pipeline processes as utility with empty calls in the deterministic pass. If the LLM pass is meant to do this, the procedure should say so.
+  evidence: 'summary subworkflows[]: those three were kind pipeline; UTILS_NEXTFLOW_PIPELINE and UTILS_NFCORE_PIPELINE were utility. Corrected by hand and recorded in the summary warnings. The cast history lists the utility-vs-pipeline split as a rev-2 change.'
+  status: open
+  issue: null
+- id: summarize-nextflow-workflow-edges-include-operator-fragments
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 21
+    content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+    foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+  subject:
+    kind: mold
+    label: summarize-nextflow
+    locator: content/molds/summarize-nextflow/index.md
+    content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+  kind: gap
+  severity: major
+  what: The deterministic workflow.edges list uses operator-chain fragments as endpoints (for example from '[[:]', '[]', ']' and '}' into SAMTOOLS_CHR and MULTIQC), with no marker separating them from real edges. The output is still schema-valid.
+  expected: Mark unreconciled edges (for example in notes, or with an explicit status) or leave them out, and have the validator flag endpoints that are neither a channel nor a process output.
+  evidence: About 16 of the 33 deterministic edges had non-name endpoints; the tool also printed 'workflow graph extraction is intentionally partial in resolver v1'. Rebuilt 24 edges by reading workflows/bamtofastq.nf and subworkflows/local/*. Validation passed both before and after the rebuild.
+  status: open
+  issue: null
+- id: summarize-nextflow-ternary-channel-factory-not-emitted
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 21
+    content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+    foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+  subject:
+    kind: mold
+    label: summarize-nextflow
+    locator: content/molds/summarize-nextflow/index.md
+    content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+  kind: gap
+  severity: minor
+  what: 'A workflow channel built by a ternary on a parameter (params.fasta ? channel.fromPath(params.fasta)... : channel.value(...)) is missing from workflow.channels, so the fasta input has no from_param link in the channel inventory.'
+  expected: Emit channels whose construction is a ternary over factories, with construct taken from the factory in either branch and from_param set when a branch references params.X. Otherwise state in the procedure that ternaries are out of scope.
+  evidence: workflows/bamtofastq.nf defines fasta_fai with that ternary; channels[] held 16 entries without it. Added by hand as fasta_fai (from_param fasta). reference_assets still records fasta and fasta_fai.
+  status: open
+  issue: null
+- id: summarize-nextflow-getgenomeattribute-defaults-missed
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in:
+    mold: nextflow-summary-to-galaxy-reference-data
+    path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+    revision: 5
+    content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+    foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+  subject:
+    kind: mold
+    label: summarize-nextflow
+    locator: content/molds/summarize-nextflow/index.md
+    content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+  kind: defect
+  severity: major
+  what: 'The summary lists fasta and fasta_fai as nextflow_schema params with source_expression null. main.nf:37-38 sets both from getGenomeAttribute through ?: fallbacks (params.fasta = params.fasta ?: getGenomeAttribute(''fasta'')). The key-expanded signal the reference-data classification depends on is therefore missing from params[] and from reference_assets[] evidence.'
+  expected: Record config-time getGenomeAttribute defaults in the entry script with source_kind getGenomeAttribute and the verbatim source_expression, as the summarize-nextflow procedure (section 3) already asks for this exact case.
+  evidence: 'summary-nextflow.json reference_assets[] for fasta and fasta_fai: source_kind nextflow_schema, evidence []. The reference-data brief classified the bundle from main.nf directly.'
+  status: open
+  issue: null
+- id: summarize-nextflow-channel-branch-rebuild-missed
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in:
+    mold: nextflow-summary-to-galaxy-reference-data
+    path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+    revision: 5
+    content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+    foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+  subject:
+    kind: mold
+    label: summarize-nextflow
+    locator: content/molds/summarize-nextflow/index.md
+    content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+  kind: gap
+  severity: major
+  what: reference_rebuilds[] is empty although PREPARE_INDICES runs SAMTOOLS_FAIDX on the index == false branch of the fasta_fai channel, which rebuilds the .fai when it is absent. The idiom is a channel branch on a metadata flag, not an if-guard on a param, and the reference-data mold's stated known gaps cover only positive-form if/else rebuilds.
+  expected: Detect a compute-if-missing rebuild when a builder consumes the not-provided branch of a channel split on a metadata flag derived from a param, and emit a reference_rebuilds entry; otherwise name the idiom as a stated gap.
+  evidence: 'subworkflows/local/prepare_indices/main.nf: fasta_branch.to_index feeds SAMTOOLS_FAIDX; ch_fasta_fai = fasta_branch.is_fasta_indexed.mix(fasta_newly_indexed).first(). summary reference_rebuilds: [].'
+  status: open
+  issue: null
+- id: nextflow-summary-to-galaxy-reference-data-no-route-for-wrong-summary
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in:
+    mold: nextflow-summary-to-galaxy-reference-data
+    path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+    revision: 5
+    content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+    foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+  subject:
+    kind: mold
+    label: nextflow-summary-to-galaxy-reference-data
+    locator: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+    content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+  kind: gap
+  severity: minor
+  what: The Reading the summary section says to flag a missing signal as rebuild-unverified rather than re-parse source files, but gives no route when the summary is wrong rather than missing. Here the summary labels fasta and fasta_fai as plain schema params while main.nf defines them through getGenomeAttribute. Classifying from the summary alone would have dropped the key-expanded class; checking the source was not covered by the procedure.
+  expected: State whether a summary-versus-source conflict on a reference asset is verified against source and recorded in the brief, or flagged and classified from the summary alone.
+  evidence: The brief's Evidence section records the source check (main.nf:37-38, 106-115) and the summary discrepancy; the open ledger discoveries cite it.
+  status: open
+  issue: null
+- id: galaxy-sample-sheet-collections-record-vs-implicit-mapping
+  raised_by: nextflow-summary-to-galaxy-interface
+  observed_in:
+    mold: nextflow-summary-to-galaxy-interface
+    path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+    revision: 6
+    content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+    foundry_head: 61da115975d155a36face0e83d5c28f638da7fca
+  subject:
+    kind: research
+    label: galaxy-sample-sheet-collections
+    locator: content/research/galaxy-sample-sheet-collections/index.md
+    content_hash: 98736fdcd0c4f4698af4e0cd4c539b33e3d0db872de1e10487556b21033030ec
+  kind: defect
+  severity: major
+  what: The note recommends sample_sheet:record for several heterogeneous path columns per row (Mapping from Nextflow sample sheets table; the params note repeats it), but its own Mapping rules say allow_implicit_mapping is True for everything except record. The note does not say how a record-variant input reaches mapped tools, and it has no rule for an optional companion path column (for example index), so for a row with one required data column and one optional companion data column the note gives no consistent Galaxy shape.
+  expected: 'Reconcile the table with the mapping rules: state that record inputs cannot be mapped over, and give a shape for an optional companion dataset per row, or state that it is out of scope.'
+  evidence: The interface step ruled out sample_sheet:record only by reading the mapping rules, not the table, and dropped the index column as a recorded loss (ledger entry sample-index-column-not-carried). Brief section Interface decisions 1 and Open questions 6.
+  status: open
+  issue: null
+- id: summarize-nextflow-conditionals-omit-data-driven-branch
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  observed_in:
+    mold: nextflow-summary-to-galaxy-data-flow
+    path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+    revision: 8
+    content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+    foundry_head: 61da115975d155a36face0e83d5c28f638da7fca
+  subject:
+    kind: mold
+    label: summarize-nextflow
+    locator: content/molds/summarize-nextflow/index.md
+    content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+  kind: gap
+  severity: minor
+  what: 'workflow.conditionals[] holds only parameter-guarded branches (three entries: params.chr, !params.no_read_QC, !params.no_stats). The per-sample routing that sends each sample to the single-end or the paired-end path (conversion_input = ch_input_new.branch on meta.single_end, fed by CHECKPAIREDEND) is driven by channel content and is absent, so a consumer that reads conditionals[] alone misses it.'
+  expected: Record channel-level branch predicates (a branch or filter on channel content) in conditionals[] or a sibling field, naming the producing process; or state that data-driven routing is outside the schema.
+  evidence: summary workflow.conditionals[] has the three guards above; workflows/bamtofastq.nf has the conversion_input branch. The data-flow brief reconstructed the routing from edges and the source.
+  status: open
+  issue: null
+- id: nextflow-summary-to-galaxy-data-flow-no-rule-for-remote-test-rows
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  observed_in:
+    mold: nextflow-summary-to-galaxy-data-flow
+    path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+    revision: 8
+    content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+    foundry_head: 61da115975d155a36face0e83d5c28f638da7fca
+  subject:
+    kind: mold
+    label: nextflow-summary-to-galaxy-data-flow
+    locator: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+    content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+  kind: gap
+  severity: minor
+  what: The procedure asks that element identifiers be checked against the source test's rows. The summary holds only URLs for test rows (test_candidates[].inputs), and the mold says nothing about fetching remote fixtures. The check needed five public sample sheets downloaded from those URLs.
+  expected: State whether remote test rows may be fetched for this check. If yes, name the fetch rule; if no, name the fallback (for example, rows recorded in the summary, or an unverified flag).
+  evidence: The five test sheets were fetched from the nf-core/test-datasets URLs named in the summary; identifiers were unique in all five. The fetch is recorded in the brief's test rows table.
+  status: open
+  issue: null
+- id: gxwf-convert-exit-1-on-fallback-with-output
+  raised_by: compare-against-iwc-exemplar
+  observed_in:
+    mold: compare-against-iwc-exemplar
+    path: content/molds/compare-against-iwc-exemplar/index.md
+    revision: 12
+    content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+    foundry_head: 94ce4ea20107680b467d03e8889b63689774e325
+  subject:
+    kind: related-project
+    label: gxwf convert (@galaxy-tool-util/cli)
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts/tree/main/packages/cli
+  kind: friction
+  severity: minor
+  what: gxwf convert --to format2 --compact wrote the complete converted workflow, but exited 1 because 7 of 13 steps fell back (unknown_tool, with the tool cache empty). A harness reading the exit code would treat a usable conversion as failed. The packaged convert reference covers the tool cache only for stateful re-encoding; it does not describe fallbacks or the exit code.
+  expected: Exit 0 when the output is complete and only fallbacks occurred, or document the exit code; and document the fallback path and its cause in the convert reference.
+  evidence: 'Conversion of data-fetching/sra-manifest-to-concatenated-fastqs.ga reported ''6/13 steps converted, 7 fell back'' with ''fallback breakdown: unknown_tool=7'', exit=1; the output (391 lines) was written.'
+  status: open
+  issue: null
+- id: compare-against-iwc-exemplar-confidence-no-grade-for-same-data-different-analysis
+  raised_by: compare-against-iwc-exemplar
+  observed_in:
+    mold: compare-against-iwc-exemplar
+    path: content/molds/compare-against-iwc-exemplar/index.md
+    revision: 12
+    content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+    foundry_head: 94ce4ea20107680b467d03e8889b63689774e325
+  subject:
+    kind: mold
+    label: compare-against-iwc-exemplar
+    locator: content/molds/compare-against-iwc-exemplar/index.md
+    content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+  kind: gap
+  severity: minor
+  what: The Confidence Levels table grades High and Medium by domain and subdomain, and grades 'No nearest exemplar' by the absence of domain or topology alignment. It does not say how to grade a candidate that matches the topology and data types but not the analysis (here, read acquisition versus BAM-to-FASTQ conversion). I graded it Low on the cross-domain row, which is a judgment call.
+  expected: 'Add a row or rule for same-data-type, same-topology, different-analysis candidates: their grade, and whether a labelled pattern excerpt is allowed.'
+  evidence: data-fetching/sra-manifest-to-concatenated-fastqs was graded Low and used only for a labelled pattern excerpt; the sibling file was not written. The grade decides whether the sibling exists.
+  status: open
+  issue: null
+- id: nextflow-summary-to-galaxy-template-schema-check-has-no-validator
+  raised_by: nextflow-summary-to-galaxy-template
+  observed_in:
+    mold: nextflow-summary-to-galaxy-template
+    path: content/molds/nextflow-summary-to-galaxy-template/index.md
+    revision: 10
+    content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+    foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+  subject:
+    kind: mold
+    label: nextflow-summary-to-galaxy-template
+    locator: content/molds/nextflow-summary-to-galaxy-template/index.md
+    content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+  kind: gap
+  severity: minor
+  what: 'The Validation section says to validate galaxy-workflow-draft.gxwf.yml against the galaxy-workflow-draft schema when a validator is available. No listed tool runs a JSON Schema check: gxwf draft-validate applies the draft-contract rules, and the environment has no jsonschema module. The schema check could not be run and was skipped.'
+  expected: Name the command that validates a document against galaxy-workflow-draft.schema.json, or remove the step; state what a skipped check means for the handoff.
+  evidence: gxwf draft-validate passed (33 steps, 157 TODO sentinels); python jsonschema import failed with ModuleNotFoundError; no other validator is listed in Required Tools.
+  status: open
+  issue: null
+- id: nextflow-summary-to-galaxy-template-identity-pin-tool-id-form
+  raised_by: nextflow-summary-to-galaxy-template
+  observed_in:
+    mold: nextflow-summary-to-galaxy-template
+    path: content/molds/nextflow-summary-to-galaxy-template/index.md
+    revision: 10
+    content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+    foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+  subject:
+    kind: research
+    label: galaxy-workflow-draft-format
+    locator: content/research/galaxy-workflow-draft-format/index.md
+    content_hash: 8bb5cad935b261021277487ef21ae0d2cfc6739908886e88d9a2fcf4acf05597
+  kind: gap
+  severity: minor
+  what: The format note defines Identity-pinned as a concrete tool_id with tool_version TODO, but does not say whether tool_id keeps the version suffix that IWC .ga files carry (for example .../samtools_view/1.22+galaxy2) or uses the unversioned id. The draft uses the unversioned id.
+  expected: State the tool_id form for identity-pinned steps (versioned or not), with one worked example.
+  evidence: IWC .ga steps carry tool_id with the version suffix and a separate tool_version; the draft's 19 identity-pinned steps use unversioned ids and tool_version TODO. The choice is not documented in the note.
+  status: open
+  issue: null
+- id: galaxy-workflow-draft-format-no-index-as-metadata-case
+  raised_by: repair-galaxy-draft-topology
+  observed_in:
+    mold: repair-galaxy-draft-topology
+    path: content/molds/repair-galaxy-draft-topology/index.md
+    revision: 7
+    content_hash: 692708480037be9680eda6be70c7fa2fd93604037432f7d94b6363266a6ca25e
+    foundry_head: db8801f2f0a31746e35cf399dd96cdbb8aa36dcf
+  subject:
+    kind: research
+    label: galaxy-workflow-draft-format
+    locator: content/research/galaxy-workflow-draft-format/index.md
+    content_hash: 8bb5cad935b261021277487ef21ae0d2cfc6739908886e88d9a2fcf4acf05597
+  kind: gap
+  severity: minor
+  what: The draft format, the implement procedure and the repair procedure treat a tool's index as a separate dataset that one step outputs and a consumer takes as an input. The packaged notes do not say what to do when a wrapper keeps the index as dataset metadata. The samtools index wrapper declares one bam output and no discover_datasets, so the repair had to choose between a separate index path and consuming the indexed BAM, with no stated rule for the choice.
+  expected: State how an index that is dataset metadata is represented in the draft, and when removing an index-producing step is allowed (for example, when no consumer needs the index).
+  evidence: 'tool-summary-samtools_index.json parsed_tool.outputs: one output1 of format bam, discover_datasets []. The repair removed index_sample, chr_index and pick_bai (decision index-datasets-removed-bam-metadata) and kept the index dependencies as plain entries.'
+  status: open
+  issue: null
+- id: nextflow-summary-to-galaxy-template-two-tool-module-modelled-as-one-node
+  raised_by: implement-galaxy-tool-step
+  observed_in:
+    mold: nextflow-summary-to-galaxy-template
+    path: content/molds/nextflow-summary-to-galaxy-template/index.md
+    revision: 10
+    content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+    foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+  subject:
+    kind: mold
+    label: nextflow-summary-to-galaxy-template
+    locator: content/molds/nextflow-summary-to-galaxy-template/index.md
+    content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+  kind: gap
+  severity: major
+  what: The draft models the source's paired-end conversion (COLLATE_FASTQ_MAP / COLLATE_FASTQ_UNMAP, which run samtools collate then samtools fastq) as one node with one tool. No Tool Shed wrapper covers both operations as one, so the chain surfaced only at implementation as a blocking gap (collate-mapped-needs-name-collate-producer), and a repair had to add two collate steps.
+  expected: Where a source module chains two tools, the template should model the chain as tool needs (name-collate, then convert) rather than one node.
+  evidence: source/modules/nf-core/samtools/collatefastq/main.nf (collate at line 37, fastq at line 45); the draft's collate_mapped and collate_unmapped nodes; the repair entry collate-mapped-needs-name-collate-producer.
+  status: open
+  issue: null
+- id: nextflow-summary-to-galaxy-data-flow-sibling-fan-in-into-one-multiple-input-not-flagged
+  raised_by: implement-galaxy-tool-step
+  observed_in:
+    mold: nextflow-summary-to-galaxy-data-flow
+    path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+    revision: 8
+    content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+    foundry_head: 61da115975d155a36face0e83d5c28f638da7fca
+  subject:
+    kind: mold
+    label: nextflow-summary-to-galaxy-data-flow
+    locator: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+    content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+  kind: gap
+  severity: major
+  what: The data-flow brief's merge of three sibling per-sample collections (N9b) was not flagged as a fan-in into one multiple-input tool, which needs a per-sample list of three datasets. The stock collection operations cannot group three siblings per sample without a regrouping rule, so the merge was not realizable. A repair replaced it with one expression-filter selection.
+  expected: Flag fan-in of N sibling collections into one multiple-input tool as a shape gap that needs an explicit per-sample grouping or an alternative selection, with the grouping mechanism named.
+  evidence: Tool summary tool-summary-merge_unmapped.json (bamfiles multiple, required); the repair entry merge-unmapped-needs-per-sample-list and decision name-union-selection-replaces-merge.
+  status: open
+  issue: null
+- id: gxwf-tool-search-exit-2-on-zero-hits
+  raised_by: implement-galaxy-tool-step
+  observed_in:
+    mold: discover-shed-tool
+    path: content/molds/discover-shed-tool/index.md
+    revision: 6
+    content_hash: f861bb1cb096f6e293ed3aaa25fe2f5aed11b5a22020434579513ccf7ed63869
+    foundry_head: db8801f2f0a31746e35cf399dd96cdbb8aa36dcf
+  subject:
+    kind: related-project
+    label: gxwf tool-search (@galaxy-tool-util/cli)
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts/tree/main/packages/cli
+  kind: friction
+  severity: minor
+  what: 'gxwf tool-search exits 2 with valid JSON ({"hits": []}) when a query has zero hits, and it does not say so on stderr. The discovery skill treats a nonzero exit as a failure, so a clean miss reads as an error. A Tool Shed timeout exits 3 with the message on stderr; the two need different handling.'
+  expected: Exit 0 for an empty result, and reserve nonzero exits for errors, or document the exit codes in the discovery reference.
+  evidence: Queries 'checkpairedend' (exit 2, empty hits), 'zzqxnonexistenttoolzz' (exit 2, empty hits) and 'samtools merge' (exit 3, timeout message on stderr).
+  status: open
+  issue: null
+- id: implement-galaxy-tool-step-builtin-version-not-discoverable-before-cache-add
+  raised_by: implement-galaxy-tool-step
+  observed_in:
+    mold: implement-galaxy-tool-step
+    path: content/molds/implement-galaxy-tool-step/index.md
+    revision: 15
+    content_hash: 2009d579cf2a68f8b31d1a69dd751f3f4d80fe3f19f3606f8cac2dda37aa343b
+    foundry_head: 61da115975d155a36face0e83d5c28f638da7fca
+  subject:
+    kind: mold
+    label: implement-galaxy-tool-step
+    locator: content/molds/implement-galaxy-tool-step/index.md
+    content_hash: 2009d579cf2a68f8b31d1a69dd751f3f4d80fe3f19f3606f8cac2dda37aa343b
+  kind: gap
+  severity: minor
+  what: For a built-in tool, the procedure says the version comes from a populated cache (galaxy-tool-cache list) and never from a guess. The cache is empty until a version is added, and no packaged note says how to learn the built-in versions the server serves. The run added __FILTER_NULL__ 1.0.0 by a guess; the add succeeded and the later list showed the version with source api.
+  expected: Name how to list the versions a server serves for a built-in id before caching it (for example a list call against the server, or a pinned version in the step plan).
+  evidence: galaxy-tool-cache add __FILTER_NULL__ --tool-version 1.0.0 succeeded; galaxy-tool-cache list then showed 1.0.0 with source api; the same applied to __UNZIP_COLLECTION__, __ZIP_COLLECTION__, __BUILD_LIST__ and __APPLY_RULES__.
+  status: open
+  issue: null

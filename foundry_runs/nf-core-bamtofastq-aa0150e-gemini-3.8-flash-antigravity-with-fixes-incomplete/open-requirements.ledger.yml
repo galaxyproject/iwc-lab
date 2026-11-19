@@ -1,0 +1,54 @@
+entries: []
+discoveries:
+  - id: optional-reference-fasta
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    evidence: "nf-core/bamtofastq uses reference FASTA optionally when handling CRAM files."
+    impact: "Reference input in Galaxy workflow should be optional data input."
+  - id: input-bams-collection
+    raised_by: nextflow-summary-to-galaxy-interface
+    evidence: "nf-core/bamtofastq samplesheet defines per-sample BAM/CRAM files indexed by sample_id."
+    impact: "Galaxy interface takes a list collection of BAM/CRAM datasets with sample_id as element identifier."
+  - id: partitioned-collate-conversion
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    evidence: "Alignment conversion partitions mapped vs unmapped reads before running collate/fastq and concatenating mates."
+    impact: "Data flow preserves mapped and unmapped sub-branches to ensure identical paired-read ordering and integrity."
+  - id: iwc-multiqc-pattern
+    raised_by: compare-against-iwc-exemplar
+    evidence: "IWC exemplar short-read-qc-trimming structures MultiQC results as repeated software_cond entries."
+    impact: "MultiQC reduction step should format input channels using repeatable software_cond inputs."
+  - id: draft-topology-computability
+    raised_by: nextflow-summary-to-galaxy-template
+    evidence: "All 15 pipeline tool steps and 8 workflow outputs are wired with complete upstream data producers."
+    impact: "Topology draft is computably sound and passes gxwf draft-validate without blocking gaps."
+decisions:
+  - id: explicit-optional-reference-input
+    decided_by: nextflow-summary-to-galaxy-reference-data
+    decision: "Expose reference genome as an explicit optional data input (format: fasta)."
+    rationale: "Adheres to Foundry v1 posture prioritizing portability without reliance on server-side reference data tables."
+    evidence:
+      - optional-reference-fasta
+  - id: map-samplesheet-to-list-collection
+    decided_by: nextflow-summary-to-galaxy-interface
+    decision: "Represent the input samplesheet as a list collection of BAM/CRAM datasets."
+    rationale: "Native Galaxy pattern for multi-sample workflows; element identifiers preserve sample_id and tools seamlessly map over collections."
+    evidence:
+      - input-bams-collection
+  - id: multiqc-reduction
+    decided_by: nextflow-summary-to-galaxy-data-flow
+    decision: "Gather pre-QC, stats, post-QC, and tool metrics across all samples into a single MultiQC invocation."
+    rationale: "Matches nf-core pipeline report aggregation behavior."
+    evidence:
+      - partitioned-collate-conversion
+  - id: adopt-iwc-qc-reporting-conventions
+    decided_by: compare-against-iwc-exemplar
+    decision: "Adopt IWC naming and output exposure patterns for MultiQC and FastQC."
+    rationale: "Ensures consistency with standard Galaxy workflows in the IWC corpus."
+    evidence:
+      - iwc-multiqc-pattern
+  - id: settle-draft-skeleton
+    decided_by: nextflow-summary-to-galaxy-template
+    decision: "Emit 15-step GalaxyWorkflowDraft with complete producer-consumer wiring and _plan_* context."
+    rationale: "Provides the complete structural skeleton for per-step advancement."
+    evidence:
+      - draft-topology-computability
+brief_change_recommendations: []

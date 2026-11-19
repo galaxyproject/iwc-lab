@@ -1,0 +1,544 @@
+class: GalaxyWorkflowDraft
+label: BAM to FASTQ conversion with QC (nf-core/bamtofastq)
+doc: |
+  Converts a collection of BAM files back to FASTQ reads, with QC before and after
+  conversion. Each sample is classified as paired-end or single-end from its first
+  alignment records and routed to the matching conversion branch. Translated from
+  nf-core/bamtofastq (commit aa0150e). Not carried from the source: CRAM input and
+  reference FASTA, region extraction (--chr), QC skip flags, software-versions file.
+  Reads are written in read-name order (the BAM to FASTQ tool name-sorts its input); the source
+  pipeline writes them in samtools collate order. Read content is the same.
+license: MIT
+inputs:
+  Alignments:
+    type: collection
+    collection_type: list
+    format: bam
+    doc: One BAM file per sample. The element identifier is used as the sample name in every output.
+outputs:
+  Paired-end reads:
+    outputSource: Pair forward and reverse/output
+    doc: Forward and reverse reads of the samples classified as paired-end (mapped pairs first, then pairs with
+      an unmapped mate).
+  Single-end reads:
+    outputSource: Single-end to FASTQ/nonspecific
+    doc: Reads of the samples classified as single-end.
+  Samtools flagstat:
+    outputSource: Samtools flagstat/output1
+  Samtools idxstats:
+    outputSource: Samtools idxstats/output
+  Samtools stats:
+    outputSource: Samtools stats/output
+  FastQC pre-conversion report:
+    outputSource: FastQC pre-conversion/html_file
+  FastQC pre-conversion data:
+    outputSource: FastQC pre-conversion/text_file
+  FastQC post-conversion report:
+    outputSource: FastQC post-conversion/html_file
+  FastQC post-conversion data:
+    outputSource: FastQC post-conversion/text_file
+  FASTQ validation (paired-end):
+    outputSource: Validate paired FASTQ/output
+  FASTQ validation (single-end):
+    outputSource: Validate single-end FASTQ/output
+  MultiQC report:
+    outputSource: MultiQC/html_report
+  Pairedness per sample:
+    outputSource: Collapse pairedness/output
+    doc: Two-column table, sample identifier and class (paired or single). Shows how each sample was routed.
+steps:
+  Samtools flagstat:
+    label: Samtools flagstat
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8
+    in:
+      input1: Alignments
+    out:
+    - id: output1
+    tool_version: 2.0.8
+    tool_shed_repository:
+      changeset_revision: a0d8e49a018c
+      name: samtools_flagstat
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      output_fmt: txt
+  Samtools idxstats:
+    label: Samtools idxstats
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats/2.0.8
+    in:
+      input: Alignments
+    out:
+    - id: output
+    tool_version: 2.0.8
+    tool_shed_repository:
+      changeset_revision: 13aad5cb9be4
+      name: samtools_idxstats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    state: {}
+  Samtools stats:
+    label: Samtools stats
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.9
+    tool_version: 2.0.9
+    in:
+      input: Alignments
+    out:
+    - id: output
+    tool_shed_repository:
+      changeset_revision: 8fca6e1eac98
+      name: samtools_stats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      coverage_cond:
+        coverage_select: 'no'
+      remove_dups: false
+      split_output_cond:
+        split_output_selector: 'no'
+      filter_by_flags:
+        filter_flags: nofilter
+      addref_cond:
+        addref_select: 'no'
+      cond_region:
+        select_region: 'no'
+      sparse: false
+      remove_overlaps: false
+  FastQC pre-conversion:
+    label: FastQC pre-conversion
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    in:
+      input_file: Alignments
+    out:
+    - id: html_file
+    - id: text_file
+    tool_version: 0.74+galaxy1
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      nogroup: false
+      kmers: 7
+  Classify pairedness:
+    label: Classify pairedness
+    in:
+      alignment: Alignments
+    out:
+    - id: pairedness
+      hide: true
+    run:
+      class: GalaxyUserTool
+      id: bamtofastq_check_paired_end
+      version: 1.0.0
+      name: Check paired-end
+      description: Classify a BAM file as paired-end or single-end from its first 1000 alignment records
+      license: MIT
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      shell_command: |
+        samtools view '$(inputs.alignment.path)' | head -n 1000 | awk '$2 % 2 == 1 { p++ } END { if (NR > 0 && p == NR) print "paired"; else print "single" }' > pairedness.txt
+      inputs:
+      - name: alignment
+        type: data
+        format:
+        - bam
+        label: Alignments (BAM)
+        help: Only the first 1000 alignment records are read.
+      outputs:
+      - name: pairedness
+        type: data
+        format: txt
+        from_work_dir: pairedness.txt
+        label: Pairedness class
+      help:
+        format: markdown
+        content: |
+          Reads the first 1000 alignment records of a BAM file (all records if there are fewer)
+          and writes one word:
+
+          - `paired` if every one of those records has the SAM flag 0x1 (read is paired),
+          - `single` otherwise (including an empty file).
+
+          This is the check done by the `CHECKPAIREDEND` process of nf-core/bamtofastq, which
+          counts the records with flag 0x1 among the first 1000 and requires the ratio to be 1.
+          Here the class is written as file content instead of an empty `*.paired.txt` or
+          `*.single.txt` flag file.
+  Collapse pairedness:
+    label: Collapse pairedness
+    tool_id: toolshed.g2.bx.psu.edu/repos/nml/collapse_collections/collapse_dataset/5.1.0
+    tool_version: 5.1.0
+    tool_shed_repository:
+      changeset_revision: 90981f86000f
+      name: collapse_collections
+      owner: nml
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      input_list: Classify pairedness/pairedness
+    out:
+    - id: output
+      change_datatype: tabular
+    state:
+      filename:
+        add_name: true
+        place_name: same_multiple
+      one_header: false
+  Select paired rows:
+    label: Select paired rows
+    tool_id: Filter1
+    tool_version: 1.1.1
+    in:
+      input: Collapse pairedness/output
+    out:
+    - id: out_file1
+      hide: true
+    state:
+      cond: c2=='paired'
+      header_lines: 0
+  Paired sample identifiers:
+    label: Paired sample identifiers
+    tool_id: Cut1
+    tool_version: 1.0.2
+    in:
+      input: Select paired rows/out_file1
+    out:
+    - id: out_file1
+      hide: true
+    state:
+      columnList: c1
+      delimiter: T
+  Split alignments by pairedness:
+    label: Split alignments by pairedness
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: 1.1.0
+    in:
+      input: Alignments
+      how|filter_source: Paired sample identifiers/out_file1
+    out:
+    - id: output_filtered
+      hide: true
+    - id: output_discarded
+      hide: true
+    state:
+      how:
+        how_filter: remove_if_absent
+  Extract mapped pairs:
+    label: Extract mapped pairs
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    in:
+      input: Split alignments by pairedness/output_filtered
+    out:
+    - id: outputsam
+      hide: true
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: 'no'
+          cond_rg:
+            select_rg: 'no'
+          cond_expr:
+            select_expr: 'no'
+          inclusive_filter:
+          - '1'
+          exclusive_filter:
+          - '4'
+          - '8'
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1.0
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: 'no'
+  Extract pairs with unmapped mate:
+    label: Extract pairs with unmapped mate
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    in:
+      input: Split alignments by pairedness/output_filtered
+    out:
+    - id: outputsam
+      hide: true
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: 'no'
+          cond_rg:
+            select_rg: 'no'
+          cond_expr:
+            select_expr: 'yes'
+            expression: flag.unmap || flag.munmap
+          exclusive_filter:
+          - '256'
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1.0
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          output_format:
+            oformat: bam
+      addref_cond:
+        addref_select: 'no'
+  Mapped pairs to FASTQ:
+    label: Mapped pairs to FASTQ
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx/samtools_fastx/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    in:
+      input: Extract mapped pairs/outputsam
+    out:
+    - id: forward
+      hide: true
+    - id: reverse
+      hide: true
+    - id: singletons
+      hide: true
+    tool_shed_repository:
+      changeset_revision: 4bde991b8037
+      name: samtools_fastx
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      output_fmt_cond:
+        output_fmt_select: fastqsanger.gz
+        output_quality: false
+        ilumina_casava: false
+      outputs:
+      - r1
+      - r2
+      - s
+      copy_tags: false
+      read_numbering: -N
+      idxout_cond:
+        idxout_select: 'no'
+  Unmapped-mate pairs to FASTQ:
+    label: Unmapped-mate pairs to FASTQ
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx/samtools_fastx/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    in:
+      input: Extract pairs with unmapped mate/outputsam
+    out:
+    - id: forward
+      hide: true
+    - id: reverse
+      hide: true
+    - id: singletons
+      hide: true
+    tool_shed_repository:
+      changeset_revision: 4bde991b8037
+      name: samtools_fastx
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      output_fmt_cond:
+        output_fmt_select: fastqsanger.gz
+        output_quality: false
+        ilumina_casava: false
+      outputs:
+      - r1
+      - r2
+      - s
+      copy_tags: false
+      read_numbering: -N
+      idxout_cond:
+        idxout_select: 'no'
+  Concatenate forward reads:
+    label: Concatenate forward reads
+    tool_id: cat1
+    tool_version: 1.0.0
+    in:
+      input1: Mapped pairs to FASTQ/forward
+      queries_0|input2: Unmapped-mate pairs to FASTQ/forward
+    out:
+    - id: out_file1
+      hide: true
+    state:
+      queries:
+      - {}
+  Concatenate reverse reads:
+    label: Concatenate reverse reads
+    tool_id: cat1
+    tool_version: 1.0.0
+    in:
+      input1: Mapped pairs to FASTQ/reverse
+      queries_0|input2: Unmapped-mate pairs to FASTQ/reverse
+    out:
+    - id: out_file1
+      hide: true
+    state:
+      queries:
+      - {}
+  Pair forward and reverse:
+    label: Pair forward and reverse
+    tool_id: __ZIP_COLLECTION__
+    tool_version: 1.0.0
+    in:
+      input_forward: Concatenate forward reads/out_file1
+      input_reverse: Concatenate reverse reads/out_file1
+    out:
+    - id: output
+    state: {}
+  Single-end to FASTQ:
+    label: Single-end to FASTQ
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx/samtools_fastx/1.22+galaxy2
+    tool_version: 1.22+galaxy2
+    in:
+      input: Split alignments by pairedness/output_discarded
+    out:
+    - id: nonspecific
+    tool_shed_repository:
+      changeset_revision: 4bde991b8037
+      name: samtools_fastx
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      output_fmt_cond:
+        output_fmt_select: fastqsanger.gz
+        output_quality: false
+        ilumina_casava: false
+      outputs:
+      - r0
+      copy_tags: false
+      read_numbering: -N
+      idxout_cond:
+        idxout_select: 'no'
+  Flatten paired reads:
+    label: Flatten paired reads
+    tool_id: __FLATTEN__
+    tool_version: 1.0.0
+    in:
+      input: Pair forward and reverse/output
+    out:
+    - id: output
+      hide: true
+    state:
+      join_identifier: _
+  Merge all reads:
+    label: Merge all reads
+    tool_id: __MERGE_COLLECTION__
+    tool_version: 1.0.0
+    in:
+      inputs_0|input: Flatten paired reads/output
+      inputs_1|input: Single-end to FASTQ/nonspecific
+    out:
+    - id: output
+      hide: true
+    state:
+      inputs:
+      - {}
+      - {}
+      advanced:
+        conflict:
+          duplicate_options: keep_first
+  FastQC post-conversion:
+    label: FastQC post-conversion
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    in:
+      input_file: Merge all reads/output
+    out:
+    - id: html_file
+    - id: text_file
+    tool_version: 0.74+galaxy1
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      nogroup: false
+      kmers: 7
+  Validate paired FASTQ:
+    label: Validate paired FASTQ
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/fastq_info/fastq_info/0.25.3+galaxy0
+    in:
+      input_option|fastq_1: Concatenate forward reads/out_file1
+      input_option|fastq_2: Concatenate reverse reads/out_file1
+    out:
+    - id: output
+    tool_version: 0.25.3+galaxy0
+    tool_shed_repository:
+      changeset_revision: 2bca15e630a4
+      name: fastq_info
+      owner: bgruening
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      input_option:
+        input_type: paired
+      q: true
+      r: false
+  Validate single-end FASTQ:
+    label: Validate single-end FASTQ
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/fastq_info/fastq_info/0.25.3+galaxy0
+    in:
+      input_option|fastq_1: Single-end to FASTQ/nonspecific
+    out:
+    - id: output
+    tool_version: 0.25.3+galaxy0
+    tool_shed_repository:
+      changeset_revision: 2bca15e630a4
+      name: fastq_info
+      owner: bgruening
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      input_option:
+        input_type: single
+      q: true
+      r: false
+  MultiQC:
+    label: MultiQC
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+    tool_version: 1.35+galaxy5
+    in:
+      results_0|software_cond|output_0|input: FastQC pre-conversion/text_file
+      results_0|software_cond|output_1|input: FastQC post-conversion/text_file
+      results_1|software_cond|output_0|type|input: Samtools stats/output
+      results_1|software_cond|output_1|type|input: Samtools flagstat/output1
+      results_1|software_cond|output_2|type|input: Samtools idxstats/output
+    out:
+    - id: html_report
+    - id: stats
+      hide: true
+    tool_shed_repository:
+      changeset_revision: 94b6bea727ae
+      name: multiqc
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    state:
+      results:
+      - software_cond:
+          software: fastqc
+          output:
+          - type: data
+          - type: data
+      - software_cond:
+          software: samtools
+          output:
+          - type:
+              type: stats
+          - type:
+              type: flagstat
+          - type:
+              type: idxstats
+      title: bamtofastq
+      flat: false
+      export: false
+      png_plots: false

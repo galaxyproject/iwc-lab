@@ -1,0 +1,219 @@
+- doc: Two paired BAM samples with FASTA and rebuilt FAI; use source snapshot checksums for text outputs and labelled smoke checks for compressed or unavailable formats.
+  job:
+    alignment_samples:
+      class: Collection
+      collection_type: list
+      elements:
+        - identifier: test
+          class: File
+          location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam
+          filetype: bam
+          hashes:
+            - hash_function: SHA-1
+              hash_value: 0799f89638bddd570439115c606f425c22d189b1
+        - identifier: test2
+          class: File
+          location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam
+          filetype: bam
+          hashes:
+            - hash_function: SHA-1
+              hash_value: 522fb037cea05b9d41dd69647f27a644838bf507
+    reference_fasta:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/refs/heads/modules/data/genomics/homo_sapiens/genome/genome.fasta
+      filetype: fasta
+      hashes:
+        - hash_function: SHA-1
+          hash_value: 56e7a0c035e2fce8ebe497d3704431d7586fd444
+    reference_mode: build_fai
+    chromosome: ""
+    skip_read_qc: false
+    alignment_stats_mode: with_reference
+    fast_collate: false
+    reads_in_memory: 100000
+    multiqc_title: ""
+  outputs:
+    converted_reads:
+      class: Collection
+      collection_type: list:paired_or_unpaired
+      element_count: 2
+      element_tests:
+        test:
+          class: Collection
+          count: 2
+          element_tests:
+            forward:
+              decompress: true
+              asserts:
+                - has_size:
+                    min: 1
+            reverse:
+              decompress: true
+              asserts:
+                - has_size:
+                    min: 1
+        test2:
+          class: Collection
+          count: 2
+          element_tests:
+            forward:
+              decompress: true
+              asserts:
+                - has_size:
+                    min: 1
+            reverse:
+              decompress: true
+              asserts:
+                - has_size:
+                    min: 1
+    fastq_validation:
+      class: Collection
+      collection_type: list:paired_or_unpaired
+      element_count: 2
+      element_tests:
+        test:
+          checksum: md5$db31682c36cde02f1e8567d130537cac
+        test2:
+          checksum: md5$0222a414a69c92608af1580f3c6ce996
+    alignment_flagstat:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test:
+          checksum: md5$a53f3d26e2e9851f7d528442bbfe9781
+        test2:
+          checksum: md5$acbd95030a362a7e6491faa87d1b9c2c
+    alignment_idxstats:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test:
+          checksum: md5$e179601fa7b8ebce81ac3765206f6c15
+        test2:
+          checksum: md5$90f01313bc89c7fd096aad051cd71b66
+    alignment_stats:
+      class: Collection
+      collection_type: list
+      element_tests:
+        test:
+          checksum: md5$3c3f8fa56674fa987fd912b530f49c3c
+        test2:
+          checksum: md5$7e6537bde51ee4bb4a50562014ae2cd4
+    pre_conversion_fastqc_html:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+            - has_text:
+                text: FastQC Report
+        test2:
+          asserts:
+            - has_text:
+                text: FastQC Report
+    pre_conversion_fastqc_data:
+      class: Collection
+      collection_type: list
+      element_count: 2
+      element_tests:
+        test:
+          asserts:
+            - has_text:
+                text: "Filename\ttest.pre_conversion.bam"
+            - has_text:
+                text: "Total Sequences\t5644"
+        test2:
+          asserts:
+            - has_text:
+                text: "Filename\ttest2.pre_conversion.bam"
+            - has_text:
+                text: "Total Sequences\t5436"
+    post_conversion_fastqc_html:
+      class: Collection
+      collection_type: list:paired_or_unpaired
+      element_count: 2
+      element_tests:
+        test:
+          class: Collection
+          count: 2
+          element_tests:
+            forward:
+              asserts:
+                - has_text:
+                    text: FastQC Report
+            reverse:
+              asserts:
+                - has_text:
+                    text: FastQC Report
+        test2:
+          class: Collection
+          count: 2
+          element_tests:
+            forward:
+              asserts:
+                - has_text:
+                    text: FastQC Report
+            reverse:
+              asserts:
+                - has_text:
+                    text: FastQC Report
+    post_conversion_fastqc_data:
+      class: Collection
+      collection_type: list:paired_or_unpaired
+      element_count: 2
+      element_tests:
+        test:
+          class: Collection
+          count: 2
+          element_tests:
+            forward:
+              asserts:
+                - has_text:
+                    text: "Filename\ttest.post_conversion_1.fastq.gz"
+                - has_text:
+                    text: "Total Sequences\t2821"
+            reverse:
+              asserts:
+                - has_text:
+                    text: "Filename\ttest.post_conversion_2.fastq.gz"
+                - has_text:
+                    text: "Total Sequences\t2821"
+        test2:
+          class: Collection
+          count: 2
+          element_tests:
+            forward:
+              asserts:
+                - has_text:
+                    text: "Filename\ttest2.post_conversion_1.fastq.gz"
+                - has_text:
+                    text: "Total Sequences\t2718"
+            reverse:
+              asserts:
+                - has_text:
+                    text: "Filename\ttest2.post_conversion_2.fastq.gz"
+                - has_text:
+                    text: "Total Sequences\t2718"
+    multiqc_report:
+      asserts:
+        - has_size:
+            min: 1
+    multiqc_data:
+      asserts:
+        - has_size:
+            min: 1
+    software_versions:
+      asserts:
+        - has_text:
+            text: "CHECKPAIREDEND:\n  samtools: 1.23.1"
+        - has_text:
+            text: "COLLATE_FASTQ_MAP:\n  samtools: 1.23.1"
+        - has_text:
+            text: "COLLATE_FASTQ_UNMAP:\n  samtools: 1.23.1"
+        - has_text:
+            text: "FASTQUTILS_INFO:\n  fastqutils: 0.25.3"
+        - has_text:
+            text: "MULTIQC:\n  multiqc: 1.34"
+        - has_text:
+            text: "cat: 9.5"

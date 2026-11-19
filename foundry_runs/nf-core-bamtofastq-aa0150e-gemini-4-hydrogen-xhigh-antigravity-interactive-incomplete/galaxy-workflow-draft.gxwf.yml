@@ -1,0 +1,1022 @@
+class: GalaxyWorkflowDraft
+label: bamtofastq
+doc: >
+  Convert BAM/CRAM alignment collections into single-end and paired-end FASTQ reads
+  with pre- and post-conversion alignment and read QC, FASTQ integrity verification,
+  and MultiQC reporting. Translated from nf-core/bamtofastq (commit aa0150e).
+tags:
+  - bamtofastq
+  - bam
+  - cram
+  - fastq
+  - qc
+  - nf-core
+
+inputs:
+  alignments:
+    type: collection
+    collection_type: list
+    optional: false
+    format:
+      - bam
+      - cram
+    doc: >
+      Collection (list) of BAM and/or CRAM alignment datasets keyed by sample identifier
+      (maps nf-core samplesheet sample_id + mapped + file_type; index metadata .bai/.crai
+      managed natively by Galaxy).
+  fasta:
+    type: data
+    format: fasta
+    optional: true
+    doc: >
+      Optional reference FASTA file required for CRAM decoding and CRAM alignment QC.
+  chr:
+    type: string
+    optional: true
+    default: null
+    doc: >
+      Optional chromosome/region filter passed to samtools view when non-empty.
+  no_read_qc:
+    type: boolean
+    optional: true
+    default: false
+    doc: >
+      Skip pre-conversion (BAM) and post-conversion (FASTQ) FastQC steps when true
+      (maps nf-core params.no_read_QC).
+  no_stats:
+    type: boolean
+    optional: true
+    default: false
+    doc: >
+      Skip pre-conversion samtools flagstat, idxstats, and stats steps when true.
+  samtools_collate_fast:
+    type: boolean
+    optional: true
+    default: false
+    doc: >
+      Use samtools collate fast mode (-f) during alignment-to-FASTQ extraction.
+  reads_in_memory:
+    type: int
+    optional: true
+    default: 100000
+    doc: >
+      Number of temporary reads buffered in memory (-r) when samtools_collate_fast is enabled.
+  multiqc_title:
+    type: string
+    optional: true
+    default: ""
+    doc: >
+      Optional report title passed to MultiQC.
+
+outputs:
+  paired_reads:
+    outputSource: cat_paired_fastq/TODO_merged_paired_fastq
+    doc: Paired-end converted FASTQ reads (list:paired of fastqsanger.gz).
+  single_end_reads:
+    outputSource: samtools_collatefastq_single/fastq_other
+    doc: Single-end converted FASTQ reads (list of fastqsanger.gz; empty when all inputs are paired-end).
+  fastqutils_info:
+    outputSource: merge_fastqutils_info/TODO_merged_collection
+    doc: Per-sample fastq_info integrity verification reports (list of txt).
+  samtools_flagstat:
+    outputSource: samtools_flagstat/output1
+    doc: Pre-conversion samtools flagstat reports (list of txt, skipped when no_stats=true).
+  samtools_idxstats:
+    outputSource: samtools_idxstats/output
+    doc: Pre-conversion samtools idxstats reports (list of tabular, skipped when no_stats=true).
+  samtools_stats:
+    outputSource: select_samtools_stats/output
+    doc: Pre-conversion samtools stats reports (list of txt, skipped when no_stats=true).
+  fastqc_pre_conversion_html:
+    outputSource: fastqc_pre_conversion/html_file
+    doc: Pre-conversion FastQC HTML reports on BAM inputs (skipped when no_read_qc=true).
+  fastqc_pre_conversion_zip:
+    outputSource: fastqc_pre_conversion/text_file
+    doc: Pre-conversion FastQC raw data reports on BAM inputs (skipped when no_read_qc=true).
+  fastqc_post_conversion_html:
+    outputSource: fastqc_post_conversion/TODO_html_report
+    doc: Post-conversion FastQC HTML reports across converted FASTQs (skipped when no_read_qc=true).
+  fastqc_post_conversion_zip:
+    outputSource: fastqc_post_conversion/TODO_qc_data
+    doc: Post-conversion FastQC raw data / ZIP reports across converted FASTQs (skipped when no_read_qc=true).
+  multiqc_report:
+    outputSource: multiqc/TODO_html_report
+    doc: Aggregated MultiQC HTML report (skipped only when both no_read_qc and no_stats are true).
+
+steps:
+  samtools_flagstat:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat
+    tool_version: "2.0.8"
+    tool_shed_repository:
+      name: samtools_flagstat
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+      changeset_revision: a0d8e49a018c
+    label: samtools_flagstat
+    doc: Pre-conversion samtools flagstat on all BAM/CRAM inputs.
+    when: "$(!inputs.no_stats)"
+    state:
+      output_fmt: txt
+    in:
+      input1: alignments
+      no_stats: no_stats
+    out:
+      - id: output1
+
+  samtools_idxstats:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats
+    tool_version: "2.0.8"
+    tool_shed_repository:
+      name: samtools_idxstats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+      changeset_revision: 13aad5cb9be4
+    label: samtools_idxstats
+    doc: Pre-conversion samtools idxstats on all BAM/CRAM inputs.
+    when: "$(!inputs.no_stats)"
+    state: {}
+    in:
+      input: alignments
+      no_stats: no_stats
+    out:
+      - id: output
+
+  samtools_stats:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats
+    tool_version: "2.0.9"
+    tool_shed_repository:
+      name: samtools_stats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+      changeset_revision: 8fca6e1eac98
+    label: samtools_stats
+    doc: Pre-conversion samtools stats on all BAM/CRAM inputs when reference FASTA is omitted.
+    when: "$(!inputs.no_stats && inputs.fasta == null)"
+    state:
+      addref_cond:
+        addref_select: "no"
+    in:
+      input: alignments
+      fasta: fasta
+      no_stats: no_stats
+    out:
+      - id: output
+        hide: true
+
+  samtools_stats_with_fasta:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats
+    tool_version: "2.0.9"
+    tool_shed_repository:
+      name: samtools_stats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+      changeset_revision: 8fca6e1eac98
+    label: samtools_stats_with_fasta
+    doc: Pre-conversion samtools stats on all BAM/CRAM inputs when optional reference `fasta` is supplied.
+    when: "$(!inputs.no_stats && inputs.fasta != null)"
+    state:
+      addref_cond:
+        addref_select: history
+        ref:
+          __class__: ConnectedValue
+    in:
+      input: alignments
+      "addref_cond|ref": fasta
+      fasta: fasta
+      no_stats: no_stats
+    out:
+      - id: output
+        hide: true
+
+  select_samtools_stats:
+    type: pick_value
+    label: select_samtools_stats
+    doc: Select samtools stats report from either reference-free or reference-FASTA branch (or emit skipped sentinel when no_stats=true).
+    state:
+      mode: first_or_skip
+    in:
+      input_0: samtools_stats/output
+      input_1: samtools_stats_with_fasta/output
+    out:
+      - id: output
+
+  detect_bam_alignments:
+    label: detect_bam_alignments
+    doc: Emit non-empty marker only for BAM elements so CRAM elements do not enter pre-conversion FastQC.
+    when: "$(!inputs.no_read_qc)"
+    run:
+      class: GalaxyUserTool
+      id: bamtofastq_detect_bam_alignments
+      version: "0.1.0"
+      name: Detect BAM alignments
+      description: Emit a non-empty text marker for BAM files and an empty file for CRAM files so CRAM inputs can be excluded from BAM-only FastQC.
+      container: community.wave.seqera.io/library/coreutils_grep_gzip_lbzip2_pruned:838ba80435a629f8
+      shell_command: |
+        set -e
+        magic=\$(od -N 4 -An -tx1 '$(inputs.alignment.path)' | tr -d ' \t\n\r')
+        case "$magic" in
+          4352414d|"")
+            : > marker.txt
+            ;;
+          *)
+            printf 'bam\n' > marker.txt
+            ;;
+        esac
+      inputs:
+        - name: alignment
+          type: data
+          format:
+            - bam
+            - cram
+          label: Alignment dataset
+          help: BAM or CRAM alignment dataset to inspect for BAM vs CRAM format.
+      outputs:
+        - name: bam_marker
+          type: data
+          format: txt
+          label: BAM marker
+          from_work_dir: marker.txt
+    in:
+      alignment: alignments
+      no_read_qc: no_read_qc
+    out:
+      - id: bam_marker
+        hide: true
+
+  filter_empty_bam_markers:
+    tool_id: __FILTER_EMPTY_DATASETS__
+    tool_version: "1.1.0"
+    label: filter_empty_bam_markers
+    doc: Remove empty markers corresponding to CRAM datasets.
+    when: "$(!inputs.no_read_qc)"
+    state: {}
+    in:
+      input: detect_bam_alignments/bam_marker
+      no_read_qc: no_read_qc
+    out:
+      - id: output
+        hide: true
+
+  extract_bam_identifiers:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_element_identifiers/collection_element_identifiers
+    tool_version: "0.0.3"
+    tool_shed_repository:
+      name: collection_element_identifiers
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+      changeset_revision: 3e27acfa4830
+    label: extract_bam_identifiers
+    doc: Extract surviving BAM element identifiers into a text list for collection filtering.
+    when: "$(!inputs.no_read_qc)"
+    state: {}
+    in:
+      input_collection: filter_empty_bam_markers/output
+      no_read_qc: no_read_qc
+    out:
+      - id: output
+        hide: true
+
+  filter_bam_alignments:
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: "1.1.0"
+    label: filter_bam_alignments
+    doc: Subset `alignments` to BAM-only datasets using surviving identifiers.
+    when: "$(!inputs.no_read_qc)"
+    state:
+      how:
+        how_filter: remove_if_absent
+        filter_source:
+          __class__: ConnectedValue
+    in:
+      input: alignments
+      "how|filter_source": extract_bam_identifiers/output
+      no_read_qc: no_read_qc
+    out:
+      - id: output_filtered
+        hide: true
+
+  fastqc_pre_conversion:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc
+    tool_version: "0.74+galaxy1"
+    tool_shed_repository:
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+      changeset_revision: 2c64fded1286
+    label: fastqc_pre_conversion
+    doc: Run FastQC pre-conversion QC on BAM inputs only.
+    when: "$(!inputs.no_read_qc)"
+    state: {}
+    in:
+      input_file: filter_bam_alignments/output_filtered
+      no_read_qc: no_read_qc
+    out:
+      - id: html_file
+      - id: text_file
+
+  samtools_chr:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+      changeset_revision: 5cf9fcc93508
+    label: samtools_chr
+    doc: Optional region filtering of input alignments when `chr` is supplied without reference FASTA.
+    when: "$(inputs.chr != null && inputs.chr !== '' && inputs.fasta == null)"
+    state:
+      addref_cond:
+        addref_select: "no"
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: text
+            regions:
+              __class__: ConnectedValue
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+    in:
+      input: alignments
+      "mode|filter_config|cond_region|regions": chr
+      chr: chr
+      fasta: fasta
+    out:
+      - id: outputsam
+        hide: true
+
+  samtools_chr_with_fasta:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view
+    tool_version: 1.22+galaxy2
+    tool_shed_repository:
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+      changeset_revision: 5cf9fcc93508
+    label: samtools_chr_with_fasta
+    doc: Optional region filtering of input alignments when `chr` and reference `fasta` are both supplied.
+    when: "$(inputs.chr != null && inputs.chr !== '' && inputs.fasta != null)"
+    state:
+      addref_cond:
+        addref_select: history
+        ref:
+          __class__: ConnectedValue
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_region:
+            select_region: text
+            regions:
+              __class__: ConnectedValue
+          cond_rg:
+            select_rg: "no"
+          cond_expr:
+            select_expr: "no"
+        subsample_config:
+          subsampling_mode:
+            select_subsample: fraction
+            factor: 1
+        output_options:
+          reads_report_type: retained
+          complementary_output: false
+          adv_output:
+            readtags: []
+            collapsecigar: false
+          output_format:
+            oformat: bam
+    in:
+      input: alignments
+      "addref_cond|ref": fasta
+      "mode|filter_config|cond_region|regions": chr
+      chr: chr
+      fasta: fasta
+    out:
+      - id: outputsam
+        hide: true
+
+  select_effective_alignments:
+    type: pick_value
+    label: select_effective_alignments
+    doc: Choose region-filtered alignments when either `samtools_chr` branch ran, otherwise pass through `alignments`.
+    state:
+      mode: first_non_null
+    in:
+      input_0: samtools_chr/outputsam
+      input_1: samtools_chr_with_fasta/outputsam
+      input_2: alignments
+    out:
+      - id: output
+        hide: true
+
+  check_paired_end:
+    label: check_paired_end
+    doc: Classify each sample alignment as paired-end or single-end by inspecting up to 1000 reads.
+    run:
+      class: GalaxyUserTool
+      id: bamtofastq_check_paired_end
+      version: "0.1.0"
+      name: Check paired-end alignment reads
+      description: Inspect up to 1000 alignment records with samtools view to classify a BAM/CRAM dataset as paired-end or single-end and emit complementary non-empty/empty marker files.
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      shell_command: |
+        set -e
+        ref_path='$(inputs.fasta ? inputs.fasta.path : "")'
+        if [ -n "$ref_path" ]; then
+          ln -sf "$ref_path" ref.fa
+          samtools faidx ref.fa
+          samtools view -H --reference ref.fa '$(inputs.input.path)' > header.sam
+          samtools view --reference ref.fa '$(inputs.input.path)' | head -n 1000 > first1k.sam
+        else
+          samtools view -H '$(inputs.input.path)' > header.sam
+          samtools view '$(inputs.input.path)' | head -n 1000 > first1k.sam
+        fi
+        lines_to_chk=\$(wc -l < first1k.sam | tr -d ' \t\n\r')
+        : > paired.txt
+        : > single.txt
+        if [ "$lines_to_chk" -gt 0 ]; then
+          paired_count=\$(cat header.sam first1k.sam | samtools view -c -f 1 - | tr -d ' \t\n\r')
+          if [ "$paired_count" = "$lines_to_chk" ]; then
+            printf 'paired_end\n' > paired.txt
+          else
+            printf 'single_end\n' > single.txt
+          fi
+        else
+          printf 'single_end\n' > single.txt
+        fi
+      inputs:
+        - name: input
+          type: data
+          format:
+            - bam
+            - cram
+          label: Alignment dataset
+          help: BAM or CRAM alignment dataset to inspect for paired-end flags (-f 1).
+        - name: fasta
+          type: data
+          optional: true
+          format:
+            - fasta
+          label: Reference FASTA (optional)
+          help: Optional reference FASTA required for decoding CRAM alignments when reference sequences are not cached.
+      outputs:
+        - name: paired_marker
+          type: data
+          format: txt
+          label: Paired-end marker
+          from_work_dir: paired.txt
+        - name: single_marker
+          type: data
+          format: txt
+          label: Single-end marker
+          from_work_dir: single.txt
+    in:
+      input: select_effective_alignments/output
+      fasta: fasta
+    out:
+      - id: paired_marker
+        hide: true
+      - id: single_marker
+        hide: true
+
+  filter_empty_paired_markers:
+    tool_id: __FILTER_EMPTY_DATASETS__
+    tool_version: "1.1.0"
+    label: filter_empty_paired_markers
+    doc: Drop empty paired-end markers for single-end samples.
+    state: {}
+    in:
+      input: check_paired_end/paired_marker
+    out:
+      - id: output
+        hide: true
+
+  extract_paired_identifiers:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_element_identifiers/collection_element_identifiers
+    tool_version: "0.0.3"
+    tool_shed_repository:
+      name: collection_element_identifiers
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+      changeset_revision: 3e27acfa4830
+    label: extract_paired_identifiers
+    doc: Extract paired-end sample identifiers into a text file.
+    state: {}
+    in:
+      input_collection: filter_empty_paired_markers/output
+    out:
+      - id: output
+        hide: true
+
+  filter_paired_alignments:
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: "1.1.0"
+    label: filter_paired_alignments
+    doc: Subset effective alignments to paired-end samples only.
+    state:
+      how:
+        how_filter: remove_if_absent
+        filter_source:
+          __class__: ConnectedValue
+    in:
+      input: select_effective_alignments/output
+      "how|filter_source": extract_paired_identifiers/output
+    out:
+      - id: output_filtered
+        hide: true
+
+  filter_empty_single_markers:
+    tool_id: __FILTER_EMPTY_DATASETS__
+    tool_version: "1.1.0"
+    label: filter_empty_single_markers
+    doc: Drop empty single-end markers for paired-end samples.
+    state: {}
+    in:
+      input: check_paired_end/single_marker
+    out:
+      - id: output
+        hide: true
+
+  extract_single_identifiers:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_element_identifiers/collection_element_identifiers
+    tool_version: "0.0.3"
+    tool_shed_repository:
+      name: collection_element_identifiers
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+      changeset_revision: 3e27acfa4830
+    label: extract_single_identifiers
+    doc: Extract single-end sample identifiers into a text file.
+    state: {}
+    in:
+      input_collection: filter_empty_single_markers/output
+    out:
+      - id: output
+        hide: true
+
+  filter_single_alignments:
+    tool_id: __FILTER_FROM_FILE__
+    tool_version: "1.1.0"
+    label: filter_single_alignments
+    doc: Subset effective alignments to single-end samples only.
+    state:
+      how:
+        how_filter: remove_if_absent
+        filter_source:
+          __class__: ConnectedValue
+    in:
+      input: select_effective_alignments/output
+      "how|filter_source": extract_single_identifiers/output
+    out:
+      - id: output_filtered
+        hide: true
+
+  samtools_collatefastq_single:
+    label: samtools_collatefastq_single
+    doc: Name-collate and extract gzipped single-end FASTQ reads via samtools collate + fastq.
+    run:
+      class: GalaxyUserTool
+      id: bamtofastq_samtools_collatefastq_single
+      version: "0.1.0"
+      name: Samtools collate and extract single-end FASTQ
+      description: Name-collate alignment records with optional fast mode (-f -r) and extract gzipped single-end FASTQ (-0) via samtools collate and samtools fastq.
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      shell_command: |
+        set -e
+        ref_path='$(inputs.fasta ? inputs.fasta.path : "")'
+        collate_fast='$(inputs.collate_fast ? "true" : "false")'
+        reads_in_mem='$(inputs.reads_in_memory !== null && inputs.reads_in_memory !== undefined ? inputs.reads_in_memory : 100000)'
+        ref_arg=""
+        if [ -n "$ref_path" ]; then
+          ln -sf "$ref_path" ref.fa
+          samtools faidx ref.fa
+          ref_arg="--reference ref.fa"
+        fi
+        collate_args=""
+        if [ "$collate_fast" = "true" ]; then
+          collate_args="-f -r $reads_in_mem"
+        fi
+        samtools collate $collate_args --threads "\${GALAXY_SLOTS:-1}" $ref_arg -O '$(inputs.input.path)' . \
+          | samtools fastq -N --threads "\${GALAXY_SLOTS:-1}" $ref_arg -0 output_other.fq.gz -1 tmp_1.fq.gz -s tmp_singleton.fq.gz
+      inputs:
+        - name: input
+          type: data
+          format:
+            - bam
+            - cram
+          label: Single-end alignment dataset
+          help: BAM or CRAM alignment dataset for a single-end sample.
+        - name: fasta
+          type: data
+          optional: true
+          format:
+            - fasta
+          label: Reference FASTA (optional)
+          help: Optional reference FASTA required for decoding CRAM alignments.
+        - name: collate_fast
+          type: boolean
+          optional: true
+          value: false
+          label: Fast collation mode (-f)
+          help: Process primary alignments only using samtools collate -f -r.
+        - name: reads_in_memory
+          type: integer
+          optional: true
+          value: 100000
+          label: Reads stored in memory (-r)
+          help: Number of temporary reads buffered in memory when fast collation mode is enabled.
+      outputs:
+        - name: fastq_other
+          type: data
+          format: fastqsanger.gz
+          label: Single-end FASTQ reads
+          from_work_dir: output_other.fq.gz
+    state: {}
+    in:
+      input: filter_single_alignments/output_filtered
+      fasta: fasta
+      collate_fast: samtools_collate_fast
+      reads_in_memory: reads_in_memory
+    out:
+      - id: fastq_other
+
+  samtools_view_map_map:
+    tool_id: TODO
+    tool_version: TODO
+    label: samtools_view_map_map
+    doc: Extract read-mapped and mate-mapped paired alignments (-b -f1 -F12).
+    in:
+      TODO_input: filter_paired_alignments/output_filtered
+      TODO_fasta: fasta
+    out:
+      - id: TODO_bam
+        hide: true
+    _plan_state: |
+      Run `samtools view` outputting BAM (`-b`), requiring flag 1 (`0x1` paired), excluding flags 12 (`0x4 | 0x8`, both mapped). Pass optional `fasta` if supplied.
+    _plan_context: |
+      upstream: nf-core ALIGNMENT_TO_FASTQ -> SAMTOOLS_VIEW_MAP_MAP (nf-core/samtools/view).
+      ext.args: `-b -f1 -F12`
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+    _plan_in: |
+      `TODO_input` -> `filter_paired_alignments/TODO_filtered_collection` (`list`).
+      `TODO_fasta` -> optional `fasta`.
+    _plan_out: |
+      `TODO_bam` -> `list` `bam` consumed by `collate_fastq_map`.
+
+  samtools_view_unmap_unmap:
+    tool_id: TODO
+    tool_version: TODO
+    label: samtools_view_unmap_unmap
+    doc: Extract read-unmapped and mate-unmapped paired alignments (-b -f12 -F256).
+    in:
+      TODO_input: filter_paired_alignments/output_filtered
+      TODO_fasta: fasta
+    out:
+      - id: TODO_bam
+        hide: true
+    _plan_state: |
+      Run `samtools view` outputting BAM (`-b`), requiring flags 12 (`0x4 | 0x8`), excluding secondary flag 256 (`0x100`). Pass optional `fasta` if supplied.
+    _plan_context: |
+      upstream: nf-core ALIGNMENT_TO_FASTQ -> SAMTOOLS_VIEW_UNMAP_UNMAP (nf-core/samtools/view).
+      ext.args: `-b -f12 -F256`
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+    _plan_in: |
+      `TODO_input` -> `filter_paired_alignments/TODO_filtered_collection` (`list`).
+      `TODO_fasta` -> optional `fasta`.
+    _plan_out: |
+      `TODO_bam` -> `list` `bam` consumed by `samtools_merge_unmap`.
+
+  samtools_view_unmap_map:
+    tool_id: TODO
+    tool_version: TODO
+    label: samtools_view_unmap_map
+    doc: Extract read-unmapped and mate-mapped paired alignments (-b -f4 -F264).
+    in:
+      TODO_input: filter_paired_alignments/output_filtered
+      TODO_fasta: fasta
+    out:
+      - id: TODO_bam
+        hide: true
+    _plan_state: |
+      Run `samtools view` outputting BAM (`-b`), requiring flag 4 (`0x4`), excluding flags 264 (`0x8 | 0x100`). Pass optional `fasta` if supplied.
+    _plan_context: |
+      upstream: nf-core ALIGNMENT_TO_FASTQ -> SAMTOOLS_VIEW_UNMAP_MAP (nf-core/samtools/view).
+      ext.args: `-b -f4 -F264`
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+    _plan_in: |
+      `TODO_input` -> `filter_paired_alignments/TODO_filtered_collection` (`list`).
+      `TODO_fasta` -> optional `fasta`.
+    _plan_out: |
+      `TODO_bam` -> `list` `bam` consumed by `samtools_merge_unmap`.
+
+  samtools_view_map_unmap:
+    tool_id: TODO
+    tool_version: TODO
+    label: samtools_view_map_unmap
+    doc: Extract read-mapped and mate-unmapped paired alignments (-b -f8 -F260).
+    in:
+      TODO_input: filter_paired_alignments/output_filtered
+      TODO_fasta: fasta
+    out:
+      - id: TODO_bam
+        hide: true
+    _plan_state: |
+      Run `samtools view` outputting BAM (`-b`), requiring flag 8 (`0x8`), excluding flags 260 (`0x4 | 0x100`). Pass optional `fasta` if supplied.
+    _plan_context: |
+      upstream: nf-core ALIGNMENT_TO_FASTQ -> SAMTOOLS_VIEW_MAP_UNMAP (nf-core/samtools/view).
+      ext.args: `-b -f8 -F260`
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+    _plan_in: |
+      `TODO_input` -> `filter_paired_alignments/TODO_filtered_collection` (`list`).
+      `TODO_fasta` -> optional `fasta`.
+    _plan_out: |
+      `TODO_bam` -> `list` `bam` consumed by `samtools_merge_unmap`.
+
+  samtools_merge_unmap:
+    tool_id: TODO
+    tool_version: TODO
+    label: samtools_merge_unmap
+    doc: Merge the three unmapped/half-mapped BAM slices per sample via samtools merge.
+    in:
+      TODO_unmap_unmap: samtools_view_unmap_unmap/TODO_bam
+      TODO_unmap_map: samtools_view_unmap_map/TODO_bam
+      TODO_map_unmap: samtools_view_map_unmap/TODO_bam
+      TODO_fasta: fasta
+    out:
+      - id: TODO_merged_bam
+        hide: true
+    _plan_state: |
+      Merge 3 aligned BAM inputs per sample via `samtools merge -c -p`? (Check nf-core SAMTOOLS_MERGE default: `samtools merge --threads $task.cpus ${prefix}.bam $input_files` — no `-c -p` extra args in `modules.config`!).
+      Emit `bam` preserving sample identifier.
+    _plan_context: |
+      upstream: nf-core ALIGNMENT_TO_FASTQ -> SAMTOOLS_MERGE_UNMAP (nf-core/samtools/merge).
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      arity_check: must verify in tool discovery whether `iuc/samtools_merge` accepts 3 mapped repeat/single data inputs per sample (vs 1 `multiple="true"` data param that would require `list:list` grouping via topology repair).
+    _plan_in: |
+      `TODO_unmap_unmap` -> `samtools_view_unmap_unmap/TODO_bam` (`list`).
+      `TODO_unmap_map` -> `samtools_view_unmap_map/TODO_bam` (`list`).
+      `TODO_map_unmap` -> `samtools_view_map_unmap/TODO_bam` (`list`).
+      `TODO_fasta` -> optional `fasta` (note all 3 inputs are BAM).
+    _plan_out: |
+      `TODO_merged_bam` -> `list` `bam` consumed by `collate_fastq_unmap`.
+
+  collate_fastq_map:
+    tool_id: TODO
+    tool_version: TODO
+    label: collate_fastq_map
+    doc: Name-collate and extract paired FASTQ R1/R2 from properly paired mapped reads.
+    in:
+      TODO_input: samtools_view_map_map/TODO_bam
+      TODO_fasta: fasta
+      TODO_collate_fast: samtools_collate_fast
+      TODO_reads_in_memory: reads_in_memory
+    out:
+      - id: TODO_paired_fastq
+        hide: true
+    _plan_state: |
+      Name-collate with `samtools collate` (with `-f -r <reads_in_memory>` when `samtools_collate_fast` is true) and extract paired FASTQ via
+      `samtools fastq -N -F 0x900 -1 <prefix>_1.fq.gz -2 <prefix>_2.fq.gz -c 1 -s <singleton> -0 <other>` (paired output exposed as `paired` collection `forward`/`reverse` in `fastqsanger.gz`).
+    _plan_context: |
+      upstream: nf-core ALIGNMENT_TO_FASTQ -> COLLATE_FASTQ_MAP (nf-core/samtools/collatefastq).
+      ext.args: `-N` with conditional `ext.args2`: `-f -r <reads_in_memory>` when `samtools_collate_fast`.
+      Critical for exact snapshot MD5 matching: check exact samtools fastq compression level (`-c 1` in nf-core module `collatefastq/main.nf`! No extra `-s`/`-0` merged into R1/R2) and samtools version (1.23.1 in container vs Tool Shed version).
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+    _plan_in: |
+      `TODO_input` -> `samtools_view_map_map/TODO_bam` (`list`).
+      `TODO_fasta` -> optional `fasta`.
+      `TODO_collate_fast` -> boolean `samtools_collate_fast`.
+      `TODO_reads_in_memory` -> integer `reads_in_memory`.
+    _plan_out: |
+      `TODO_paired_fastq` -> `list:paired` (`forward`, `reverse`) `fastqsanger.gz` consumed by `cat_paired_fastq`.
+
+  collate_fastq_unmap:
+    tool_id: TODO
+    tool_version: TODO
+    label: collate_fastq_unmap
+    doc: Name-collate and extract paired FASTQ R1/R2 from merged unmapped/half-mapped reads.
+    in:
+      TODO_input: samtools_merge_unmap/TODO_merged_bam
+      TODO_fasta: fasta
+      TODO_collate_fast: samtools_collate_fast
+      TODO_reads_in_memory: reads_in_memory
+    out:
+      - id: TODO_paired_fastq
+        hide: true
+    _plan_state: |
+      Name-collate with `samtools collate` (with `-f -r <reads_in_memory>` when `samtools_collate_fast` is true) and extract paired FASTQ (`samtools fastq -N -F 0x900 -1 ... -2 ... -c 1`), emitting a `paired` collection (`forward`, `reverse`) in `fastqsanger.gz`.
+    _plan_context: |
+      upstream: nf-core ALIGNMENT_TO_FASTQ -> COLLATE_FASTQ_UNMAP (nf-core/samtools/collatefastq).
+      container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+      Same samtools collate/fastq command and compression behavior as `collate_fastq_map`.
+    _plan_in: |
+      `TODO_input` -> `samtools_merge_unmap/TODO_merged_bam` (`list`).
+      `TODO_fasta` -> optional `fasta`.
+      `TODO_collate_fast` -> boolean `samtools_collate_fast`.
+      `TODO_reads_in_memory` -> integer `reads_in_memory`.
+    _plan_out: |
+      `TODO_paired_fastq` -> `list:paired` (`forward`, `reverse`) `fastqsanger.gz` consumed by `cat_paired_fastq`.
+
+  cat_paired_fastq:
+    tool_id: TODO
+    tool_version: TODO
+    label: cat_paired_fastq
+    doc: Concatenate mapped and unmapped paired FASTQ streams per sample and mate (R1+R1, R2+R2).
+    in:
+      TODO_input1: collate_fastq_map/TODO_paired_fastq
+      TODO_input2: collate_fastq_unmap/TODO_paired_fastq
+    out:
+      - id: TODO_merged_paired_fastq
+    _plan_state: |
+      Map 2-input byte concatenation (`cat "$input1" "$input2" > out.fastqsanger.gz`) over matching `list:paired` inputs (`forward`+`forward`, `reverse`+`reverse`), preserving compressed `fastqsanger.gz` format without decompress/recompress.
+    _plan_context: |
+      upstream: nf-core ALIGNMENT_TO_FASTQ -> CAT_FASTQ (`cat ${readList} > ${prefix}.merged.fastq.gz`).
+      container: community.wave.seqera.io/library/coreutils_grep_gzip_lbzip2_pruned:838ba80435a629f8
+      Check Galaxy `cat1` / `tp_cat` behavior on compressed `fastqsanger.gz`: must concatenate raw gzip bytes directly (NOT auto-decompress and re-gzip) so `test_1.merged.fastq.gz` / `test_2.merged.fastq.gz` match nf-core snapshot MD5s!
+    _plan_in: |
+      `TODO_input1` -> `collate_fastq_map/TODO_paired_fastq` (`list:paired`).
+      `TODO_input2` -> `collate_fastq_unmap/TODO_paired_fastq` (`list:paired`).
+    _plan_out: |
+      `TODO_merged_paired_fastq` -> `list:paired` `fastqsanger.gz`, exposed as `paired_reads`, flattened for `fastqc_post_conversion`, and checked by `fastqutils_info_paired`.
+
+  flatten_paired_reads:
+    tool_id: __FLATTEN__
+    tool_version: TODO
+    label: flatten_paired_reads
+    doc: Flatten paired reads (`list:paired`) to a flat `list` joining `<sample>_<forward|reverse>` for post-conversion FastQC.
+    when: "$(!inputs.no_read_qc)"
+    in:
+      TODO_input: cat_paired_fastq/TODO_merged_paired_fastq
+      no_read_qc: no_read_qc
+    out:
+      - id: TODO_flattened
+        hide: true
+    _plan_state: |
+      Flatten `list:paired` to `list` using `join_identifier: "_"`.
+    _plan_context: |
+      Built-in Galaxy collection operation `__FLATTEN__` (`collection-flatten-after-fanout`).
+    _plan_in: |
+      `TODO_input` -> `cat_paired_fastq/TODO_merged_paired_fastq` (`list:paired`).
+      `no_read_qc` -> boolean workflow input for `when:` guard.
+    _plan_out: |
+      `TODO_flattened` -> `list` `fastqsanger.gz` consumed by `merge_post_qc_reads`.
+
+  merge_post_qc_reads:
+    tool_id: __MERGE_COLLECTION__
+    tool_version: TODO
+    label: merge_post_qc_reads
+    doc: Merge flattened paired reads and single-end reads into one FASTQ collection for post-conversion FastQC.
+    when: "$(!inputs.no_read_qc)"
+    in:
+      TODO_input_0: flatten_paired_reads/TODO_flattened
+      TODO_input_1: samtools_collatefastq_single/fastq_other
+      no_read_qc: no_read_qc
+    out:
+      - id: TODO_merged_collection
+        hide: true
+    _plan_state: |
+      Merge two `list` collections (`inputs_0` + `inputs_1`) keeping unique sample+mate identifiers (`keep_first` or unique suffix behavior).
+    _plan_context: |
+      Built-in Galaxy collection operation `__MERGE_COLLECTION__` mirroring `ch_reads_post_qc = single.mix(paired)`.
+    _plan_in: |
+      `TODO_input_0` -> `flatten_paired_reads/TODO_flattened` (`list`).
+      `TODO_input_1` -> `samtools_collatefastq_single/TODO_fastq_other` (`list`).
+      `no_read_qc` -> boolean workflow input for `when:` guard.
+    _plan_out: |
+      `TODO_merged_collection` -> `list` `fastqsanger.gz` consumed by `fastqc_post_conversion`.
+
+  fastqc_post_conversion:
+    tool_id: TODO
+    tool_version: TODO
+    label: fastqc_post_conversion
+    doc: Run FastQC post-conversion QC on all extracted FASTQ datasets.
+    when: "$(!inputs.no_read_qc)"
+    in:
+      TODO_input_file: merge_post_qc_reads/TODO_merged_collection
+      no_read_qc: no_read_qc
+    out:
+      - id: TODO_html_report
+      - id: TODO_qc_data
+    _plan_state: |
+      Run FastQC (`--quiet`, default limits/contaminants) on converted `fastqsanger.gz` datasets.
+    _plan_context: |
+      upstream: nf-core BAMTOFASTQ -> FASTQC_POST_CONVERSION (nf-core/fastqc).
+      container: quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0
+    _plan_in: |
+      `TODO_input_file` -> `merge_post_qc_reads/TODO_merged_collection` (`list`).
+      `no_read_qc` -> boolean workflow input for `when:` guard.
+    _plan_out: |
+      `TODO_html_report` -> HTML report (`fastqc_post_conversion_html`).
+      `TODO_qc_data` -> FastQC raw data / ZIP (`fastqc_post_conversion_zip` and `multiqc`).
+
+  fastqutils_info_paired:
+    tool_id: TODO
+    tool_version: TODO
+    label: fastqutils_info_paired
+    doc: Validate paired-end FASTQ pairs with `fastq_info` and emit per-sample txt summary.
+    in:
+      TODO_paired_reads: cat_paired_fastq/TODO_merged_paired_fastq
+    out:
+      - id: TODO_info
+        hide: true
+    _plan_state: |
+      Run `fastq_info <R1> <R2>` on each paired element and capture confirmation message to `${prefix}.txt`.
+    _plan_context: |
+      upstream: nf-core BAMTOFASTQ -> FASTQUTILS_INFO (nf-core/fastqutils/info).
+      command:
+        fastq_info ${args} ${reads} && echo "fastq_utils fastq_info ran and found no issues with ${reads}" > ${prefix}.txt
+      container: quay.io/biocontainers/fastq_utils:0.25.3--ha9dfd29_0
+      Note: no Tool Shed wrapper likely exists; author UDT if missing. Stage input symlinks as `<sample>_1.merged.fastq.gz <sample>_2.merged.fastq.gz` if matching exact snapshot message text in `default.nf.test.snap`, or document message/filename handling explicitly.
+    _plan_in: |
+      `TODO_paired_reads` -> `cat_paired_fastq/TODO_merged_paired_fastq` (`list:paired`).
+    _plan_out: |
+      `TODO_info` -> `list` `txt` fed to `merge_fastqutils_info`.
+
+  fastqutils_info_single:
+    tool_id: TODO
+    tool_version: TODO
+    label: fastqutils_info_single
+    doc: Validate single-end FASTQ reads with `fastq_info` and emit per-sample txt summary.
+    in:
+      TODO_single_reads: samtools_collatefastq_single/fastq_other
+    out:
+      - id: TODO_info
+        hide: true
+    _plan_state: |
+      Run `fastq_info <reads>` on each single-end FASTQ dataset and capture confirmation message to `${prefix}.txt`.
+    _plan_context: |
+      upstream: nf-core BAMTOFASTQ -> FASTQUTILS_INFO (nf-core/fastqutils/info) single-end mode.
+      container: quay.io/biocontainers/fastq_utils:0.25.3--ha9dfd29_0
+      Use same wrapper/UDT as `fastqutils_info_paired` (paired vs single conditional) or dedicated single-end mode.
+    _plan_in: |
+      `TODO_single_reads` -> `samtools_collatefastq_single/TODO_fastq_other` (`list`).
+    _plan_out: |
+      `TODO_info` -> `list` `txt` fed to `merge_fastqutils_info`.
+
+  merge_fastqutils_info:
+    tool_id: __MERGE_COLLECTION__
+    tool_version: TODO
+    label: merge_fastqutils_info
+    doc: Combine paired-end and single-end `fastq_info` reports into one per-sample `list` collection.
+    in:
+      TODO_input_0: fastqutils_info_paired/TODO_info
+      TODO_input_1: fastqutils_info_single/TODO_info
+    out:
+      - id: TODO_merged_collection
+    _plan_state: |
+      Merge two `list` collections (`inputs_0` + `inputs_1`) preserving per-sample element identifiers.
+    _plan_context: |
+      Built-in Galaxy collection operation `__MERGE_COLLECTION__`.
+    _plan_in: |
+      `TODO_input_0` -> `fastqutils_info_paired/TODO_info` (`list` `txt`).
+      `TODO_input_1` -> `fastqutils_info_single/TODO_info` (`list` `txt`).
+    _plan_out: |
+      `TODO_merged_collection` -> `list` `txt` exposed as `fastqutils_info`.
+
+  multiqc:
+    tool_id: TODO
+    tool_version: TODO
+    label: multiqc
+    doc: Aggregate samtools and FastQC QC outputs into an interactive MultiQC HTML report.
+    when: "$(!(inputs.no_read_qc && inputs.no_stats))"
+    in:
+      TODO_flagstat: samtools_flagstat/output1
+      TODO_idxstats: samtools_idxstats/output
+      TODO_stats: select_samtools_stats/output
+      TODO_fastqc_pre: fastqc_pre_conversion/text_file
+      TODO_fastqc_post: fastqc_post_conversion/TODO_qc_data
+      TODO_title: multiqc_title
+      no_read_qc: no_read_qc
+      no_stats: no_stats
+    out:
+      - id: TODO_html_report
+    _plan_state: |
+      Aggregate samtools (`flagstat`, `idxstats`, `stats`) and FastQC (`fastqc_pre`, `fastqc_post`) reports with optional `multiqc_title`.
+    _plan_context: |
+      upstream: nf-core BAMTOFASTQ -> MULTIQC.
+      container: community.wave.seqera.io/library/multiqc:1.34--db7c73dae76bc9e6
+      Decision `wire-qc-outputs-into-galaxy-multiqc`: wires actual QC collections directly rather than nf-core aa0150e disabled channels.
+      CRITICAL CHECK (`multiqc-partial-skip-input-tolerance`): inspect `iuc/multiqc` repeat `results_N|software_cond|input` optionality! If `iuc/multiqc` rejects skipped (`NO_REPLACEMENT`) collections when `no_read_qc` or `no_stats` is true, escalate to `repair-galaxy-draft-topology` to split MultiQC across branches + `pick_value` (IWC `rnaseq-pe` idiom).
+    _plan_in: |
+      `TODO_flagstat` -> `samtools_flagstat/TODO_flagstat` (`samtools` / `flagstat`).
+      `TODO_idxstats` -> `samtools_idxstats/TODO_idxstats` (`samtools` / `idxstats`).
+      `TODO_stats` -> `samtools_stats/TODO_stats` (`samtools` / `stats`).
+      `TODO_fastqc_pre` -> `fastqc_pre_conversion/TODO_qc_data` (`fastqc`).
+      `TODO_fastqc_post` -> `fastqc_post_conversion/TODO_qc_data` (`fastqc`).
+      `TODO_title` -> optional string `multiqc_title`.
+      `no_read_qc`, `no_stats` -> booleans for `when:` guard.
+    _plan_out: |
+      `TODO_html_report` -> HTML report exposed as `multiqc_report`.

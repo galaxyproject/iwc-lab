@@ -1,0 +1,447 @@
+class: GalaxyWorkflow
+label: nf-core/bamtofastq
+doc: Convert BAM/CRAM files back to FASTQ format with pre- and post-conversion quality
+  control.
+inputs:
+  input_bams:
+    type: collection
+    collection_type: list
+    format:
+    - bam
+    - cram
+    doc: Input BAM or CRAM alignments per sample
+  reference_fasta:
+    type: data
+    format: fasta
+    optional: true
+    doc: Reference genome FASTA (optional, needed for CRAM decoding if reference not
+      embedded)
+outputs:
+  extracted_fastqs_r1:
+    outputSource: cat_fastq/merged_1
+    doc: Extracted R1 FASTQ reads
+  extracted_fastqs_r2:
+    outputSource: cat_fastq/merged_2
+    doc: Extracted R2 FASTQ reads
+  multiqc_report:
+    outputSource: multiqc/html_report
+    doc: MultiQC aggregated quality control report
+  pre_conversion_fastqc_html:
+    outputSource: fastqc_pre_conversion/html_file
+    doc: Pre-conversion FastQC HTML reports on input BAMs
+  samtools_stats:
+    outputSource: samtools_stats/output
+    doc: Samtools stats reports on input BAMs
+  samtools_flagstat:
+    outputSource: samtools_flagstat/output1
+    doc: Samtools flagstat reports on input BAMs
+  samtools_idxstats:
+    outputSource: samtools_idxstats/output
+    doc: Samtools idxstats reports on input BAMs
+  post_conversion_fastqc_html:
+    outputSource: fastqc_post_conversion/html_file
+    doc: Post-conversion FastQC HTML reports on extracted FASTQ reads
+  fastqutils_info:
+    outputSource: fastqutils_info/output
+    doc: FastqUtils info reports on extracted FASTQ reads
+steps:
+  fastqc_pre_conversion:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc
+    tool_version: 0.74+galaxy1
+    label: fastqc_pre_conversion
+    doc: FastQC on input BAM files
+    in:
+      input_file: input_bams
+    out:
+    - id: html_file
+    - id: text_file
+    state: {}
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+  samtools_stats:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats
+    tool_version: 2.0.9
+    label: samtools_stats
+    doc: Samtools stats on input alignments
+    in:
+      input: input_bams
+    out:
+    - id: output
+    state: {}
+    tool_shed_repository:
+      changeset_revision: 8fca6e1eac98
+      name: samtools_stats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+  samtools_flagstat:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat
+    tool_version: 2.0.8
+    label: samtools_flagstat
+    doc: Samtools flagstat on input alignments
+    in:
+      input1: input_bams
+    out:
+    - id: output1
+    state: {}
+    tool_shed_repository:
+      changeset_revision: a0d8e49a018c
+      name: samtools_flagstat
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+  samtools_idxstats:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats
+    tool_version: 2.0.8
+    label: samtools_idxstats
+    doc: Samtools idxstats on input alignments
+    in:
+      input: input_bams
+    out:
+    - id: output
+    state: {}
+    tool_shed_repository:
+      changeset_revision: 13aad5cb9be4
+      name: samtools_idxstats
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+  samtools_view_map_map:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view
+    tool_version: 1.22+galaxy2
+    label: samtools_view_map_map
+    doc: Filter BAM reads where both pairs map (-f 1 -F 12)
+    in:
+      input: input_bams
+    out:
+    - id: outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_filter:
+            select_filter: 'yes'
+            req_flag:
+            - '1'
+            excl_flag:
+            - '4'
+            - '8'
+        output_options:
+          reads_report_type: retained
+          output_format:
+            oformat: bam
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+  samtools_view_unmap_unmap:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view
+    tool_version: 1.22+galaxy2
+    label: samtools_view_unmap_unmap
+    doc: Filter BAM reads where both pairs are unmapped (-f 12 -F 256)
+    in:
+      input: input_bams
+    out:
+    - id: outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_filter:
+            select_filter: 'yes'
+            req_flag:
+            - '4'
+            - '8'
+            excl_flag:
+            - '256'
+        output_options:
+          reads_report_type: retained
+          output_format:
+            oformat: bam
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+  samtools_view_unmap_map:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view
+    tool_version: 1.22+galaxy2
+    label: samtools_view_unmap_map
+    doc: Filter BAM reads where read1 is unmapped and read2 maps (-f 4 -F 264)
+    in:
+      input: input_bams
+    out:
+    - id: outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_filter:
+            select_filter: 'yes'
+            req_flag:
+            - '4'
+            excl_flag:
+            - '8'
+            - '256'
+        output_options:
+          reads_report_type: retained
+          output_format:
+            oformat: bam
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+  samtools_view_map_unmap:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view
+    tool_version: 1.22+galaxy2
+    label: samtools_view_map_unmap
+    doc: Filter BAM reads where read1 maps and read2 is unmapped (-f 8 -F 260)
+    in:
+      input: input_bams
+    out:
+    - id: outputsam
+    state:
+      mode:
+        outtype: selected_reads
+        filter_config:
+          cond_filter:
+            select_filter: 'yes'
+            req_flag:
+            - '8'
+            excl_flag:
+            - '4'
+            - '256'
+        output_options:
+          reads_report_type: retained
+          output_format:
+            oformat: bam
+    tool_shed_repository:
+      changeset_revision: 5cf9fcc93508
+      name: samtools_view
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+  samtools_merge_unmap:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_merge/samtools_merge
+    tool_version: 1.22+galaxy2
+    label: samtools_merge_unmap
+    doc: Merge unmapped BAM read partitions
+    in:
+      bamfiles:
+      - samtools_view_unmap_unmap/outputsam
+      - samtools_view_unmap_map/outputsam
+      - samtools_view_map_unmap/outputsam
+    out:
+    - id: output
+    state: {}
+    tool_shed_repository:
+      changeset_revision: 37c8eb55315d
+      name: samtools_merge
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+  collate_fastq_map:
+    run:
+      class: GalaxyUserTool
+      id: samtools_collatefastq
+      version: 1.23.1
+      name: Samtools Collate and FastQ
+      container: quay.io/biocontainers/samtools:1.23.1--ha83d96e_0
+      inputs:
+      - name: input
+        type: data
+        format:
+        - bam
+        - cram
+      outputs:
+      - name: fastq_1
+        type: data
+        format: fastqsanger.gz
+        from_work_dir: output_1.fq.gz
+      - name: fastq_2
+        type: data
+        format: fastqsanger.gz
+        from_work_dir: output_2.fq.gz
+      shell_command: 'samtools collate -O $(inputs.input.path) . | samtools fastq
+        -1 output_1.fq.gz -2 output_2.fq.gz -0 other.fq.gz -s singleton.fq.gz
+
+        '
+    label: collate_fastq_map
+    doc: Collate and extract FASTQ from mapped reads
+    in:
+      input: samtools_view_map_map/outputsam
+    out:
+    - id: fastq_1
+    - id: fastq_2
+  collate_fastq_unmap:
+    run:
+      class: GalaxyUserTool
+      id: samtools_collatefastq
+      version: 1.23.1
+      name: Samtools Collate and FastQ
+      container: quay.io/biocontainers/samtools:1.23.1--ha83d96e_0
+      inputs:
+      - name: input
+        type: data
+        format:
+        - bam
+        - cram
+      outputs:
+      - name: fastq_1
+        type: data
+        format: fastqsanger.gz
+        from_work_dir: output_1.fq.gz
+      - name: fastq_2
+        type: data
+        format: fastqsanger.gz
+        from_work_dir: output_2.fq.gz
+      shell_command: 'samtools collate -O $(inputs.input.path) . | samtools fastq
+        -1 output_1.fq.gz -2 output_2.fq.gz -0 other.fq.gz -s singleton.fq.gz
+
+        '
+    label: collate_fastq_unmap
+    doc: Collate and extract FASTQ from unmapped reads
+    in:
+      input: samtools_merge_unmap/output
+    out:
+    - id: fastq_1
+    - id: fastq_2
+  cat_fastq:
+    run:
+      class: GalaxyUserTool
+      id: cat_fastq
+      version: 1.0.0
+      name: Concatenate FastQ Read Pairs
+      container: community.wave.seqera.io/library/coreutils_grep_gzip_lbzip2_pruned:838ba80435a629f8
+      inputs:
+      - name: mapped_1
+        type: data
+        format:
+        - fastqsanger.gz
+        - fastq.gz
+        - fastqsanger
+        - fastq
+      - name: mapped_2
+        type: data
+        format:
+        - fastqsanger.gz
+        - fastq.gz
+        - fastqsanger
+        - fastq
+      - name: unmapped_1
+        type: data
+        format:
+        - fastqsanger.gz
+        - fastq.gz
+        - fastqsanger
+        - fastq
+      - name: unmapped_2
+        type: data
+        format:
+        - fastqsanger.gz
+        - fastq.gz
+        - fastqsanger
+        - fastq
+      outputs:
+      - name: merged_1
+        type: data
+        format: fastqsanger.gz
+        from_work_dir: output_1.merged.fastq.gz
+      - name: merged_2
+        type: data
+        format: fastqsanger.gz
+        from_work_dir: output_2.merged.fastq.gz
+      shell_command: 'cat $(inputs.mapped_1.path) $(inputs.unmapped_1.path) > output_1.merged.fastq.gz
+
+        cat $(inputs.mapped_2.path) $(inputs.unmapped_2.path) > output_2.merged.fastq.gz
+
+        '
+    label: cat_fastq
+    doc: Concatenate mapped and unmapped FASTQ reads
+    in:
+      mapped_1: collate_fastq_map/fastq_1
+      mapped_2: collate_fastq_map/fastq_2
+      unmapped_1: collate_fastq_unmap/fastq_1
+      unmapped_2: collate_fastq_unmap/fastq_2
+    out:
+    - id: merged_1
+    - id: merged_2
+  fastqc_post_conversion:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc
+    tool_version: 0.74+galaxy1
+    label: fastqc_post_conversion
+    doc: FastQC on extracted FASTQ read pairs
+    in:
+      input_file: cat_fastq/merged_1
+    out:
+    - id: html_file
+    - id: text_file
+    state: {}
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+  fastqutils_info:
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/fastq_info/fastq_info
+    tool_version: 0.25.3+galaxy0
+    label: fastqutils_info
+    doc: FastqUtils info validation on extracted FASTQ reads
+    in:
+      input_option|fastq_1: cat_fastq/merged_1
+      input_option|fastq_2: cat_fastq/merged_2
+    out:
+    - id: output
+    state:
+      input_option:
+        input_type: paired
+      q: false
+      r: false
+    tool_shed_repository:
+      changeset_revision: 2bca15e630a4
+      name: fastq_info
+      owner: bgruening
+      tool_shed: toolshed.g2.bx.psu.edu
+  multiqc:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc
+    tool_version: 1.35+galaxy5
+    label: multiqc
+    doc: Aggregate quality control reports
+    in:
+      results_0|software_cond|output_0|input: fastqc_pre_conversion/text_file
+      results_1|software_cond|output_0|type|input: samtools_stats/output
+      results_1|software_cond|output_1|type|input: samtools_flagstat/output1
+      results_1|software_cond|output_2|type|input: samtools_idxstats/output
+      results_2|software_cond|output_0|input: fastqc_post_conversion/text_file
+    out:
+    - id: html_report
+    - id: stats
+    state:
+      results:
+      - software_cond:
+          software: fastqc
+          output:
+          - type: data
+      - software_cond:
+          software: samtools
+          output:
+          - type:
+              type: stats
+          - type:
+              type: flagstat
+          - type:
+              type: idxstats
+      - software_cond:
+          software: fastqc
+          output:
+          - type: data
+      title: ''
+      comment: ''
+      flat: false
+      export: false
+      png_plots: false
+    tool_shed_repository:
+      changeset_revision: 94b6bea727ae
+      name: multiqc
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu

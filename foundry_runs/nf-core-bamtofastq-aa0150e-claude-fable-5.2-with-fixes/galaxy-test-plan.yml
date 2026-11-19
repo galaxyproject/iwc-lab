@@ -1,0 +1,625 @@
+plan_version: '1'
+source:
+  kind: nextflow
+  name: nf-core/bamtofastq @ aa0150e
+  derived_from: test-evidence
+  notes: 'Translated from pipeline-level nf-tests (tests/*.nf.test + .snap). Selected candidate per summary-nextflow: tests/default.nf.test::-profile test. One further eligible candidate is translated as an extra case because it covers a branch the selected one does not reach: tests/no_bai.nf.test (adds a single-end sample). tests/collate_fast.nf.test was planned as a third case and removed after planemo attempt 1: the fast-mode input was dropped from the workflow.'
+workflow:
+  title: BAM to FASTQ conversion with QC (nf-core/bamtofastq)
+  label_source: draft
+  notes: Labels read from galaxy-workflow.gxwf.yml (1 input, 13 outputs) as re-extracted after planemo attempt 1.
+test_cases:
+- id: default_paired_end_bams
+  doc: 'Two paired-end BAM files (nf-core default test): conversion to paired FASTQ, QC before and after, empty single-end branch.'
+  derived_from: mixed
+  provenance: tests/default.nf.test::-profile test (selected candidate); tests/default.nf.test.snap
+  job_inputs:
+  - workflow_label: Alignments
+    label_status: resolved
+    description: 'BAM files, one list element per sample: test <- https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam (SHA-1:0799f89638bddd570439115c606f425c22d189b1), test2 <- https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam (SHA-1:522fb037cea05b9d41dd69647f27a644838bf507). Stage each as filetype bam with the SHA-1 as input hash.'
+    collection_shape: list
+    datatype: bam
+    fixture:
+      storage: remote-url
+      location: null
+      checksum: null
+      provenance: elements from test-data-refs.json (nextflow-to-test-data); rows of the selected candidate samplesheet
+  expected_outputs:
+  - workflow_label: Paired-end reads
+    label_status: resolved
+    description: 'Forward and reverse FASTQ of the paired-end samples; the primary product (source: reads/<id>_{1,2}.merged.fastq.gz).'
+    output_kind: collection
+    collection_shape: list:paired
+    assertion_intent:
+    - family: element_count
+      intent: exactly the two paired-end samples
+      expected_value: 2
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: high
+    - family: file
+      intent: 'Exact read content, order-insensitive. compare: diff, sort: true, decompress: true. (sort: true added after planemo attempt 1: the Galaxy BAM to FASTQ wrapper writes reads in name order, the source in samtools collate order; the comparison still fails on any missing, extra or altered line, but no longer checks read order or which header belongs to which sequence.) (the Galaxy output is fastqsanger.gz, so `checksum` cannot be used: it hashes the stored gzip bytes). Expected file test-data/expected/test_1.fastq.gz was produced by running the source module commands (samtools 1.23.1 container) on the upstream fixture and accepted only because the md5 of its decompressed content equals the tests/default.nf.test.snap token md5,9b0c08862a5e47e842a485ddad31b871.'
+      expected_value: test-data/expected/test_1.fastq.gz
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: no tolerance; lines are sorted before the diff
+      element_identifier: test/forward
+      evidence: test-evidence
+      confidence: high
+    - family: file
+      intent: 'Exact read content, order-insensitive. compare: diff, sort: true, decompress: true. (sort: true added after planemo attempt 1: the Galaxy BAM to FASTQ wrapper writes reads in name order, the source in samtools collate order; the comparison still fails on any missing, extra or altered line, but no longer checks read order or which header belongs to which sequence.) (the Galaxy output is fastqsanger.gz, so `checksum` cannot be used: it hashes the stored gzip bytes). Expected file test-data/expected/test_2.fastq.gz was produced by running the source module commands (samtools 1.23.1 container) on the upstream fixture and accepted only because the md5 of its decompressed content equals the tests/default.nf.test.snap token md5,40e17982d1231e561d6420234ae29357.'
+      expected_value: test-data/expected/test_2.fastq.gz
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: no tolerance; lines are sorted before the diff
+      element_identifier: test/reverse
+      evidence: test-evidence
+      confidence: high
+    - family: file
+      intent: 'Exact read content, order-insensitive. compare: diff, sort: true, decompress: true. (sort: true added after planemo attempt 1: the Galaxy BAM to FASTQ wrapper writes reads in name order, the source in samtools collate order; the comparison still fails on any missing, extra or altered line, but no longer checks read order or which header belongs to which sequence.) (the Galaxy output is fastqsanger.gz, so `checksum` cannot be used: it hashes the stored gzip bytes). Expected file test-data/expected/test2_1.fastq.gz was produced by running the source module commands (samtools 1.23.1 container) on the upstream fixture and accepted only because the md5 of its decompressed content equals the tests/default.nf.test.snap token md5,a4984fb5a60f80ccbfbfcf1cef9daaf3.'
+      expected_value: test-data/expected/test2_1.fastq.gz
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: no tolerance; lines are sorted before the diff
+      element_identifier: test2/forward
+      evidence: test-evidence
+      confidence: high
+    - family: file
+      intent: 'Exact read content, order-insensitive. compare: diff, sort: true, decompress: true. (sort: true added after planemo attempt 1: the Galaxy BAM to FASTQ wrapper writes reads in name order, the source in samtools collate order; the comparison still fails on any missing, extra or altered line, but no longer checks read order or which header belongs to which sequence.) (the Galaxy output is fastqsanger.gz, so `checksum` cannot be used: it hashes the stored gzip bytes). Expected file test-data/expected/test2_2.fastq.gz was produced by running the source module commands (samtools 1.23.1 container) on the upstream fixture and accepted only because the md5 of its decompressed content equals the tests/default.nf.test.snap token md5,bde23801e2d60604afb3bd0b0ab014ab.'
+      expected_value: test-data/expected/test2_2.fastq.gz
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: no tolerance; lines are sorted before the diff
+      element_identifier: test2/reverse
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: Single-end reads
+    label_status: resolved
+    description: No sample is single-end in this case, so the collection is empty.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: element_count
+      intent: 'empty collection: the single-end branch received no sample. Count-only check; the upstream snapshot lists no reads/*_other.fq.gz for this case. NOTE: Galaxy''s verifier does not enforce an expected count of 0, so this is a type-only check; emptiness is evidenced by ''Pairedness per sample''.'
+      expected_value: 0
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: low
+  - workflow_label: Samtools flagstat
+    label_status: resolved
+    description: 'samtools flagstat text per sample (source: samtools/<id>.flagstat).'
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: Whole-file md5 from the tests/default.nf.test.snap token for test.flagstat (output is stored uncompressed, plain samtools text).
+      expected_value: md5$a53f3d26e2e9851f7d528442bbfe9781
+      tolerance: null
+      element_identifier: test
+      evidence: test-evidence
+      confidence: high
+    - family: checksum
+      intent: Whole-file md5 from the tests/default.nf.test.snap token for test2.flagstat (output is stored uncompressed, plain samtools text).
+      expected_value: md5$acbd95030a362a7e6491faa87d1b9c2c
+      tolerance: null
+      element_identifier: test2
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: Samtools idxstats
+    label_status: resolved
+    description: 'samtools idxstats table per sample (source: samtools/<id>.idxstats).'
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: Whole-file md5 from the tests/default.nf.test.snap token for test.idxstats.
+      expected_value: md5$e179601fa7b8ebce81ac3765206f6c15
+      tolerance: null
+      element_identifier: test
+      evidence: test-evidence
+      confidence: high
+    - family: checksum
+      intent: Whole-file md5 from the tests/default.nf.test.snap token for test2.idxstats.
+      expected_value: md5$90f01313bc89c7fd096aad051cd71b66
+      tolerance: null
+      element_identifier: test2
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: Samtools stats
+    label_status: resolved
+    description: 'samtools stats per sample (source: samtools/<id>.stats).'
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_text
+      intent: 'Summary line. The snapshot md5 for test.stats cannot be used: the file header holds the samtools version and command line. Value measured with samtools stats on the upstream fixture.'
+      expected_value: "raw total sequences:\t5642"
+      tolerance: null
+      element_identifier: test
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: 'Summary line. The snapshot md5 for test2.stats cannot be used: the file header holds the samtools version and command line. Value measured with samtools stats on the upstream fixture.'
+      expected_value: "raw total sequences:\t5436"
+      tolerance: null
+      element_identifier: test2
+      evidence: fixture-derived
+      confidence: high
+  - workflow_label: FastQC pre-conversion data
+    label_status: resolved
+    description: 'FastQC raw data of each input BAM (source: inside fastqc/<id>.pre_conversion_fastqc.zip, ignored by .nftignore).'
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_text
+      intent: Record count seen by FastQC in the BAM; measured with FastQC 0.12.1 on the upstream fixture.
+      expected_value: "Total Sequences\t5644"
+      tolerance: null
+      element_identifier: test
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: Record count seen by FastQC in the BAM; measured with FastQC 0.12.1 on the upstream fixture.
+      expected_value: "Total Sequences\t5436"
+      tolerance: null
+      element_identifier: test2
+      evidence: fixture-derived
+      confidence: high
+  - workflow_label: FastQC post-conversion data
+    label_status: resolved
+    description: FastQC raw data of every converted FASTQ file; identifiers <sample>_forward / <sample>_reverse for paired, <sample> for single-end.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: element_count
+      intent: one element per converted FASTQ file
+      expected_value: 4
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: Read count after conversion; equals the read count of the expected FASTQ (lines / 4).
+      expected_value: "Total Sequences\t2821"
+      tolerance: null
+      element_identifier: test_forward
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: Read count after conversion; equals the read count of the expected FASTQ (lines / 4).
+      expected_value: "Total Sequences\t2821"
+      tolerance: null
+      element_identifier: test_reverse
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: Read count after conversion; equals the read count of the expected FASTQ (lines / 4).
+      expected_value: "Total Sequences\t2718"
+      tolerance: null
+      element_identifier: test2_forward
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: Read count after conversion; equals the read count of the expected FASTQ (lines / 4).
+      expected_value: "Total Sequences\t2718"
+      tolerance: null
+      element_identifier: test2_reverse
+      evidence: fixture-derived
+      confidence: high
+  - workflow_label: FASTQ validation (paired-end)
+    label_status: resolved
+    description: fastq_info report per paired sample. The Galaxy wrapper keeps the job green on validation errors, so the report text carries the verdict.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_line
+      intent: fastq_info verdict line; measured by running fastq_info 0.25.3 on the expected FASTQ pair.
+      expected_value: OK
+      tolerance: null
+      element_identifier: test
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: read count reported by fastq_info
+      expected_value: 'Number of reads: 2821'
+      tolerance: null
+      element_identifier: test
+      evidence: fixture-derived
+      confidence: high
+    - family: has_line
+      intent: fastq_info verdict line; measured by running fastq_info 0.25.3 on the expected FASTQ pair.
+      expected_value: OK
+      tolerance: null
+      element_identifier: test2
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: read count reported by fastq_info
+      expected_value: 'Number of reads: 2718'
+      tolerance: null
+      element_identifier: test2
+      evidence: fixture-derived
+      confidence: high
+  - workflow_label: FASTQ validation (single-end)
+    label_status: resolved
+    description: Empty in this case.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: element_count
+      intent: 'empty collection (count-only check) NOTE: Galaxy''s verifier does not enforce an expected count of 0, so this is a type-only check; emptiness is evidenced by ''Pairedness per sample''.'
+      expected_value: 0
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: low
+  - workflow_label: Pairedness per sample
+    label_status: resolved
+    description: 'Routing table: sample identifier and class.'
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_n_lines
+      intent: one row per sample
+      expected_value: 2
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_line
+      intent: Class of the sample. The upstream snapshot shows the same routing through its published file names (reads/<id>_1.merged.fastq.gz for paired, reads/<id>_other.fq.gz for single-end).
+      expected_value: "test\tpaired"
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: high
+    - family: has_line
+      intent: Class of the sample. The upstream snapshot shows the same routing through its published file names (reads/<id>_1.merged.fastq.gz for paired, reads/<id>_other.fq.gz for single-end).
+      expected_value: "test2\tpaired"
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: MultiQC report
+    label_status: resolved
+    description: 'Aggregated HTML report. Deviation from the source: fed with FastQC and samtools outputs.'
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_text
+      intent: report title set in the workflow step
+      expected_value: bamtofastq
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+    - family: has_text
+      intent: a sample name from the samtools/FastQC sections appears in the report
+      expected_value: test2
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+  - workflow_label: FastQC pre-conversion report
+    label_status: resolved
+    description: FastQC HTML per BAM.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: element_count
+      intent: one report per sample (count-only check)
+      expected_value: 2
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: it is a FastQC HTML page (smoke check)
+      expected_value: FastQC Report
+      tolerance: null
+      element_identifier: test
+      evidence: intent
+      confidence: medium
+  - workflow_label: FastQC post-conversion report
+    label_status: resolved
+    description: FastQC HTML per FASTQ file.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: element_count
+      intent: one report per FASTQ file (count-only check)
+      expected_value: 4
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: it is a FastQC HTML page (smoke check)
+      expected_value: FastQC Report
+      tolerance: null
+      element_identifier: test_forward
+      evidence: intent
+      confidence: medium
+    - family: has_text
+      intent: it is a FastQC HTML page (smoke check)
+      expected_value: FastQC Report
+      tolerance: null
+      element_identifier: test_reverse
+      evidence: intent
+      confidence: medium
+    - family: has_text
+      intent: it is a FastQC HTML page (smoke check)
+      expected_value: FastQC Report
+      tolerance: null
+      element_identifier: test2_forward
+      evidence: intent
+      confidence: medium
+    - family: has_text
+      intent: it is a FastQC HTML page (smoke check)
+      expected_value: FastQC Report
+      tolerance: null
+      element_identifier: test2_reverse
+      evidence: intent
+      confidence: medium
+- id: mixed_paired_and_single_end_bams
+  doc: 'Two paired-end and one single-end BAM (nf-core no_bai test): per-sample routing, single-end conversion.'
+  derived_from: mixed
+  provenance: tests/no_bai.nf.test::-profile test --input test_bam_samplesheet_no_bai.csv (eligible candidate); tests/no_bai.nf.test.snap. The missing-index aspect of the source test has no Galaxy counterpart (bam datasets are indexed at upload).
+  job_inputs:
+  - workflow_label: Alignments
+    label_status: resolved
+    description: 'BAM files, one list element per sample: test <- https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam (SHA-1:0799f89638bddd570439115c606f425c22d189b1), test2 <- https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam (SHA-1:522fb037cea05b9d41dd69647f27a644838bf507), test3 <- https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test3.single_end.markduplicates.sorted.bam (SHA-1:072c537f5a850f0ae036fd0ef6906f767e9f28c1). Stage each as filetype bam with the SHA-1 as input hash.'
+    collection_shape: list
+    datatype: bam
+    fixture:
+      storage: remote-url
+      location: null
+      checksum: null
+      provenance: elements from test-data-refs.json (nextflow-to-test-data); test3 from tests/no_bai.nf.test
+  expected_outputs:
+  - workflow_label: Paired-end reads
+    label_status: resolved
+    description: 'Forward and reverse FASTQ of the paired-end samples; the primary product (source: reads/<id>_{1,2}.merged.fastq.gz).'
+    output_kind: collection
+    collection_shape: list:paired
+    assertion_intent:
+    - family: element_count
+      intent: exactly the two paired-end samples
+      expected_value: 2
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: high
+    - family: file
+      intent: 'Exact read content, order-insensitive. compare: diff, sort: true, decompress: true. (sort: true added after planemo attempt 1: the Galaxy BAM to FASTQ wrapper writes reads in name order, the source in samtools collate order; the comparison still fails on any missing, extra or altered line, but no longer checks read order or which header belongs to which sequence.) (the Galaxy output is fastqsanger.gz, so `checksum` cannot be used: it hashes the stored gzip bytes). Expected file test-data/expected/test_1.fastq.gz was produced by running the source module commands (samtools 1.23.1 container) on the upstream fixture and accepted only because the md5 of its decompressed content equals the tests/no_bai.nf.test.snap token md5,9b0c08862a5e47e842a485ddad31b871.'
+      expected_value: test-data/expected/test_1.fastq.gz
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: no tolerance; lines are sorted before the diff
+      element_identifier: test/forward
+      evidence: test-evidence
+      confidence: high
+    - family: file
+      intent: 'Exact read content, order-insensitive. compare: diff, sort: true, decompress: true. (sort: true added after planemo attempt 1: the Galaxy BAM to FASTQ wrapper writes reads in name order, the source in samtools collate order; the comparison still fails on any missing, extra or altered line, but no longer checks read order or which header belongs to which sequence.) (the Galaxy output is fastqsanger.gz, so `checksum` cannot be used: it hashes the stored gzip bytes). Expected file test-data/expected/test_2.fastq.gz was produced by running the source module commands (samtools 1.23.1 container) on the upstream fixture and accepted only because the md5 of its decompressed content equals the tests/no_bai.nf.test.snap token md5,40e17982d1231e561d6420234ae29357.'
+      expected_value: test-data/expected/test_2.fastq.gz
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: no tolerance; lines are sorted before the diff
+      element_identifier: test/reverse
+      evidence: test-evidence
+      confidence: high
+    - family: file
+      intent: 'Exact read content, order-insensitive. compare: diff, sort: true, decompress: true. (sort: true added after planemo attempt 1: the Galaxy BAM to FASTQ wrapper writes reads in name order, the source in samtools collate order; the comparison still fails on any missing, extra or altered line, but no longer checks read order or which header belongs to which sequence.) (the Galaxy output is fastqsanger.gz, so `checksum` cannot be used: it hashes the stored gzip bytes). Expected file test-data/expected/test2_1.fastq.gz was produced by running the source module commands (samtools 1.23.1 container) on the upstream fixture and accepted only because the md5 of its decompressed content equals the tests/no_bai.nf.test.snap token md5,a4984fb5a60f80ccbfbfcf1cef9daaf3.'
+      expected_value: test-data/expected/test2_1.fastq.gz
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: no tolerance; lines are sorted before the diff
+      element_identifier: test2/forward
+      evidence: test-evidence
+      confidence: high
+    - family: file
+      intent: 'Exact read content, order-insensitive. compare: diff, sort: true, decompress: true. (sort: true added after planemo attempt 1: the Galaxy BAM to FASTQ wrapper writes reads in name order, the source in samtools collate order; the comparison still fails on any missing, extra or altered line, but no longer checks read order or which header belongs to which sequence.) (the Galaxy output is fastqsanger.gz, so `checksum` cannot be used: it hashes the stored gzip bytes). Expected file test-data/expected/test2_2.fastq.gz was produced by running the source module commands (samtools 1.23.1 container) on the upstream fixture and accepted only because the md5 of its decompressed content equals the tests/no_bai.nf.test.snap token md5,bde23801e2d60604afb3bd0b0ab014ab.'
+      expected_value: test-data/expected/test2_2.fastq.gz
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: no tolerance; lines are sorted before the diff
+      element_identifier: test2/reverse
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: Single-end reads
+    label_status: resolved
+    description: 'FASTQ of the single-end sample (source: reads/test3_other.fq.gz).'
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: element_count
+      intent: exactly the one single-end sample
+      expected_value: 1
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: high
+    - family: file
+      intent: 'Exact read content, order-insensitive. compare: diff, sort: true, decompress: true. (sort: true added after planemo attempt 1: the Galaxy BAM to FASTQ wrapper writes reads in name order, the source in samtools collate order; the comparison still fails on any missing, extra or altered line, but no longer checks read order or which header belongs to which sequence.) (the Galaxy output is fastqsanger.gz, so `checksum` cannot be used: it hashes the stored gzip bytes). Expected file test-data/expected/test3_other.fastq.gz was produced by running the source module commands (samtools 1.23.1 container) on the upstream fixture and accepted only because the md5 of its decompressed content equals the tests/no_bai.nf.test.snap token md5,d8a935709a2519d0af2b0e28631962f7.'
+      expected_value: test-data/expected/test3_other.fastq.gz
+      tolerance:
+        kind: none
+        magnitude: null
+        rationale: no tolerance; lines are sorted before the diff
+      element_identifier: test3
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: Pairedness per sample
+    label_status: resolved
+    description: 'Routing table: sample identifier and class.'
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_n_lines
+      intent: one row per sample
+      expected_value: 3
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_line
+      intent: Class of the sample. The upstream snapshot shows the same routing through its published file names (reads/<id>_1.merged.fastq.gz for paired, reads/<id>_other.fq.gz for single-end).
+      expected_value: "test\tpaired"
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: high
+    - family: has_line
+      intent: Class of the sample. The upstream snapshot shows the same routing through its published file names (reads/<id>_1.merged.fastq.gz for paired, reads/<id>_other.fq.gz for single-end).
+      expected_value: "test2\tpaired"
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: high
+    - family: has_line
+      intent: Class of the sample. The upstream snapshot shows the same routing through its published file names (reads/<id>_1.merged.fastq.gz for paired, reads/<id>_other.fq.gz for single-end).
+      expected_value: "test3\tsingle"
+      tolerance: null
+      element_identifier: null
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: Samtools flagstat
+    label_status: resolved
+    description: flagstat of the single-end sample.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: Whole-file md5 from the tests/no_bai.nf.test.snap token for test3.flagstat.
+      expected_value: md5$7b43b975b0a395040bf1ee3c48f058e7
+      tolerance: null
+      element_identifier: test3
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: Samtools idxstats
+    label_status: resolved
+    description: idxstats of the single-end sample.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: checksum
+      intent: Whole-file md5 from the tests/no_bai.nf.test.snap token for test3.idxstats.
+      expected_value: md5$094096b6f303cc18892e1e027c87f273
+      tolerance: null
+      element_identifier: test3
+      evidence: test-evidence
+      confidence: high
+  - workflow_label: FASTQ validation (single-end)
+    label_status: resolved
+    description: fastq_info report of the single-end sample.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_line
+      intent: fastq_info verdict line; measured on the expected FASTQ.
+      expected_value: OK
+      tolerance: null
+      element_identifier: test3
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: read count reported by fastq_info
+      expected_value: 'Number of reads: 12473'
+      tolerance: null
+      element_identifier: test3
+      evidence: fixture-derived
+      confidence: high
+  - workflow_label: FastQC post-conversion data
+    label_status: resolved
+    description: FastQC raw data of every converted FASTQ file; identifiers <sample>_forward / <sample>_reverse for paired, <sample> for single-end.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: element_count
+      intent: one element per converted FASTQ file
+      expected_value: 5
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: Read count after conversion; equals the read count of the expected FASTQ (lines / 4).
+      expected_value: "Total Sequences\t2821"
+      tolerance: null
+      element_identifier: test_forward
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: Read count after conversion; equals the read count of the expected FASTQ (lines / 4).
+      expected_value: "Total Sequences\t2821"
+      tolerance: null
+      element_identifier: test_reverse
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: Read count after conversion; equals the read count of the expected FASTQ (lines / 4).
+      expected_value: "Total Sequences\t2718"
+      tolerance: null
+      element_identifier: test2_forward
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: Read count after conversion; equals the read count of the expected FASTQ (lines / 4).
+      expected_value: "Total Sequences\t2718"
+      tolerance: null
+      element_identifier: test2_reverse
+      evidence: fixture-derived
+      confidence: high
+    - family: has_text
+      intent: Read count after conversion; equals the read count of the expected FASTQ (lines / 4).
+      expected_value: "Total Sequences\t12473"
+      tolerance: null
+      element_identifier: test3
+      evidence: fixture-derived
+      confidence: high
+unresolved: []
+omissions:
+- target: FastQC HTML reports and MultiQC report content
+  reason: 'HTML with embedded dates/versions; the source ignores them too (tests/.nftignore: fastqc/*_fastqc.{html,zip}, multiqc/multiqc_report.html). Only smoke checks.'
+  category: nondeterministic
+- target: pipeline_info software versions YAML and succeeded task count (32 / 43)
+  reason: 'No Galaxy equivalent: the workflow produces no versions file (recorded drop) and task counts are a Nextflow runtime property.'
+  category: out-of-scope
+- target: multiqc/multiqc_data/multiqc_citations.txt (snapshot md5 4c806e63...)
+  reason: The MultiQC data directory is not a workflow output, and the Galaxy report has different inputs than the source report.
+  category: out-of-scope
+- target: fastqutils/<id>.txt snapshot md5s
+  reason: The source file is a sentence written by the Nextflow module that embeds file names; the Galaxy wrapper output is the fastq_info report itself. Asserted by content instead.
+  category: other
+- target: Source candidates cram, no_crai, chr, fai, no_qc, no_stats
+  reason: They exercise features recorded as dropped (CRAM + reference, chr region filter, fasta_fai, QC skip flags). fai and no_qc have the same snapshot content as the default case.
+  category: out-of-scope
+- target: Source candidate collate_fast (tests/collate_fast.nf.test)
+  reason: 'Fast collate mode is a recorded drop (ledger collate-fast-mode-not-carried): the Galaxy BAM to FASTQ wrapper name-sorts its input, so collate mode cannot affect the output. Its snapshot read md5s differ from the default case only by read order.'
+  category: out-of-scope
+- target: Read order inside the FASTQ outputs
+  reason: Galaxy output is in read-name order, the source in samtools collate order; reads are compared as sorted lines. Mate synchronisation is covered by the paired fastq_info report.
+  category: other
+warnings:
+- code: untranslatable-snapshot
+  message: 'The four reads tokens are for .gz files: nf-test hashes the decompressed content, Galaxy checksum hashes the stored gzip. Translated to file + compare: diff + decompress: true against expected files whose decompressed md5 equals each token.'
+  path: tests/default.nf.test.snap#-profile test/content/3 (test_1.merged.fastq.gz, test_2..., test2_1..., test2_2...)
+- code: untranslatable-snapshot
+  message: Same for reads/test3_other.fq.gz.
+  path: tests/no_bai.nf.test.snap (test3_other.fq.gz:md5,d8a935709a2519d0af2b0e28631962f7)
+- code: untranslatable-snapshot
+  message: 'samtools stats tokens (test.stats, test2.stats, test3.stats): header lines contain the samtools version and the command line, which differ in Galaxy (samtools 1.22 wrapper, no --reference). Replaced by a fixture-derived has_text on the SN summary.'
+  path: tests/default.nf.test.snap (test.stats:md5,3c3f8fa5..., test2.stats:md5,7e6537bd...)
+- code: untranslatable-snapshot
+  message: 'fastqutils/*.txt tokens: see omissions.'
+  path: tests/default.nf.test.snap (test.txt, test2.txt)

@@ -1,0 +1,118 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-bamtofastq-gemini4-hydrogen-xhigh-fixed
+  status: running
+  phases:
+    - { n: 1, kind: mold, skill: summarize-nextflow, status: done, feedback_checked: true }
+    - { n: 2, kind: mold, skill: nextflow-summary-to-galaxy-reference-data, status: done, feedback_checked: true }
+    - { n: 3, kind: mold, skill: nextflow-summary-to-galaxy-interface, status: done, feedback_checked: true }
+    - { n: 4, kind: mold, skill: nextflow-summary-to-galaxy-data-flow, status: done, feedback_checked: true }
+    - { n: 5, kind: mold, skill: compare-against-iwc-exemplar, status: done, feedback_checked: true }
+    - { n: 6, kind: mold, skill: nextflow-summary-to-galaxy-template, status: done, feedback_checked: true }
+    - { n: 7, kind: mold, skill: advance-galaxy-draft-step, status: done, feedback_checked: true }
+    - { n: 8, kind: branch, pattern: test-data-resolution, status: done, selected: nextflow-to-test-data, feedback_checked: true }
+    - { n: 9, kind: mold, skill: nextflow-test-to-galaxy-test-plan, status: done, feedback_checked: true }
+    - { n: 10, kind: mold, skill: implement-galaxy-workflow-test, status: done, feedback_checked: true }
+    - { n: 11, kind: mold, skill: validate-galaxy-workflow, status: done, feedback_checked: true }
+    - { n: 12, kind: mold, skill: run-workflow-test, status: running }
+    - { n: 13, kind: mold, skill: debug-galaxy-workflow-output, status: pending }
+entries:
+  - id: summarize-nextflow-multiline-tuple-edge-splitting
+    raised_by: summarize-nextflow
+    observed_in:
+      mold: summarize-nextflow
+      path: content/molds/summarize-nextflow/index.md
+      revision: 21
+      content_hash: 12fda0aa7f41e1899f921f4c9970af864e0022b25610e8f4fb6b4eba0a62d499
+      foundry_head: df991d0d789b0a29618cbcdbe7eb6d9508f1f062
+    subject:
+      kind: cli-command
+      label: foundry summarize-nextflow
+      locator: packages/summarize-nextflow/src/index.ts
+    kind: defect
+    severity: minor
+    what: "foundry summarize-nextflow split multi-line Groovy tuple/list arguments to SAMTOOLS_CHR and MULTIQC on commas, emitting bogus workflow.edges entries such as from='[[:]', from=']]]', from='[', and from='}'."
+    expected: "Parse balanced brackets/closures when splitting process/subworkflow call arguments so multi-line Groovy literals do not produce synthetic token edges."
+    evidence: "Running foundry summarize-nextflow on nf-core/bamtofastq aa0150e emitted 15 malformed edge fragments in <run>/summary-nextflow.json (cleaned during the LLM pass)."
+    status: open
+    issue: null
+  - id: reference-rebuilds-misses-branch-compute-if-missing
+    raised_by: nextflow-summary-to-galaxy-reference-data
+    observed_in:
+      mold: nextflow-summary-to-galaxy-reference-data
+      path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+      revision: 5
+      content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+      foundry_head: 77425ce07f69da2bdda1de21faea3abc4600ae00
+    subject:
+      kind: research
+      label: nextflow-reference-data-classification
+      locator: content/research/nextflow-reference-data-classification/index.md
+      content_hash: 2b33f3bddb635c9d700e506784b4bf16f8c387369bc66194a15cb75be9ad8a1f
+    kind: gap
+    severity: minor
+    what: "The compute-if-missing classification note covers negated and positive if-else forms, but does not mention channel .branch { is_fasta_indexed: meta.index == true; to_index: meta.index == false } -> BUILDER(...) used by nf-core/bamtofastq PREPARE_INDICES, where reference_rebuilds[] is also empty."
+    expected: "Document channel-.branch compute-if-missing alongside positive-form if/else as an idiom where reference_rebuilds[] may be empty and summarize-nextflow detection could be extended."
+    evidence: "In <run>/summary-nextflow.json, reference_rebuilds is [] while subworkflows/local/prepare_indices/main.nf builds missing fasta_fai with SAMTOOLS_FAIDX via fasta_fai.branch."
+    status: open
+    issue: null
+  - id: per-element-branch-and-filter-recipe-gap
+    raised_by: nextflow-summary-to-galaxy-data-flow
+    observed_in:
+      mold: nextflow-summary-to-galaxy-data-flow
+      path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+      revision: 8
+      content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+      foundry_head: 61da115975d155a36face0e83d5c28f638da7fca
+    subject:
+      kind: research
+      label: nextflow-operators-to-galaxy-collection-recipes
+      locator: content/research/nextflow-operators-to-galaxy-collection-recipes/index.md
+      content_hash: 59d97f05e7839f78cb7f42e17299fe6bc373bde8a32eca506238633a3dff9282
+    kind: gap
+    severity: minor
+    what: "Per-element runtime branching (CHECKPAIREDEND optional marker emission + .join) and datatype filtering (.filter { filetype == 'bam' } on mixed [bam, cram] collections) lack worked Galaxy recipes, and child pattern pages linked by galaxy-collection-patterns.md are not shipped in references/patterns/."
+    expected: "Document concrete Galaxy idioms for per-element empty-marker filtering + identifier sync and datatype filtering, and include linked pattern detail pages if needed by data-flow/template molds."
+    evidence: "In <run>/source/workflows/bamtofastq.nf and PRE_CONVERSION_QC, mixed BAM/CRAM and paired/single routing required inventing __FILTER_EMPTY_DATASETS__ + sync-collections-by-identifier wiring without bundled child pattern specs."
+    status: open
+    issue: null
+  - id: remote-samplesheet-url-unexpanded-in-test-refs
+    raised_by: nextflow-to-test-data
+    observed_in:
+      mold: nextflow-to-test-data
+      path: content/molds/nextflow-to-test-data/index.md
+      revision: 4
+      content_hash: 842e097edfb5bfbc37b62a35d5870ee2087df33919212a7965fd70dae799b189
+      foundry_head: 871b5e6deadfd56aeb5e2ba92eb8f6f50c8449ee
+    subject:
+      kind: mold
+      label: nextflow-to-test-data
+      locator: content/molds/nextflow-to-test-data/index.md
+      content_hash: 842e097edfb5bfbc37b62a35d5870ee2087df33919212a7965fd70dae799b189
+    kind: gap
+    severity: minor
+    what: "nextflow-to-test-data declares Required Tools: None declared, yet when summary-nextflow.json records only a remote samplesheet URL with sha1: null (test_bam_samplesheet.csv), expanding collection elements and verifying SHA-1 checksums requires external network fetching and hashing tools."
+    expected: "Document remote samplesheet CSV resolution and digest calculation in nextflow-to-test-data (or expand remote samplesheet rows in summarize-nextflow)."
+    evidence: "In <run>/summary-nextflow.json, tests/default.nf.test inputs[0] only listed role=samplesheet url=test_bam_samplesheet.csv with sha1=null; expanding test and test2 BAM URLs and SHA-1 digests required curl and sha1sum."
+    status: open
+    issue: null
+  - id: test-plan-schema-scalar-input-gap
+    raised_by: nextflow-test-to-galaxy-test-plan
+    observed_in:
+      mold: nextflow-test-to-galaxy-test-plan
+      path: content/molds/nextflow-test-to-galaxy-test-plan/index.md
+      revision: 8
+      content_hash: fa769216f621ef25470c9fb907df1278635c0a1e022b647b9462ff7b92469291
+      foundry_head: 161947ef7cd5c61b647aa3f49397ae2c04183009
+    subject:
+      kind: schema
+      label: galaxy-workflow-test-plan
+      locator: package://@galaxy-foundry/gxwf-foundry#galaxyWorkflowTestPlanSchema
+      content_hash: 03fc1d58499c4bd5f3fa9556d771a8f24bcc8a387f120bd6eb28fe5f103ffc95
+    kind: gap
+    severity: minor
+    what: "galaxyWorkflowTestPlanSchema requires every job_inputs entry to carry fixture.storage from [remote-url, in-repo, cvmfs-string, generated-toy, unresolved, null] with no scalar/parameter storage value or structured value field for non-file workflow inputs (boolean, int, optional string)."
+    expected: "Allow scalar/parameter entries in JobInput (or add storage: parameter and optional fixture.value) so planned workflow parameter values are structured rather than placed only in description."
+    evidence: "In <run>/galaxy-test-plan.yml, scalar workflow inputs chr, no_read_qc, no_stats, samtools_collate_fast, and reads_in_memory had to use fixture.storage: null with values encoded in description."
+    status: open
+    issue: null

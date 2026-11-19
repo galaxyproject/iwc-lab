@@ -1,0 +1,67 @@
+class: GalaxyUserTool
+id: samtools_collate_fastq
+version: 1.23.1
+name: samtools collate and fastq
+description: Convert BAM/CRAM to FASTQ with samtools collate piped into samtools fastq.
+container: quay.io/biocontainers/samtools:1.23.1--ha83d96e_0
+license: MIT
+help:
+  format: markdown
+  content: |
+    Reproduces the nf-core `SAMTOOLS_COLLATEFASTQ` module shell block:
+
+        samtools collate [-f -r 100000] --threads N [--reference FASTA] -O INPUT . |
+        samtools fastq -N --threads N [--reference FASTA] \
+            -0 out_other.fq.gz -1 out_1.fq.gz -2 out_2.fq.gz -s out_singleton.fq.gz
+
+    The collate stage fixes the read order, so the converted FASTQ is
+    byte-comparable with the nf-core pipeline output. Reads are split into the
+    mate files (-1/-2), the "other" file (-0, which also receives single-end
+    reads) and singletons (-s).
+configfiles:
+  - filename: run_collate_fastq.sh
+    content: |
+      set -o pipefail
+      set -e
+      REF="$(inputs.reference ? "--reference '" + inputs.reference.path + "'" : "")"
+      COLLATE_FAST="$(inputs.collate_fast ? "-f -r 100000" : "")"
+      samtools collate $COLLATE_FAST --threads "$GALAXY_SLOTS" $REF \
+          -O '$(inputs.input.path)' . |
+      samtools fastq -N --threads "$GALAXY_SLOTS" $REF \
+          -0 out_other.fq.gz -1 out_1.fq.gz -2 out_2.fq.gz -s out_singleton.fq.gz
+shell_command: bash run_collate_fastq.sh
+inputs:
+  - name: input
+    type: data
+    format: [bam, cram]
+    label: Alignments to convert
+  - name: reference
+    type: data
+    format: [fasta]
+    optional: true
+    label: Reference FASTA (required for CRAM)
+  - name: collate_fast
+    type: boolean
+    value: false
+    label: Use samtools collate -f -r 100000
+outputs:
+  - name: forward
+    type: data
+    format: fastqsanger.gz
+    from_work_dir: out_1.fq.gz
+    label: Mate 1 FASTQ
+  - name: reverse
+    type: data
+    format: fastqsanger.gz
+    from_work_dir: out_2.fq.gz
+    label: Mate 2 FASTQ
+  - name: other
+    type: data
+    format: fastqsanger.gz
+    from_work_dir: out_other.fq.gz
+    label: Other reads (single-end reads land here)
+  - name: singleton
+    type: data
+    format: fastqsanger.gz
+    from_work_dir: out_singleton.fq.gz
+    label: Singleton reads

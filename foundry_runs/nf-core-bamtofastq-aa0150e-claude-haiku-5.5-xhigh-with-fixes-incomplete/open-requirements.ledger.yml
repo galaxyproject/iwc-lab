@@ -1,0 +1,676 @@
+# Open-requirements ledger (carried workflow-run knowledge). First Mold of the run's design tier that writes it: nextflow-summary-to-galaxy-reference-data.
+entries:
+- id: index-sample-wrapper-no-index-dataset
+  status: resolved
+  kind: gap
+  blocking: true
+  raised_by: implement-galaxy-tool-step
+  step: index_sample
+  unmet: index_sample must produce a separate BAM or CRAM index dataset per sample (TODO_index), which classify_layout, flagstat, idxstats, stats, chr_extract, the four select steps and pick_bai consume
+  missing: the only Tool Shed wrapper that indexes a file is jackcurragh/ribogalaxy_samtools_index samtools_index 2.0.4 (changeset d90d874e1d9e; weak; its citations and description confirm it runs samtools index). Its parsed_tool declares one output, output1 of format bam, with no discover_datasets, so no separate index dataset can be bound to TODO_index
+  resolved_by: repair-galaxy-draft-topology
+  supersedes: null
+  note: 'Closed by repair-galaxy-draft-topology: remove-step index_sample, chr_index and pick_bai; rewire the consumers to the sample BAM collection (index no longer a separate dataset). The index dependencies of idxstats and chr_extract are recorded as plain entries. Decision index-datasets-removed-bam-metadata.'
+- id: genome-key-no-galaxy-data-table
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  units: genome key expansion for fasta and fasta_fai (params.genome via getGenomeAttribute, main.nf:37-38, conf/igenomes.config)
+  because: nextflow-to-galaxy-reference-data-mapping.md (Recommendations) and nextflow-params-to-galaxy-inputs.md (Reference data) forbid introducing Galaxy data tables; the iGenomes keys resolve only to igenomes_base (default s3://ngi-igenomes/igenomes/), which a stock Galaxy cannot read.
+  unmet: fasta and fasta_fai supplied by the genome key
+  missing: no Galaxy data table exists for the iGenomes keys; the explicit optional fasta and fasta_fai inputs replace the key path
+  resolved_by: null
+  supersedes: null
+  note: ''
+- id: fasta-fai-rebuild-in-tool-unverified
+  status: resolved
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  unmet: 'fasta_fai compute-if-missing (source: SAMTOOLS_FAIDX in PREPARE_INDICES) needs a Galaxy consumer that builds the .fai from the FASTA when no fasta_fai is supplied'
+  missing: in-tool rebuild capability of the chosen Galaxy wrapper is unverified; no tool is chosen yet (mapping note, gap 'in-tool rebuild capability discovery')
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+  supersedes: null
+  note: 'Placement settled by decision fai-and-sample-index-workflow-tier: the fai is built by a workflow-tier step, so the consuming tool no longer needs to rebuild it. The tool question for building an index (data-flow tool need 1) is left to discovery and is not claimed resolved.'
+- id: reference-free-run-path-unverified
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  unmet: behaviour of the pipeline when neither fasta nor genome is supplied (BAM input)
+  missing: 'static reading: PREPARE_INDICES routes an empty reference to SAMTOOLS_FAIDX, and SAMTOOLS_FAIDX has no when guard (modules/nf-core/samtools/faidx/main.nf; conf/modules.config sets none); no nf-test case runs this path'
+  resolved_by: null
+  supersedes: null
+  note: Needs a runtime check or an explicit interface decision on whether fasta is required for every run. Keep fasta optional in the interface until settled.
+- id: cram-input-needs-reference-unenforced
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  step: null
+  unmet: CRAM sample rows require a reference, but the Galaxy fasta input is optional
+  missing: source does not enforce it (nextflow_schema.json requires false; no runtime check); Galaxy cannot make an input required only for some sample-sheet rows (mapping note, requiredness gap)
+  resolved_by: null
+  supersedes: null
+  note: Interface Mold to document in the input help that CRAM rows need fasta.
+- id: sample-index-column-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  units: sample sheet column index (optional per-row .bai/.crai companion dataset, assets/schema_input.json)
+  because: 'The sample_sheet variant holds one dataset element per row and typed scalar columns only. sample_sheet:record does not allow implicit mapping, so a second per-row dataset cannot feed mapped tools. Cited: galaxy-sample-sheet-collections.md (Variants; Mapping rules).'
+  unmet: user-supplied BAI or CRAI index per sample
+  missing: no Galaxy shape carries an optional companion dataset per sample row; the source builds a missing index with SAMTOOLS_INDEX (PREPARE_INDICES)
+  resolved_by: null
+  supersedes: null
+  note: 'Loss in v1: users cannot supply sample indexes. The tool side has to build one when absent: see sample-index-in-tool-build-unverified.'
+- id: sample-index-in-tool-build-unverified
+  status: resolved
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  unmet: 'a Galaxy consumer builds the BAM or CRAM index when none is supplied (source: SAMTOOLS_INDEX via PREPARE_INDICES)'
+  missing: the chosen wrapper's ability to build an index in-tool is unverified; no tool is chosen yet
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+  supersedes: null
+  note: 'Placement settled by decision fai-and-sample-index-workflow-tier: a workflow-tier map over samples builds each missing index. The tool question for building an index (data-flow tool need 2) is left to discovery and is not claimed resolved.'
+- id: fastqc-and-fastq-utils-outputs-not-exposed
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  units: FASTQC_PRE_CONVERSION, FASTQC_POST_CONVERSION and FASTQUTILS_INFO outputs; the no_read_QC ext.when gate (conf/modules.config)
+  because: 'Cited: conf/modules.config defines no publishDir for these three modules; workflows/bamtofastq.nf does not mix their outputs into ch_multiqc_files (the FastQC line is commented out), and the workflow emits none of them. Verified by reading both files at aa0150e.'
+  unmet: per-read QC reports from the source
+  missing: the source computes these outputs and nothing consumes or publishes them, so the interface has nothing to expose
+  resolved_by: null
+  supersedes: null
+  note: The data-flow Mold may keep an unexposed QC step; this entry does not decide that.
+- id: outdir-pipeline-info-versions-not-exposed
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  units: 'collated software-versions YAML written by collectFile(storeDir: "${outdir}/pipeline_info") in workflows/bamtofastq.nf'
+  because: Design choice, uncited for the Galaxy side. The source produces the file from the Nextflow topic:versions channel; this run did not verify Galaxy's per-job tool-version recording.
+  unmet: pipeline software-versions report under the output directory
+  missing: no Galaxy workflow output carries it in this interface
+  resolved_by: null
+  supersedes: null
+  note: 'Uncited drop: a debt, not a finding. Revisit if Galaxy job provenance does not cover the versions.'
+- id: sample-sheet-element-identifier-source
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  unmet: output element identifiers must match sample_id
+  missing: Galaxy's rule for which sample_sheet column becomes the element identifier is not verified (galaxy-sample-sheet-collections.md does not state it)
+  resolved_by: null
+  supersedes: null
+  note: Verify at template or tool-step time; test assertions on identifiers depend on it.
+- id: sample-sheet-element-format-bam-or-cram
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  unmet: the sample_sheet element format must accept both bam and cram rows
+  missing: the list form [bam, cram] for a sample_sheet element format is not verified against the gxformat2 schema; the datatype note has no mixed-format rule
+  resolved_by: null
+  supersedes: null
+  note: Medium confidence in the interface brief; check at template time.
+- id: chr-changes-output-identifiers
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: null
+  unmet: output element identifiers under the chr control flag
+  missing: with chr set, meta.id is rebound to the chromosome-extracted file basename (workflows/bamtofastq.nf), so identifiers differ from sample_id
+  resolved_by: null
+  supersedes: null
+  note: Non-blocking. The test plan must decide whether identifiers are asserted under chr.
+- id: chr-layout-flag-rekeying
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: null
+  unmet: with chr set, the per-sample layout flag (keyed by sample_id) must gate the chromosome-named elements, which are keyed by file basename
+  missing: after the chr fan-in the identifiers are sample.chr and the flag is keyed by sample id; no carrier in the draft recovers the key (SAMTOOLS_CHR prefix is ${meta.id}.${chr}, and sample ids can contain dots)
+  resolved_by: null
+  supersedes: null
+  note: Non-blocking for the default path. A chr run must not be claimed correct until resolved. Options in the data-flow brief, open question 1.
+- id: chr-fan-in-pick-value-collections
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: null
+  unmet: the chr branch joins two alternative collections (region-extracted or original) into one
+  missing: pick_value on collections is not verified; the twin downstream cascade is the alternative and roughly doubles the DAG width
+  resolved_by: null
+  supersedes: null
+  note: Low confidence in the data-flow brief (node N8c).
+- id: per-element-layout-routing-unverified
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: null
+  unmet: 'per-sample layout routing: a boolean per sample gates the paired and single conversion paths'
+  missing: the per-element when gate is verified in the collection note (boolean on a mapped step), but not end to end with the classifier, and not for a path that receives an empty collection (all rows one layout; the CRAM test sheets have no single-end rows)
+  resolved_by: null
+  supersedes: null
+  note: 'Verify with the test plan: the no_bai sheet mixes layouts; the CRAM sheets do not. Medium confidence for nodes N6 to N10.'
+- id: remainder-join-nulls-before-merge
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: null
+  unmet: 'the unmapped merge (node N9b) receives three sibling sets joined with remainder: true, so a set can be missing'
+  missing: the source passes nulls into SAMTOOLS_MERGE_UNMAP; the draft needs them removed or accepted by the merge; unverified in Galaxy
+  resolved_by: null
+  supersedes: null
+  note: Operator-recipe review trigger (join with remainder).
+- id: multiqc-versions-input-no-galaxy-source
+  status: resolved
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: null
+  unmet: MULTIQC consumes the collated software-versions file (ch_collated_versions) as an input, not only as a published output
+  missing: Galaxy records tool versions per job, not as a workflow file; no tool need is identified for producing a versions summary
+  resolved_by: nextflow-summary-to-galaxy-template
+  supersedes: null
+  note: 'Settled by decision multiqc-versions-not-fed: MultiQC runs without a versions input. The gap of not having a Galaxy versions source is recorded, not closed.'
+- id: multiqc-report-without-qc-content
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: null
+  unmet: 'content of multiqc_report: the faithful draft gives MultiQC only versions, methods and config'
+  missing: the source excludes the samtools reports and FastQC from MultiQC (ALIGNMENT_TO_FASTQ zip line commented out; PRE_CONVERSION_QC outputs never mixed in), so the Galaxy report carries little QC
+  resolved_by: null
+  supersedes: null
+  note: 'Expert decision: keep faithful (default), or feed the samtools reports into MultiQC as a deliberate deviation.'
+- id: sample-sheet-unique-sample-id-requirement
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: null
+  unmet: 'element identity: one sample-sheet row is one element keyed by sample_id'
+  missing: the source does not enforce unique sample_id, and its join keys on the whole meta map; a repeated sample_id would collide in Galaxy
+  resolved_by: null
+  supersedes: null
+  note: The five test sheets are unique. Interface or template to state the requirement, or choose sample_id plus row number.
+- id: workflow-summary-yaml-not-produced
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: null
+  units: workflow_summary_mqc.yaml (paramsSummaryMap parameter dump, ch_summary_params in workflows/bamtofastq.nf), which MULTIQC consumes
+  because: 'Cited: workflows/bamtofastq.nf builds ch_summary_params with paramsSummaryMap(workflow, parameters_schema) and mixes its YAML into ch_multiqc_files. It is a Nextflow run-parameter dump; Galaxy''s invocation record is the nearest equivalent, and that equivalence is not verified.'
+  unmet: parameter-summary section of the MultiQC report
+  missing: no Galaxy carrier in this draft
+  resolved_by: null
+  supersedes: null
+  note: Dropped as a design decision. The equivalence to the invocation record is uncited.
+- id: no-iwc-exemplar-bam-to-fastq-conversion
+  status: open
+  kind: gap
+  raised_by: compare-against-iwc-exemplar
+  step: null
+  unmet: the core BAM or CRAM to FASTQ conversion and its flag selection, merge and collate steps (data-flow nodes N9a to N9d, N10) have no IWC pattern to pattern-match
+  missing: no IWC .ga contains collatefastq, samtools fastq, bam2fastq, bamtofastq, bam_to_fastq, samtools_collate or collate_fastq (grep over 133 workflows at c07557f); the nearest pattern match is Low
+  resolved_by: null
+  supersedes: null
+  note: Non-blocking. The template authors these steps from the data-flow brief; tool choices go through the per-step loop. No exemplar is claimed.
+- id: no-iwc-precedent-sample-sheet-input
+  status: open
+  kind: gap
+  raised_by: compare-against-iwc-exemplar
+  step: null
+  unmet: the typed sample_sheet collection input chosen in the interface brief
+  missing: no IWC .ga uses a sample_sheet input (grep for sample_sheet over the corpus); the nearest pattern exemplar takes a manifest data input plus column-number parameters
+  resolved_by: null
+  supersedes: null
+  note: Non-blocking. The interface decision stands; the template must not claim corpus support for it.
+- id: draft-multiqc-null-inputs-when-reports-skipped
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-template
+  step: multiqc
+  unmet: multiqc receives the three samtools report collections, which are skipped (null) when skip_samtools_reports is true
+  missing: a reduction over collections with skipped members is unverified in Galaxy; the draft does not drop the null inputs
+  resolved_by: null
+  supersedes: null
+  note: 'Non-blocking. Check at the first concrete run. Fallback: run MultiQC without the samtools inputs when the flag is set.'
+- id: draft-positional-sibling-pairing
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-template
+  step: null
+  unmet: the draft pairs sibling collections by position in five places (pick_bam with pick_bai, the three unmapped merge inputs, nest_fwd, nest_rev, zip_pairs)
+  missing: Galaxy pairs linked inputs by position; this is correct only when siblings share element order and membership, which holds by construction here but is not verified; a mismatch would pair wrong elements silently
+  resolved_by: null
+  supersedes: null
+  note: Non-blocking. The data-flow brief asked for identifier synchronisation (N9b, N9e); the draft uses position instead (decision sibling-pairing-positional). Verify with a test whose siblings differ in gating (the no_bai sheet).
+- id: draft-when-guard-on-data-input
+  status: open
+  kind: gap
+  raised_by: nextflow-summary-to-galaxy-template
+  step: index_fasta
+  unmet: index_fasta runs only when reference_fasta is provided; its when-guard tests an optional data input
+  missing: the expression inputs.when !== null over a data input is not verified; draft-validate passed but does not evaluate guards
+  resolved_by: null
+  supersedes: null
+  note: Non-blocking. Check at the first concrete run. The same guard pattern is used by chr_extract and chr_index (chromosome_filter).
+- id: index-fasta-output-format-tabular-vs-fai
+  status: open
+  kind: gap
+  raised_by: implement-galaxy-tool-step
+  step: index_fasta
+  unmet: the fai dataset that index_fasta produces feeds pick_fai and then every per-sample consumer, which expects the fai datatype
+  missing: 'the bound wrapper (iuc samtools_faidx 1.22+galaxy1) declares its output port as format tabular (tool summary, output ''output''); fai is a tabular subclass in Galaxy, so the connection may be refused or the datatype may be wrong at run time. No change_datatype post-job action was added: the procedure says not to invent a format'
+  resolved_by: null
+  supersedes: null
+  note: 'Non-blocking. Decide at the first concrete run: add a producer-side change_datatype to fai on output, or keep tabular and check the consumer''s acceptance. Source evidence: SAMTOOLS_FAIDX output fai (modules/nf-core/samtools/faidx/main.nf).'
+- id: index-sample-per-sample-index-dataset-not-carried
+  status: open
+  kind: dropped
+  raised_by: repair-galaxy-draft-topology
+  step: null
+  units: source SAMTOOLS_INDEX per sample as a separate index dataset (PREPARE_INDICES); the region-BAM index (chr_index); the index fan-in (pick_bai)
+  because: 'The only Tool Shed wrapper that indexes a file, jackcurragh/ribogalaxy_samtools_index samtools_index 2.0.4 (weak), declares parsed_tool.outputs = [{name: output1, format: bam, discover_datasets: []}] (tool-summary-samtools_index.json), so no index dataset is produced. A tool-search for ''samtools index'' with owner iuc and owner devteam returned no samtools_index wrapper (tool search runs, this session).'
+  unmet: per-sample BAM or CRAM index dataset as a workflow value
+  missing: no wrapper in the search writes an index dataset; Galaxy keeps the index as BAM dataset metadata, so the index dependency moves to the BAM input
+  resolved_by: null
+  supersedes: null
+  note: Narrowing. Index dependencies of idxstats and chr_extract remain as plain gap entries (not blocking).
+- id: idxstats-requires-bam-index-metadata
+  status: open
+  kind: gap
+  raised_by: repair-galaxy-draft-topology
+  step: idxstats
+  unmet: samtools idxstats needs an index on its BAM input; the separate index dataset is removed
+  missing: no evidence here that a derived BAM carries its index as metadata for this wrapper (devteam samtools_idxstats 2.0.8 not checked)
+  resolved_by: null
+  supersedes: null
+  note: Not blocking. Check at idxstats implementation; an in-tool index step is the fallback.
+- id: chr-extract-region-needs-index
+  status: open
+  kind: gap
+  raised_by: repair-galaxy-draft-topology
+  step: chr_extract
+  unmet: the chromosome region extraction is a region query and needs an index on the input BAM
+  missing: the index now comes from BAM dataset metadata; no wrapper evidence yet that the index is available for a derived or uploaded BAM in this workflow
+  resolved_by: null
+  supersedes: null
+  note: Not blocking. Affects the chromosome branch only (params.chr). Test plan should exercise chr with an indexed input.
+- id: multiqc-config-logo-methods-no-wrapper-port
+  status: open
+  kind: dropped
+  raised_by: implement-galaxy-tool-step
+  step: multiqc
+  units: report customisation inputs multiqc_config, multiqc_logo and multiqc_methods_description (workflow inputs kept declared, no consumer)
+  because: 'The bound wrapper iuc/multiqc 1.35+galaxy5 has no port for them: its parsed_tool.inputs are results, image_content_input, title, comment, flat, export, png_plots (tool-summary-multiqc.json). Only title is bound.'
+  unmet: custom MultiQC config, logo and methods section from the user
+  missing: no MultiQC port in this wrapper accepts them; the three workflow inputs stay declared but unconsumed, which is an interface change left for the expert
+  resolved_by: null
+  supersedes: null
+  note: Narrowing at the wrapper tier. Interface brief item still names these inputs; the expert decides whether to remove them.
+- id: classify-layout-authored-tool-unverified
+  status: open
+  kind: gap
+  raised_by: implement-galaxy-tool-step
+  step: classify_layout
+  unmet: the authored samtools-based layout check gives the source's CHECKPAIREDEND decision on real BAM and CRAM files
+  missing: the definition passes a local self-check only; no Galaxy user-tool validator was run; the script was tested with a mock samtools view on two synthetic SAM files, not with samtools; a headerless SAM for samtools view -c and the CRAM reference path are unverified
+  resolved_by: null
+  supersedes: null
+  note: Not blocking. Verify at the first concrete run on the test sheets (paired, mixed and CRAM).
+- id: pick-fai-reference-free-first-non-null
+  status: open
+  kind: gap
+  raised_by: implement-galaxy-tool-step
+  step: pick_fai
+  unmet: pick_fai returns the FASTA index when neither reference_fasta_index nor index_fasta output exists (reference-free path)
+  missing: pick_value in pick_style first is used; whether it returns null or fails when no input is non-null is not verified (the summary's help text does not say); the same question applies to pick_bam
+  resolved_by: null
+  supersedes: null
+  note: Not blocking here; the reference-free open entry carries it. Check with a BAM-only run.
+- id: collate-mapped-needs-name-collate-producer
+  status: resolved
+  kind: gap
+  blocking: true
+  raised_by: implement-galaxy-tool-step
+  step: collate_mapped
+  unmet: collate_mapped must produce a paired FASTQ collection (R1 and R2) from the mapped BAM records (select_mm output)
+  missing: 'the only converter bound to this path is iuc samtools_fastx 1.22+galaxy2, whose output is written from its input in file order; the source produces pairs by first running samtools collate (modules/nf-core/samtools/collatefastq/main.nf: a collate step precedes the fastq step). The draft has no name-collate producer, so the declared paired output cannot be computed from the wired input'
+  resolved_by: repair-galaxy-draft-topology
+  supersedes: null
+  note: 'Closed by repair-galaxy-draft-topology: add-step collate_mapped_records (input select_mm outputsam) and collate_unmapped_records (input merge_unmapped TODO_bam), both draft tier and gated by gate_paired; collate_mapped and collate_unmapped rewired to the collated records. The wrapper iuc samtools_collate is a Tool Shed search candidate only, not pinned. Decision name-collate-before-paired-conversion.'
+- id: collate_mapped_records-wrapper-unpinned
+  status: open
+  kind: gap
+  raised_by: repair-galaxy-draft-topology
+  step: collate_mapped_records
+  unmet: collate_mapped_records must name-collate its input (select_mm outputsam) so that mates are adjacent for the paired FASTQ conversion
+  missing: no Tool Shed wrapper is pinned for this step; iuc samtools_collate appears in the Tool Shed search only ('shuffle and group reads together by their names'); its ports and version are unverified
+  resolved_by: null
+  supersedes: null
+  note: Not blocking. The loop resolves the wrapper (discover, pin, summarize) on a later iteration.
+- id: collate_unmapped_records-wrapper-unpinned
+  status: open
+  kind: gap
+  raised_by: repair-galaxy-draft-topology
+  step: collate_unmapped_records
+  unmet: collate_unmapped_records must name-collate its input (merge_unmapped TODO_bam) so that mates are adjacent for the paired FASTQ conversion
+  missing: no Tool Shed wrapper is pinned for this step; iuc samtools_collate appears in the Tool Shed search only ('shuffle and group reads together by their names'); its ports and version are unverified
+  resolved_by: null
+  supersedes: null
+  note: Not blocking. The loop resolves the wrapper (discover, pin, summarize) on a later iteration.
+- id: merge-unmapped-needs-per-sample-list
+  status: resolved
+  kind: gap
+  blocking: true
+  raised_by: implement-galaxy-tool-step
+  step: merge_unmapped
+  unmet: merge_unmapped must merge the three unmapped record sets of each sample (select_uu, select_um, select_mu outputsam) into one BAM per sample
+  missing: 'the bound wrapper iuc samtools_merge 1.22+galaxy2 (changeset 37c8eb55315d) takes one multiple data input bamfiles (summary: bamfiles, multiple True, required); the three sibling collections are linked by position, not grouped per sample, and no draft step builds a per-sample list of the three datasets. Quoted from tool-summary-merge_unmapped.json. The Tool Shed name search timed out for this step, so the pin rests on the version list and the changeset lookup.'
+  resolved_by: repair-galaxy-draft-topology
+  supersedes: null
+  note: 'Closed by repair-galaxy-draft-topology: add-step select_unmapped_union (one samtools_view pass, expression filter, draft tier) feeding collate_unmapped_records; remove-step merge_unmapped; the three unmapped selections select_uu, select_um, select_mu are realized and kept, now unconsumed (entry select-uu-um-mu-unconsumed). Decision name-union-selection-replaces-merge.'
+- id: merge-unmapped-three-selections-merged
+  status: open
+  kind: dropped
+  raised_by: repair-galaxy-draft-topology
+  step: merge_unmapped
+  units: samtools_merge step merge_unmapped (three sibling inputs select_uu, select_um, select_mu outputsam)
+  because: 'The union of the three source selections is one set: conf/modules.config gives SAMTOOLS_VIEW_UNMAP_UNMAP -b -f12 -F256, SAMTOOLS_VIEW_UNMAP_MAP -b -f4 -F264 and SAMTOOLS_VIEW_MAP_UNMAP -b -f8 -F260; together they are records with flag 4 or 8 set and flag 256 clear. The bound wrapper samtools_view has filter_config cond_expr with an expression text (tool-summary-chr_extract.json), so one pass selects the union. The bound merge takes one multiple bamfiles input (tool-summary-merge_unmapped.json), which the sibling collections cannot supply per sample.'
+  unmet: one merged unmapped BAM per sample
+  missing: no step needed after the union selection; the merge's per-sample grouping problem does not arise
+  resolved_by: null
+  supersedes: null
+  note: Narrowing. The three realized selections remain in the draft, unconsumed, because implementation cannot remove realized steps.
+- id: union-selection-expression-unverified
+  status: open
+  kind: gap
+  raised_by: repair-galaxy-draft-topology
+  step: select_unmapped_union
+  unmet: the one-pass union selection gives the same records as the three source selections
+  missing: the samtools expression syntax (flag.unmap, flag.munmap, flag.secondary) and the wrapper's handling of the expression text are not verified here (no samtools in this environment); the set equality is derived from the source flags
+  resolved_by: null
+  supersedes: null
+  note: Not blocking. Verify at the first concrete run with a mixed BAM (the no_bai test sheet).
+- id: select-uu-um-mu-unconsumed
+  status: open
+  kind: gap
+  raised_by: repair-galaxy-draft-topology
+  step: select_uu
+  unmet: select_uu, select_um and select_mu (realized, bound to iuc samtools_view 1.22+galaxy2) no longer feed any step after the union selection
+  missing: implementation cannot remove realized steps, so they still run and their outputs are unused
+  resolved_by: null
+  supersedes: null
+  note: Not blocking. Remove them in a later edit that is allowed to remove realized steps, or keep as labelled waste.
+decisions:
+- id: reference-inputs-explicit-optional-data
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: Expose fasta (data, format fasta, optional) and fasta_fai (data, format fai, optional) as explicit workflow inputs. No genome key, no data tables.
+  rationale: 'v1 posture from the mapping note: explicit optional inputs with in-tool rebuild. Both params are curated path params with identical used_by attribution.'
+  evidence:
+  - summary reference_assets[] (fasta, fasta_fai)
+  - source/workflows/bamtofastq.nf fasta_fai channel
+- id: genome-key-not-carried
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: Do not carry the genome key, conf/igenomes.config genomes map, igenomes_base, or igenomes_ignore into the Galaxy surface.
+  rationale: Recorded as the dropped entry genome-key-no-galaxy-data-table. The igenomes controls are infrastructure, not data (params note, runtime-control exclusion).
+  evidence:
+  - nextflow-params-to-galaxy-inputs.md (Reference data)
+  - source/main.nf:37-38
+- id: fai-rebuild-in-tool
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: When fasta_fai is absent, the consuming Galaxy tool builds the index in-tool. No workflow-level indexing step.
+  rationale: 'Mapping note: in-tool is preferred below about three rebuilds. The .fai is built once per run and used by several consumers, but only as a per-run cost; no sharing requirement is documented.'
+  evidence:
+  - nextflow-to-galaxy-reference-data-mapping.md (Why in-tool rebuild)
+  - source/subworkflows/local/prepare_indices/main.nf
+- id: input-as-sample-sheet
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Model input as a sample_sheet collection (one bam or cram dataset per row) with column_definitions sample_id (string, required, regex ^\S+$) and file_type (string, required, restrictions bam and cram).
+  rationale: sample_id names outputs and file_type drives --reference; sample_sheet is the only variant that maps over per-row datasets; index is dropped (entry sample-index-column-not-carried).
+  evidence:
+  - source/assets/schema_input.json
+  - summary sample_sheets[0] (discovered_via nf-schema)
+  - galaxy-sample-sheet-collections.md (Variants; Mapping rules)
+- id: reads-split-by-layout
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Expose paired_reads (list:paired, fastqsanger.gz) and single_reads (list, fastqsanger.gz) as two outputs, not one mixed collection.
+  rationale: The source has two producers selected per sample by CHECKPAIREDEND; the channel-shape note marks paired_or_unpaired as medium confidence.
+  evidence:
+  - source/workflows/bamtofastq.nf (conversion_input.ch_single and ch_paired)
+  - nextflow-to-galaxy-channel-shape-mapping.md (Mixed single-end and paired-end reads)
+- id: samtools-reports-checkpoint-gated-by-no-stats
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Expose samtools_flagstat, samtools_idxstats and samtools_stats as outputs gated by no_stats. samtools_flagstat is the test checkpoint.
+  rationale: All three are published user-facing reports (conf/modules.config); flagstat content is stable and tied to input record counts (galaxy-workflow-testability-design.md).
+  evidence:
+  - source/conf/modules.config (SAMTOOLS_FLAGSTAT, SAMTOOLS_IDXSTATS, SAMTOOLS_STATS publishDir)
+- id: control-flags-kept
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Keep chr, no_stats, samtools_collate_fast and reads_in_memory as scalar inputs. Exclude the publish, notification, CLI and institutional params listed in the interface brief.
+  rationale: Each kept flag changes a step or a command argument; each excluded param has a recorded class and assessment in the brief.
+  evidence:
+  - nextflow-params-to-galaxy-inputs.md (Control params)
+  - summary params[] and workflow.conditionals[]
+- id: multiqc-customisation-kept
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Keep multiqc_title as a string and multiqc_config, multiqc_logo and multiqc_methods_description as optional data inputs with no format.
+  rationale: 'Each changes a user-visible report. Format omitted: no registry-backed extension for these files (datatype note, Registry constraint).'
+  evidence:
+  - source/conf/modules.config (MULTIQC ext.args)
+  - nextflow-path-glob-to-galaxy-datatype.md (Registry constraint)
+- id: fai-and-sample-index-workflow-tier
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Build the FASTA index (fai) and the per-sample BAM/CRAM indexes as workflow-tier steps, not inside each consuming tool. The fai step runs only when fasta is given and fasta_fai is absent.
+  rationale: 'The source builds both in PREPARE_INDICES as workflow-level steps. Each index feeds about ten steps per sample, and the mapping note''s threshold (more than about three rebuilds: workflow tier) applies.'
+  evidence:
+  - source/subworkflows/local/prepare_indices/main.nf
+  - nextflow-to-galaxy-reference-data-mapping.md (Heavy indexes, repeated use)
+  supersedes: fai-rebuild-in-tool
+- id: per-element-layout-routing
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Route each sample to the paired or the single path with a per-sample boolean (nodes N6, N7) read by mapped when gates on both paths, then drop null elements. Do not run both paths for every sample.
+  rationale: The source branches each sample on its layout. A per-element boolean with mapped when gates is the verified Galaxy route, and running the paired path on single-end data would not match the source.
+  evidence:
+  - source/workflows/bamtofastq.nf (conversion_input branch)
+  - galaxy-sample-sheet-collections.md (per-element when, verified)
+- id: chr-inline-when-with-pick-fanin
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Gate the two chr steps inline on chr; fan the original and the region collections into one with pick_value (mode the_only_non_null). Low confidence, flagged.
+  rationale: 'Two steps and a rebinding: the cascade is short, so inline when rather than a subworkflow (conditional-note heuristics). The alternatives are mutually exclusive by construction, so the_only_non_null.'
+  evidence:
+  - nextflow-conditional-to-galaxy-subworkflow-when.md
+  - source/workflows/bamtofastq.nf (if params.chr)
+- id: samtools-reports-inline-when
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Gate the three samtools report steps inline on not no_stats. No subworkflow boundary.
+  rationale: The three steps are independent (none chains into another), and the conditional note favours inline when for short independent cascades.
+  evidence:
+  - source/conf/modules.config (ext.when = !params.no_stats)
+- id: versions-node-internal-to-multiqc
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Keep the software-versions input as an internal node feeding MultiQC, and do not publish it. The gap multiqc-versions-input-no-galaxy-source stays open.
+  rationale: The source consumes the versions file in MULTIQC (ch_multiqc_files), so the drop of the published copy does not remove the input.
+  evidence:
+  - source/workflows/bamtofastq.nf (ch_collated_versions mixed into ch_multiqc_files)
+- id: cram-reference-passed-always
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Pass the reference to every conversion and view step. Do not carry file_type as a per-element tool parameter; the element datatype (bam or cram) carries the format.
+  rationale: The source passes --reference only for CRAM rows (meta.filetype). Whether passing a reference for BAM rows is harmless to samtools is not verified.
+  evidence:
+  - source/modules/local/checkpairedend/main.nf (meta.filetype == cram)
+  - nextflow-galaxy-interface.md (file_type column)
+- id: no-high-or-medium-iwc-exemplar
+  decided_by: compare-against-iwc-exemplar
+  decision: Report no High or Medium nearest exemplar for this pipeline. Use data-fetching/sra-manifest-to-concatenated-fastqs as a Low-confidence pattern excerpt only. Do not write the iwc-exemplar sibling file.
+  rationale: No IWC workflow converts BAM or CRAM to FASTQ. The sra-manifest workflow shares topology and output shape but not the analysis (read acquisition). The procedure writes the sibling file only for High or Medium exemplars.
+  evidence:
+  - iwc-comparison-notes.md (Result; Candidates ranked)
+  - IWC c07557f, 133 .ga workflows, grep for conversion tools: zero matches
+- id: iwc-sra-manifest-pattern-excerpt-only
+  decided_by: compare-against-iwc-exemplar
+  decision: Use the converted sra-manifest concatenation steps only as a labelled pattern excerpt in the comparison notes. Do not adopt its fetch tool, its relabel tool or its manifest input.
+  rationale: Low-confidence cross-domain matches may surface a short excerpt for pattern comparison, labelled as such. The fetch and relabel tools belong to the per-step loop.
+  evidence:
+  - iwc-comparison-notes.md (Labeled excerpt)
+- id: chr-fanin-first-non-null
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: Fan the region BAM and region index into the sample collections with pick_value in mode first_non_null, region first and original second, not the_only_non_null.
+  rationale: The original collection is always non-null, so the_only_non_null fails whenever a region is extracted. first_non_null picks the region when chromosome_filter is set and the original otherwise.
+  evidence:
+  - galaxy-workflow-draft.gxwf.yml (pick_bam, pick_bai)
+  - nextflow-conditional-to-galaxy-subworkflow-when.md (the_only_non_null is for branches exclusive by construction)
+  supersedes: chr-inline-when-with-pick-fanin
+- id: multiqc-fed-by-samtools-reports
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: MultiQC takes the three samtools report collections, plus the config, logo, methods description and title. The source's MultiQC inputs are not all wired.
+  rationale: The source's inputs (versions, workflow summary, methods description) carry no sample data, so a tool step with a required data input has nothing to reduce. IWC rnaseq-pe aggregates the workflow's own QC into MultiQC. This departs from the source and is proposed as a brief change for expert confirmation.
+  evidence:
+  - workflows/bamtofastq.nf (MULTIQC inputs)
+  - iwc-comparison-notes.md (rnaseq-pe pattern evidence)
+- id: multiqc-versions-not-fed
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: MultiQC has no software-versions input. The versions gap stays a recorded gap, not a tool need.
+  rationale: Galaxy keeps no workflow file of per-tool versions (open entry multiqc-versions-input-no-galaxy-source). Leaving the input out keeps the topology closed without a fabricated versions step.
+  evidence:
+  - galaxy-workflow-draft.gxwf.yml (multiqc)
+- id: wrapper-tiers-identity-pinned-from-iwc
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: Identity-pin a tool step only when a local IWC workflow uses the same wrapper for the same operation; defer the rest. No step is Resolved.
+  rationale: 'No step has a full evidence set for wrapper, parameters and port names: the tool cache is empty, so built-in and wrapper state keys cannot be checked. Identity-pinned steps keep tool_version TODO and carry _plan_state.'
+  evidence:
+  - iwc-tool-ids-counts (discovery)
+- id: sibling-pairing-positional
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: Pair sibling collections by position in the draft. Identifier synchronisation is not a separate node.
+  rationale: Siblings derived from one element set under the same per-element booleans have the same order and membership. An identifier join would need a key Galaxy cannot reconstruct after the chromosome rename.
+  evidence:
+  - draft-positional-sibling-pairing (ledger entry)
+  - nextflow-galaxy-data-flow.md (open question 1, chromosome re-keying)
+- id: index-datasets-removed-bam-metadata
+  decided_by: repair-galaxy-draft-topology
+  decision: Remove index_sample, chr_index and pick_bai. Consumers read the sample BAM collection (classify_layout, flagstat, idxstats, stats, chr_extract, select_mm, select_uu, select_um, select_mu). The index is carried by the BAM dataset metadata.
+  rationale: The only indexing wrapper produces no index dataset. Only idxstats and the region query need an index; flag-based views, collate, CHECKPAIREDEND and flagstat/stats read the file record by record (source command blocks). Preserves every label and checkpoint.
+  evidence:
+  - tool-summary-samtools_index.json (parsed_tool.outputs)
+  - source/modules/local/checkpairedend/main.nf (samtools view on ${input})
+  - source/conf/modules.config SAMTOOLS_VIEW_* ext.args (flag filters, no region)
+- id: name-collate-before-paired-conversion
+  decided_by: repair-galaxy-draft-topology
+  decision: Insert a name-collate step before each paired FASTQ conversion (collate_mapped and collate_unmapped), gated by gate_paired, at draft tier.
+  rationale: The source runs samtools collate before samtools fastq, and the FASTQ pairs need adjacent mates; the bound converter alone cannot pair them.
+  evidence:
+  - source/modules/nf-core/samtools/collatefastq/main.nf (collate line 37, fastq line 45)
+  - open-requirements entry collate-mapped-needs-name-collate-producer
+- id: name-union-selection-replaces-merge
+  decided_by: repair-galaxy-draft-topology
+  decision: Select the unmapped union in one samtools_view pass with an expression filter (draft tier), feeding collate_unmapped_records directly; remove the merge.
+  rationale: The merge takes one multiple input per job and the sibling selections cannot be grouped per sample with stock collection operations; the union is one set in the source flags.
+  evidence:
+  - source/conf/modules.config (SAMTOOLS_VIEW_UNMAP_UNMAP, SAMTOOLS_VIEW_UNMAP_MAP, SAMTOOLS_VIEW_MAP_UNMAP ext.args)
+  - tool-summary-merge_unmapped.json (bamfiles)
+  - tool-summary-chr_extract.json (filter_config cond_expr)
+discoveries:
+- id: summary-getgenomeattribute-defaults-missed
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: 'main.nf:37-38 sets params.fasta and params.fasta_fai from getGenomeAttribute through ?: fallbacks. The summary lists both as nextflow_schema params with source_expression null and empty reference_assets evidence.'
+  impact: The key-expanded classification was verified from source. Logged as feedback summarize-nextflow-getgenomeattribute-defaults-missed.
+- id: summary-channel-branch-rebuild-missed
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: PREPARE_INDICES routes the fasta_fai channel on meta.index; index == false goes to SAMTOOLS_FAIDX. reference_rebuilds[] is empty.
+  impact: The compute-if-missing class was verified from source. Logged as feedback summarize-nextflow-channel-branch-rebuild-missed.
+- id: schema-help-text-copied-from-alignment-template
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: 'nextflow_schema.json help_text for fasta and fasta_fai: ''mandatory if --genome is not specified'', ''BWA index will be generated''. This pipeline builds no BWA index.'
+  impact: Requiredness is taken from source, not from help text.
+- id: sample-index-compute-if-missing
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: PREPARE_INDICES sends samples with index == false to SAMTOOLS_INDEX; the sample sheet's index column is optional data.
+  impact: Per-sample, out of reference scope. Handed to interface and data-flow Molds as an in-tool samtools index rebuild.
+- id: fastqc-outputs-unpublished-unconsumed
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: conf/modules.config defines no publishDir for FASTQC_PRE_CONVERSION, FASTQC_POST_CONVERSION or FASTQUTILS_INFO; workflows/bamtofastq.nf does not consume their outputs (the FastQC mix is commented out).
+  impact: The source computes these outputs and drops them. The data-flow Mold must not expose them as outputs unless it decides otherwise.
+- id: chr-rebinds-meta-id
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: 'workflows/bamtofastq.nf: ch_input_new = ch_input_chr.map { ... new_id = file.baseName ... }.'
+  impact: Output identifiers change with chr. Recorded as gap chr-changes-output-identifiers.
+- id: samtools-reports-describe-input-not-reads
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: PRE_CONVERSION_QC runs SAMTOOLS_FLAGSTAT, _IDXSTATS and _STATS on the input BAM/CRAM (ch_input), before conversion.
+  impact: The checkpoint describes input records, not output reads. The test plan must not compare them with read counts without a conversion-aware rule.
+- id: summary-sample-sheet-index-columns
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: 'sample_sheets[0].columns: sample_id (meta), mapped (data, required), index (data, optional), file_type (meta, enum bam/cram).'
+  impact: The row has one required element dataset and one optional companion dataset. Only the first is carried in v1 (decision input-as-sample-sheet).
+- id: source-branch-on-layout-not-in-conditionals
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: workflow.conditionals[] holds three parameter guards (params.chr, !no_read_QC, !no_stats). The layout branch (conversion_input = ch_input_new.branch on meta.single_end) is driven by channel content from CHECKPAIREDEND, not by a parameter, and is absent from conditionals[].
+  impact: The data-flow step had to find the per-sample routing in the edges and the workflow source. Logged as feedback summarize-nextflow-conditionals-omit-data-driven-branch.
+- id: test-sheets-layout-mix
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: test_bam_samplesheet_no_bai.csv has two paired rows and one single-end row (test3). test_chr_samplesheet.csv has one single-end row. Both CRAM sheets are all paired.
+  impact: The no_bai test exercises mixed routing; the CRAM tests exercise an empty single-end path.
+- id: join-keys-on-whole-meta
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: 'ALIGNMENT_TO_FASTQ: COLLATE_FASTQ_MAP.out.fastq.join(COLLATE_FASTQ_UNMAP.out.fastq) joins on the full meta map (id, filetype, single_end).'
+  impact: The effective key is sample_id only when sample_id is unique.
+- id: samtools-chr-prefix-identifiers
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: conf/modules.config SAMTOOLS_CHR ext.prefix = ${meta.id}.${params.chr} (dots and spaces become underscores); workflows/bamtofastq.nf rebinds meta.id to file.baseName.
+  impact: Chromosome-branch identifiers are sample.chr. Recorded as gap chr-layout-flag-rekeying.
+- id: versions-yaml-feeds-multiqc
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: 'workflows/bamtofastq.nf: ch_collated_versions = softwareVersionsToYAML(...).mix(...).collectFile(storeDir: outdir/pipeline_info); then ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions).'
+  impact: The interface drop of the published versions file does not remove the input to MultiQC. Recorded as gap multiqc-versions-input-no-galaxy-source.
+- id: multiqc-inputs-exclude-qc
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: 'MULTIQC inputs in workflows/bamtofastq.nf: versions, workflow summary, methods description. PRE_CONVERSION_QC outputs are not mixed in; the ALIGNMENT_TO_FASTQ zip line is commented out.'
+  impact: The faithful report has little QC content. Recorded as gap multiqc-report-without-qc-content.
+- id: iwc-sra-manifest-outputs-split-by-layout
+  raised_by: compare-against-iwc-exemplar
+  evidence: data-fetching/sra-manifest-to-concatenated-fastqs exposes paired_output (list:paired) and single_output (list) as separate outputs, relabelling the single and paired collections separately.
+  impact: Corroborates the reads-split-by-layout decision (interface and data-flow briefs). No change to the decision.
+- id: iwc-relabel-from-table-candidate-mechanism
+  raised_by: compare-against-iwc-exemplar
+  evidence: The sra-manifest exemplar relabels collections with __RELABEL_FROM_FILE__ and a label table generated in the workflow (SRA plus sample identifiers).
+  impact: 'A candidate mechanism for chr-layout-flag-rekeying. It is not a resolution: the table still needs a rule that recovers the sample id from a chromosome-named element.'
+- id: iwc-pick-value-dataset-level-only
+  raised_by: compare-against-iwc-exemplar
+  evidence: transcriptomics/rnaseq-pe uses pick_value on MultiQC report and stats datasets (style_cond pick_from_0 and pick_from_1). No corpus workflow uses it on collections in the workflows reviewed.
+  impact: Corpus evidence does not show pick_value over collections. chr-fan-in-pick-value-collections stays open.
+- id: iwc-rnaseq-multiqc-fed-by-workflow-qc
+  raised_by: compare-against-iwc-exemplar
+  evidence: 'transcriptomics/rnaseq-pe: the MultiQC inputs are the workflow''s own trimming, alignment and counting outputs, with or without extra QC chosen by pick_value.'
+  impact: Corpus precedent for a MultiQC report that aggregates the workflow's QC. Bears on multiqc-report-without-qc-content (expert decision); does not settle it.
+- id: iwc-sra-manifest-tests-size-only
+  raised_by: compare-against-iwc-exemplar
+  evidence: data-fetching/sra-manifest-to-concatenated-fastqs-tests.yml asserts has_size (with delta) on each FASTQ element; no content or count assertions.
+  impact: A weaker test style than the counts preferred in the testability note. Routed to the test-plan skill.
+- id: iwc-tool-ids-counts
+  raised_by: nextflow-summary-to-galaxy-template
+  evidence: 'IWC c07557f .ga tool ids and step counts: samtools_view 1.22+galaxy2 (17); samtools_merge 1.22+galaxy2 (3); devteam samtools_stats 2.0.9 (11); devteam samtools_idxstats 2.0.8 (1); iuc multiqc 1.35+galaxy4 and 5 (42); artbio cat_multi_datasets 1.4.3 (9); iuc pick_value 0.2.0 (105); param_value_from_file 0.1.0 (61); __UNZIP_COLLECTION__ 1.0.0 (11); __ZIP_COLLECTION__ 1.0.0 (2); __BUILD_LIST__ 1.2.0 (10). Zero uses: samtools index, faidx, flagstat, collate, fastq; __FILTER_NULL__; cat1.'
+  impact: Basis for the identity-pinned and deferred tiers. It shows the wrapper is used elsewhere, not that its parameters or port names match this pipeline.
+brief_change_recommendations:
+- id: multiqc-report-aggregates-samtools-reports
+  raised_by: nextflow-summary-to-galaxy-template
+  proposed_change: State that multiqc_report aggregates the samtools flagstat, idxstats and stats reports as well as the methods description and config (a departure from the source's MultiQC inputs).
+  reason: The source's MultiQC inputs carry no sample data, so the step has nothing to reduce as a tool step. The draft feeds the samtools reports (IWC rnaseq-pe precedent).
+  evidence:
+  - decision multiqc-fed-by-samtools-reports
+  - iwc-comparison-notes.md
+  status: proposed
+topology_repair:
+  escalations: 3
+  cap: 5
+  open_history:
+  - 0
+  - 0
+  - 0
