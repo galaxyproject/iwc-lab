@@ -1,0 +1,207 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-demo-glm
+  status: complete
+phases:
+- n: 1
+  skill: summarize-nextflow
+  status: done
+  iterations: 1
+  feedback_checked: true
+- n: 2
+  skill: nextflow-summary-to-galaxy-reference-data
+  status: done
+  iterations: 1
+  feedback_checked: true
+- n: 3
+  skill: nextflow-summary-to-galaxy-interface
+  status: done
+  iterations: 1
+  feedback_checked: true
+- n: 4
+  skill: nextflow-summary-to-galaxy-data-flow
+  status: done
+  iterations: 1
+  feedback_checked: true
+- n: 5
+  skill: compare-against-iwc-exemplar
+  status: done
+  iterations: 1
+  feedback_checked: true
+- n: 6
+  skill: nextflow-summary-to-galaxy-template
+  status: done
+  iterations: 1
+  feedback_checked: true
+- n: 7
+  skill: advance-galaxy-draft-step
+  status: done
+  iterations: 4
+  feedback_checked: true
+- n: 8
+  pattern: test-data-resolution
+  status: done
+  iterations: 1
+  feedback_checked: true
+  selected: nextflow-to-test-data
+- n: 9
+  skill: nextflow-test-to-galaxy-test-plan
+  status: done
+  iterations: 1
+  feedback_checked: true
+- n: 10
+  skill: implement-galaxy-workflow-test
+  status: done
+  iterations: 9
+  feedback_checked: true
+- n: 11
+  skill: validate-galaxy-workflow
+  status: done
+  iterations: 1
+  feedback_checked: true
+- n: 12
+  skill: run-workflow-test
+  status: done
+  iterations: 1
+  feedback_checked: true
+- n: 13
+  skill: debug-galaxy-workflow-output
+  status: done
+  iterations: 1
+  feedback_checked: true
+entries:
+- id: draft-extract-output-path-flag-undocumented-in-run-record
+  raised_by: nextflow-summary-to-galaxy-template
+  observed_in:
+    mold: nextflow-summary-to-galaxy-template
+    path: content/molds/nextflow-summary-to-galaxy-template/index.md
+    revision: 10
+    content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+    foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+  subject:
+    kind: related-project
+    label: gxwf CLI draft-validate
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts
+  kind: friction
+  severity: minor
+  what: 'gxwf draft-validate prints each structure error as a full JSON-Schema type
+    signature dump (a 4-step draft with 5 errors produced ~81KB of output); the actionable
+    message (e.g. ''format: Expected ReadonlyArray<string>, actual string'') is buried
+    inside readonly-type noise.'
+  expected: Summarize each schema violation to its path and the concrete expected-vs-actual
+    pair; keep the full type dump behind a verbose flag.
+  evidence: Validating a 4-step draft with one bad input `format` value and a wrong
+    comments shape; the error text had to be filtered by line length to be read at
+    all.
+  status: open
+  issue: null
+- id: gxformat2-connection-sources-resolve-by-label-not-id
+  raised_by: implement-galaxy-workflow-test
+  observed_in:
+    mold: nextflow-summary-to-galaxy-template
+    path: content/molds/nextflow-summary-to-galaxy-template/index.md
+    revision: 10
+    content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+    foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+  subject:
+    kind: research
+    label: gxformat2 schema note
+    locator: content/notes/gxformat2-schema.md
+    content_hash: 47a3b94dc15bb954f9193e888522b7aaff80143f2486531a21146fa4daaa54d4
+  kind: friction
+  severity: major
+  what: "gxformat2 connection `source`/`outputSource` values must reference the step's\
+    \ `label` (or `step.label or step.id`), not the step's map-key id, whenever the\
+    \ two differ. The packaged gxformat2-schema note documents the label field but\
+    \ not this resolution rule; gxwf draft-validate accepts both forms, so the draft\
+    \ passes its gate and the mismatch only surfaces at planemo conversion with `ValueError:\
+    \ invalid literal for int() with base 10: 'fastqc'` inside gxformat2 `_register_labels`\
+    \ \u2014 an error that names neither label resolution nor the offending key."
+  expected: State in the gxformat2-schema note (and anywhere connection keys are documented)
+    that sources resolve against `step.label or step.id`, and have draft-validate
+    flag source references matching neither the id nor the label.
+  evidence: A 4-step draft whose connections used map-key ids validated green under
+    gxwf draft-validate --concrete --strict-state, then failed planemo workflow-test
+    conversion with the int() ValueError; fixed by rewriting all connection sources
+    and outputSources to the labels (MultiQC/FastQC/seqtk trimfq). Read from planemo's
+    bundled gxformat2/normalized/_conversion.py `_register_labels`.
+  status: open
+  issue: null
+- id: tool-shed-repository-name-is-repository-not-tool
+  raised_by: implement-galaxy-workflow-test
+  observed_in:
+    mold: implement-galaxy-workflow-test
+    path: content/molds/implement-galaxy-workflow-test/index.md
+    revision: 10
+    content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+    foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+  subject:
+    kind: related-project
+    label: planemo tool_shed_repository install
+    locator: planemo/galaxy/workflows.py (tool_shed_repository handling)
+    content_hash: 57452ca4a459a6dc
+  kind: friction
+  severity: major
+  what: '`tool_shed_repository.name` in a gxformat2 workflow must be the Tool Shed
+    REPOSITORY name (e.g. `seqtk` for owner `iuc`), not the tool name inside the repo
+    (e.g. `seqtk_trimfq`). Neither the packaged gxformat2-schema note nor the mold
+    prose states which name goes in the field, and the planemo install failure (`No
+    information is available for the requested repository revision`, shed error 400008)
+    quotes the tool id and gives no hint that the field is wrong.'
+  expected: Document that tool_shed_repository carries shed/owner/NAME (repository)/
+    changeset_revision, with a worked example where tool name != repository name.
+  evidence: 'seqtk step pinned tool_id .../iuc/seqtk/seqtk_trimfq/1.5+galaxy0 with
+    tool_shed_repository.name: seqtk_trimfq; planemo install failed with shed error
+    400008 until renamed to `seqtk`. Verified against the shed API get_repository_revision_install_info
+    for iuc/seqtk@c8fb17965c7d.'
+  status: open
+  issue: null
+- id: tests-format-element-count-only-collection-output-not-detectable
+  raised_by: implement-galaxy-workflow-test
+  observed_in:
+    mold: implement-galaxy-workflow-test
+    path: content/molds/implement-galaxy-workflow-test/index.md
+    revision: 10
+    content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+    foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+  subject:
+    kind: research
+    label: planemo asserts idioms note
+    locator: content/notes/planemo-asserts-idioms.md
+    content_hash: 9a6363854dcbeb01e1e590dc5bc0f5d7d0ec9675c4828ad2a8be8fa8022a61df
+  kind: friction
+  severity: major
+  what: 'A tests-format expected output for a collection must carry `class: Collection`
+    AND an `element_tests` key for planemo to treat it as a collection: `element_count`
+    alone fails with `No path specified for expected output file` because planemo''s
+    `_check_output` keys collection handling on the presence of `element_tests` (`for_collections
+    = "element_tests" in test_properties`). The packaged planemo-asserts-idioms note
+    documents element_count as an assertion family but does not warn that count-only
+    is not expressible as a standalone collection check.'
+  expected: Add to planemo-asserts-idioms (or the tests-format section) that any collection
+    output assertion block needs `element_tests:` present (may be `{}` for identifier-set-only
+    checks), with element_count beside it.
+  evidence: 'fastqc_reports asserted as {class: Collection, element_count: 4} failed
+    planemo attempt 8 with ''No path specified for expected output file''; adding
+    `element_tests: {}` fixed it (attempt 9 green). Read from planemo test/_check_output.py.'
+  status: open
+  issue: null
+- id: galaxy-editor-renders-absent-optional-data-key-as-runtimevalue-finding
+  raised_by: apply-galaxy-workflow-changeset
+  observed_in:
+    mold: apply-galaxy-workflow-changeset
+    path: content/molds/apply-galaxy-workflow-changeset/index.md
+    revision: 6
+    content_hash: null
+    foundry_head: null
+  subject:
+    kind: related-project
+    label: galaxy-workflow-editor-issues-dialog
+    locator: https://github.com/galaxyproject/galaxy (workflow modules import recovery, populate_module_and_state / check_and_update_param_values)
+  kind: friction
+  severity: minor
+  what: "Galaxy's 'Issues loading this workflow' dialog reports every absent optional-data-input key in gxformat2 step state as a missing parameter whose default is 'RuntimeValue', which reads as a defect although the absent key is the canonical unset representation in format2 (gxwf's converter deliberately omits RuntimeValue markers on optional params when converting native to format2, and gxwf validate rejects the marker)."
+  expected: "Galaxy's import recovery could recognize absent optional data-input keys in format2 state as intentionally-unset (the same encoding its own editor saves for native workflows) and not surface them as loading issues."
+  evidence: "Revision round on an already-green workflow: 16 flagged steps, every finding an absent optional key; adding the marker fails gxwf validate, leaving it absent keeps Galaxy's dialog listing. Run directory prefix replaced with <run>/."
+  status: open
+  issue: null

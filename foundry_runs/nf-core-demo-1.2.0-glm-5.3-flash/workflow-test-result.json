@@ -1,0 +1,51 @@
+{
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "tests_path": "galaxy-workflow.gxwf-tests.yml",
+  "status": "pass",
+  "test_definition_missing": false,
+  "galaxy_mode": "planemo-managed",
+  "galaxy_root": "~/Galaxy/galaxy-arash",
+  "galaxy_branch": null,
+  "galaxy_branch_note": "No --galaxy_branch pinned; planemo default (newest) used, per procedure step 3.",
+  "docker": true,
+  "docker_reason": "The cowpy step is a workflow-embedded GalaxyUserTool whose execution environment is entirely a container (community.wave.seqera.io/library/cowpy:1.1.5--3db457ae1977a273); --docker makes planemo's job config honor containers.",
+  "commands": [
+    "npx --yes --package @galaxy-tool-util/cli@1.15.0 gxwf validate-tests galaxy-workflow.gxwf-tests.yml --workflow galaxy-workflow.gxwf.yml --json   # exit 0, valid: true, errors: []",
+    "flock /tmp/galaxy-arash-planemo.lock planemo test --galaxy_root ~/Galaxy/galaxy-arash --docker galaxy-workflow.gxwf.yml --test_output_json planemo-test-output-p12.json > planemo-test-10.log 2>&1   # exit 0"
+  ],
+  "lock": "All planemo commands run under flock /tmp/galaxy-arash-planemo.lock (shared with the parallel nf-core-demo-kimi test). No lock contention observed this run (started immediately at 20:37:11).",
+  "planemo_result": {
+    "summary_line": "All 1 test(s) executed passed.",
+    "test_id": "galaxy-workflow.gxwf.yml_0",
+    "test_outcome": "passed",
+    "exit_code": 0,
+    "wall_clock": "20:37:11 -> 20:40:20 (3m09s)",
+    "structured_output": "planemo-test-output-p12.json",
+    "html_report": "tool_test_output.html",
+    "terminal_log": "planemo-test-10.log"
+  },
+  "invocation": {
+    "invocation_id": "0e72c1a5e870b840",
+    "history_id": "0e72c1a5e870b840",
+    "workflow_id": "0e72c1a5e870b840",
+    "invocation_state": "scheduled",
+    "history_state": "ok",
+    "start_datetime": "2026-11-09T20:38:10.243166",
+    "end_datetime": "2026-11-09T20:40:15.794601",
+    "output_problems": null,
+    "execution_problem": null
+  },
+  "assertions_executed": {
+    "cowpy_txt": "checksum md5$9c8be9f4550989b40901f379cb1a605f (exact)",
+    "trimmed_reads": "collection, element_count 4, per-element checksums (2 paired + 2 singleton, 6 md5s, recomputed-from-run provenance recorded in the test doc)",
+    "fastqc_reports": "collection, element_count 4, element_tests {}",
+    "multiqc_report": "has_size min 1 (smoke)"
+  },
+  "failures": [],
+  "next_reference_surface": null,
+  "notes": [
+    "Static gate (gxwf validate-tests --workflow) passed before the run, per procedure step 1.",
+    "Tool shed repositories fastqc 2c64fded1286, seqtk c8fb17965c7d, multiqc 94b6bea727ae cloned fresh; conda envs and docker images cached from the phase-10 runs, hence the short wall clock.",
+    "Transient log lines seen and confirmed benign: 'Failed to use input connections for inputs [{when}]' (6x) and momentary workflow tool request state=validation_failed for seqtk/multiqc during scheduling — identical lines appear in the green phase-10 run 9 log and the invocation finished scheduled/ok with all assertions passing."
+  ]
+}

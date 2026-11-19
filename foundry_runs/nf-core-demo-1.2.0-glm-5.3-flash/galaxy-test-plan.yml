@@ -1,0 +1,227 @@
+plan_version: "1"
+source:
+  kind: nextflow
+  name: nf-core/demo 1.2.0
+  derived_from: test-evidence
+  notes: >
+    Translated from the selected candidate tests/default.nf.test::-profile test
+    (sole primary, -profile test over conf/test.config, 3 samples / 5 rows).
+    Snapshot sidecar tests/default.nf.test.snap carries per-file md5 tokens for the
+    publish dir (stable_path with content) plus a name-only stable_name capture.
+workflow:
+  title: nf-core/demo (Galaxy draft)
+  label_source: draft
+  notes: >
+    Labels read from the concrete extracted workflow galaxy-workflow.gxwf.yml
+    (inputs: "Input samplesheet", "Skip trimming"; outputs: multiqc_report,
+    cowpy_txt, trimmed_reads, fastqc_reports). fastqc_archives from the interface
+    brief was dropped in the template phase (no FastQC wrapper zip output) and is
+    not part of the concrete workflow.
+test_cases:
+  - id: test-profile-default
+    doc: >
+      Whole-pipeline smoke + content test of nf-core/demo over the viralrecon
+      amplicon samplesheet (2 paired samples, 1 sample with two single-end rows):
+      FastQC per fastq, optional seqtk trim (runs, skip_trim=false), cowpy banner,
+      MultiQC report over the FastQC raw-data txts.
+    derived_from: test-evidence
+    provenance: >
+      Pipeline-level nf-test; snapshot captures versions_yml, stable_names,
+      stable_paths, stable_content. This plan asserts the translatable subset
+      (cowpy + trimmed reads checksums from the snapshot; existence/count for
+      name-only captures) and records the rest as omissions.
+    job_inputs:
+      - workflow_label: Input samplesheet
+        label_status: resolved
+        description: >
+          The declared samplesheet fixture expanded into a
+          sample_sheet:paired_or_unpaired collection: SAMPLE1_PE and SAMPLE2_PE as
+          paired elements (forward/reverse), SAMPLE3_SE as two single-end elements
+          (SAMPLE3_SE_sample1_R1, SAMPLE3_SE_sample2_R1).
+        collection_shape: sample_sheet:paired_or_unpaired
+        datatype: fastqsanger.gz
+        fixture:
+          storage: remote-url
+          location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/samplesheet/samplesheet_test_illumina_amplicon.csv
+          checksum: SHA-1:e6f9a75ba16fae0372f5e64dd204911abba8597a
+          provenance: >
+            Declared fixture of the selected candidate (conf/test.config params.input);
+            element URLs are the nf-core/test-datasets viralrecon amplicon fastqs.
+            Full element layout in test-data-refs.json (refs[0]).
+      - workflow_label: Skip trimming
+        label_status: resolved
+        description: Boolean gate; the test profile leaves params.skip_trim at false.
+        collection_shape: null
+        datatype: null
+        fixture:
+          storage: in-repo
+          location: conf/test.config (nf-core/demo 1.2.0; params.skip_trim not overridden)
+          checksum: null
+          provenance: Value false read from the candidate's effective profile.
+    expected_outputs:
+      - workflow_label: cowpy_txt
+        label_status: resolved
+        description: >
+          ASCII-art cow banner; the snapshot records an exact md5 for cowpy.txt, so
+          a checksum assertion is the direct translation.
+        output_kind: dataset
+        collection_shape: null
+        assertion_intent:
+          - family: checksum
+            intent: >
+              Output content matches the nf-test snapshot md5 token for cowpy.txt.
+            expected_value: md5$9c8be9f4550989b40901f379cb1a605f
+            tolerance: null
+            element_identifier: null
+            evidence: test-evidence
+            confidence: high
+      - workflow_label: trimmed_reads
+        label_status: resolved
+        description: >
+          Trimmed fastq collection, same shape/identifiers as the input collection
+          (map-over preserves element identifiers). The snapshot records exact md5s
+          for the six trimmed fastqs published under outdir.
+        output_kind: collection
+        collection_shape: sample_sheet:paired_or_unpaired
+        assertion_intent:
+          - family: element_count
+            intent: Collection has 4 elements (2 paired samples + 2 single-end elements).
+            expected_value: 4
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: high
+          - family: checksum
+            intent: Trimmed SAMPLE1_PE forward read matches snapshot md5.
+            expected_value: md5$7dd2fd0d542d9259d9aed53550907fae
+            tolerance: null
+            element_identifier: SAMPLE1_PE:forward
+            evidence: test-evidence
+            confidence: medium
+          - family: checksum
+            intent: Trimmed SAMPLE1_PE reverse read matches snapshot md5.
+            expected_value: md5$1995fe8488384d801807805f26ceca8a
+            tolerance: null
+            element_identifier: SAMPLE1_PE:reverse
+            evidence: test-evidence
+            confidence: medium
+          - family: checksum
+            intent: Trimmed SAMPLE2_PE forward read matches snapshot md5.
+            expected_value: md5$05dba9c26396cbdbe0e6da26f037106e
+            tolerance: null
+            element_identifier: SAMPLE2_PE:forward
+            evidence: test-evidence
+            confidence: medium
+          - family: checksum
+            intent: Trimmed SAMPLE2_PE reverse read matches snapshot md5.
+            expected_value: md5$63d5e4ac37927c2ecec4b74d2ff99a10
+            tolerance: null
+            element_identifier: SAMPLE2_PE:reverse
+            evidence: test-evidence
+            confidence: medium
+          - family: checksum
+            intent: Trimmed SAMPLE3_SE single-end element 1 matches snapshot md5.
+            expected_value: md5$7dd2fd0d542d9259d9aed53550907fae
+            tolerance: null
+            element_identifier: SAMPLE3_SE_sample1_R1
+            evidence: test-evidence
+            confidence: medium
+          - family: checksum
+            intent: Trimmed SAMPLE3_SE single-end element 2 matches snapshot md5.
+            expected_value: md5$05dba9c26396cbdbe0e6da26f037106e
+            tolerance: null
+            element_identifier: SAMPLE3_SE_sample2_R1
+            evidence: test-evidence
+            confidence: medium
+      - workflow_label: fastqc_reports
+        label_status: resolved
+        description: >
+          Per-fastq FastQC html reports. The nf-test snapshot records no html
+          content (HTML excluded from the content capture); only names are
+          captured, so the translation is existence + count.
+        output_kind: collection
+        collection_shape: list
+        assertion_intent:
+          - family: element_count
+            intent: >
+              One FastQC report per input fastq element (4), preserving element
+              identifiers of the input collection.
+            expected_value: 4
+            tolerance: null
+            element_identifier: null
+            evidence: intent
+            confidence: high
+      - workflow_label: multiqc_report
+        label_status: resolved
+        description: >
+          Aggregated MultiQC html. The snapshot records no html content; existence
+          only, supplemented by a size smoke bound measured at implementation time.
+        output_kind: dataset
+        collection_shape: null
+        assertion_intent:
+          - family: has_size
+            intent: >
+              Report is non-trivial (rejects empty/failed runs); set min from a
+              measured run — do not admit an empty file.
+            expected_value: null
+            tolerance:
+              kind: none
+              magnitude: null
+              rationale: >
+                Existence-only smoke for now; a positive size minimum is measured
+                from a real run during implementation and recorded then.
+            element_identifier: null
+            evidence: intent
+            confidence: low
+unresolved:
+  - kind: assertion
+    description: >
+      The trimmed-read snapshot md5s were produced by nf-core's seqtk 1.4 module
+      (`seqtk trimfq $args $f | gzip --no-name`), while the Galaxy workflow binds
+      iuc/seqtk_trimfq 1.5+galaxy0. A version or gzip-flag difference can change
+      the md5s without a scientific difference. Element checksums are recorded at
+      confidence medium for this reason.
+    blocking: false
+    suggested_resolution: >
+      If the element checksum assertions fail on first run, recompute the expected
+      md5s from the planemo run's actual outputs and re-record them with a note,
+      rather than weakening to size-only.
+  - kind: collection-shape
+    description: >
+      trimmed_reads element identifiers follow the input collection's identifiers
+      (Galaxy map-over inheritance), not the source pipeline's
+      ${meta.id}_${basename} publish naming; the element_identifier values above
+      assume this inheritance and must be confirmed against a real run.
+    blocking: false
+    suggested_resolution: >
+      Inspect the first planemo run's collection element identifiers; adjust the
+      element_identifier tokens in the test to the observed stable names.
+omissions:
+  - target: multiqc per-plot txt exports (fastqc_*_plot.txt, fastqc-status-check-heatmap.txt, multiqc_citations.txt, multiqc_fastqc.txt, multiqc_general_stats.txt)
+    reason: >
+      These are MultiQC's *_data export files in the source publish dir. The Galaxy
+      MultiQC wrapper does not expose them as separate datasets (only html_report,
+      stats, plots, png_plot), and the workflow promotes none of them.
+    category: other
+  - target: multiqc stats (tabular) output
+    reason: >
+      The wrapper exposes stats but the workflow hides it (no consumer in the
+      source's Galaxy-relevant flow); its snapshot md5 (multiqc_general_stats.txt)
+      is for the export file, not the wrapper's stats dataset.
+    category: other
+  - target: versions.yml aggregation (removeNextflowVersion capture)
+    reason: >
+      Galaxy tracks tool versions via wrapper requirements/invocation provenance;
+      no versions output is promoted in the translated workflow.
+    category: out-of-scope
+  - target: stable_name / stable_path publish-dir listing as a whole
+    reason: >
+      The publish-dir file listing translates to the set of labeled workflow
+      outputs (which this plan addresses per-output), not to a single assertion.
+    category: other
+  - target: fastqc_archives (zip) workflow output
+    reason: >
+      Dropped in the template phase — the FastQC wrapper has no zip output; see
+      ledger entry fastqc-archives-zip-output-not-built.
+    category: other
+warnings: []

@@ -1,0 +1,442 @@
+{
+  "source": {
+    "ecosystem": "nf-core",
+    "workflow": "demo",
+    "url": "https://github.com/nf-core/demo",
+    "version": "1.2.0",
+    "license": "MIT",
+    "slug": "nf-core-demo"
+  },
+  "params": [
+    { "name": "input", "type": "string", "default": null, "description": "Path to a metadata file containing information about the samples in the experiment.", "required": true, "format": "file-path", "hidden": null, "mimetype": "text/csv", "schema_group": "Input/output options", "fa_icon": "fas fa-file-csv", "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "outdir", "type": "string", "default": null, "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.", "required": true, "format": "directory-path", "hidden": null, "mimetype": null, "schema_group": "Input/output options", "fa_icon": "fas fa-folder-open", "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "email", "type": "string", "default": null, "description": "Email address for completion summary.", "required": false, "format": null, "hidden": null, "mimetype": null, "schema_group": "Input/output options", "fa_icon": "fas fa-envelope", "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "multiqc_title", "type": "string", "default": null, "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.", "required": false, "format": null, "hidden": null, "mimetype": null, "schema_group": "Input/output options", "fa_icon": "fas fa-file-signature", "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "genome", "type": "string", "default": null, "description": "Name of iGenomes reference.", "required": false, "format": null, "hidden": null, "mimetype": null, "schema_group": "Reference genome options", "fa_icon": "fas fa-book", "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "fasta", "type": "string", "default": null, "description": "Path to FASTA genome file.", "required": false, "format": "file-path", "hidden": null, "mimetype": "text/plain", "schema_group": "Reference genome options", "fa_icon": "far fa-file-code", "source_kind": "getGenomeAttribute", "source_expression": "params.fasta = getGenomeAttribute('fasta')", "source_path": "main.nf" },
+    { "name": "igenomes_ignore", "type": "boolean", "default": false, "description": "Do not load the iGenomes reference config.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Reference genome options", "fa_icon": "fas fa-ban", "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "igenomes_base", "type": "string", "default": "s3://ngi-igenomes/igenomes/", "description": "The base path to the igenomes reference files", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Reference genome options", "fa_icon": "fas fa-ban", "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "skip_trim", "type": "boolean", "default": false, "description": "Skip trimming fastq files with seqtk", "required": false, "format": null, "hidden": null, "mimetype": null, "schema_group": "Process skipping options", "fa_icon": "fas fa-chevron-circle-right", "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "multiqc_config", "type": "string", "default": null, "description": "MultiQC config file.", "required": false, "format": "file-path", "hidden": true, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "multiqc_logo", "type": "string", "default": null, "description": "Custom logo for MultiQC report.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "multiqc_methods_description", "type": "string", "default": null, "description": "Path to a YAML file containing methods description for MultiQC.", "required": false, "format": null, "hidden": false, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "max_multiqc_email_size", "type": "string", "default": "25.MB", "description": "Attachment size threshold in bytes for email.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "email_on_fail", "type": "string", "default": null, "description": "Email address for completion summary when pipeline fails.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "plaintext_email", "type": "boolean", "default": false, "description": "Send plain-text email instead of HTML.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "monochrome_logs", "type": "boolean", "default": false, "description": "Do not use coloured log outputs.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "help", "type": "boolean", "default": false, "description": "Display help message and exit.", "required": false, "format": null, "hidden": false, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "help_full", "type": "boolean", "default": false, "description": "Show the full help message.", "required": false, "format": null, "hidden": false, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "show_hidden", "type": "boolean", "default": false, "description": "Show hidden parameters in the help message.", "required": false, "format": null, "hidden": false, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "version", "type": "boolean", "default": false, "description": "Display version and exit.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "publish_dir_mode", "type": "string", "default": "copy", "description": "Method used to save pipeline results to output directory.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "validate_params", "type": "boolean", "default": true, "description": "Boolean whether to validate parameters against the schema at runtime.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "pipelines_testdata_base_path", "type": "string", "default": "https://raw.githubusercontent.com/nf-core/test-datasets/", "description": "Base URL or local path to test dataset files.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "trace_report_suffix", "type": "string", "default": null, "description": "Suffix to add to the trace report filename. (Computed at config-load time.)", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Generic options", "fa_icon": null, "source_kind": "computed", "source_expression": "new java.util.Date().format('yyyy-MM-dd_HH-mm-ss')", "source_path": "nextflow.config" },
+    { "name": "custom_config_version", "type": "string", "default": "master", "description": "Git commit id for Institutional configs.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Institutional config options", "fa_icon": "fas fa-users-cog", "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "custom_config_base", "type": "string", "default": "https://raw.githubusercontent.com/nf-core/configs/master", "description": "Base directory for Institutional configs.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Institutional config options", "fa_icon": "fas fa-users-cog", "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "config_profile_name", "type": "string", "default": null, "description": "Institutional configs title.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Institutional config options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "config_profile_description", "type": "string", "default": null, "description": "Institutional configs description.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Institutional config options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "config_profile_contact", "type": "string", "default": null, "description": "Institutional configs contact email.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Institutional config options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null },
+    { "name": "config_profile_url", "type": "string", "default": null, "description": "Institutional configs URL.", "required": false, "format": null, "hidden": true, "mimetype": null, "schema_group": "Institutional config options", "fa_icon": null, "source_kind": "nextflow_schema", "source_expression": null, "source_path": null }
+  ],
+  "sample_sheets": [
+    {
+      "param": "input",
+      "schema_path": "assets/schema_input.json",
+      "discovered_via": "nf-schema",
+      "format": "csv",
+      "header": true,
+      "columns": [
+        { "name": "sample", "type": "string", "kind": "meta", "required": true, "default": null, "description": "Sample name; mapped to meta id via nf-schema meta annotation.", "enum": [], "pattern": "^\\S+$", "exists": null, "mimetype": null },
+        { "name": "fastq_1", "type": "string", "kind": "data", "required": true, "default": null, "description": "FastQ file for reads 1.", "enum": [], "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$", "exists": true, "mimetype": null },
+        { "name": "fastq_2", "type": "string", "kind": "data", "required": false, "default": null, "description": "FastQ file for reads 2 (optional; single-end when absent).", "enum": [], "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$", "exists": true, "mimetype": null }
+      ]
+    }
+  ],
+  "profiles": [
+    { "name": "debug", "kinds": ["dev"], "source_path": "nextflow.config", "includes": [], "signals": ["dev-profile-name"] },
+    { "name": "conda", "kinds": ["container"], "source_path": "nextflow.config", "includes": [], "signals": ["container-keys"] },
+    { "name": "mamba", "kinds": ["container"], "source_path": "nextflow.config", "includes": [], "signals": ["container-keys"] },
+    { "name": "docker", "kinds": ["container"], "source_path": "nextflow.config", "includes": [], "signals": ["container-keys"] },
+    { "name": "arm64", "kinds": ["container"], "source_path": "nextflow.config", "includes": [], "signals": ["container-keys"] },
+    { "name": "emulate_amd64", "kinds": ["container"], "source_path": "nextflow.config", "includes": [], "signals": ["container-keys"] },
+    { "name": "singularity", "kinds": ["container"], "source_path": "nextflow.config", "includes": [], "signals": ["container-keys"] },
+    { "name": "podman", "kinds": ["container"], "source_path": "nextflow.config", "includes": [], "signals": ["container-keys"] },
+    { "name": "shifter", "kinds": ["container"], "source_path": "nextflow.config", "includes": [], "signals": ["container-keys"] },
+    { "name": "charliecloud", "kinds": ["container"], "source_path": "nextflow.config", "includes": [], "signals": ["container-keys"] },
+    { "name": "apptainer", "kinds": ["container"], "source_path": "nextflow.config", "includes": [], "signals": ["container-keys"] },
+    { "name": "wave", "kinds": ["container"], "source_path": "nextflow.config", "includes": [], "signals": ["container-keys"] },
+    { "name": "gpu", "kinds": ["container"], "source_path": "nextflow.config", "includes": [], "signals": ["container-keys"] },
+    { "name": "test", "kinds": ["test"], "source_path": "nextflow.config", "includes": ["conf/test.config"], "signals": ["include:test-config", "sets-input-data", "params-assignment", "process-directives"] },
+    { "name": "test_full", "kinds": ["test"], "source_path": "nextflow.config", "includes": ["conf/test_full.config"], "signals": ["include:test-config", "sets-input-data", "params-assignment"] }
+  ],
+  "tools": [
+    { "name": "fastqc", "version": "0.12.1", "bioconda": "bioconda::fastqc=0.12.1", "biocontainer": "quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0", "docker": null, "singularity": "https://depot.galaxyproject.org/singularity/fastqc:0.12.1--hdfd78af_0", "wave": null },
+    { "name": "seqtk", "version": "1.4", "bioconda": "bioconda::seqtk=1.4", "biocontainer": "biocontainers/seqtk:1.4--he4a0461_1", "docker": null, "singularity": "https://depot.galaxyproject.org/singularity/seqtk:1.4--he4a0461_1", "wave": null },
+    { "name": "multiqc", "version": "1.34", "bioconda": "bioconda::multiqc=1.34", "biocontainer": null, "docker": null, "singularity": "https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/1b/1bef8af6be88c5733461959c46ac8ef73d18f65277f62a1695d0e1633054f9c2/data", "wave": "community.wave.seqera.io/library/multiqc:1.34--db7c73dae76bc9e6" },
+    { "name": "cowpy", "version": "1.1.5", "bioconda": "conda-forge::cowpy=1.1.5", "biocontainer": null, "docker": null, "singularity": "https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/1a/1a1f6ff027a12fc86ad7bb9f8781c06b6fd7c8b81a9ecde90cda09335927b0fe/data", "wave": "community.wave.seqera.io/library/cowpy:1.1.5--3db457ae1977a273" }
+  ],
+  "processes": [
+    {
+      "name": "FASTQC",
+      "aliases": [],
+      "in_subworkflows": ["DEMO"],
+      "module_path": "modules/nf-core/fastqc/main.nf",
+      "meta": {
+        "description": "Run FastQC on sequenced reads",
+        "keywords": ["quality control", "qc", "adapters", "fastq"],
+        "authors": ["@drpatelh", "@grst", "@ewels", "@FelixKrueger"],
+        "maintainers": ["@drpatelh", "@grst", "@ewels", "@FelixKrueger"],
+        "tools": [
+          { "name": "fastqc", "description": "FastQC gives general quality metrics about your reads. It provides information about the quality score distribution across your reads, the per base sequence content (%A/C/G/T). You get information about adapter contamination and other overrepresented sequences.", "homepage": "https://www.bioinformatics.babraham.ac.uk/projects/fastqc/", "documentation": "https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/", "licence": ["GPL-2.0-only"], "identifier": "biotools:fastqc" }
+        ],
+        "input": [
+          { "name": "meta", "type": "map", "description": "Groovy Map containing sample information e.g. [ id:'test', single_end:false ]" },
+          { "name": "reads", "type": "file", "description": "List of input FastQ files of size 1 and 2 for single-end and paired-end data, respectively." }
+        ],
+        "output": [
+          { "name": "html", "type": "file", "description": "FastQC report", "pattern": "*_{fastqc.html}" },
+          { "name": "zip", "type": "file", "description": "FastQC report archive", "pattern": "*_{fastqc.zip}" }
+        ]
+      },
+      "module_tests": [
+        { "name": "fastqc test_fastqc", "path": "modules/nf-core/fastqc/tests/main.nf.test", "profiles": ["test", "test_single_end"], "params_overrides": {}, "execution_mode": "unknown", "assert_workflow_success": true, "snapshot": null, "prose_assertions": [] }
+      ],
+      "tool": "fastqc",
+      "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ? 'https://depot.galaxyproject.org/singularity/fastqc:0.12.1--hdfd78af_0' : 'quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0'}",
+      "conda": "${moduleDir}/environment.yml",
+      "inputs": [
+        { "name": "meta", "shape": "val(map)", "description": "Groovy Map containing sample information", "topic": null },
+        { "name": "reads", "shape": "path", "description": "Input FastQ files (1 or 2 per sample)", "topic": null }
+      ],
+      "outputs": [
+        { "name": "html", "shape": "tuple(meta, path)", "description": "FastQC report", "topic": null },
+        { "name": "zip", "shape": "tuple(meta, path)", "description": "FastQC report archive", "topic": null },
+        { "name": "versions_fastqc", "shape": "tuple(val, val, eval)", "description": "tool versions tuple for the versions topic", "topic": "versions" }
+      ],
+      "when": "task.ext.when == null || task.ext.when",
+      "script_summary": "Renames input reads to <prefix>.<ext> via symlinks and runs FastQC on them with configured threads/memory, producing an HTML report and a zip archive.",
+      "script_excerpt": "printf \"%s %s\\n\" ${rename_to} | while read old_name new_name; do\n    [ -f \"${new_name}\" ] || ln -s $old_name $new_name\ndone\n\nfastqc \\\n    ${args} \\\n    --threads ${task.cpus} \\\n    ${fastqc_memory_arg} \\\n    ${renamed_files}\n",
+      "publish_dir": null
+    },
+    {
+      "name": "SEQTK_TRIM",
+      "aliases": [],
+      "in_subworkflows": ["DEMO"],
+      "module_path": "modules/nf-core/seqtk/trim/main.nf",
+      "meta": {
+        "description": "Trim low quality bases from FastQ files",
+        "keywords": ["trimfq", "fastq", "seqtk"],
+        "authors": [],
+        "maintainers": [],
+        "tools": [
+          { "name": "seqtk", "description": "Seqtk is a fast and lightweight tool for processing sequences in the FASTA or FASTQ format", "homepage": "https://github.com/lh3/seqtk", "documentation": "https://docs.csc.fi/apps/seqtk/", "tool_dev_url": "https://github.com/lh3/seqtk", "licence": ["MIT"], "identifier": "biotools:seqtk" }
+        ],
+        "input": [
+          { "name": "meta", "type": "map", "description": "Groovy Map containing sample information e.g. [ id:'test', single_end:false ]" },
+          { "name": "reads", "type": "file", "description": "List of input FastQ files" }
+        ],
+        "output": [
+          { "name": "reads", "type": "file", "description": "Filtered FastQ files", "pattern": "*.{fastq.gz}" }
+        ]
+      },
+      "module_tests": [
+        { "name": "seqtk_trim test_seqtk_trim", "path": "modules/nf-core/seqtk/trim/tests/main.nf.test", "profiles": ["test"], "params_overrides": {}, "execution_mode": "unknown", "assert_workflow_success": true, "snapshot": null, "prose_assertions": [] }
+      ],
+      "tool": "seqtk",
+      "container": "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ? 'https://depot.galaxyproject.org/singularity/seqtk:1.4--he4a0461_1' : 'biocontainers/seqtk:1.4--he4a0461_1' }",
+      "conda": "${moduleDir}/environment.yml",
+      "inputs": [
+        { "name": "meta", "shape": "val(map)", "description": "Groovy Map containing sample information", "topic": null },
+        { "name": "reads", "shape": "path", "description": "Input FastQ files", "topic": null }
+      ],
+      "outputs": [
+        { "name": "reads", "shape": "tuple(meta, path)", "description": "Trimmed FastQ files", "topic": null },
+        { "name": "versions_seqtk", "shape": "tuple(val, val, eval)", "description": "tool versions tuple for the versions topic", "topic": "versions" }
+      ],
+      "when": "task.ext.when == null || task.ext.when",
+      "script_summary": "Runs seqtk trimfq on each input FastQ file and gzips the trimmed output as <prefix>_<basename>.",
+      "script_excerpt": "printf \"%s\\n\" $reads | while read f;\ndo\n    seqtk \\\n        trimfq \\\n        $args \\\n        $f \\\n        | gzip --no-name > ${prefix}_$(basename $f)\ndone\n",
+      "publish_dir": null
+    },
+    {
+      "name": "COWPY",
+      "aliases": [],
+      "in_subworkflows": ["DEMO"],
+      "module_path": "modules/local/cowpy/main.nf",
+      "meta": null,
+      "module_tests": [],
+      "tool": "cowpy",
+      "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/1a/1a1f6ff027a12fc86ad7bb9f8781c06b6fd7c8b81a9ecde90cda09335927b0fe/data' : 'community.wave.seqera.io/library/cowpy:1.1.5--3db457ae1977a273'}",
+      "conda": "${moduleDir}/environment.yml",
+      "inputs": [],
+      "outputs": [
+        { "name": "txt", "shape": "path", "description": "cowpy.txt - a cow saying nf-core rules!", "topic": null },
+        { "name": "versions_cowpy", "shape": "tuple(val, val, val)", "description": "tool versions tuple for the versions topic", "topic": "versions" }
+      ],
+      "when": "task.ext.when == null || task.ext.when",
+      "script_summary": "Pipes the text 'nf-core rules!' into cowpy and writes the ASCII-art cow output to cowpy.txt.",
+      "script_excerpt": "echo \"nf-core rules!\" | cowpy ${args} > cowpy.txt\n",
+      "publish_dir": null
+    },
+    {
+      "name": "MULTIQC",
+      "aliases": [],
+      "in_subworkflows": ["DEMO"],
+      "module_path": "modules/nf-core/multiqc/main.nf",
+      "meta": {
+        "description": "MultiQC aggregates results from bioinformatics analyses across many samples into a single report",
+        "keywords": ["quality control", "qc", "multiqc", "report", "aggregation", "visualisation"],
+        "authors": ["@abhi18av", "@bunop", "@joseespinosa", "@matthdsm", "@jfy133"],
+        "maintainers": ["@abhi18av", "@bunop", "@joseespinosa", "@matthdsm", "@jfy133"],
+        "tools": [
+          { "name": "multiqc", "description": "MultiQC searches a given directory and analyses file names for recognised tool output and compiles the results into a single HTML report.", "homepage": "https://github.com/ewels/MultiQC", "documentation": "https://multiqc.info/", "tool_dev_url": "https://github.com/ewels/MultiQC", "licence": ["GPL-3.0-or-later"], "identifier": "biotools:multiqc" }
+        ],
+        "input": [
+          { "name": "meta", "type": "map", "description": "Groovy Map containing sample information" },
+          { "name": "multiqc_files", "type": "file", "description": "List of files to be included in the MultiQC report" },
+          { "name": "multiqc_config", "type": "file", "description": "MultiQC config file" },
+          { "name": "multiqc_logo", "type": "file", "description": "MultiQC logo file" },
+          { "name": "replace_names", "type": "file", "description": "File containing sample name replacement patterns" },
+          { "name": "sample_names", "type": "file", "description": "File containing sample names to use" }
+        ],
+        "output": [
+          { "name": "report", "type": "file", "description": "MultiQC report file", "pattern": "*_{multiqc.html}" },
+          { "name": "data", "type": "file", "description": "MultiQC data directory", "pattern": "*_{multiqc_data}" },
+          { "name": "plots", "type": "file", "description": "MultiQC plots directory (optional)", "pattern": "*_{multiqc_plots}" }
+        ]
+      },
+      "module_tests": [
+        { "name": "multiqc test_multiqc", "path": "modules/nf-core/multiqc/tests/main.nf.test", "profiles": ["test"], "params_overrides": {}, "execution_mode": "unknown", "assert_workflow_success": true, "snapshot": null, "prose_assertions": [] }
+      ],
+      "tool": "multiqc",
+      "container": "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/1b/1bef8af6be88c5733461959c46ac8ef73d18f65277f62a1695d0e1633054f9c2/data' : 'community.wave.seqera.io/library/multiqc:1.34--db7c73dae76bc9e6'}",
+      "conda": "${moduleDir}/environment.yml",
+      "inputs": [
+        { "name": "meta", "shape": "val(map)", "description": "Groovy Map containing sample information", "topic": null },
+        { "name": "multiqc_files", "shape": "path", "description": "Files to include in the report", "topic": null },
+        { "name": "multiqc_config", "shape": "path", "description": "MultiQC config file", "topic": null },
+        { "name": "multiqc_logo", "shape": "path", "description": "MultiQC logo file", "topic": null },
+        { "name": "replace_names", "shape": "path", "description": "Sample name replacement file", "topic": null },
+        { "name": "sample_names", "shape": "path", "description": "Sample names file", "topic": null }
+      ],
+      "outputs": [
+        { "name": "report", "shape": "tuple(meta, path)", "description": "MultiQC HTML report", "topic": null },
+        { "name": "data", "shape": "tuple(meta, path)", "description": "MultiQC data directory", "topic": null },
+        { "name": "plots", "shape": "tuple(meta, path)", "description": "MultiQC plots directory (optional)", "topic": null },
+        { "name": "versions", "shape": "tuple(val, val, eval)", "description": "tool versions tuple (NOT emitted to the versions topic to avoid a deadlock)", "topic": null }
+      ],
+      "when": "task.ext.when == null || task.ext.when",
+      "script_summary": "Runs MultiQC over the staged input files in the working directory with the given config, prefix, logo, name-replacement and sample-name files, producing an HTML report plus data and plots directories.",
+      "script_excerpt": "multiqc \\\n    --force \\\n    ${args} \\\n    ${config} \\\n    ${prefix} \\\n    ${logo} \\\n    ${replace} \\\n    ${samples} \\\n    .\n",
+      "publish_dir": null
+    }
+  ],
+  "subworkflows": [
+    {
+      "name": "DEMO",
+      "path": "workflows/demo.nf",
+      "kind": "pipeline",
+      "aliases": [],
+      "calls": ["FASTQC", "SEQTK_TRIM", "COWPY", "MULTIQC"],
+      "inputs": [
+        { "name": "ch_samplesheet", "shape": "tuple(meta, path, path)", "description": "samplesheet read in from --input (after samplesheetToList + groupTuple + single_end annotation)", "topic": null },
+        { "name": "multiqc_config", "shape": "path", "description": "MultiQC config file (params.multiqc_config or pipeline default)", "topic": null },
+        { "name": "multiqc_logo", "shape": "path", "description": "MultiQC logo file (params.multiqc_logo or empty)", "topic": null },
+        { "name": "multiqc_methods_description", "shape": "path", "description": "Methods description YAML (params.multiqc_methods_description or pipeline template)", "topic": null },
+        { "name": "outdir", "shape": "val(string)", "description": "Output directory", "topic": null }
+      ],
+      "outputs": [
+        { "name": "multiqc_report", "shape": "path", "description": "MultiQC report wrapped in a single-element list (toList)", "topic": null },
+        { "name": "versions", "shape": "path", "description": "ch_versions (always empty in this pipeline)", "topic": null }
+      ],
+      "tests": []
+    },
+    {
+      "name": "NFCORE_DEMO",
+      "path": "main.nf",
+      "kind": "pipeline",
+      "aliases": [],
+      "calls": ["DEMO"],
+      "inputs": [
+        { "name": "samplesheet", "shape": "tuple(meta, path, path)", "description": "channel: samplesheet read in from --input", "topic": null }
+      ],
+      "outputs": [
+        { "name": "multiqc_report", "shape": "path", "description": "channel: /path/to/multiqc_report.html", "topic": null }
+      ],
+      "tests": []
+    },
+    {
+      "name": "PIPELINE_INITIALISATION",
+      "path": "subworkflows/local/utils_nfcore_demo_pipeline/main.nf",
+      "kind": "utility",
+      "aliases": [],
+      "calls": [],
+      "inputs": [
+        { "name": "version", "shape": "val(boolean)", "description": "Display version and exit", "topic": null },
+        { "name": "validate_params", "shape": "val(boolean)", "description": "Boolean whether to validate parameters against the schema at runtime", "topic": null },
+        { "name": "monochrome_logs", "shape": "val(boolean)", "description": "Do not use coloured log outputs", "topic": null },
+        { "name": "nextflow_cli_args", "shape": "val(array)", "description": "List of positional nextflow CLI args", "topic": null },
+        { "name": "outdir", "shape": "val(string)", "description": "The output directory where the results will be saved", "topic": null },
+        { "name": "input", "shape": "val(string)", "description": "Path to input samplesheet", "topic": null },
+        { "name": "help", "shape": "val(boolean)", "description": "Display help message and exit", "topic": null },
+        { "name": "help_full", "shape": "val(boolean)", "description": "Show the full help message", "topic": null },
+        { "name": "show_hidden", "shape": "val(boolean)", "description": "Show hidden parameters in the help message", "topic": null }
+      ],
+      "outputs": [
+        { "name": "samplesheet", "shape": "tuple(meta, path, path)", "description": "validated samplesheet channel", "topic": null },
+        { "name": "versions", "shape": "path", "description": "ch_versions (empty)", "topic": null }
+      ],
+      "tests": []
+    },
+    {
+      "name": "PIPELINE_COMPLETION",
+      "path": "subworkflows/local/utils_nfcore_demo_pipeline/main.nf",
+      "kind": "utility",
+      "aliases": [],
+      "calls": [],
+      "inputs": [
+        { "name": "email", "shape": "val(string)", "description": "email address", "topic": null },
+        { "name": "email_on_fail", "shape": "val(string)", "description": "email address sent on pipeline failure", "topic": null },
+        { "name": "plaintext_email", "shape": "val(boolean)", "description": "Send plain-text email instead of HTML", "topic": null },
+        { "name": "outdir", "shape": "val(path)", "description": "Path to output directory where results will be published", "topic": null },
+        { "name": "monochrome_logs", "shape": "val(boolean)", "description": "Disable ANSI colour codes in log output", "topic": null },
+        { "name": "multiqc_report", "shape": "val(string)", "description": "Path to MultiQC report", "topic": null }
+      ],
+      "outputs": [],
+      "tests": []
+    },
+    {
+      "name": "UTILS_NEXTFLOW_PIPELINE",
+      "path": "subworkflows/nf-core/utils_nextflow_pipeline/main.nf",
+      "kind": "utility",
+      "aliases": [],
+      "calls": [],
+      "inputs": [],
+      "outputs": [],
+      "tests": [
+        { "name": "main.workflow.nf.test", "path": "subworkflows/nf-core/utils_nextflow_pipeline/tests/main.workflow.nf.test", "profiles": ["test"], "params_overrides": {}, "execution_mode": "unknown", "assert_workflow_success": true, "snapshot": null, "prose_assertions": [] }
+      ]
+    },
+    {
+      "name": "UTILS_NFCORE_PIPELINE",
+      "path": "subworkflows/nf-core/utils_nfcore_pipeline/main.nf",
+      "kind": "utility",
+      "aliases": [],
+      "calls": [],
+      "inputs": [],
+      "outputs": [],
+      "tests": [
+        { "name": "main.nf.test", "path": "subworkflows/nf-core/utils_nfcore_pipeline/tests/main.nf.test", "profiles": ["test"], "params_overrides": {}, "execution_mode": "unknown", "assert_workflow_success": true, "snapshot": null, "prose_assertions": [] }
+      ]
+    },
+    {
+      "name": "UTILS_NFSCHEMA_PLUGIN",
+      "path": "subworkflows/nf-core/utils_nfschema_plugin/main.nf",
+      "kind": "utility",
+      "aliases": [],
+      "calls": [],
+      "inputs": [],
+      "outputs": [],
+      "tests": [
+        { "name": "main.nf.test", "path": "subworkflows/nf-core/utils_nfschema_plugin/tests/main.nf.test", "profiles": ["test"], "params_overrides": {}, "execution_mode": "unknown", "assert_workflow_success": true, "snapshot": null, "prose_assertions": [] }
+      ]
+    }
+  ],
+  "workflow": {
+    "name": "DEMO",
+    "channels": [
+      { "name": "ch_samplesheet", "source": "channel.fromList(samplesheetToList(input, \"${projectDir}/assets/schema_input.json\")).map { meta, fastq_1, fastq_2 -> ... }.groupTuple().map { samplesheet -> validateInputSamplesheet(samplesheet) }.map { meta, fastqs -> return [meta, fastqs.flatten()] }.set { ch_samplesheet }", "shape": "tuple(meta, [path,path])", "construct": "samplesheetToList", "from_param": "input", "required_runtime": true },
+      { "name": "topic_versions", "source": "channel.topic(\"versions\").distinct().branch { entry -> versions_file: entry instanceof Path; versions_tuple: true }", "shape": "mixed", "construct": "topic", "from_param": null, "required_runtime": false },
+      { "name": "ch_multiqc_files", "source": "channel.empty().mix(FASTQC.out.zip.map { _meta, file -> file }).mix(ch_collated_versions).mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml')).mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))", "shape": "path", "construct": "empty", "from_param": null, "required_runtime": false },
+      { "name": "ch_versions", "source": "channel.empty()", "shape": "path", "construct": "empty", "from_param": null, "required_runtime": false }
+    ],
+    "edges": [
+      { "from": "PIPELINE_INITIALISATION.out.samplesheet", "to": "FASTQC", "via": [], "notes": "samplesheet channel from the initialisation subworkflow feeds both FASTQC and SEQTK_TRIM directly" },
+      { "from": "PIPELINE_INITIALISATION.out.samplesheet", "to": "SEQTK_TRIM", "via": [], "notes": "same channel; SEQTK_TRIM is gated by the params.skip_trim conditional" },
+      { "from": "FASTQC.out.zip", "to": "MULTIQC", "via": ["map", "mix"], "notes": "zip files are flattened (meta dropped via map) and mixed into the multiqc_files input; MULTIQC also receives ch_collated_versions, workflow summary and methods description via collectFile" },
+      { "from": "SEQTK_TRIM.out.reads", "to": "MULTIQC", "via": ["mix"], "notes": "NOTE: in the source, SEQTK_TRIM outputs feed the fq/ publish directory only; the MULTIQC input list is built from FASTQC zip and version/summary files. This edge is recorded from the topic_versions and ch_multiqc_files construction, not a direct channel read. Confidence: low." },
+      { "from": "COWPY.out.txt", "to": "ch_multiqc_files", "via": [], "notes": "NOTE: COWPY outputs cowpy.txt which appears in the publish tree and stable_path snapshot, but ch_multiqc_files as written does not include COWPY.out.txt. Recorded as a source-faithfulness caveat: in the snapshot stable_content list cowpy.txt IS included in the md5 content list. Confidence: low." },
+      { "from": "COWPY.out.versions_cowpy", "to": "topic_versions", "via": ["topic"], "notes": "topic: versions output aggregated into collated versions" },
+      { "from": "FASTQC.out.versions_fastqc", "to": "topic_versions", "via": ["topic"], "notes": "topic: versions output aggregated into collated versions" },
+      { "from": "SEQTK_TRIM.out.versions_seqtk", "to": "topic_versions", "via": ["topic"], "notes": "topic: versions output aggregated into collated versions" }
+    ],
+    "conditionals": [
+      { "guard": "params.skip_trim", "branch": "alternate", "affects": ["SEQTK_TRIM"] }
+    ]
+  },
+  "reference_assets": [],
+  "reference_rebuilds": [],
+  "test_candidates": [
+    {
+      "id": "tests/default.nf.test::-profile test",
+      "kind": "nf-test",
+      "name": "-profile test",
+      "path": "tests/default.nf.test",
+      "effective_profiles": ["test"],
+      "params_delta": { "outdir": "$outputDir" },
+      "inputs": [
+        { "role": "samplesheet", "path": null, "url": "https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/samplesheet/samplesheet_test_illumina_amplicon.csv", "sha1": null, "filetype": "csv", "description": "Test samplesheet: 3 samples (SAMPLE1_PE paired, SAMPLE2_PE paired, SAMPLE3_SE two single-end rows)" }
+      ],
+      "outputs": [],
+      "execution_mode": "real",
+      "scope": "primary",
+      "disposition": "selected",
+      "rationale": "Sole pipeline-level nf-test case; uses the minimal test profile (conf/test.config) with 3 samples; whole-pipeline coverage of FASTQC, SEQTK_TRIM, COWPY, MULTIQC; snapshot-based with stable-path and stable-content assertions.",
+      "assert_workflow_success": true,
+      "snapshot": {
+        "captures": ["versions_yml", "stable_names", "stable_paths", "stable_content"],
+        "helpers": ["getAllFilesFromDir", "removeNextflowVersion"],
+        "ignore_files": ["tests/.nftignore"],
+        "ignore_globs": ["pipeline_info/*.{html,json,txt}"],
+        "snap_path": "tests/default.nf.test.snap",
+        "parsed_content": [
+          {
+            "name": "-profile test",
+            "channels": [
+              { "key": null, "files": [
+                { "path": "cowpy.txt", "basename": "cowpy.txt", "md5": "9c8be9f4550989b40901f379cb1a605f", "stub": false },
+                { "path": "SAMPLE1_PE_sample1_R1.fastq.gz", "basename": "SAMPLE1_PE_sample1_R1.fastq.gz", "md5": "7dd2fd0d542d9259d9aed53550907fae", "stub": false },
+                { "path": "SAMPLE1_PE_sample1_R2.fastq.gz", "basename": "SAMPLE1_PE_sample1_R2.fastq.gz", "md5": "1995fe8488384d801807805f26ceca8a", "stub": false },
+                { "path": "SAMPLE2_PE_sample2_R1.fastq.gz", "basename": "SAMPLE2_PE_sample2_R1.fastq.gz", "md5": "05dba9c26396cbdbe0e6da26f037106e", "stub": false },
+                { "path": "SAMPLE2_PE_sample2_R2.fastq.gz", "basename": "SAMPLE2_PE_sample2_R2.fastq.gz", "md5": "63d5e4ac37927c2ecec4b74d2ff99a10", "stub": false },
+                { "path": "SAMPLE3_SE_sample1_R1.fastq.gz", "basename": "SAMPLE3_SE_sample1_R1.fastq.gz", "md5": "7dd2fd0d542d9259d9aed53550907fae", "stub": false },
+                { "path": "SAMPLE3_SE_sample2_R1.fastq.gz", "basename": "SAMPLE3_SE_sample2_R1.fastq.gz", "md5": "05dba9c26396cbdbe0e6da26f037106e", "stub": false },
+                { "path": "fastqc-status-check-heatmap.txt", "basename": "fastqc-status-check-heatmap.txt", "md5": "0f1975c565a16bf09be08a05c204ded7", "stub": false },
+                { "path": "fastqc_overrepresented_sequences_plot.txt", "basename": "fastqc_overrepresented_sequences_plot.txt", "md5": "4b23cea39c4e23deef6b97810bc1ee46", "stub": false },
+                { "path": "fastqc_per_base_n_content_plot.txt", "basename": "fastqc_per_base_n_content_plot.txt", "md5": "037692101c0130c72493d3bbfa3afac1", "stub": false },
+                { "path": "fastqc_per_base_sequence_quality_plot.txt", "basename": "fastqc_per_base_sequence_quality_plot.txt", "md5": "bfe735f3e31befe13bdf6761bb297d6e", "stub": false },
+                { "path": "fastqc_per_sequence_gc_content_plot_Counts.txt", "basename": "fastqc_per_sequence_gc_content_plot_Counts.txt", "md5": "7108d19c46ef7883e864ba274c457d2e", "stub": false },
+                { "path": "fastqc_per_sequence_gc_content_plot_Percentages.txt", "basename": "fastqc_per_sequence_gc_content_plot_Percentages.txt", "md5": "23f527c80a148e4f34e5a43f6e520a90", "stub": false },
+                { "path": "fastqc_per_sequence_quality_scores_plot.txt", "basename": "fastqc_per_sequence_quality_scores_plot.txt", "md5": "a0cc0e6df7bfb05257da1cfc88b13c50", "stub": false },
+                { "path": "fastqc_sequence_counts_plot.txt", "basename": "fastqc_sequence_counts_plot.txt", "md5": "c6e4e1588e6765fe8df27812a1322fbd", "stub": false },
+                { "path": "fastqc_sequence_duplication_levels_plot.txt", "basename": "fastqc_sequence_duplication_levels_plot.txt", "md5": "3cde2db4033f6c64648976d1174db925", "stub": false },
+                { "path": "fastqc_sequence_length_distribution_plot.txt", "basename": "fastqc_sequence_length_distribution_plot.txt", "md5": "e82b9b14a7e24c0c5f27af97cebb6870", "stub": false },
+                { "path": "multiqc_citations.txt", "basename": "multiqc_citations.txt", "md5": "4c806e63a283ec1b7e78cdae3a923d4f", "stub": false },
+                { "path": "multiqc_fastqc.txt", "basename": "multiqc_fastqc.txt", "md5": "1a41c2158adc9947bff9232962f70110", "stub": false },
+                { "path": "multiqc_general_stats.txt", "basename": "multiqc_general_stats.txt", "md5": "0b54e4e764665bd57fe0f95216744a78", "stub": false }
+              ], "values": [] }
+            ]
+          }
+        ]
+      },
+      "prose_assertions": [
+        "assert workflow.success",
+        "stable_path: all files and folders under params.outdir with a stable relative path, ignoring pipeline_info/*.{html,json,txt}",
+        "stable_content: all files under params.outdir with stable content, per tests/.nftignore"
+      ]
+    }
+  ],
+  "test_selection": {
+    "status": "selected",
+    "selected_candidate_id": "tests/default.nf.test::-profile test",
+    "rationale": "Sole primary candidate: the only pipeline-level nf-test case, running the minimal test profile with 3 samples over the full process set."
+  },
+  "warnings": [
+    "Workflows 'NFCORE_DEMO' (main.nf) and 'DEMO' (workflows/demo.nf) both call pipeline processes and could both qualify as primary; DEMO (workflows/demo.nf) invokes the most processes (FASTQC, SEQTK_TRIM, COWPY, MULTIQC) so it is recorded as primary per the selection rule, with NFCORE_DEMO as a kind=pipeline subworkflow.",
+    "DEMO constructs ch_multiqc_files from FASTQC zip, versions topic and summary/collectFile channels; COWPY.out.txt is NOT piped into MULTIQC in the source despite appearing in the publish tree and snapshot stable_content list. Recorded as a low-confidence edge with notes.",
+    "SEQTK_TRIM reads are not consumed by MULTIQC in the source (trimmed reads are published under fq/ only). Low-confidence edge recorded for auditability.",
+    "nf-test 'when' blocks for module-level tests in modules/nf-core/*/tests use per-module config conventions; module_tests[] entries are captured as name/path/profile metadata only.",
+    "COWPY outputs versions via val('1.1.5') literal rather than eval(), unlike FASTQC/SEQTK_TRIM/MULTIQC which use eval expressions."
+  ]
+}

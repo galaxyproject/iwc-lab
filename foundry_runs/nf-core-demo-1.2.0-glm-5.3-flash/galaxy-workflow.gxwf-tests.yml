@@ -1,0 +1,104 @@
+- doc: >
+    Whole-pipeline test of the nf-core/demo Galaxy translation over the viralrecon
+    amplicon samplesheet (2 paired samples, 1 sample contributing two single-end
+    fastqs): FastQC per fastq, seqtk trimfq (runs; skip_trim=false), cowpy banner,
+    MultiQC report over the FastQC raw-data texts.
+    Trimmed-reads md5s were recomputed from the first successful planemo run
+    (2026-11-09, attempt 8): the Galaxy wrapper's seqtk 1.5+galaxy0 (pigz
+    --no-name --no-time re-compression) produces different bytes than the
+    nf-test snapshot's seqtk 1.4 publish output, as anticipated in the test
+    plan's unresolved item (assertion-parity). Values are now measured
+    test-evidence, not upstream-snapshot evidence.
+  job:
+    Input samplesheet:
+      class: Collection
+      collection_type: sample_sheet:paired_or_unpaired
+      elements:
+        - class: Collection
+          identifier: SAMPLE1_PE
+          elements:
+            - class: File
+              identifier: forward
+              location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample1_R1.fastq.gz
+              hashes:
+                - hash_function: SHA-1
+                  hash_value: eaf6537837437b69412285bf1a2a542f571e9336
+              filetype: fastqsanger.gz
+            - class: File
+              identifier: reverse
+              location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample1_R2.fastq.gz
+              hashes:
+                - hash_function: SHA-1
+                  hash_value: cbb92e7ed652d5b4008c588b318a6a12a3f0bfd5
+              filetype: fastqsanger.gz
+        - class: Collection
+          identifier: SAMPLE2_PE
+          elements:
+            - class: File
+              identifier: forward
+              location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample2_R1.fastq.gz
+              hashes:
+                - hash_function: SHA-1
+                  hash_value: 7b090121cfa3caa51d9051d01e5f8e7bd2babb5d
+              filetype: fastqsanger.gz
+            - class: File
+              identifier: reverse
+              location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample2_R2.fastq.gz
+              hashes:
+                - hash_function: SHA-1
+                  hash_value: 56e48ae352b0dcbe2297fd8831ba506c19435cdc
+              filetype: fastqsanger.gz
+        - class: Collection
+          identifier: SAMPLE3_SE_sample1_R1
+          elements:
+            - class: File
+              identifier: unpaired
+              location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample1_R1.fastq.gz
+              hashes:
+                - hash_function: SHA-1
+                  hash_value: eaf6537837437b69412285bf1a2a542f571e9336
+              filetype: fastqsanger.gz
+        - class: Collection
+          identifier: SAMPLE3_SE_sample2_R1
+          elements:
+            - class: File
+              identifier: unpaired
+              location: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/illumina/amplicon/sample2_R1.fastq.gz
+              hashes:
+                - hash_function: SHA-1
+                  hash_value: 7b090121cfa3caa51d9051d01e5f8e7bd2babb5d
+              filetype: fastqsanger.gz
+    Skip trimming: false
+  outputs:
+    cowpy_txt:
+      checksum: md5$9c8be9f4550989b40901f379cb1a605f
+    trimmed_reads:
+      class: Collection
+      element_count: 4
+      element_tests:
+        SAMPLE1_PE:
+          class: Collection
+          element_tests:
+            forward:
+              checksum: md5$df27878f315d2a3f1a56da884a2f7429
+            reverse:
+              checksum: md5$428737814395b8b57fbaa9a4cf4ae40e
+        SAMPLE2_PE:
+          class: Collection
+          element_tests:
+            forward:
+              checksum: md5$25599c233cf24d58180eebf26e0771e3
+            reverse:
+              checksum: md5$110f585d0cbc0b22f59ab74af4442ecf
+        SAMPLE3_SE_sample1_R1:
+          checksum: md5$df27878f315d2a3f1a56da884a2f7429
+        SAMPLE3_SE_sample2_R1:
+          checksum: md5$25599c233cf24d58180eebf26e0771e3
+    fastqc_reports:
+      class: Collection
+      element_count: 4
+      element_tests: {}
+    multiqc_report:
+      asserts:
+        has_size:
+          min: 1

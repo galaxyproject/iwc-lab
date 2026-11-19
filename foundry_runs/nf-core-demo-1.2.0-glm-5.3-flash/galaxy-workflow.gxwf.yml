@@ -1,0 +1,164 @@
+class: GalaxyWorkflow
+label: nf-core/demo (Galaxy draft)
+doc: |
+  Galaxy translation of nf-core/demo 1.2.0: FastQC over a samplesheet collection,
+  optional seqtk trimfq gated by a boolean, a cowpy novelty output, and a MultiQC
+  report aggregating the FastQC text outputs.
+inputs:
+  - id: Input samplesheet
+    type: collection
+    collection_type: sample_sheet:paired_or_unpaired
+    optional: false
+    format:
+      - fastqsanger.gz
+    doc: Samplesheet rows (sample, fastq_1, fastq_2?) as a mixed paired/single-end collection.
+  - id: Skip trimming
+    type: boolean
+    optional: false
+    default: false
+    doc: params.skip_trim — when true the seqtk trim step is skipped.
+outputs:
+  - id: multiqc_report
+    outputSource: MultiQC/html_report
+  - id: cowpy_txt
+    outputSource: cowpy/txt
+  - id: trimmed_reads
+    outputSource: seqtk trimfq/default
+  - id: fastqc_reports
+    outputSource: FastQC/html_file
+comments:
+  - type: frame
+    position:
+      - 100
+      - 100
+    size:
+      - 400
+      - 300
+    color: blue
+    title: Per-sample QC and optional trimming
+    contains_steps:
+      - FastQC
+      - seqtk trimfq
+  - type: frame
+    position:
+      - 550
+      - 100
+    size:
+      - 400
+      - 300
+    color: pink
+    title: Aggregation and extras
+    contains_steps:
+      - MultiQC
+      - cowpy
+steps:
+  fastqc:
+    label: FastQC
+    doc: Run FastQC on every samplesheet row (one job per element).
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    tool_shed_repository:
+      changeset_revision: 2c64fded1286
+      name: fastqc
+      owner: devteam
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      - id: input_file
+        source: Input samplesheet
+    out:
+      - id: html_file
+        rename: FastQC report
+      - id: text_file
+        rename: FastQC raw data
+    state:
+      kmers: 7
+      min_length: null
+      nogroup: false
+  trim reads:
+    label: seqtk trimfq
+    doc: Trim low-quality ends with seqtk trimfq, gated by params.skip_trim.
+    when: $(!inputs.when)
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/seqtk/seqtk_trimfq/1.5+galaxy0
+    tool_version: 1.5+galaxy0
+    tool_shed_repository:
+      changeset_revision: c8fb17965c7d
+      name: seqtk
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      - id: in_file
+        source: Input samplesheet
+      - id: when
+        source: Skip trimming
+    out:
+      - id: default
+        rename: Trimmed reads
+    state:
+      mode:
+        mode_select: quality
+        __current_case__: 0
+        q: 0.05
+        l: 30
+  cowpy:
+    label: cowpy
+    doc: Novelty nf-core banner (source pipes nothing into it and takes only its txt).
+    run:
+      class: GalaxyUserTool
+      id: cowpy
+      version: 1.0.0
+      name: Cowpy ASCII-art banner
+      description: |
+        Writes an ASCII-art cow saying "nf-core rules!" to a text file, reproducing the novelty banner produced by the nf-core/demo pipeline's COWPY module.
+      container: community.wave.seqera.io/library/cowpy:1.1.5--3db457ae1977a273
+      shell_command: echo "nf-core rules!" | cowpy > cowpy.txt
+      inputs: []
+      outputs:
+        - name: txt
+          type: data
+          format: txt
+          from_work_dir: cowpy.txt
+          label: cowpy.txt — a cow saying nf-core rules!
+      help:
+        format: markdown
+        content: |
+          Reimplements the nf-core/demo pipeline's COWPY module
+          (`echo "nf-core rules!" | cowpy ${args} > cowpy.txt` with `args` empty).
+          The output is a plain-text ASCII-art cow. It is a novelty artifact: the
+          source pipeline does not feed it into MultiQC or any other step.
+    in: []
+    out:
+      - id: txt
+  multiqc:
+    label: MultiQC
+    doc: Aggregate the FastQC text reports into one HTML report.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+    tool_version: 1.35+galaxy5
+    tool_shed_repository:
+      changeset_revision: 94b6bea727ae
+      name: multiqc
+      owner: iuc
+      tool_shed: toolshed.g2.bx.psu.edu
+    in:
+      - id: results_0|software_cond|output_0|input
+        source: FastQC/text_file
+    out:
+      - id: html_report
+        rename: MultiQC report
+      - id: stats
+        hide: true
+    state:
+      comment: ""
+      export: false
+      flat: false
+      png_plots: false
+      title: ""
+      results:
+        - __index__: 0
+          software_cond:
+            software: fastqc
+            __current_case__: 9
+            output:
+              - __index__: 0
+                type: data
+                input:
+                  __class__: ConnectedValue

@@ -1,0 +1,106 @@
+run:
+  run_slug: nf-core-demo-glm
+  pipeline: nextflow-to-galaxy
+topology_repair:
+  escalations: 0
+  cap: 5
+  open_history: []
+entries:
+- id: fastqc-archives-zip-output-not-built
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-template
+  units: "workflow output fastqc_archives (zip of FastQC raw-data archives) from the
+    interface brief"
+  because: "devteam/fastqc wrapper exposes only html_file (html) and text_file (txt)
+    — no zip output in any checked version 0.52 through 0.74+galaxy1 (galaxy-tool-cache
+    summarize across versions, 2026-11-09); the source's FASTQC.out.zip publish has no
+    wrapper equivalent"
+  unmet: "the source publishes a zip archive per sample alongside the html report; the
+    Galaxy workflow cannot emit them"
+  missing: "no wrapper produces the archive; a separate archive/compress step would
+    need to be authored to restore it"
+  note: "Recorded as a drop, not silently omitted: fastqc_reports (html) and the MultiQC
+    txt feed carry the substantive information."
+- id: wrapper-sample-sheet-variant-acceptance
+  status: open
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: FastQC and seqtk trim wrappers must consume a sample_sheet:paired_or_unpaired
+    collection
+  missing: no evidence yet that the chosen Galaxy wrappers declare this collection_type
+    in their allowlist
+  note: Interface chose sample_sheet:paired_or_unpaired for the input samplesheet
+    (fastq_2 optional). If wrappers reject it, fall back to list:paired + single-end
+    list split. Verify in data-flow phase via gxwf tool-search / wrapper inspection.
+- id: trimmed-reads-element-identifiers
+  status: open
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: trimmed_reads collection output must carry stable, sample-derived element
+    identifiers
+  missing: seqtk names outputs <prefix>_<basename> (e.g. SAMPLE1_PE_sample1_R1.fastq.gz);
+    Galaxy element identifiers depend on wrapper output naming
+  note: Test plan wants md5 assertions on trimmed reads; data-flow phase must confirm
+    identifier derivation. Template note — wrapper iuc/seqtk_trimfq 1.5+galaxy0 emits
+    a single 'default' output per invocation; element identifiers follow map-over
+    element naming, not the source's ${prefix}_$(basename $f) scheme. Acceptable for
+    md5-per-element assertions if the test plan keys on collection position/element
+    id rather than source-style filenames; revisit during per-step loop.
+discoveries:
+- id: no-reference-data-surface
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: reference_assets[] and reference_rebuilds[] empty; genome/fasta params
+    consumed only by genomeExistsError validation.
+  impact: Workflow has no reference-data inputs.
+- id: mixed-paired-and-single-end-test-data
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: Test samplesheet (viralrecon samplesheet_test_illumina_amplicon.csv) has
+    2 paired samples and 1 sample with two single-end rows.
+  impact: Input variant must be paired_or_unpaired, not paired.
+decisions:
+- id: fix-multiqc-customization-inputs
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Do not expose multiqc_config/multiqc_logo/multiqc_methods_description/multiqc_title
+    as workflow inputs; MultiQC consumes the pipeline default config.
+  rationale: These change report cosmetics, not the report's existence or core contents;
+    exposing 4 optional inputs would bloat the interface. Recorded as deliberate simplification
+    (validation loss).
+- id: sample-sheet-row-grouping-flattened
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Model the input as one sample_sheet:paired_or_unpaired collection where
+    every samplesheet row is a standalone element; do not merge SAMPLE3_SE's two single-end
+    rows into one sample group.
+  rationale: The meta.id grouping affects only publish-directory layout; FastQC and
+    seqtk operate per file and MultiQC consumes files, not sample groups. Scientific
+    output is unaffected.
+- id: fastqc-html-feeds-multiqc
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Connect FASTQC html outputs to MultiQC; the zip channel mixing in the
+    source is publish plumbing.
+  rationale: MultiQC reads the html/data report files; zip archives are for user download.
+- id: fastqc-txt-feeds-multiqc
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: Wire the FastQC text_file (txt) collection into MultiQC's fastqc software
+    case, not the html outputs.
+  supersedes: fastqc-html-feeds-multiqc
+  rationale: Wrapper inspection of iuc/multiqc 1.35+galaxy5 shows the fastqc case
+    input is gx_data multiple=True extensions=['txt'] only — html is a type mismatch.
+    The mgnify exemplar feeds transformed FastQC text_file outputs the same way.
+- id: no-cowpy-to-multiqc-edge
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: Do not materialize the data-flow brief's low-confidence N3 (cowpy.txt)
+    to N4 (MultiQC) edge.
+  rationale: "Verified against workflows/demo.nf — COWPY.out.txt is not mixed into
+    ch_multiqc_files (summary warning #2). The MultiQC wrapper has no generic-file
+    case (only software-specific discriminators), and cowpy.txt is ASCII art, not
+    parseable QC data. cowpy_txt stands as an unconsumed promoted output."
+- id: skip-trim-inline-when
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: "Gate the seqtk step with an inline tool-step when on a negative ECMAScript
+    expression (`when: $(!inputs.when)`) wired from the Skip trimming boolean workflow
+    input."
+  rationale: "rnaseq-pe corpus idiom (`when: $(inputs.when)`); negative form because
+    the source flag is skip_trim and when-expressions are ECMAScript 5.1 (not `not`).
+    No pick_value needed — nothing downstream consumes trimmed reads."
+brief_change_recommendations: []
+
+
