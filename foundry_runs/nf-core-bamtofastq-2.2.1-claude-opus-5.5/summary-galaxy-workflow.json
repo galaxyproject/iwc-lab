@@ -1,0 +1,2228 @@
+{
+ "summary_version": "1",
+ "source": {
+  "ecosystem": "galaxy",
+  "workflow": "nf-core/bamtofastq (Galaxy translation)",
+  "url": "./galaxy-workflow.before-revision.gxwf.yml",
+  "version": null,
+  "license": "MIT",
+  "slug": "nf-core-bamtofastq-claude",
+  "format": "gxformat2",
+  "original_format": "gxformat2",
+  "release": null,
+  "annotation": "Translation of nf-core/bamtofastq 2.2.1 (8a29586). Converts a list of BAM/CRAM alignments\nto FASTQ: pre-conversion samtools/FastQC QC, per-sample single/paired classification,\npaired-end conversion via the source's four-way pair-class split (map/map, unmap/unmap,\nunmap/map, map/unmap), merge of unmapped classes, name-collated FASTQ extraction and\nmapped+unmapped concatenation; single-end conversion keeps the \"other\" FASTQ stream;\npost-conversion FastQC and fastq_info.\n"
+ },
+ "documents": {
+  "entrypoint": "./galaxy-workflow.before-revision.gxwf.yml",
+  "converted_path": null,
+  "validation": {
+   "command": "gxwf validate starting-galaxy-workflow.gxwf.yml --strict-state --cache-dir tool-cache --json",
+   "status": "valid",
+   "diagnostics": []
+  }
+ },
+ "workflow_inputs": [
+  {
+   "id": "alignments",
+   "label": "alignments",
+   "type": "collection",
+   "collection_type": "list",
+   "optional": false,
+   "default": null,
+   "format": [
+    "bam",
+    "cram"
+   ],
+   "doc": "One BAM or CRAM per sample; element identifier = sample id (nf-core samplesheet sample_id)."
+  },
+  {
+   "id": "reference_fasta",
+   "label": "reference_fasta",
+   "type": "data",
+   "collection_type": null,
+   "optional": true,
+   "default": null,
+   "format": "fasta",
+   "doc": "Reference FASTA (needed to decode CRAM; nf-core --fasta)."
+  },
+  {
+   "id": "chr",
+   "label": "chr",
+   "type": "parameter",
+   "collection_type": null,
+   "optional": true,
+   "default": null,
+   "format": null,
+   "doc": "Regions to keep before conversion, space separated (nf-core --chr), e.g. \"chrX chrY\"."
+  },
+  {
+   "id": "skip_read_qc",
+   "label": "skip_read_qc",
+   "type": "parameter",
+   "collection_type": null,
+   "optional": false,
+   "default": false,
+   "format": null,
+   "doc": "Skip FastQC before and after conversion (nf-core --no_read_QC)."
+  },
+  {
+   "id": "skip_stats",
+   "label": "skip_stats",
+   "type": "parameter",
+   "collection_type": null,
+   "optional": false,
+   "default": false,
+   "format": null,
+   "doc": "Skip samtools flagstat/idxstats/stats (nf-core --no_stats)."
+  },
+  {
+   "id": "collate_fast",
+   "label": "collate_fast",
+   "type": "parameter",
+   "collection_type": null,
+   "optional": false,
+   "default": false,
+   "format": null,
+   "doc": "Use samtools collate fast mode (nf-core --samtools_collate_fast)."
+  },
+  {
+   "id": "reads_in_memory",
+   "label": "reads_in_memory",
+   "type": "parameter",
+   "collection_type": null,
+   "optional": false,
+   "default": 100000,
+   "format": null,
+   "doc": "Reads kept in memory in collate fast mode (nf-core --reads_in_memory)."
+  }
+ ],
+ "workflow_outputs": [
+  {
+   "id": "paired_reads",
+   "label": "paired_reads",
+   "source": "zip_paired_reads/output",
+   "type": null,
+   "doc": null
+  },
+  {
+   "id": "single_end_reads",
+   "label": "single_end_reads",
+   "source": "collate_fastq_single/fastq_other",
+   "type": null,
+   "doc": null
+  },
+  {
+   "id": "samtools_idxstats",
+   "label": "samtools_idxstats",
+   "source": "idxstats/output",
+   "type": null,
+   "doc": null
+  },
+  {
+   "id": "samtools_flagstat",
+   "label": "samtools_flagstat",
+   "source": "flagstat/output1",
+   "type": null,
+   "doc": null
+  },
+  {
+   "id": "samtools_stats",
+   "label": "samtools_stats",
+   "source": "stats/output",
+   "type": null,
+   "doc": null
+  },
+  {
+   "id": "fastqc_pre_html",
+   "label": "fastqc_pre_html",
+   "source": "fastqc_pre/html_file",
+   "type": null,
+   "doc": null
+  },
+  {
+   "id": "fastqc_post_paired_html",
+   "label": "fastqc_post_paired_html",
+   "source": "fastqc_post_paired/html_file",
+   "type": null,
+   "doc": null
+  },
+  {
+   "id": "fastqc_post_single_html",
+   "label": "fastqc_post_single_html",
+   "source": "fastqc_post_single/html_file",
+   "type": null,
+   "doc": null
+  },
+  {
+   "id": "fastq_info_paired",
+   "label": "fastq_info_paired",
+   "source": "fastq_info_paired/output",
+   "type": null,
+   "doc": null
+  },
+  {
+   "id": "fastq_info_single",
+   "label": "fastq_info_single",
+   "source": "fastq_info_single/output",
+   "type": null,
+   "doc": null
+  },
+  {
+   "id": "fastqc_pre_data",
+   "label": "fastqc_pre_data",
+   "source": "fastqc_pre/text_file",
+   "type": null,
+   "doc": null
+  },
+  {
+   "id": "fastqc_post_single_data",
+   "label": "fastqc_post_single_data",
+   "source": "fastqc_post_single/text_file",
+   "type": null,
+   "doc": null
+  },
+  {
+   "id": "fastqc_post_paired_data",
+   "label": "fastqc_post_paired_data",
+   "source": "fastqc_post_paired/text_file",
+   "type": null,
+   "doc": null
+  }
+ ],
+ "steps": [
+  {
+   "id": "idxstats",
+   "label": "idxstats",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats/2.0.8",
+   "tool_version": "2.0.8",
+   "tool_shed_repository": {
+    "changeset_revision": "13aad5cb9be4",
+    "name": "samtools_idxstats",
+    "owner": "devteam",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input": {
+     "__class__": "ConnectedValue"
+    }
+   },
+   "out": [
+    {
+     "id": "output",
+     "actions": null
+    }
+   ],
+   "when": "$(!inputs.skip)",
+   "annotation": null,
+   "in": [
+    {
+     "name": "input",
+     "source": "alignments",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "skip",
+     "source": "skip_stats",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "flagstat",
+   "label": "flagstat",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8",
+   "tool_version": "2.0.8",
+   "tool_shed_repository": {
+    "changeset_revision": "a0d8e49a018c",
+    "name": "samtools_flagstat",
+    "owner": "devteam",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input1": {
+     "__class__": "ConnectedValue"
+    },
+    "output_fmt": "txt"
+   },
+   "out": [
+    {
+     "id": "output1",
+     "actions": null
+    }
+   ],
+   "when": "$(!inputs.skip)",
+   "annotation": null,
+   "in": [
+    {
+     "name": "input1",
+     "source": "alignments",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "skip",
+     "source": "skip_stats",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "stats",
+   "label": "stats",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.9",
+   "tool_version": "2.0.9",
+   "tool_shed_repository": {
+    "changeset_revision": "8fca6e1eac98",
+    "name": "samtools_stats",
+    "owner": "devteam",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input": {
+     "__class__": "ConnectedValue"
+    },
+    "coverage_cond": {
+     "coverage_select": "no"
+    },
+    "remove_dups": false,
+    "split_output_cond": {
+     "split_output_selector": "no"
+    },
+    "filter_by_flags": {
+     "filter_flags": "nofilter"
+    },
+    "addref_cond": {
+     "addref_select": "no"
+    }
+   },
+   "out": [
+    {
+     "id": "output",
+     "actions": null
+    }
+   ],
+   "when": "$(!inputs.skip)",
+   "annotation": null,
+   "in": [
+    {
+     "name": "input",
+     "source": "alignments",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "skip",
+     "source": "skip_stats",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "fastqc_pre",
+   "label": "fastqc_pre",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1",
+   "tool_version": "0.74+galaxy1",
+   "tool_shed_repository": {
+    "changeset_revision": "2c64fded1286",
+    "name": "fastqc",
+    "owner": "devteam",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input_file": {
+     "__class__": "ConnectedValue"
+    },
+    "nogroup": false,
+    "kmers": 7
+   },
+   "out": [
+    {
+     "id": "html_file",
+     "actions": null
+    },
+    {
+     "id": "text_file",
+     "actions": null
+    }
+   ],
+   "when": "$(!inputs.skip)",
+   "annotation": null,
+   "in": [
+    {
+     "name": "input_file",
+     "source": "alignments",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "skip",
+     "source": "skip_read_qc",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "chr_extract",
+   "label": "chr_extract",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2",
+   "tool_version": "1.22+galaxy2",
+   "tool_shed_repository": {
+    "changeset_revision": "5cf9fcc93508",
+    "name": "samtools_view",
+    "owner": "iuc",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input": {
+     "__class__": "ConnectedValue"
+    },
+    "mode": {
+     "outtype": "selected_reads",
+     "filter_config": {
+      "cond_region": {
+       "select_region": "text",
+       "regions": {
+        "__class__": "ConnectedValue"
+       }
+      },
+      "cond_rg": {
+       "select_rg": "no"
+      },
+      "cond_expr": {
+       "select_expr": "no"
+      },
+      "inclusive_filter": [],
+      "exclusive_filter": [],
+      "exclusive_filter_all": []
+     },
+     "subsample_config": {
+      "subsampling_mode": {
+       "select_subsample": "fraction",
+       "factor": 1
+      }
+     },
+     "output_options": {
+      "reads_report_type": "retained",
+      "complementary_output": false,
+      "output_format": {
+       "oformat": "bam"
+      }
+     }
+    },
+    "addref_cond": {
+     "addref_select": "no"
+    }
+   },
+   "out": [
+    {
+     "id": "outputsam",
+     "actions": null
+    }
+   ],
+   "when": "$(inputs.chr != null && inputs.chr != \"\")",
+   "annotation": null,
+   "in": [
+    {
+     "name": "input",
+     "source": "alignments",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "mode|filter_config|cond_region|regions",
+     "source": "chr",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "chr",
+     "source": "chr",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "pick_alignments",
+   "label": "pick_alignments",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0",
+   "tool_version": "0.2.0",
+   "tool_shed_repository": {
+    "changeset_revision": "b19e21af9c52",
+    "name": "pick_value",
+    "owner": "iuc",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "style_cond": {
+     "pick_style": "first",
+     "type_cond": {
+      "param_type": "data",
+      "pick_from": [
+       {
+        "value": {
+         "__class__": "ConnectedValue"
+        }
+       },
+       {
+        "value": {
+         "__class__": "ConnectedValue"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "out": [
+    {
+     "id": "data_param",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "style_cond|type_cond|pick_from_0|value",
+     "source": "chr_extract/outputsam",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "style_cond|type_cond|pick_from_1|value",
+     "source": "alignments",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "check_paired_end",
+   "label": "check_paired_end",
+   "type": "tool",
+   "tool_id": "nfcore_bamtofastq_checkpairedend",
+   "tool_version": "1.0.0",
+   "tool_shed_repository": null,
+   "tool_state": null,
+   "out": [
+    {
+     "id": "classification",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "alignment",
+     "source": "pick_alignments/data_param",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "reference",
+     "source": "reference_fasta",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "pairing_table",
+   "label": "pairing_table",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/nml/collapse_collections/collapse_dataset/5.1.0",
+   "tool_version": "5.1.0",
+   "tool_shed_repository": {
+    "changeset_revision": "90981f86000f",
+    "name": "collapse_collections",
+    "owner": "nml",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input_list": {
+     "__class__": "ConnectedValue"
+    },
+    "one_header": false,
+    "filename": {
+     "add_name": true,
+     "place_name": "same_once"
+    }
+   },
+   "out": [
+    {
+     "id": "output",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input_list",
+     "source": "check_paired_end/classification",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "paired_ids_filter",
+   "label": "paired_ids_filter",
+   "type": "tool",
+   "tool_id": "Filter1",
+   "tool_version": "1.1.1",
+   "tool_shed_repository": null,
+   "tool_state": {
+    "cond": "c2=='paired'",
+    "header_lines": 0
+   },
+   "out": [
+    {
+     "id": "out_file1",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input",
+     "source": "pairing_table/output",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "paired_ids",
+   "label": "paired_ids",
+   "type": "tool",
+   "tool_id": "Cut1",
+   "tool_version": "1.0.2",
+   "tool_shed_repository": null,
+   "tool_state": {
+    "columnList": "c1",
+    "delimiter": "T"
+   },
+   "out": [
+    {
+     "id": "out_file1",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input",
+     "source": "paired_ids_filter/out_file1",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "split_by_pairing",
+   "label": "split_by_pairing",
+   "type": "tool",
+   "tool_id": "__FILTER_FROM_FILE__",
+   "tool_version": "1.0.0",
+   "tool_shed_repository": null,
+   "tool_state": {
+    "how": {
+     "how_filter": "remove_if_absent"
+    }
+   },
+   "out": [
+    {
+     "id": "output_filtered",
+     "actions": null
+    },
+    {
+     "id": "output_discarded",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input",
+     "source": "pick_alignments/data_param",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "how|filter_source",
+     "source": "paired_ids/out_file1",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "view_map_map",
+   "label": "view_map_map",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2",
+   "tool_version": "1.22+galaxy2",
+   "tool_shed_repository": {
+    "changeset_revision": "5cf9fcc93508",
+    "name": "samtools_view",
+    "owner": "iuc",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input": {
+     "__class__": "ConnectedValue"
+    },
+    "mode": {
+     "outtype": "selected_reads",
+     "filter_config": {
+      "cond_region": {
+       "select_region": "no"
+      },
+      "cond_rg": {
+       "select_rg": "no"
+      },
+      "cond_expr": {
+       "select_expr": "no"
+      },
+      "inclusive_filter": [
+       "1"
+      ],
+      "exclusive_filter": [
+       "4",
+       "8"
+      ],
+      "exclusive_filter_all": []
+     },
+     "subsample_config": {
+      "subsampling_mode": {
+       "select_subsample": "fraction",
+       "factor": 1
+      }
+     },
+     "output_options": {
+      "reads_report_type": "retained",
+      "complementary_output": false,
+      "output_format": {
+       "oformat": "bam"
+      }
+     }
+    },
+    "addref_cond": {
+     "addref_select": "no"
+    }
+   },
+   "out": [
+    {
+     "id": "outputsam",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input",
+     "source": "split_by_pairing/output_filtered",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "view_unmap_unmap",
+   "label": "view_unmap_unmap",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2",
+   "tool_version": "1.22+galaxy2",
+   "tool_shed_repository": {
+    "changeset_revision": "5cf9fcc93508",
+    "name": "samtools_view",
+    "owner": "iuc",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input": {
+     "__class__": "ConnectedValue"
+    },
+    "mode": {
+     "outtype": "selected_reads",
+     "filter_config": {
+      "cond_region": {
+       "select_region": "no"
+      },
+      "cond_rg": {
+       "select_rg": "no"
+      },
+      "cond_expr": {
+       "select_expr": "no"
+      },
+      "inclusive_filter": [
+       "4",
+       "8"
+      ],
+      "exclusive_filter": [
+       "256"
+      ],
+      "exclusive_filter_all": []
+     },
+     "subsample_config": {
+      "subsampling_mode": {
+       "select_subsample": "fraction",
+       "factor": 1
+      }
+     },
+     "output_options": {
+      "reads_report_type": "retained",
+      "complementary_output": false,
+      "output_format": {
+       "oformat": "bam"
+      }
+     }
+    },
+    "addref_cond": {
+     "addref_select": "no"
+    }
+   },
+   "out": [
+    {
+     "id": "outputsam",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input",
+     "source": "split_by_pairing/output_filtered",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "view_unmap_map",
+   "label": "view_unmap_map",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2",
+   "tool_version": "1.22+galaxy2",
+   "tool_shed_repository": {
+    "changeset_revision": "5cf9fcc93508",
+    "name": "samtools_view",
+    "owner": "iuc",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input": {
+     "__class__": "ConnectedValue"
+    },
+    "mode": {
+     "outtype": "selected_reads",
+     "filter_config": {
+      "cond_region": {
+       "select_region": "no"
+      },
+      "cond_rg": {
+       "select_rg": "no"
+      },
+      "cond_expr": {
+       "select_expr": "no"
+      },
+      "inclusive_filter": [
+       "4"
+      ],
+      "exclusive_filter": [
+       "8",
+       "256"
+      ],
+      "exclusive_filter_all": []
+     },
+     "subsample_config": {
+      "subsampling_mode": {
+       "select_subsample": "fraction",
+       "factor": 1
+      }
+     },
+     "output_options": {
+      "reads_report_type": "retained",
+      "complementary_output": false,
+      "output_format": {
+       "oformat": "bam"
+      }
+     }
+    },
+    "addref_cond": {
+     "addref_select": "no"
+    }
+   },
+   "out": [
+    {
+     "id": "outputsam",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input",
+     "source": "split_by_pairing/output_filtered",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "view_map_unmap",
+   "label": "view_map_unmap",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/samtools_view/samtools_view/1.22+galaxy2",
+   "tool_version": "1.22+galaxy2",
+   "tool_shed_repository": {
+    "changeset_revision": "5cf9fcc93508",
+    "name": "samtools_view",
+    "owner": "iuc",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input": {
+     "__class__": "ConnectedValue"
+    },
+    "mode": {
+     "outtype": "selected_reads",
+     "filter_config": {
+      "cond_region": {
+       "select_region": "no"
+      },
+      "cond_rg": {
+       "select_rg": "no"
+      },
+      "cond_expr": {
+       "select_expr": "no"
+      },
+      "inclusive_filter": [
+       "8"
+      ],
+      "exclusive_filter": [
+       "4",
+       "256"
+      ],
+      "exclusive_filter_all": []
+     },
+     "subsample_config": {
+      "subsampling_mode": {
+       "select_subsample": "fraction",
+       "factor": 1
+      }
+     },
+     "output_options": {
+      "reads_report_type": "retained",
+      "complementary_output": false,
+      "output_format": {
+       "oformat": "bam"
+      }
+     }
+    },
+    "addref_cond": {
+     "addref_select": "no"
+    }
+   },
+   "out": [
+    {
+     "id": "outputsam",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input",
+     "source": "split_by_pairing/output_filtered",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "merge_unmapped_classes",
+   "label": "merge_unmapped_classes",
+   "type": "tool",
+   "tool_id": "__MERGE_COLLECTION__",
+   "tool_version": "1.0.0",
+   "tool_shed_repository": null,
+   "tool_state": {
+    "inputs": [
+     {
+      "input": {
+       "__class__": "ConnectedValue"
+      }
+     },
+     {
+      "input": {
+       "__class__": "ConnectedValue"
+      }
+     },
+     {
+      "input": {
+       "__class__": "ConnectedValue"
+      }
+     }
+    ],
+    "advanced": {
+     "conflict": {
+      "duplicate_options": "suffix_every",
+      "suffix_pattern": "_#"
+     }
+    }
+   },
+   "out": [
+    {
+     "id": "output",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "inputs_0|input",
+     "source": "view_unmap_unmap/outputsam",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "inputs_1|input",
+     "source": "view_unmap_map/outputsam",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "inputs_2|input",
+     "source": "view_map_unmap/outputsam",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "nest_unmapped_classes",
+   "label": "nest_unmapped_classes",
+   "type": "tool",
+   "tool_id": "__APPLY_RULES__",
+   "tool_version": "1.1.0",
+   "tool_shed_repository": null,
+   "tool_state": {
+    "input": {
+     "__class__": "ConnectedValue"
+    },
+    "rules": {
+     "rules": [
+      {
+       "type": "add_column_metadata",
+       "value": "identifier0"
+      },
+      {
+       "type": "add_column_regex",
+       "target_column": 0,
+       "expression": "^(.*)_([123])$",
+       "group_count": 2
+      }
+     ],
+     "mapping": [
+      {
+       "type": "list_identifiers",
+       "columns": [
+        1,
+        2
+       ]
+      }
+     ]
+    }
+   },
+   "out": [
+    {
+     "id": "output",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input",
+     "source": "merge_unmapped_classes/output",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "merge_unmapped",
+   "label": "merge_unmapped",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/samtools_merge/samtools_merge/1.22+galaxy2",
+   "tool_version": "1.22+galaxy2",
+   "tool_shed_repository": {
+    "changeset_revision": "37c8eb55315d",
+    "name": "samtools_merge",
+    "owner": "iuc",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "bamfiles": {
+     "__class__": "ConnectedValue"
+    },
+    "idrg": false,
+    "idpg": false,
+    "seed": 1
+   },
+   "out": [
+    {
+     "id": "output",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "bamfiles",
+     "source": "nest_unmapped_classes/output",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "collate_fastq_mapped",
+   "label": "collate_fastq_mapped",
+   "type": "tool",
+   "tool_id": "nfcore_samtools_collatefastq",
+   "tool_version": "1.23.1",
+   "tool_shed_repository": null,
+   "tool_state": {
+    "single_end": false
+   },
+   "out": [
+    {
+     "id": "fastq_1",
+     "actions": null
+    },
+    {
+     "id": "fastq_2",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "alignment",
+     "source": "view_map_map/outputsam",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "reference",
+     "source": "reference_fasta",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "collate_fast",
+     "source": "collate_fast",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "reads_in_memory",
+     "source": "reads_in_memory",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "collate_fastq_unmapped",
+   "label": "collate_fastq_unmapped",
+   "type": "tool",
+   "tool_id": "nfcore_samtools_collatefastq",
+   "tool_version": "1.23.1",
+   "tool_shed_repository": null,
+   "tool_state": {
+    "single_end": false
+   },
+   "out": [
+    {
+     "id": "fastq_1",
+     "actions": null
+    },
+    {
+     "id": "fastq_2",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "alignment",
+     "source": "merge_unmapped/output",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "reference",
+     "source": "reference_fasta",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "collate_fast",
+     "source": "collate_fast",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "reads_in_memory",
+     "source": "reads_in_memory",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "cat_r1",
+   "label": "cat_r1",
+   "type": "tool",
+   "tool_id": "cat1",
+   "tool_version": "1.0.0",
+   "tool_shed_repository": null,
+   "tool_state": {
+    "input1": {
+     "__class__": "ConnectedValue"
+    },
+    "queries": [
+     {
+      "input2": {
+       "__class__": "ConnectedValue"
+      }
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "out_file1",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input1",
+     "source": "collate_fastq_mapped/fastq_1",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "queries_0|input2",
+     "source": "collate_fastq_unmapped/fastq_1",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "cat_r2",
+   "label": "cat_r2",
+   "type": "tool",
+   "tool_id": "cat1",
+   "tool_version": "1.0.0",
+   "tool_shed_repository": null,
+   "tool_state": {
+    "input1": {
+     "__class__": "ConnectedValue"
+    },
+    "queries": [
+     {
+      "input2": {
+       "__class__": "ConnectedValue"
+      }
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "out_file1",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input1",
+     "source": "collate_fastq_mapped/fastq_2",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "queries_0|input2",
+     "source": "collate_fastq_unmapped/fastq_2",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "zip_paired_reads",
+   "label": "zip_paired_reads",
+   "type": "tool",
+   "tool_id": "__ZIP_COLLECTION__",
+   "tool_version": "1.0.0",
+   "tool_shed_repository": null,
+   "tool_state": null,
+   "out": [
+    {
+     "id": "output",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input_forward",
+     "source": "cat_r1/out_file1",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "input_reverse",
+     "source": "cat_r2/out_file1",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "collate_fastq_single",
+   "label": "collate_fastq_single",
+   "type": "tool",
+   "tool_id": "nfcore_samtools_collatefastq",
+   "tool_version": "1.23.1",
+   "tool_shed_repository": null,
+   "tool_state": {
+    "single_end": true
+   },
+   "out": [
+    {
+     "id": "fastq_other",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "alignment",
+     "source": "split_by_pairing/output_discarded",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "reference",
+     "source": "reference_fasta",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "collate_fast",
+     "source": "collate_fast",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "reads_in_memory",
+     "source": "reads_in_memory",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "fastqc_post_paired",
+   "label": "fastqc_post_paired",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1",
+   "tool_version": "0.74+galaxy1",
+   "tool_shed_repository": {
+    "changeset_revision": "2c64fded1286",
+    "name": "fastqc",
+    "owner": "devteam",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input_file": {
+     "__class__": "ConnectedValue"
+    },
+    "nogroup": false,
+    "kmers": 7
+   },
+   "out": [
+    {
+     "id": "html_file",
+     "actions": null
+    },
+    {
+     "id": "text_file",
+     "actions": null
+    }
+   ],
+   "when": "$(!inputs.skip)",
+   "annotation": null,
+   "in": [
+    {
+     "name": "input_file",
+     "source": "zip_paired_reads/output",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "skip",
+     "source": "skip_read_qc",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "fastqc_post_single",
+   "label": "fastqc_post_single",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1",
+   "tool_version": "0.74+galaxy1",
+   "tool_shed_repository": {
+    "changeset_revision": "2c64fded1286",
+    "name": "fastqc",
+    "owner": "devteam",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input_file": {
+     "__class__": "ConnectedValue"
+    },
+    "nogroup": false,
+    "kmers": 7
+   },
+   "out": [
+    {
+     "id": "html_file",
+     "actions": null
+    },
+    {
+     "id": "text_file",
+     "actions": null
+    }
+   ],
+   "when": "$(!inputs.skip)",
+   "annotation": null,
+   "in": [
+    {
+     "name": "input_file",
+     "source": "collate_fastq_single/fastq_other",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "skip",
+     "source": "skip_read_qc",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "fastq_info_paired",
+   "label": "fastq_info_paired",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/bgruening/fastq_info/fastq_info/0.25.3+galaxy0",
+   "tool_version": "0.25.3+galaxy0",
+   "tool_shed_repository": {
+    "changeset_revision": "2bca15e630a4",
+    "name": "fastq_info",
+    "owner": "bgruening",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input_option": {
+     "input_type": "paired",
+     "fastq_1": {
+      "__class__": "ConnectedValue"
+     },
+     "fastq_2": {
+      "__class__": "ConnectedValue"
+     }
+    },
+    "q": true,
+    "r": false
+   },
+   "out": [
+    {
+     "id": "output",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input_option|fastq_1",
+     "source": "cat_r1/out_file1",
+     "default": null,
+     "value_from": null
+    },
+    {
+     "name": "input_option|fastq_2",
+     "source": "cat_r2/out_file1",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  },
+  {
+   "id": "fastq_info_single",
+   "label": "fastq_info_single",
+   "type": "tool",
+   "tool_id": "toolshed.g2.bx.psu.edu/repos/bgruening/fastq_info/fastq_info/0.25.3+galaxy0",
+   "tool_version": "0.25.3+galaxy0",
+   "tool_shed_repository": {
+    "changeset_revision": "2bca15e630a4",
+    "name": "fastq_info",
+    "owner": "bgruening",
+    "tool_shed": "toolshed.g2.bx.psu.edu"
+   },
+   "tool_state": {
+    "input_option": {
+     "input_type": "single",
+     "fastq_1": {
+      "__class__": "ConnectedValue"
+     }
+    },
+    "q": true,
+    "r": false
+   },
+   "out": [
+    {
+     "id": "output",
+     "actions": null
+    }
+   ],
+   "when": null,
+   "annotation": null,
+   "in": [
+    {
+     "name": "input_option|fastq_1",
+     "source": "collate_fastq_single/fastq_other",
+     "default": null,
+     "value_from": null
+    }
+   ]
+  }
+ ],
+ "graph": {
+  "nodes": [
+   {
+    "id": "alignments",
+    "kind": "workflow-input",
+    "label": "alignments"
+   },
+   {
+    "id": "reference_fasta",
+    "kind": "workflow-input",
+    "label": "reference_fasta"
+   },
+   {
+    "id": "chr",
+    "kind": "workflow-input",
+    "label": "chr"
+   },
+   {
+    "id": "skip_read_qc",
+    "kind": "workflow-input",
+    "label": "skip_read_qc"
+   },
+   {
+    "id": "skip_stats",
+    "kind": "workflow-input",
+    "label": "skip_stats"
+   },
+   {
+    "id": "collate_fast",
+    "kind": "workflow-input",
+    "label": "collate_fast"
+   },
+   {
+    "id": "reads_in_memory",
+    "kind": "workflow-input",
+    "label": "reads_in_memory"
+   },
+   {
+    "id": "idxstats",
+    "kind": "step",
+    "label": "idxstats"
+   },
+   {
+    "id": "flagstat",
+    "kind": "step",
+    "label": "flagstat"
+   },
+   {
+    "id": "stats",
+    "kind": "step",
+    "label": "stats"
+   },
+   {
+    "id": "fastqc_pre",
+    "kind": "step",
+    "label": "fastqc_pre"
+   },
+   {
+    "id": "chr_extract",
+    "kind": "step",
+    "label": "chr_extract"
+   },
+   {
+    "id": "pick_alignments",
+    "kind": "step",
+    "label": "pick_alignments"
+   },
+   {
+    "id": "check_paired_end",
+    "kind": "step",
+    "label": "check_paired_end"
+   },
+   {
+    "id": "pairing_table",
+    "kind": "step",
+    "label": "pairing_table"
+   },
+   {
+    "id": "paired_ids_filter",
+    "kind": "step",
+    "label": "paired_ids_filter"
+   },
+   {
+    "id": "paired_ids",
+    "kind": "step",
+    "label": "paired_ids"
+   },
+   {
+    "id": "split_by_pairing",
+    "kind": "step",
+    "label": "split_by_pairing"
+   },
+   {
+    "id": "view_map_map",
+    "kind": "step",
+    "label": "view_map_map"
+   },
+   {
+    "id": "view_unmap_unmap",
+    "kind": "step",
+    "label": "view_unmap_unmap"
+   },
+   {
+    "id": "view_unmap_map",
+    "kind": "step",
+    "label": "view_unmap_map"
+   },
+   {
+    "id": "view_map_unmap",
+    "kind": "step",
+    "label": "view_map_unmap"
+   },
+   {
+    "id": "merge_unmapped_classes",
+    "kind": "step",
+    "label": "merge_unmapped_classes"
+   },
+   {
+    "id": "nest_unmapped_classes",
+    "kind": "step",
+    "label": "nest_unmapped_classes"
+   },
+   {
+    "id": "merge_unmapped",
+    "kind": "step",
+    "label": "merge_unmapped"
+   },
+   {
+    "id": "collate_fastq_mapped",
+    "kind": "step",
+    "label": "collate_fastq_mapped"
+   },
+   {
+    "id": "collate_fastq_unmapped",
+    "kind": "step",
+    "label": "collate_fastq_unmapped"
+   },
+   {
+    "id": "cat_r1",
+    "kind": "step",
+    "label": "cat_r1"
+   },
+   {
+    "id": "cat_r2",
+    "kind": "step",
+    "label": "cat_r2"
+   },
+   {
+    "id": "zip_paired_reads",
+    "kind": "step",
+    "label": "zip_paired_reads"
+   },
+   {
+    "id": "collate_fastq_single",
+    "kind": "step",
+    "label": "collate_fastq_single"
+   },
+   {
+    "id": "fastqc_post_paired",
+    "kind": "step",
+    "label": "fastqc_post_paired"
+   },
+   {
+    "id": "fastqc_post_single",
+    "kind": "step",
+    "label": "fastqc_post_single"
+   },
+   {
+    "id": "fastq_info_paired",
+    "kind": "step",
+    "label": "fastq_info_paired"
+   },
+   {
+    "id": "fastq_info_single",
+    "kind": "step",
+    "label": "fastq_info_single"
+   },
+   {
+    "id": "out:paired_reads",
+    "kind": "workflow-output",
+    "label": "paired_reads"
+   },
+   {
+    "id": "out:single_end_reads",
+    "kind": "workflow-output",
+    "label": "single_end_reads"
+   },
+   {
+    "id": "out:samtools_idxstats",
+    "kind": "workflow-output",
+    "label": "samtools_idxstats"
+   },
+   {
+    "id": "out:samtools_flagstat",
+    "kind": "workflow-output",
+    "label": "samtools_flagstat"
+   },
+   {
+    "id": "out:samtools_stats",
+    "kind": "workflow-output",
+    "label": "samtools_stats"
+   },
+   {
+    "id": "out:fastqc_pre_html",
+    "kind": "workflow-output",
+    "label": "fastqc_pre_html"
+   },
+   {
+    "id": "out:fastqc_post_paired_html",
+    "kind": "workflow-output",
+    "label": "fastqc_post_paired_html"
+   },
+   {
+    "id": "out:fastqc_post_single_html",
+    "kind": "workflow-output",
+    "label": "fastqc_post_single_html"
+   },
+   {
+    "id": "out:fastq_info_paired",
+    "kind": "workflow-output",
+    "label": "fastq_info_paired"
+   },
+   {
+    "id": "out:fastq_info_single",
+    "kind": "workflow-output",
+    "label": "fastq_info_single"
+   },
+   {
+    "id": "out:fastqc_pre_data",
+    "kind": "workflow-output",
+    "label": "fastqc_pre_data"
+   },
+   {
+    "id": "out:fastqc_post_single_data",
+    "kind": "workflow-output",
+    "label": "fastqc_post_single_data"
+   },
+   {
+    "id": "out:fastqc_post_paired_data",
+    "kind": "workflow-output",
+    "label": "fastqc_post_paired_data"
+   }
+  ],
+  "edges": [
+   {
+    "from": "alignments",
+    "to": "idxstats",
+    "via": []
+   },
+   {
+    "from": "skip_stats",
+    "to": "idxstats",
+    "via": []
+   },
+   {
+    "from": "alignments",
+    "to": "flagstat",
+    "via": []
+   },
+   {
+    "from": "skip_stats",
+    "to": "flagstat",
+    "via": []
+   },
+   {
+    "from": "alignments",
+    "to": "stats",
+    "via": []
+   },
+   {
+    "from": "skip_stats",
+    "to": "stats",
+    "via": []
+   },
+   {
+    "from": "alignments",
+    "to": "fastqc_pre",
+    "via": []
+   },
+   {
+    "from": "skip_read_qc",
+    "to": "fastqc_pre",
+    "via": []
+   },
+   {
+    "from": "alignments",
+    "to": "chr_extract",
+    "via": []
+   },
+   {
+    "from": "chr",
+    "to": "chr_extract",
+    "via": []
+   },
+   {
+    "from": "chr",
+    "to": "chr_extract",
+    "via": []
+   },
+   {
+    "from": "chr_extract",
+    "to": "pick_alignments",
+    "via": []
+   },
+   {
+    "from": "alignments",
+    "to": "pick_alignments",
+    "via": []
+   },
+   {
+    "from": "pick_alignments",
+    "to": "check_paired_end",
+    "via": []
+   },
+   {
+    "from": "reference_fasta",
+    "to": "check_paired_end",
+    "via": []
+   },
+   {
+    "from": "check_paired_end",
+    "to": "pairing_table",
+    "via": []
+   },
+   {
+    "from": "pairing_table",
+    "to": "paired_ids_filter",
+    "via": []
+   },
+   {
+    "from": "paired_ids_filter",
+    "to": "paired_ids",
+    "via": []
+   },
+   {
+    "from": "pick_alignments",
+    "to": "split_by_pairing",
+    "via": []
+   },
+   {
+    "from": "paired_ids",
+    "to": "split_by_pairing",
+    "via": []
+   },
+   {
+    "from": "split_by_pairing",
+    "to": "view_map_map",
+    "via": []
+   },
+   {
+    "from": "split_by_pairing",
+    "to": "view_unmap_unmap",
+    "via": []
+   },
+   {
+    "from": "split_by_pairing",
+    "to": "view_unmap_map",
+    "via": []
+   },
+   {
+    "from": "split_by_pairing",
+    "to": "view_map_unmap",
+    "via": []
+   },
+   {
+    "from": "view_unmap_unmap",
+    "to": "merge_unmapped_classes",
+    "via": []
+   },
+   {
+    "from": "view_unmap_map",
+    "to": "merge_unmapped_classes",
+    "via": []
+   },
+   {
+    "from": "view_map_unmap",
+    "to": "merge_unmapped_classes",
+    "via": []
+   },
+   {
+    "from": "merge_unmapped_classes",
+    "to": "nest_unmapped_classes",
+    "via": []
+   },
+   {
+    "from": "nest_unmapped_classes",
+    "to": "merge_unmapped",
+    "via": []
+   },
+   {
+    "from": "view_map_map",
+    "to": "collate_fastq_mapped",
+    "via": []
+   },
+   {
+    "from": "reference_fasta",
+    "to": "collate_fastq_mapped",
+    "via": []
+   },
+   {
+    "from": "collate_fast",
+    "to": "collate_fastq_mapped",
+    "via": []
+   },
+   {
+    "from": "reads_in_memory",
+    "to": "collate_fastq_mapped",
+    "via": []
+   },
+   {
+    "from": "merge_unmapped",
+    "to": "collate_fastq_unmapped",
+    "via": []
+   },
+   {
+    "from": "reference_fasta",
+    "to": "collate_fastq_unmapped",
+    "via": []
+   },
+   {
+    "from": "collate_fast",
+    "to": "collate_fastq_unmapped",
+    "via": []
+   },
+   {
+    "from": "reads_in_memory",
+    "to": "collate_fastq_unmapped",
+    "via": []
+   },
+   {
+    "from": "collate_fastq_mapped",
+    "to": "cat_r1",
+    "via": []
+   },
+   {
+    "from": "collate_fastq_unmapped",
+    "to": "cat_r1",
+    "via": []
+   },
+   {
+    "from": "collate_fastq_mapped",
+    "to": "cat_r2",
+    "via": []
+   },
+   {
+    "from": "collate_fastq_unmapped",
+    "to": "cat_r2",
+    "via": []
+   },
+   {
+    "from": "cat_r1",
+    "to": "zip_paired_reads",
+    "via": []
+   },
+   {
+    "from": "cat_r2",
+    "to": "zip_paired_reads",
+    "via": []
+   },
+   {
+    "from": "split_by_pairing",
+    "to": "collate_fastq_single",
+    "via": []
+   },
+   {
+    "from": "reference_fasta",
+    "to": "collate_fastq_single",
+    "via": []
+   },
+   {
+    "from": "collate_fast",
+    "to": "collate_fastq_single",
+    "via": []
+   },
+   {
+    "from": "reads_in_memory",
+    "to": "collate_fastq_single",
+    "via": []
+   },
+   {
+    "from": "zip_paired_reads",
+    "to": "fastqc_post_paired",
+    "via": []
+   },
+   {
+    "from": "skip_read_qc",
+    "to": "fastqc_post_paired",
+    "via": []
+   },
+   {
+    "from": "collate_fastq_single",
+    "to": "fastqc_post_single",
+    "via": []
+   },
+   {
+    "from": "skip_read_qc",
+    "to": "fastqc_post_single",
+    "via": []
+   },
+   {
+    "from": "cat_r1",
+    "to": "fastq_info_paired",
+    "via": []
+   },
+   {
+    "from": "cat_r2",
+    "to": "fastq_info_paired",
+    "via": []
+   },
+   {
+    "from": "collate_fastq_single",
+    "to": "fastq_info_single",
+    "via": []
+   },
+   {
+    "from": "zip_paired_reads",
+    "to": "out:paired_reads",
+    "via": []
+   },
+   {
+    "from": "collate_fastq_single",
+    "to": "out:single_end_reads",
+    "via": []
+   },
+   {
+    "from": "idxstats",
+    "to": "out:samtools_idxstats",
+    "via": []
+   },
+   {
+    "from": "flagstat",
+    "to": "out:samtools_flagstat",
+    "via": []
+   },
+   {
+    "from": "stats",
+    "to": "out:samtools_stats",
+    "via": []
+   },
+   {
+    "from": "fastqc_pre",
+    "to": "out:fastqc_pre_html",
+    "via": []
+   },
+   {
+    "from": "fastqc_post_paired",
+    "to": "out:fastqc_post_paired_html",
+    "via": []
+   },
+   {
+    "from": "fastqc_post_single",
+    "to": "out:fastqc_post_single_html",
+    "via": []
+   },
+   {
+    "from": "fastq_info_paired",
+    "to": "out:fastq_info_paired",
+    "via": []
+   },
+   {
+    "from": "fastq_info_single",
+    "to": "out:fastq_info_single",
+    "via": []
+   },
+   {
+    "from": "fastqc_pre",
+    "to": "out:fastqc_pre_data",
+    "via": []
+   },
+   {
+    "from": "fastqc_post_single",
+    "to": "out:fastqc_post_single_data",
+    "via": []
+   },
+   {
+    "from": "fastqc_post_paired",
+    "to": "out:fastqc_post_paired_data",
+    "via": []
+   }
+  ]
+ },
+ "tests": [
+  {
+   "name": "nf-core/bamtofastq default test (tests/default.nf.test \"-profile test\"): two paired-end BAMs plus genome.fasta, default parameters. Expected values come from tests/default.nf.test.snap; see galaxy-test-plan.yml for provenance.",
+   "job_path": "galaxy-workflow.gxwf-tests.yml",
+   "expected_outputs": [
+    {
+     "id": "paired_reads",
+     "path": null,
+     "url": null,
+     "filetype": null,
+     "checksum": null,
+     "assertions": [
+      "{\"class\": \"Collection\", \"element_count\": 2, \"element_tests\": {\"test\": {\"class\": \"Collection\", \"element_tests\": {\"forward\": {\"decompress\": true, \"file\": \"test-data/expected/test_1.merged.fastq.gz\"}, \"reverse\": {\"decompress\": true, \"file\": \"test-data/expected/test_2.merged.fastq.gz\"}}}, \"test2\": {\"class\": \"Collection\", \"element_tests\": {\"forward\": {\"decompress\": true, \"file\": \"test-data/expected/test2_1.merged.fastq.gz\"}, \"reverse\": {\"decompress\": true, \"file\": \"test-data/expected/test2_2.merged.fastq.gz\"}}}}}"
+     ]
+    },
+    {
+     "id": "samtools_flagstat",
+     "path": null,
+     "url": null,
+     "filetype": null,
+     "checksum": null,
+     "assertions": [
+      "{\"class\": \"Collection\", \"element_tests\": {\"test\": {\"checksum\": \"md5$a53f3d26e2e9851f7d528442bbfe9781\"}, \"test2\": {\"checksum\": \"md5$acbd95030a362a7e6491faa87d1b9c2c\"}}}"
+     ]
+    },
+    {
+     "id": "samtools_idxstats",
+     "path": null,
+     "url": null,
+     "filetype": null,
+     "checksum": null,
+     "assertions": [
+      "{\"class\": \"Collection\", \"element_tests\": {\"test\": {\"checksum\": \"md5$e179601fa7b8ebce81ac3765206f6c15\"}, \"test2\": {\"checksum\": \"md5$90f01313bc89c7fd096aad051cd71b66\"}}}"
+     ]
+    },
+    {
+     "id": "samtools_stats",
+     "path": null,
+     "url": null,
+     "filetype": null,
+     "checksum": null,
+     "assertions": [
+      "{\"class\": \"Collection\", \"element_tests\": {\"test\": {\"asserts\": [{\"line\": \"SN\\traw total sequences:\\t5642\\t# excluding supplementary and secondary reads\", \"that\": \"has_line\"}, {\"line\": \"SN\\treads unmapped:\\t2\", \"that\": \"has_line\"}]}, \"test2\": {\"asserts\": [{\"line\": \"SN\\traw total sequences:\\t5436\\t# excluding supplementary and secondary reads\", \"that\": \"has_line\"}]}}}"
+     ]
+    },
+    {
+     "id": "fastq_info_paired",
+     "path": null,
+     "url": null,
+     "filetype": null,
+     "checksum": null,
+     "assertions": [
+      "{\"class\": \"Collection\", \"element_count\": 2, \"element_tests\": {\"test\": {\"asserts\": [{\"text\": \"ERROR\", \"that\": \"not_has_text\"}]}, \"test2\": {\"asserts\": [{\"text\": \"ERROR\", \"that\": \"not_has_text\"}]}}}"
+     ]
+    },
+    {
+     "id": "single_end_reads",
+     "path": null,
+     "url": null,
+     "filetype": null,
+     "checksum": null,
+     "assertions": [
+      "{\"class\": \"Collection\", \"element_tests\": {}}"
+     ]
+    },
+    {
+     "id": "fastqc_pre_html",
+     "path": null,
+     "url": null,
+     "filetype": null,
+     "checksum": null,
+     "assertions": [
+      "{\"class\": \"Collection\", \"element_count\": 2, \"element_tests\": {\"test\": {\"asserts\": [{\"text\": \"FastQC\", \"that\": \"has_text\"}]}}}"
+     ]
+    },
+    {
+     "id": "fastqc_post_paired_html",
+     "path": null,
+     "url": null,
+     "filetype": null,
+     "checksum": null,
+     "assertions": [
+      "{\"class\": \"Collection\", \"element_count\": 2, \"element_tests\": {\"test\": {\"class\": \"Collection\", \"element_tests\": {\"forward\": {\"asserts\": [{\"text\": \"FastQC\", \"that\": \"has_text\"}]}}}}}"
+     ]
+    }
+   ],
+   "provenance": "sibling galaxy-workflow.gxwf-tests.yml (phase 10 of the original run; passed in phase 12)"
+  }
+ ],
+ "warnings": [
+  {
+   "code": "galaxy-import-missing-state",
+   "message": "Galaxy editor reported 59 parameters missing from step state on import (orchestrator-findings-2026-11-10.md); gxwf --strict-state reports all steps ok. Recorded verbatim; disposition is the change-set's job.",
+   "path": "orchestrator-findings-2026-11-10.md"
+  }
+ ]
+}

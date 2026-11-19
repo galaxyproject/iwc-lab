@@ -1,0 +1,381 @@
+{
+  "schema_version": 1,
+  "tool_id": "samtools_merge",
+  "tool_version": "1.22+galaxy2",
+  "cache_key": "2a8790f75626adac7e3464680801feabbeed38c46b034eee8b9732a1b3afd733",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~samtools_merge~samtools_merge/versions/1.22+galaxy2",
+    "cached_at": "2026-11-10T08:45:47.719Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": "~/Galaxy/biohackathon-31/runs/nf-core-bamtofastq-claude/tool-cache/2a8790f75626adac7e3464680801feabbeed38c46b034eee8b9732a1b3afd733.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "samtools_merge",
+    "version": "1.22+galaxy2",
+    "name": "Samtools merge",
+    "description": "merge multiple sorted alignment files",
+    "inputs": [
+      {
+        "name": "bamfiles",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Alignments in BAM format",
+        "help": "Sets of aligned reads.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "sam",
+          "bam",
+          "cram"
+        ],
+        "multiple": true,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "bed_file",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Merge only reads overlapping the specified regions in the BED file",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "data",
+        "extensions": [
+          "bed"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "region",
+        "parameter_type": "gx_text",
+        "hidden": false,
+        "label": "Merge files in a region",
+        "help": "Merge files in the specified region indicated by a string",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "text",
+        "area": false,
+        "value": null,
+        "default_options": [],
+        "validators": []
+      },
+      {
+        "name": "headerbam",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "File to take @headers from",
+        "help": "Use the lines of FILE as `@' headers to be copied to out.bam, replacing any header lines that would otherwise be copied from in1.bam. (FILE is actually in SAM format, though any alignment records it may contain are ignored.)",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "data",
+        "extensions": [
+          "sam",
+          "bam"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "idrg",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Make @RG headers unique",
+        "help": "When several input files contain @RG headers with the same ID, emit only one of them (namely, the header line from the first file we find that ID in) to the merged output file. Combining these similar headers is usually the right thing to do when the files being merged originated from the same file. Without -c, all @RG headers appear in the output file, with random suffices added to their IDs where necessary to differentiate them.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-c",
+        "falsevalue": ""
+      },
+      {
+        "name": "idpg",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Make @PG headers unique",
+        "help": "Similarly, for each @PG ID in the set of files to merge, use the @PG line of the first file we find that ID in rather than adding a suffix to differentiate similar IDs.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "-p",
+        "falsevalue": ""
+      },
+      {
+        "name": "seed",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "random seed",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "integer",
+        "value": 1,
+        "min": null,
+        "max": null,
+        "validators": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output",
+        "label": null,
+        "hidden": false,
+        "type": "data",
+        "format": "bam",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1093/gigascience/giab008"
+      },
+      {
+        "type": "doi",
+        "content": "10.1093/bioinformatics/btr076"
+      }
+    ],
+    "license": null,
+    "profile": "24.0",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n**What it does**\nMerge multiple sorted alignment files, producing a single sorted output file that contains all the input records and maintains the existing sort order.\n\nIf a file to take @headers from is specified the @SQ headers of input files will be merged into the specified header, otherwise they will be merged into a composite header created from the input headers. If in the process of merging @SQ lines for coordinate sorted input files, a conflict arises as to the order (for example input1.bam has @SQ for a,b,c and input2.bam has b,a,c) then the resulting output file will need to be re-sorted back into coordinate order.\n\nUnless the @PG/@RG headers are made unique when merging @RG and @PG records into the output header then any IDs found to be duplicates of existing IDs in the output header will have a suffix appended to them to differentiate them from similar header records from other files and the read records will be updated to reflect this.\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "bamfiles": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "bed_file": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "headerbam": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "idrg": {
+          "type": "boolean"
+        },
+        "idpg": {
+          "type": "boolean"
+        },
+        "seed": {
+          "$ref": "#/$defs/Int"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "bamfiles"
+      ],
+      "properties": {
+        "bamfiles": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "bed_file": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "region": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "headerbam": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "idrg": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "idpg": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

@@ -1,0 +1,207 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-bamtofastq-claude
+  status: complete
+  phases:
+  - {n: 1, kind: mold, skill: summarize-nextflow, status: done, feedback_checked: true}
+  - {n: 2, kind: mold, skill: nextflow-summary-to-galaxy-reference-data, status: done, feedback_checked: true}
+  - {n: 3, kind: mold, skill: nextflow-summary-to-galaxy-interface, status: done, feedback_checked: true}
+  - {n: 4, kind: mold, skill: nextflow-summary-to-galaxy-data-flow, status: done, feedback_checked: true}
+  - {n: 5, kind: mold, skill: compare-against-iwc-exemplar, status: done, feedback_checked: true}
+  - {n: 6, kind: mold, skill: nextflow-summary-to-galaxy-template, status: done, feedback_checked: true}
+  - {n: 7, kind: mold, skill: advance-galaxy-draft-step, status: done, iterations: 21, feedback_checked: true}
+  - {n: 8, kind: branch, pattern: test-data-resolution, status: done, selected: nextflow-to-test-data, feedback_checked: true}
+  - {n: 9, kind: mold, skill: nextflow-test-to-galaxy-test-plan, status: done, feedback_checked: true}
+  - {n: 10, kind: mold, skill: implement-galaxy-workflow-test, status: done, feedback_checked: true}
+  - {n: 11, kind: mold, skill: validate-galaxy-workflow, status: done, feedback_checked: true}
+  - {n: 12, kind: mold, skill: run-workflow-test, status: done, feedback_checked: true}
+  - {n: 13, kind: mold, skill: debug-galaxy-workflow-output, status: done, feedback_checked: true}
+entries:
+- id: summarize-nextflow-cli-edge-tokenizer-fragments
+  raised_by: summarize-nextflow
+  observed_in: {mold: summarize-nextflow, path: content/molds/summarize-nextflow/index.md, revision: 18, content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37, foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100}
+  subject: {kind: cli-command, label: foundry summarize-nextflow (workflow edge extraction), locator: 'package://@galaxy-foundry/gxwf-foundry#summarize-nextflow'}
+  kind: defect
+  severity: minor
+  what: The deterministic edge extractor splits multi-line process-call arguments on commas, emitting edges whose `from` is a source fragment ('[[:]', '[]]', ']', '}', '? file(multiqc_config, ...)') and
+    never emits edges internal to local subworkflows.
+  expected: Parse call arguments with bracket/brace depth tracking (or drop unparseable arguments with a warning) instead of emitting fragments as channel names.
+  evidence: 'nf-core/bamtofastq 2.2.1: 14 of 33 emitted edges were fragments for SAMTOOLS_CHR(ch_input_new, ch_fasta_fai, [[:], []], [[:], []], []) and the MULTIQC map closure; LLM pass had to rebuild the
+    edge list.'
+  status: open
+  issue: null
+- id: summarize-nextflow-ext-when-gating-not-captured
+  raised_by: summarize-nextflow
+  observed_in: {mold: summarize-nextflow, path: content/molds/summarize-nextflow/index.md, revision: 18, content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37, foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100}
+  subject: {kind: mold, label: summarize-nextflow, locator: content/molds/summarize-nextflow/index.md}
+  kind: gap
+  severity: major
+  what: The procedure only derives workflow.conditionals[] from `if (params.X)` blocks in the workflow body; nf-core pipelines also gate processes through `ext.when = { !params.X }` in conf/modules.config,
+    which the procedure never mentions, so those toggles are silently missing.
+  expected: 'Add a step: read conf/modules.config withName ext.when closures and emit a conditionals[] entry per guard (affects = selector''s process aliases).'
+  evidence: bamtofastq --no_read_QC and --no_stats (two of the pipeline's nf-test cases) are implemented only via ext.when; deterministic summary had a single conditional (params.chr).
+  status: open
+  issue: null
+- id: summarize-nextflow-misses-elvis-getgenomeattribute-and-branch-rebuild
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in: {mold: nextflow-summary-to-galaxy-reference-data, path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md, revision: 5, content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f,
+    foundry_head: ba14d15b6a3ed7c0799765f3cf812c9977d33594}
+  subject: {kind: cli-command, label: foundry summarize-nextflow (reference_assets / reference_rebuilds), locator: 'package://@galaxy-foundry/gxwf-foundry#summarize-nextflow'}
+  kind: gap
+  severity: minor
+  what: "For nf-core/bamtofastq the summary records fasta/fasta_fai with source_kind nextflow_schema although main.nf sets them via `params.fasta ?: getGenomeAttribute('fasta')`, and reference_rebuilds[]\
+    \ is empty although PREPARE_INDICES rebuilds the fai via `fasta_fai.branch { meta.index == false }` \u2192 SAMTOOLS_FAIDX."
+  expected: Detect the elvis-form getGenomeAttribute assignment in main.nf, and the branch-on-meta compute-if-missing idiom (or list it with the rnaseq positive-form idiom as a known gap in the reference
+    notes).
+  evidence: nextflow-summary-to-galaxy-reference-data had to infer key-expanded and compute-if-missing classification from edges/conditionals instead of the structured fields.
+  status: open
+  issue: null
+- id: per-element-branch-has-no-recipe
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  observed_in: {mold: nextflow-summary-to-galaxy-data-flow, path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md, revision: 8, content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247,
+    foundry_head: c2406d44954aebf094e8590e2edd7fc8bd5d0f6a}
+  subject: {kind: research, label: nextflow-operators-to-galaxy-collection-recipes, locator: content/research/nextflow-operators-to-galaxy-collection-recipes/index.md}
+  kind: gap
+  severity: minor
+  what: "The operator note says per-element `branch` 'usually needs explicit filters/classifiers or user review' and lists a dedicated per-element branch pattern as a TODO; it gives no concrete recipe,\
+    \ so the classify \u2192 table \u2192 filter ids \u2192 __FILTER_FROM_FILE__ chain had to be invented."
+  expected: Add the classifier + __FILTER_FROM_FILE__ (filtered/discarded outputs) recipe for runtime per-element branch, with its plumbing cost, to the operator note or galaxy-conditionals-patterns.
+  evidence: "bamtofastq CHECKPAIREDEND \u2192 ch_input_new.branch { single_end }."
+  status: open
+  issue: null
+- id: compare-iwc-convert-flag-mismatch
+  raised_by: compare-against-iwc-exemplar
+  observed_in: {mold: compare-against-iwc-exemplar, path: content/molds/compare-against-iwc-exemplar/index.md, revision: 12, content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb,
+    foundry_head: 2f8792a62ca53f074605ddbcfb25e75871f52b24}
+  subject: {kind: cli-command, label: gxwf convert (packaged CLI sidecar), locator: 'package://@galaxy-tool-util/cli#gxwf-convert'}
+  kind: friction
+  severity: minor
+  what: gxwf convert rejects `-o` (only `--output` exists) and the Mold text gives no output-flag example, so the first conversion attempt failed.
+  expected: Show the full `gxwf convert <file> --to format2 --compact --output <path>` invocation in the procedure.
+  evidence: '`error: unknown option ''-o''` on first attempt.'
+  status: open
+  issue: null
+- id: template-pattern-index-links-unbundled-pages
+  raised_by: nextflow-summary-to-galaxy-template
+  observed_in: {mold: nextflow-summary-to-galaxy-template, path: content/molds/nextflow-summary-to-galaxy-template/index.md, revision: 10, content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab,
+    foundry_head: 9678dfba7293f01d34bb755adbb6dbfa7913dea0}
+  subject: {kind: pattern, label: galaxy-conditionals-patterns, locator: content/patterns/galaxy-conditionals-patterns.md}
+  kind: gap
+  severity: minor
+  what: 'The bundled conditionals pattern index names [[conditional-transform-or-pass-through]] (when + pick_value) but the page itself is not packaged in the template skill, and the gxformat2 note lists
+    a native `type: pick_value` step without showing its shape; the template had to choose between the native module and the iuc pick_value tool without a worked example.'
+  expected: Package the leaf pattern pages the index points at (or inline a minimal gxformat2 snippet for transform-or-pass-through, native module vs tool, and its collection behaviour).
+  evidence: bamtofastq --chr transform-or-pass-through over a list collection; pick_value tool chosen from IWC precedent, collection behaviour left as ledger entry pick-value-collections.
+  status: open
+  issue: null
+- id: tool-summary-omits-command-template
+  raised_by: summarize-galaxy-tool
+  observed_in: {mold: summarize-galaxy-tool, path: content/molds/summarize-galaxy-tool/index.md, revision: 8, content_hash: a53a303bff1d7ace3b44fb12af329b12695bfcd165933634b8fb6484c0c306f7, foundry_head: f0515353aec7d57e89f60cac678c80907cf91e4c}
+  subject: {kind: research, label: galaxy-tool-summary-input-source, locator: content/research/galaxy-tool-summary-input-source/index.md}
+  kind: gap
+  severity: major
+  what: "The galaxy-tool-summary manifest (ParsedTool) carries no command template, and the procedure's \xA74 'summarize command and failure behavior' cannot be done from it; raw_tool_source_path was null.\
+    \ Whether iuc samtools_fastx collates or name-sorts (decisive for read order and for matching nf-test md5s) was only answerable by fetching the wrapper XML from GitHub."
+  expected: Include the command block (or raw XML path) in the cached summary, or state in the Mold that the agent must fetch the wrapper source when command behaviour matters.
+  evidence: samtools_fastx 1.22+galaxy2 runs `samtools sort -n` before `samtools fastq`; nf-core uses `samtools collate -O`; led to UDT fall-through.
+  status: open
+  issue: null
+- id: per-step-artifact-basenames-collide-in-loop
+  raised_by: discover-shed-tool
+  observed_in: {mold: discover-shed-tool, path: content/molds/discover-shed-tool/index.md, revision: 5, content_hash: 05c99cbac2ec6a4d130b06204c15d0e76cf4fd0e00cdc8164dd606dac72809e2, foundry_head: 63a3f9cf9c97a637fe1628d298e524f35709e289}
+  subject: {kind: pipeline, label: nextflow-to-galaxy, locator: content/pipelines/nextflow-to-galaxy/index.md}
+  kind: friction
+  severity: minor
+  what: discover-shed-tool and summarize-galaxy-tool write fixed basenames (galaxy-tool-pin.json, galaxy-tool-summary.json) and the harness prefixes only the run directory, so every loop iteration overwrites
+    the previous step's pin and summary.
+  expected: Have the harness give loop iterations a per-step subdirectory (e.g. <run>/steps/<step>/) or per-step filenames.
+  evidence: This run kept them under <run>/steps/<tool>/ by hand.
+  status: open
+  issue: null
+- id: snapshot-gz-md5-is-over-decompressed-content
+  raised_by: nextflow-test-to-galaxy-test-plan
+  observed_in: {mold: nextflow-test-to-galaxy-test-plan, path: content/molds/nextflow-test-to-galaxy-test-plan/index.md, revision: 8, content_hash: fa769216f621ef25470c9fb907df1278635c0a1e022b647b9462ff7b92469291,
+    foundry_head: 47aa5c1cf419386ea72929c8ee34aec0db65588f}
+  subject: {kind: research, label: nextflow-snapshot-to-galaxy-assertions, locator: content/research/nextflow-snapshot-to-galaxy-assertions/index.md}
+  kind: defect
+  severity: major
+  what: "\xA71a/\xA76 say to translate `<file>:md5,<hex>` to `checksum: md5$<hex>`, but for *.gz files nf-test hashes the decompressed content, while Galaxy's checksum verification (galaxy.tool_util.verify._verify_checksum)\
+    \ hashes the stored bytes and ignores `decompress`; following the note produces assertions that can never pass for gzipped outputs."
+  expected: State that gzipped snapshot tokens are content md5s; translate them as a decompressed comparison (file + decompress against a materialization whose decompressed md5 is verified equal to the
+    token) or decompressed content asserts, never a raw checksum.
+  evidence: 'bamtofastq reads/*.merged.fastq.gz: zcat|md5sum of an nf-core-container regeneration equals the snapshot tokens; raw-byte md5s differ.'
+  status: open
+  issue: null
+- id: planemo-collection-output-needs-element-tests
+  raised_by: implement-galaxy-workflow-test
+  observed_in: {mold: implement-galaxy-workflow-test, path: content/molds/implement-galaxy-workflow-test/index.md, revision: 11, content_hash: 34855691581889d36265e00178088b8a52a51ee72119329261bca186f7cb480e,
+    foundry_head: a59d6025d612ce7013b09fa1ccb58f60507ccc6a}
+  subject: {kind: related-project, label: planemo runnable._check_output / galaxy.tool_util.verify collection count, locator: 'https://github.com/galaxyproject/planemo'}
+  kind: defect
+  severity: minor
+  what: 'A collection output asserted with only `class: Collection` + `element_count: 0` is treated by planemo as a dataset (for_collections() keys on `element_tests`) and fails with ''No path specified
+    for expected output file''; and galaxy.tool_util.verify skips the count check entirely when the expected count is 0 (`if output_collection_def.count and ...`), so an empty-collection assertion is impossible.'
+  expected: 'planemo should treat `class: Collection` (or element_count) as a collection test, and Galaxy verify should compare counts with `is not None` so element_count: 0 is enforced.'
+  evidence: 'bamtofastq phase-10 run: single_end_reads failed with ''No path specified for expected output file''; all other 7 outputs passed.'
+  status: open
+  issue: null
+- id: validate-tests-misses-collection-without-element-tests
+  raised_by: implement-galaxy-workflow-test
+  observed_in: {mold: implement-galaxy-workflow-test, path: content/molds/implement-galaxy-workflow-test/index.md, revision: 11, content_hash: 34855691581889d36265e00178088b8a52a51ee72119329261bca186f7cb480e,
+    foundry_head: a59d6025d612ce7013b09fa1ccb58f60507ccc6a}
+  subject: {kind: cli-command, label: gxwf validate-tests / foundry validate-tests-format, locator: 'package://@galaxy-tool-util/cli#gxwf-validate-tests'}
+  kind: gap
+  severity: minor
+  what: 'Both static gates accepted an output test `{class: Collection, element_count: 0}` that planemo then mis-handles at runtime, so a planemo run was spent on a test-format issue the static check could
+    flag.'
+  expected: Warn when a collection output test has no element_tests (planemo treats it as a dataset) and when element_count is 0 (not enforced by Galaxy verify).
+  evidence: phase-10 planemo run failure on single_end_reads after green static validation.
+  status: open
+  issue: null
+- id: strict-state-ok-but-galaxy-request-validation-failed
+  raised_by: run-workflow-test
+  observed_in: {mold: run-workflow-test, path: content/molds/run-workflow-test/index.md, revision: 8, content_hash: 6e312c6ee27ef6e45a6ace74087cd28a6509ade11f788a51ee478efce58971b6, foundry_head: 0b06389d693ff56e7892349d90052de33156734c}
+  subject: {kind: cli-command, label: gxwf validate --strict-state (tool-state validation), locator: 'package://@galaxy-tool-util/cli#gxwf-validate'}
+  kind: gap
+  severity: minor
+  what: gxwf validate --strict --connections reported 28/28 tool states OK, but at runtime Galaxy dev's ToolRequest capture logged request_state=validation_failed for 14 of those steps (samtools_view x5,
+    samtools_stats, pick_value, collapse_dataset, __FILTER_FROM_FILE__, __MERGE_COLLECTION__, cat1 x2, fastq_info x2). Galaxy calls that capture execution-neutral, and the jobs ran and passed, so the static
+    gate and Galaxy's strict request model disagree.
+  expected: Have gxwf (or run-workflow-test) surface Galaxy's per-step request validation result, or align --strict-state with the request_internal model, so the steps that would fail strict request validation
+    are visible before runtime.
+  evidence: <run>/planemo/phase12/planemo.log 'workflow tool request state ... state=validation_failed'; job summary ok 44 / skipped 2; test passed.
+  status: open
+  issue: null
+- id: revision-strict-state-ok-but-galaxy-editor-reports-missing-state
+  raised_by: apply-galaxy-workflow-changeset
+  observed_in: {mold: apply-galaxy-workflow-changeset, path: content/molds/apply-galaxy-workflow-changeset/index.md, revision: 3, content_hash: 82d8e6e440fc48fdb4e7c5a5e25591ecc8e8a248ea03cc950df5096256656b62, foundry_head: null}
+  subject: {kind: cli-command, label: gxwf validate / draft-validate --strict-state, locator: 'package://@galaxy-tool-util/cli#gxwf-validate'}
+  kind: gap
+  severity: minor
+  what: The original run's workflow passed `gxwf validate --strict --connections` and `draft-validate --concrete --strict-state` (28/28 tool states ok), yet Galaxy's editor reported 59 parameters missing from step state across 10 steps ("Issues loading this workflow"). Optional empty parameters and default-false booleans are allowed to be absent in `input_schemas.workflow_step_linked`, and implement-galaxy-tool-step never says whether step state should be complete.
+  expected: Offer a gxwf check (or a --complete-state option) that lists tool parameters absent from step state, the way Galaxy's upgrade_messages do, and say in implement-galaxy-tool-step whether to write the tool defaults explicitly.
+  evidence: orchestrator-findings-2026-11-10.md (59 entries). Revision added 43 explicit defaults; the 16 left are unconnected optional data inputs (RuntimeValue). Related to strict-state-ok-but-galaxy-request-validation-failed.
+  status: open
+  issue: null
+- id: summarize-galaxy-workflow-schema-has-no-embedded-user-tool-step
+  raised_by: summarize-galaxy-workflow
+  observed_in: {mold: summarize-galaxy-workflow, path: content/molds/summarize-galaxy-workflow/index.md, revision: 2, content_hash: 23b770bbbd5409a37a7a0ea457a10b2cfba21f36a6e7e892125735035ac36078, foundry_head: null}
+  subject: {kind: schema, label: summary-galaxy-workflow WorkflowStep, locator: 'package://@galaxy-foundry/gxwf-foundry#summary-galaxy-workflow'}
+  kind: gap
+  severity: minor
+  what: WorkflowStep (additionalProperties false) has no field for an embedded `run:` GalaxyUserTool, and its `type` enum has no value that distinguishes one. The three embedded user-defined-tool steps had to be recorded as type `tool` with tool_id taken from `run.id`, and the tool definition was dropped from the summary.
+  expected: Add a `run` (or `embedded_tool`) field, or a type value for embedded user tools, so that the update pipeline's change-set can address them.
+  evidence: summary-galaxy-workflow.json steps check_paired_end, collate_fastq_mapped, collate_fastq_unmapped, collate_fastq_single.
+  status: open
+  issue: null
+- id: changeset-anchor-rule-excludes-absent-state-keys
+  raised_by: interview-to-galaxy-workflow-changeset
+  observed_in: {mold: interview-to-galaxy-workflow-changeset, path: content/molds/interview-to-galaxy-workflow-changeset/index.md, revision: 3, content_hash: 9e2b8567ee121020d44ac03ff4e119393e799c6cb35a0f21b9d2ce1d4a21dce1, foundry_head: null}
+  subject: {kind: mold, label: interview-to-galaxy-workflow-changeset (anchor discipline), locator: content/molds/interview-to-galaxy-workflow-changeset/index.md}
+  kind: gap
+  severity: minor
+  what: The anchor discipline requires every change-parameter target to be a tool_state key "quoted from the summary". A parameter that the tool exposes but that is absent from state, which was every one of the 43 edits here, cannot be anchored that way, and no rule covers it. The update pipeline also has no input slot for non-interview evidence such as Galaxy import messages, so the findings file had to stand in for the interview.
+  expected: Allow a change-parameter anchor of the form step label plus a tool parameter path that the tool summary exposes but state omits. Name import or editor messages as an accepted change-set source.
+  evidence: galaxy-workflow-changeset.md entries 1-4.
+  status: open
+  issue: null

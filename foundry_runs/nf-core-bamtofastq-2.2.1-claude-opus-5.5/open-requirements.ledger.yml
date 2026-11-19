@@ -1,0 +1,138 @@
+topology_repair:
+  escalations: 0
+  cap: 5
+  open_history: []
+entries:
+- id: fasta-fai-rebuild-in-wrapper-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: fasta_fai is not exposed; Galaxy samtools wrappers are assumed to faidx a history FASTA internally
+  missing: wrapper-level confirmation for each chosen samtools tool (view, stats, fastx/collate)
+  resolved_by: advance-galaxy-draft-step
+  note: UDTs pass --reference to samtools, which builds/loads the fai itself; shed steps carry no reference
+- id: igenomes-genome-key-dropped
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  units: "params.genome (iGenomes key \u2192 fasta, fasta_fai)"
+  because: v1 reference-data posture discourages dbkey/data-table lookups (nextflow-to-galaxy-reference-data-mapping, Recommendations); user uploads the FASTA instead
+  unmet: selecting a reference by iGenomes key
+  missing: ''
+  resolved_by: null
+  note: ''
+- id: optional-reference-into-samtools-conditional
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: optional reference_fasta must reach the samtools reference conditional only when supplied
+  missing: data-flow decision on how an optional input selects the conditional branch
+  resolved_by: advance-galaxy-draft-step
+  note: "reference_fasta wired only into the two UDTs (optional data input); shed samtools view/stats steps use addref_select=no \u2014 see reference-not-wired-to-shed-samtools-steps"
+- id: per-element-single-paired-routing
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: CHECKPAIREDEND routes each sample to single-end or paired-end conversion at runtime
+  missing: Galaxy per-element routing design (data-flow)
+  resolved_by: nextflow-summary-to-galaxy-data-flow
+  note: "classifier per element \u2192 collapse to id/class table \u2192 filter ids \u2192 __FILTER_FROM_FILE__ splits list into paired/single sublists"
+- id: fastq-info-tool-unverified
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-interface
+  step: fastq_info
+  unmet: fastq_utils fastq_info post-conversion check
+  missing: Galaxy/Tool Shed wrapper for fastq_utils fastq_info
+  resolved_by: advance-galaxy-draft-step
+  note: bgruening/fastq_info 0.25.3+galaxy0 (same fastq_utils version as nf-core); paired mode fed by cat_r1/cat_r2 element-wise
+- id: cram-elements-fastqc-pre
+  status: open
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: FASTQC_PRE_CONVERSION runs on BAM only
+  missing: filter or branch for CRAM elements in a mixed list
+  resolved_by: null
+  note: ''
+- id: multiqc-versions-report-dropped
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  units: MULTIQC, software-versions collectFile
+  because: 'workflows/bamtofastq.nf (2.2.1): ch_multiqc_files only mixes ch_collated_versions, workflow_summary_mqc.yaml and methods_description_mqc.yaml; the ALIGNMENT_TO_FASTQ zip mix is commented out.
+    Galaxy job provenance carries versions and params.'
+  unmet: MultiQC HTML report (versions/params only)
+  missing: ''
+  resolved_by: null
+  note: ''
+- id: chr-identifier-rename-not-carried
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  units: 'ch_input_chr map: id = file.baseName (<id>.<chr_joined>)'
+  because: cosmetic identifier rename; Galaxy keeps sample ids as element identifiers
+  unmet: chr-suffixed sample ids
+  missing: ''
+  resolved_by: null
+  note: ''
+- id: pick-value-collections
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: pick_alignments
+  unmet: select chr-filtered list when chr is set, else alignments
+  missing: confirmation that pick_value accepts collection inputs
+  resolved_by: run-workflow-test
+  note: 'planemo runs (phase 10 and 12): chr_extract skipped (2 jobs), pick_alignments picked the alignments fallback element-wise; downstream outputs matched snapshot evidence'
+- id: collate-fastq-tool-shape
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  step: collate_fastq_mapped
+  unmet: samtools collate | samtools fastq -N with separate R1/R2/other outputs
+  missing: Galaxy wrapper(s) and whether collate fast mode (-f -r) is exposed
+  resolved_by: advance-galaxy-draft-step
+  note: iuc samtools_fastx 1.22 name-sorts (samtools sort -n) instead of collating and has no fast mode; authored UDT nfcore_samtools_collatefastq in the nf-core samtools 1.23.1 container. Local container
+    simulation of the nf-core chain reproduced all four snapshot FASTQ md5s (decompressed).
+- id: no-iwc-precedent-pair-class-split
+  status: open
+  raised_by: compare-against-iwc-exemplar
+  unmet: four-way samtools view pair-class split + merge + ordered mapped/unmapped FASTQ concatenation
+  missing: IWC corpus exemplar (searched 9f111cb for samtools_fastx/view/merge/collate)
+  resolved_by: null
+  note: non-blocking; template carries the source structure
+- id: reference-not-wired-to-shed-samtools-steps
+  status: open
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: --reference on SAMTOOLS_STATS, SAMTOOLS_VIEW_* , SAMTOOLS_CHR for CRAM decoding
+  because: "Galaxy samtools_view 1.22+galaxy2 and samtools_stats 2.0.9 take the reference in a required-branch conditional (addref_cond: history \u2192 ref non-optional); an optional workflow input cannot\
+    \ select that branch"
+  unmet: CRAM inputs whose reference is not resolvable from header/REF_CACHE
+  missing: ''
+  resolved_by: null
+  note: BAM path unaffected (reference inert). CRAM support relies on samtools reference resolution without --reference.
+- id: fastqc-zip-not-exposed
+  status: open
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: FASTQC_*.zip outputs
+  because: devteam fastqc 0.74+galaxy1 outputs html_file and text_file (fastqc_data.txt), no zip
+  unmet: FastQC zip archives
+  missing: ''
+  resolved_by: null
+  note: "workflow outputs renamed fastqc_*_zip \u2192 fastqc_*_data (raw data text)"
+discoveries:
+- id: fasta-only-needed-for-cram
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: CHECKPAIREDEND uses --reference only when meta.filetype == 'cram'; samtools modules pass fasta for CRAM decoding
+  impact: reference is optional in the Galaxy interface
+- id: iwc-samtools-fastx-idiom
+  raised_by: compare-against-iwc-exemplar
+  evidence: host-contamination-removal-long-reads uses samtools_fastx 1.22+galaxy2 with outputs multi-select and read_numbering
+  impact: collate|fastq nodes should be tried with samtools_fastx first
+decisions:
+- id: alignments-as-list-not-sample-sheet
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Expose params.input as a list collection of bam/cram datasets keyed by sample_id
+  rationale: index and file_type are carried by Galaxy datatype metadata; no step reads row columns
+  evidence:
+  - assets/schema_input.json columns sample_id, mapped, index, file_type
+- id: merge-per-sample-via-list-list
+  decided_by: advance-galaxy-draft-step
+  decision: Insert __MERGE_COLLECTION__ (suffix_every _#) + __APPLY_RULES__ (list:list by sample) before samtools_merge
+  rationale: samtools_merge bamfiles is multiple=true; three lists connected directly would reduce across samples
+brief_change_recommendations: []

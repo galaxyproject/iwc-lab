@@ -1,0 +1,42 @@
+class: GalaxyUserTool
+id: nfcore_bamtofastq_checkpairedend
+version: 1.0.0
+name: Check paired-end alignments
+description: classify a BAM/CRAM as paired or single end (nf-core/bamtofastq CHECKPAIREDEND)
+license: MIT
+container: community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5
+requirements:
+  - type: resource
+    cores_min: 1
+configfiles:
+  - filename: check_paired_end.sh
+    content: |
+      REF="$(inputs.reference ? "--reference '" + inputs.reference.path + "'" : '')"
+      IN='$(inputs.alignment.path)'
+      N=`eval samtools view $REF "'$IN'" -@ $GALAXY_SLOTS | head -n1000 | wc -l`
+      if [ "$N" -lt 1000 ]; then LINES=$N; else LINES=1000; fi
+      FRAC=`{ eval samtools view -H $REF "'$IN'" -@ $GALAXY_SLOTS ; eval samtools view $REF "'$IN'" -@ $GALAXY_SLOTS | head -n$LINES; } | eval samtools view $REF -c -f 1 -@ $GALAXY_SLOTS | awk -v lines=$LINES '{print $1/lines}'`
+      if [ "$FRAC" = "1" ]; then echo paired > result.txt; else echo single > result.txt; fi
+shell_command: bash check_paired_end.sh
+inputs:
+  - name: alignment
+    type: data
+    format: [bam, cram]
+    label: Alignments (BAM or CRAM)
+  - name: reference
+    type: data
+    format: [fasta]
+    optional: true
+    label: Reference FASTA (needed for CRAM)
+outputs:
+  - name: classification
+    type: data
+    format: tabular
+    from_work_dir: result.txt
+    label: Pairing class
+help:
+  format: markdown
+  content: |
+    Port of the nf-core/bamtofastq 2.2.1 local module CHECKPAIREDEND. Reads up to the first
+    1000 alignment records; writes `paired` when every sampled record has FLAG 0x1, otherwise
+    `single`.
