@@ -1,0 +1,138 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: nf-core-bamtofastq-deepseek
+  status: complete
+  phases:
+  - n: 1
+    kind: mold
+    skill: summarize-nextflow
+    status: done
+    feedback_checked: true
+  - n: 2
+    kind: mold
+    skill: nextflow-summary-to-galaxy-reference-data
+    status: done
+    feedback_checked: true
+  - n: 3
+    kind: mold
+    skill: nextflow-summary-to-galaxy-interface
+    status: done
+    feedback_checked: true
+  - n: 4
+    kind: mold
+    skill: nextflow-summary-to-galaxy-data-flow
+    status: done
+    feedback_checked: true
+  - n: 5
+    kind: mold
+    skill: compare-against-iwc-exemplar
+    status: done
+    feedback_checked: true
+  - n: 6
+    kind: mold
+    skill: nextflow-summary-to-galaxy-template
+    status: done
+    feedback_checked: true
+  - n: 7
+    kind: mold
+    skill: advance-galaxy-draft-step
+    status: done
+    iterations: 14
+    feedback_checked: true
+  - n: 8
+    kind: branch
+    pattern: test-data-resolution
+    status: done
+    selected: nextflow-to-test-data
+    feedback_checked: true
+  - n: 9
+    kind: mold
+    skill: nextflow-test-to-galaxy-test-plan
+    status: done
+    feedback_checked: true
+  - n: 10
+    kind: mold
+    skill: implement-galaxy-workflow-test
+    status: done
+    feedback_checked: true
+  - n: 11
+    kind: mold
+    skill: validate-galaxy-workflow
+    status: done
+    feedback_checked: true
+  - n: 12
+    kind: mold
+    skill: run-workflow-test
+    status: done
+    feedback_checked: true
+  - n: 13
+    kind: mold
+    skill: debug-galaxy-workflow-output
+    status: done
+    feedback_checked: true
+entries:
+- id: workflow-edges-contain-non-channel-fragments
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: implementation
+    label: summarize-nextflow workflow-graph extraction
+    locator: package://@galaxy-foundry/gxwf-foundry#summarize-nextflow
+  kind: defect
+  severity: major
+  what: 'Edges contain non-channel fragments as `from` values (''[[:]'', ''[]]'', ''['', '']'', ''}'', "[id: ''bamtofastq'']") from multi-line list literals,
+    and SAMTOOLS_CHR / SAMTOOLS_COLLATEFASTQ_SINGLE_END edges mix step-argument text with real channels; workflow.channels[] also lists channels the edges
+    never use.'
+  expected: Reconcile edges against declared channels and process outputs only; drop or flag non-channel fragments.
+  evidence: 'summary-nextflow.json for nf-core/bamtofastq @aa0150e: 18 of 34 edges have fragment `from` values; SAMTOOLS_CHR appears with 6 fragment sources.'
+  status: open
+  issue: null
+- id: positive-form-compute-if-missing-undetected-bamtofastq
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in:
+    mold: nextflow-summary-to-galaxy-reference-data
+    path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+    revision: null
+    content_hash: null
+    foundry_head: null
+  subject:
+    kind: implementation
+    label: summarize-nextflow reference_rebuilds detection (branch-on-meta.index form)
+    locator: package://@galaxy-foundry/gxwf-foundry#summarize-nextflow
+  kind: gap
+  severity: minor
+  what: bamtofastq's compute-if-missing branch is `fasta_branch.to_index` selected by `meta.index == false` in prepare_indices/main.nf; reference_rebuilds[]
+    stays empty, so the asset must be flagged rebuild-unverified from the structured summary alone.
+  expected: Detect the meta.index branch form (or record it in warnings[]) so the reference-data Mold does not have to re-read source files to confirm the
+    rebuild.
+  evidence: 'summary-nextflow.json for nf-core/bamtofastq @aa0150e: reference_rebuilds=[] while SAMTOOLS_FAIDX runs on the non-indexed branch.'
+  status: open
+  issue: null
+- id: tool-search-misses-iuc-samtools-view
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: null
+    content_hash: null
+    foundry_head: null
+  subject:
+    kind: related-project
+    label: gxwf tool-search index coverage
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts/tree/main/packages/cli
+  kind: gap
+  severity: minor
+  what: '`gxwf tool-search ''samtools view''` (and ''samtools collate fastq'') returns no iuc samtools wrappers, while `tool-versions iuc~samtools_view~samtools_view`
+    resolves 1.22+galaxy2 and `tool-search samtools --owner iuc` lists other samtools repos. A discovery run that trusted the first query would fall through
+    to authoring a wrapper that already exists.'
+  expected: Improve the lexical index/query for multi-word tool names, or have discover-shed-tool try the underscore-collapsed repo/candidate name when
+    a human-phrase query misses.
+  evidence: 'Queries: ''samtools view'' (no samtools hits), ''samtools collate fastq'' (0 hits), ''collatefastq'' (0 hits); direct TRS id resolves samtools_view
+    1.22+galaxy2. Same run also needed a manual probe for samtools stats/flagstat/idxstats (iuc has none; devteam does).'
+  status: open
+  issue: null

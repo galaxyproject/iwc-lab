@@ -1,0 +1,49 @@
+- doc: 'nf-core/bamtofastq chr test profile: one single-end BAM restricted to
+
+    chrX/chrY/X/Y, converted to FASTQ with samtools stats, FastQC, fastqutils
+
+    and MultiQC. Translated from tests/chr.nf.test::-profile test.
+
+    '
+  job:
+    input_alignments:
+      class: Collection
+      collection_type: list
+      elements:
+      - identifier: test3
+        class: File
+        location: https://github.com/nf-core/test-datasets/raw/bamtofastq/test-datasets/data/genomics/homo_sapiens/illumina/bam/test3.single_end.markduplicates.sorted.bam
+        filetype: bam
+        hashes:
+        - hash_function: SHA-1
+          hash_value: 072c537f5a850f0ae036fd0ef6906f767e9f28c1
+    no_read_QC: false
+    no_stats: false
+    samtools_collate_fast: false
+    reads_in_memory: 100000
+    multiqc_title: nf-core/bamtofastq test
+  outputs:
+    converted_reads_single:
+      class: Collection
+      collection_type: list
+      element_count: 1
+      element_tests:
+        test3:
+          ftype: fastqsanger
+    fastqutils_info:
+      class: Collection
+      collection_type: list
+      element_count: 1
+      element_tests:
+        test3:
+          ftype: txt
+    post_fastqc_html:
+      class: Collection
+      collection_type: list
+      element_count: 1
+      element_tests:
+        test3:
+          ftype: html
+    multiqc_report:
+      class: File
+      ftype: html

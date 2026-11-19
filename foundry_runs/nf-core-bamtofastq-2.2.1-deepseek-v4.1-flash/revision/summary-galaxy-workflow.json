@@ -1,0 +1,472 @@
+{
+  "summary_version": "1",
+  "source": {
+    "ecosystem": "galaxy",
+    "workflow": "nf-core/bamtofastq \u2014 BAM/CRAM to FASTQ conversion with QC",
+    "url": "https://github.com/nf-core/bamtofastq",
+    "version": "aa0150e",
+    "license": "MIT",
+    "slug": "nf-core-bamtofastq",
+    "format": "gxformat2",
+    "original_format": "gxformat2",
+    "release": null,
+    "annotation": null
+  },
+  "documents": {
+    "entrypoint": "galaxy-workflow.gxwf.yml",
+    "converted_path": null,
+    "validation": {
+      "command": "gxwf validate galaxy-workflow.gxwf.yml --strict",
+      "status": "valid",
+      "diagnostics": []
+    }
+  },
+  "workflow_inputs": [
+    {
+      "id": "input_alignments",
+      "label": "input_alignments",
+      "type": "collection",
+      "collection_type": "list",
+      "optional": false,
+      "default": null,
+      "format": null,
+      "doc": "One BAM or CRAM per sample. Samplesheet `sample_id` is the element\nidentifier; the datatype distinguishes BAM from CRAM. Indexes are built\ninside the workflow when needed.\n"
+    },
+    {
+      "id": "no_read_QC",
+      "label": "no_read_QC",
+      "type": "parameter",
+      "collection_type": null,
+      "optional": false,
+      "default": false,
+      "format": null,
+      "doc": "Skip FastQC on input and converted reads."
+    },
+    {
+      "id": "no_stats",
+      "label": "no_stats",
+      "type": "parameter",
+      "collection_type": null,
+      "optional": false,
+      "default": false,
+      "format": null,
+      "doc": "Skip samtools stats/flagstat/idxstats."
+    },
+    {
+      "id": "samtools_collate_fast",
+      "label": "samtools_collate_fast",
+      "type": "parameter",
+      "collection_type": null,
+      "optional": false,
+      "default": false,
+      "format": null,
+      "doc": "Use samtools collate fast mode with `reads_in_memory`."
+    },
+    {
+      "id": "reads_in_memory",
+      "label": "reads_in_memory",
+      "type": "parameter",
+      "collection_type": null,
+      "optional": false,
+      "default": 100000,
+      "format": null,
+      "doc": "Reads held in memory when collate fast mode is on."
+    },
+    {
+      "id": "multiqc_title",
+      "label": "multiqc_title",
+      "type": "parameter",
+      "collection_type": null,
+      "optional": true,
+      "default": null,
+      "format": null,
+      "doc": "MultiQC report title."
+    },
+    {
+      "id": "multiqc_config",
+      "label": "multiqc_config",
+      "type": "data",
+      "collection_type": null,
+      "optional": true,
+      "default": null,
+      "format": null,
+      "doc": "Optional MultiQC config file."
+    }
+  ],
+  "workflow_outputs": [
+    {
+      "id": "converted_reads_single",
+      "label": "converted_reads_single",
+      "source": "fastx_single/output",
+      "type": null,
+      "doc": null
+    },
+    {
+      "id": "post_fastqc_html",
+      "label": "post_fastqc_html",
+      "source": "post_fastqc/html_file",
+      "type": null,
+      "doc": null
+    },
+    {
+      "id": "fastqutils_info",
+      "label": "fastqutils_info",
+      "source": "fastqutils/output",
+      "type": null,
+      "doc": null
+    },
+    {
+      "id": "multiqc_report",
+      "label": "multiqc_report",
+      "source": "multiqc/html_report",
+      "type": null,
+      "doc": null
+    }
+  ],
+  "steps": [
+    {
+      "id": "post_fastqc",
+      "label": "post_fastqc",
+      "type": "tool",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1",
+      "tool_version": "0.74+galaxy1",
+      "tool_shed_repository": {
+        "changeset_revision": "2c64fded1286",
+        "name": "fastqc",
+        "owner": "devteam",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "nogroup": false,
+        "kmers": 7
+      },
+      "in": [
+        {
+          "name": "input_file",
+          "source": "fastx_single/output",
+          "default": null,
+          "value_from": null
+        }
+      ],
+      "out": [
+        {
+          "id": "html_file",
+          "actions": null
+        },
+        {
+          "id": "text_file",
+          "actions": null
+        }
+      ],
+      "when": null,
+      "annotation": null
+    },
+    {
+      "id": "fastqutils",
+      "label": "fastqutils",
+      "type": "tool",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/bgruening/fastq_info/fastq_info/0.25.3+galaxy0",
+      "tool_version": "0.25.3+galaxy0",
+      "tool_shed_repository": {
+        "changeset_revision": "2bca15e630a4",
+        "name": "fastq_info",
+        "owner": "bgruening",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "input_option": {
+          "input_type": "single"
+        },
+        "q": false,
+        "r": false
+      },
+      "in": [
+        {
+          "name": "input_option|fastq_1",
+          "source": "fastx_single/output",
+          "default": null,
+          "value_from": null
+        }
+      ],
+      "out": [
+        {
+          "id": "output",
+          "actions": null
+        }
+      ],
+      "when": null,
+      "annotation": null
+    },
+    {
+      "id": "multiqc",
+      "label": "multiqc",
+      "type": "tool",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5",
+      "tool_version": "1.35+galaxy5",
+      "tool_shed_repository": {
+        "changeset_revision": "94b6bea727ae",
+        "name": "multiqc",
+        "owner": "iuc",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "results": [
+          {
+            "software_cond": {
+              "software": "fastqc",
+              "output": [
+                {
+                  "type": "data"
+                }
+              ]
+            }
+          }
+        ],
+        "flat": false,
+        "export": false,
+        "png_plots": false
+      },
+      "in": [
+        {
+          "name": "results_0|software_cond|output_0|input",
+          "source": "post_fastqc/text_file",
+          "default": null,
+          "value_from": null
+        },
+        {
+          "name": "title",
+          "source": "multiqc_title",
+          "default": null,
+          "value_from": null
+        }
+      ],
+      "out": [
+        {
+          "id": "html_report",
+          "actions": null
+        },
+        {
+          "id": "stats",
+          "actions": null
+        }
+      ],
+      "when": null,
+      "annotation": null
+    },
+    {
+      "id": "fastx_single",
+      "label": "fastx_single",
+      "type": "tool",
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/samtools_fastx/samtools_fastx/1.22+galaxy2",
+      "tool_version": "1.22+galaxy2",
+      "tool_shed_repository": {
+        "changeset_revision": "4bde991b8037",
+        "name": "samtools_fastx",
+        "owner": "iuc",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": {
+        "output_fmt_cond": {
+          "output_fmt_select": "fastqsanger",
+          "__current_case__": 1,
+          "default_quality": null,
+          "output_quality": false,
+          "ilumina_casava": false
+        },
+        "outputs": [
+          "other"
+        ],
+        "copy_tags": false,
+        "read_numbering": "",
+        "idxout_cond": {
+          "idxout_select": "no",
+          "__current_case__": 0
+        }
+      },
+      "in": [
+        {
+          "name": "input",
+          "source": "input_alignments",
+          "default": null,
+          "value_from": null
+        }
+      ],
+      "out": [
+        {
+          "id": "output",
+          "actions": null
+        }
+      ],
+      "when": null,
+      "annotation": null
+    }
+  ],
+  "graph": {
+    "nodes": [
+      {
+        "id": "post_fastqc",
+        "kind": "step",
+        "label": "post_fastqc"
+      },
+      {
+        "id": "fastqutils",
+        "kind": "step",
+        "label": "fastqutils"
+      },
+      {
+        "id": "multiqc",
+        "kind": "step",
+        "label": "multiqc"
+      },
+      {
+        "id": "fastx_single",
+        "kind": "step",
+        "label": "fastx_single"
+      },
+      {
+        "id": "input_alignments",
+        "kind": "workflow-input",
+        "label": "input_alignments"
+      },
+      {
+        "id": "no_read_QC",
+        "kind": "workflow-input",
+        "label": "no_read_QC"
+      },
+      {
+        "id": "no_stats",
+        "kind": "workflow-input",
+        "label": "no_stats"
+      },
+      {
+        "id": "samtools_collate_fast",
+        "kind": "workflow-input",
+        "label": "samtools_collate_fast"
+      },
+      {
+        "id": "reads_in_memory",
+        "kind": "workflow-input",
+        "label": "reads_in_memory"
+      },
+      {
+        "id": "multiqc_title",
+        "kind": "workflow-input",
+        "label": "multiqc_title"
+      },
+      {
+        "id": "multiqc_config",
+        "kind": "workflow-input",
+        "label": "multiqc_config"
+      },
+      {
+        "id": "converted_reads_single",
+        "kind": "workflow-output",
+        "label": "converted_reads_single"
+      },
+      {
+        "id": "post_fastqc_html",
+        "kind": "workflow-output",
+        "label": "post_fastqc_html"
+      },
+      {
+        "id": "fastqutils_info",
+        "kind": "workflow-output",
+        "label": "fastqutils_info"
+      },
+      {
+        "id": "multiqc_report",
+        "kind": "workflow-output",
+        "label": "multiqc_report"
+      }
+    ],
+    "edges": [
+      {
+        "from": "fastx_single",
+        "to": "post_fastqc",
+        "via": []
+      },
+      {
+        "from": "fastx_single",
+        "to": "fastqutils",
+        "via": []
+      },
+      {
+        "from": "post_fastqc",
+        "to": "multiqc",
+        "via": []
+      },
+      {
+        "from": "multiqc_title",
+        "to": "multiqc",
+        "via": []
+      },
+      {
+        "from": "input_alignments",
+        "to": "fastx_single",
+        "via": []
+      },
+      {
+        "from": "fastx_single",
+        "to": "converted_reads_single",
+        "via": []
+      },
+      {
+        "from": "post_fastqc",
+        "to": "post_fastqc_html",
+        "via": []
+      },
+      {
+        "from": "fastqutils",
+        "to": "fastqutils_info",
+        "via": []
+      },
+      {
+        "from": "multiqc",
+        "to": "multiqc_report",
+        "via": []
+      }
+    ]
+  },
+  "tests": [
+    {
+      "name": "nf-core/bamtofastq chr test profile: one single-end BAM restricted to\nchrX/chrY/X/Y, converted to FASTQ with samtools stats, FastQC, fastqutils\nand MultiQC. Translated from tests/chr.nf.test::-profile test.\n",
+      "job_path": "galaxy-workflow.gxwf-tests.yml",
+      "expected_outputs": [
+        {
+          "id": "converted_reads_single",
+          "path": null,
+          "url": null,
+          "filetype": null,
+          "checksum": null,
+          "assertions": []
+        },
+        {
+          "id": "fastqutils_info",
+          "path": null,
+          "url": null,
+          "filetype": null,
+          "checksum": null,
+          "assertions": []
+        },
+        {
+          "id": "post_fastqc_html",
+          "path": null,
+          "url": null,
+          "filetype": null,
+          "checksum": null,
+          "assertions": []
+        },
+        {
+          "id": "multiqc_report",
+          "path": null,
+          "url": null,
+          "filetype": null,
+          "checksum": null,
+          "assertions": []
+        }
+      ],
+      "provenance": "existing tests file (regression baseline)"
+    }
+  ],
+  "warnings": []
+}
