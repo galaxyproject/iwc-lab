@@ -1,0 +1,477 @@
+class: GalaxyWorkflow
+label: Nanopore DNA variant calling
+doc: |
+  This workflow performs read QC (NanoPlot, FastQC), minimap2 alignment, alignment statistics (samtools), diploid
+  small-variant calling with Clair3, structural-variant calling with Sniffles2 and a bigWig coverage track on a
+  collection of Oxford Nanopore DNA reads (R9.4.1 chemistry) against a reference genome, to generate per-sample
+  sorted BAMs, bgzipped VCFs, coverage tracks and a combined MultiQC report. Adapted from the DNA variant-calling
+  path of nf-core/nanoseq 3.1.0, with Clair3 in place of medaka.
+creator:
+  - class: Person
+    identifier: https://orcid.org/0000-0002-9318-1781
+    name: Martin Cech
+license: MIT
+release: '0.1'
+inputs:
+  Nanopore reads:
+    type: collection
+    collection_type: list
+    format:
+      - fastqsanger.gz
+    doc: Basecalled Oxford Nanopore DNA reads (R9.4.1 flow cells; Clair3 uses its r941_prom_hac_g360+g422 model), one gzipped FASTQ per sample. Element identifiers are used as sample names in all per-sample outputs.
+  Reference genome:
+    type: data
+    format:
+      - fasta
+    doc: Reference genome FASTA shared by all samples. Its sequence names are carried into the BAM, VCF and bigWig outputs.
+outputs:
+  Sorted alignments:
+    outputSource: minimap2/alignment_output
+  Alignment flagstat:
+    outputSource: samtools_flagstat/output1
+  Alignment stats:
+    outputSource: samtools_stats/output
+  Small variants:
+    outputSource: clair3/merge_output
+  Structural variants:
+    outputSource: compress_structural_variants/output1
+  Coverage bigWig:
+    outputSource: bedgraph_to_bigwig/out_file1
+  NanoPlot reports:
+    outputSource: nanoplot/output_html
+  FastQC reports:
+    outputSource: fastqc/html_file
+  MultiQC report:
+    outputSource: multiqc/html_report
+steps:
+  nanoplot:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/nanoplot/nanoplot/1.48.0+galaxy0
+    tool_version: 1.48.0+galaxy0
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: iuc
+      name: nanoplot
+      changeset_revision: 8de9d54f7a96
+    label: nanoplot
+    doc: |
+      NanoPlot read QC. Default NanoPlot per sample (batch mode, fastq input, mapped over the reads list), equivalent to source
+      QCFASTQ_NANOPLOT_FASTQC / NANOPLOT (`NanoPlot --fastq <reads>`, no extra args). HTML report -> NanoPlot reports;
+      NanoStats tables are not consumed (not fed to MultiQC, per source).
+    in:
+      mode|reads|files: Nanopore reads
+    out:
+      - id: output_html
+      - id: nanostats
+    state:
+      mode:
+        choice: batch
+        reads:
+          type: fastq
+      filter:
+        drop_outliers: false
+        loglength: false
+        percentqual: false
+        alength: false
+        barcoded: false
+        no_supplementary: false
+        maxlength: null
+        minlength: null
+        downsample: null
+        minqual: null
+        runtime_until: null
+        readtype: null
+      customization:
+        N50: false
+        color: null
+        plots: null
+  fastqc:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1
+    tool_version: 0.74+galaxy1
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: devteam
+      name: fastqc
+      changeset_revision: 2c64fded1286
+    label: fastqc
+    doc: |
+      FastQC read QC. Default FastQC per sample (mapped over the reads list), equivalent to source QCFASTQ_NANOPLOT_FASTQC / FASTQC
+      with no adapter, contaminant or limits files. HTML report -> FastQC reports; raw data -> MultiQC.
+    in:
+      input_file: Nanopore reads
+    out:
+      - id: html_file
+      - id: text_file
+    state:
+      nogroup: false
+      min_length: null
+      kmers: 7
+      adapters: null
+      contaminants: null
+      limits: null
+  chrom_sizes:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fasta_compute_length/fasta_compute_length/1.0.4
+    tool_version: 1.0.4
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: devteam
+      name: fasta_compute_length
+      changeset_revision: 5cbde03c1103
+    label: chrom_sizes
+    doc: |
+      Reference chromosome sizes. Two-column (sequence id, length) table from the reference FASTA, equivalent to source GET_CHROM_SIZES
+      (samtools faidx | cut -f1,2). Header description is stripped so ids match BAM/.fai sequence names.
+    in:
+      ref|input: Reference genome
+    out:
+      - id: output
+    state:
+      ref:
+        ref_source: history
+        keep_first: 0
+        keep_first_word: true
+  minimap2:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/minimap2/minimap2/2.31+galaxy1
+    tool_version: 2.31+galaxy1
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: iuc
+      name: minimap2
+      changeset_revision: 7a6382582d76
+    label: minimap2
+    doc: |
+      Map reads with minimap2. minimap2 -ax map-ont against the history reference, mapped over the reads list; the wrapper pipes through
+      samtools sort, so alignment_output is coordinate-sorted BAM (subsumes source SAMTOOLS_VIEW_BAM and
+      SAMTOOLS_SORT_INDEX). The wrapper exposes no --MD option (ledger minimap2-md-tag-gap).
+    in:
+      fastq_input|fastq_input1: Nanopore reads
+      reference_source|ref_file: Reference genome
+    out:
+      - id: alignment_output
+    state:
+      reference_source:
+        reference_source_selector: history
+      fastq_input:
+        fastq_input_selector: single
+        analysis_type_selector: map-ont
+      io_options:
+        output_format: BAM
+        Q: false
+        L: false
+        K: null
+        cs: null
+        c: false
+        eqx: false
+        Y: false
+        copy_comments: false
+        ds_tag: false
+        secondary_seq: false
+        two_io_threads: false
+        seed: null
+      mapping_options:
+        kmer_ocurrence_interval:
+          interval: ""
+        N: null
+        f: null
+        min_occ_floor: null
+        q_occ_frac: null
+        g: null
+        r: null
+        n: null
+        m: null
+        max_chain_skip: null
+        max_chain_iter: null
+        X: false
+        p: null
+        mask_len: null
+        rmq_inner: null
+        no_hash_name: false
+      alignment_options:
+        splicing:
+          splice_mode: preset
+        A: null
+        B: null
+        b: null
+        O: null
+        O2: null
+        E: null
+        E2: null
+        z: null
+        z2: null
+        s: null
+        end_bonus: null
+        score_N: null
+        no_end_flt: true
+        jump_min_match: null
+        end_seed_pen: null
+        cap_sw_mem: null
+        cap_kalloc: null
+      indexing_options:
+        H: false
+        k: null
+        w: null
+        I: null
+  samtools_stats:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_stats/samtools_stats/2.0.9
+    tool_version: 2.0.9
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: devteam
+      name: samtools_stats
+      changeset_revision: 8fca6e1eac98
+    label: samtools_stats
+    doc: |
+      samtools stats. Default samtools stats per sample on the sorted minimap2 BAM (mapped over the list), equivalent to source
+      BAM_STATS_SAMTOOLS / SAMTOOLS_STATS, which passes the reference FASTA (`--reference`): wired here through
+      addref_cond (addref_select history -> ref). Single combined tabular report (no table splitting) is what
+      MultiQC's samtools/stats parser reads; also the public `Alignment stats` output.
+    in:
+      input: minimap2/alignment_output
+      addref_cond|ref: Reference genome
+    out:
+      - id: output
+    state:
+      coverage_cond:
+        coverage_select: "no"
+      remove_dups: false
+      split_output_cond:
+        split_output_selector: "no"
+      filter_by_flags:
+        filter_flags: nofilter
+      addref_cond:
+        addref_select: history
+      cond_region:
+        select_region: "no"
+      sparse: false
+      remove_overlaps: false
+      gc_depth: null
+      insert_size: null
+      read_group: null
+      read_length: null
+      most_inserts: null
+      trim_quality: null
+      cov_threshold: null
+  samtools_flagstat:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_flagstat/samtools_flagstat/2.0.8
+    tool_version: 2.0.8
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: devteam
+      name: samtools_flagstat
+      changeset_revision: a0d8e49a018c
+    label: samtools_flagstat
+    doc: |
+      samtools flagstat. Default samtools flagstat per sample on the sorted minimap2 BAM (mapped over the list), equivalent to source
+      SAMTOOLS_FLAGSTAT. Plain-text output (output_fmt txt) is the classic flagstat report MultiQC's samtools/flagstat
+      parser reads; also the public `Alignment flagstat` test checkpoint.
+    in:
+      input1: minimap2/alignment_output
+    out:
+      - id: output1
+    state:
+      output_fmt: txt
+  samtools_idxstats:
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/samtools_idxstats/samtools_idxstats/2.0.8
+    tool_version: 2.0.8
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: devteam
+      name: samtools_idxstats
+      changeset_revision: 13aad5cb9be4
+    label: samtools_idxstats
+    doc: |
+      samtools idxstats. Default samtools idxstats per sample on the sorted minimap2 BAM (mapped over the list; Galaxy's bam datatype
+      supplies the .bai index from metadata), equivalent to source SAMTOOLS_IDXSTATS. Tabular output feeds MultiQC's
+      samtools/idxstats section only.
+    in:
+      input: minimap2/alignment_output
+    out:
+      - id: output
+    state: {}
+  clair3:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/clair3/clair3/1.0.10+galaxy1
+    tool_version: 1.0.10+galaxy1
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: iuc
+      name: clair3
+      changeset_revision: c9218b9dc7f0
+    label: clair3
+    doc: |
+      Diploid small-variant calling. Clair3 1.0.10 per sample on the sorted minimap2 BAM (bai from Galaxy metadata) against
+      the shared history reference, mapped over samples. Expert decision 2026-11-10 (workflow-brief.md Decisions; ledger
+      clair3-small-variants) replacing source MEDAKA_VARIANT (medaka 1.4.4 medaka_variant). Platform ont with the built-in
+      r941_prom_hac_g360+g422 model (R9.4.1 guppy hac, matching nanoseq's medaka r941_prom_hac models). Default calling:
+      diploid, no GVCF, no phasing, default qual, whole reference on all contigs. The wrapper symlinks the reference into
+      the job directory and runs samtools faidx there. merge_output is Clair3's coordinate-sorted bgzipped VCF (vcf_bgzip),
+      so it feeds `Small variants` directly, replacing source MEDAKA_BGZIP_VCF -> MEDAKA_TABIX_VCF.
+    in:
+      bam_input: minimap2/alignment_output
+      ref_source|ref_fasta: Reference genome
+    out:
+      - id: merge_output
+    state:
+      ref_source:
+        source: history
+      ont_license_agree: false
+      model_source:
+        source: built-in
+        select_built_in: r941_prom_hac_g360+g422
+      bed_or_vcf:
+        bed_or_vcf_selector: unrestricted
+        include_all_ctgs: true
+      gvcf: false
+      output_files: null
+      adv:
+        qual: 0
+        snp_min_af: 0.08
+        indel_min_af: 0.15
+        enable_phasing: false
+        no_phasing_for_fa: false
+        print_ref_calls: false
+        ploidity_model: ""
+        chunk_size: 5000000
+  sniffles:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/sniffles/sniffles/2.5.2+galaxy0
+    tool_version: 2.5.2+galaxy0
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: iuc
+      name: sniffles
+      changeset_revision: c7a721c21e01
+    label: sniffles
+    doc: |
+      sniffles structural variants. Default Sniffles 2.5.2 SV calling per sample (mapped over the sorted BAM list); source ran Sniffles 1.0.12
+      `sniffles -m <bam> -v <vcf> -t N` with no tuning flags (ledger sniffles-version-gap). No reference wired:
+      Sniffles 2 uses --reference only to report deletion sequences, and source passed none. Sniffles 2 reads
+      SA/NM tags, not MD (ledger minimap2-md-tag-gap). Output is plain VCF, coordinate-sorted by Sniffles 2's
+      default; compress_structural_variants bgzips it.
+    in:
+      input: minimap2/alignment_output
+    out:
+      - id: output
+    state:
+      reference_genome:
+        genome_type_select: None
+        genome: None
+      general_options:
+        minsupport: auto
+        maxsplitskb: 0.1
+        minsvlen: 50
+        mapq: 20
+        minalignmentlength: 100
+        detectlargeins: true
+      clustering_options:
+        clusterbinsize: 100
+        clusterr: 2.5
+      advanced_options:
+        mosaic: false
+  compress_structural_variants:
+    tool_id: CONVERTER_vcf_to_vcf_bgzip_0
+    tool_version: 1.0.3
+    label: compress_structural_variants
+    doc: |
+      Compress structural variants. Galaxy built-in converter CONVERTER_vcf_to_vcf_bgzip_0 (`bgzip -c`, htslib 1.14)
+      per sample on the Sniffles 2 VCF, emitting vcf_bgzip (tabix index carried as metadata), replacing source
+      SNIFFLES_SORT_VCF bcftools sort -> bgzip -> tabix. Requires coordinate-sorted input: Sniffles 2.5.2 output is
+      already coordinate-sorted, so no sort step. Expert decision 2026-11-10 (ledger bcftools-sort-no-container).
+    in:
+      input1: sniffles/output
+    out:
+      - id: output1
+    state: {}
+  bedtools_genomecov:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_genomecoveragebed/2.31.1+galaxy0
+    tool_version: 2.31.1+galaxy0
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: iuc
+      name: bedtools
+      changeset_revision: d57471728f7b
+    label: bedtools_genomecov
+    doc: |
+      Coverage bedGraph. bedtools genomecov -ibam -split -bg per sample (mapped over the sorted BAM list), equivalent to source
+      BEDTOOLS_UCSC_BIGWIG / BEDTOOLS_GENOMECOV. The wrapper does not pipe through bedtools sort; bedGraph
+      records follow the coordinate-sorted BAM header contig order (ledger genomecov-sort-gap).
+    in:
+      input_type|input: minimap2/alignment_output
+    out:
+      - id: output
+    state:
+      input_type:
+        input_type_select: bam
+      report:
+        report_select: bg
+        zero_regions: false
+        scale: 1
+      split: true
+      strand: ""
+      d: false
+      dz: false
+      five: false
+      three: false
+  bedgraph_to_bigwig:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/ucsc_wigtobigwig/ucsc_wigtobigwig/502+galaxy0
+    tool_version: 502+galaxy0
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: iuc
+      name: ucsc_wigtobigwig
+      changeset_revision: 99390cf2f6a9
+    label: bedgraph_to_bigwig
+    doc: |
+      bedGraph to bigWig. UCSC wigToBigWig per sample (mapped over the bedGraph list) with the reference-derived chromosome sizes
+      (tabular, broadcast, history branch), standing in for source UCSC_BEDGRAPHTOBIGWIG (`bedGraphToBigWig`).
+      wigToBigWig sorts bedGraph records by chrom name then start internally (kent bwgCreate.c), so the
+      unsorted genomecov bedGraph needs no separate sort step (ledger genomecov-sort-gap). Default preset adds -clip.
+    in:
+      hist_or_builtin|input1: bedtools_genomecov/output
+      hist_or_builtin|chromfile: chrom_sizes/output
+    out:
+      - id: out_file1
+    state:
+      hist_or_builtin:
+        genome_type_select: history
+      settings:
+        settingsType: preset
+  multiqc:
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+    tool_version: 1.35+galaxy5
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: iuc
+      name: multiqc
+      changeset_revision: 94b6bea727ae
+    label: multiqc
+    doc: |
+      MultiQC report. Single MultiQC run reducing over all samples, equivalent to source MULTIQC (fed ch_fastqc_multiqc and
+      ch_samtools_multiqc). Each per-sample list connects whole to a multiple="true" data input (reduction).
+      results_0 = fastqc section (raw data); results_1 = samtools section with stats, flagstat, idxstats entries.
+      NanoPlot is not fed to MultiQC, per source.
+    in:
+      results_0|software_cond|output_0|input: fastqc/text_file
+      results_1|software_cond|output_0|type|input: samtools_stats/output
+      results_1|software_cond|output_1|type|input: samtools_flagstat/output1
+      results_1|software_cond|output_2|type|input: samtools_idxstats/output
+    out:
+      - id: html_report
+    state:
+      results:
+        - software_cond:
+            software: fastqc
+            output:
+              - type: data
+        - software_cond:
+            software: samtools
+            output:
+              - type:
+                  type: stats
+              - type:
+                  type: flagstat
+              - type:
+                  type: idxstats
+      flat: false
+      export: false
+      png_plots: false
+      title: null
+      comment: null
+      image_content_input: null

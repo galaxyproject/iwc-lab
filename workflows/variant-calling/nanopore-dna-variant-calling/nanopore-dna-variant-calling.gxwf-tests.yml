@@ -1,0 +1,122 @@
+- doc: >-
+    Single-sample Nanopore DNA run on the nf-core/nanoseq test_nodx_vc fixture (NA12878, 334 reads, GRCh38 chr5 EDIL3 region). Source has no snapshot or expected values; read and mapping counts are taken from the passing usegalaxy.org run (invocation fbf1b200b6a8b01c), other outputs are checked structurally.
+  job:
+    Nanopore reads:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: NA12878_R1
+          location: https://raw.githubusercontent.com/nf-core/test-datasets/nanoseq/fastq/demultiplexed/NA12878_DNA.fastq.gz
+          filetype: fastqsanger.gz
+          hashes:
+            - hash_function: SHA-1
+              hash_value: a4921703e623c048bb455cf8b2099730adc57b75
+    Reference genome:
+      class: File
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/nanoseq/reference/GRCh38_EDIL3.fa
+      filetype: fasta
+      hashes:
+        - hash_function: SHA-1
+          hash_value: f5e587811949ab7b696430d3875915830108d20f
+  outputs:
+    Alignment flagstat:
+      class: Collection
+      collection_type: list
+      element_count: 1
+      element_tests:
+        NA12878_R1:
+          asserts:
+            - has_text:
+                text: in total (QC-passed reads + QC-failed reads)
+            - has_text:
+                text: mapped (
+            - has_line:
+                line: 334 + 0 primary
+            - has_line:
+                line: "333 + 0 primary mapped (99.70% : N/A)"
+    Sorted alignments:
+      class: Collection
+      collection_type: list
+      element_count: 1
+      element_tests:
+        NA12878_R1:
+          ftype: bam
+          asserts:
+            - has_size:
+                min: 1
+    Alignment stats:
+      class: Collection
+      collection_type: list
+      element_count: 1
+      element_tests:
+        NA12878_R1:
+          asserts:
+            - has_text:
+                text: "raw total sequences:"
+            - has_text:
+                text: "raw total sequences:\t334\t"
+    Small variants:
+      class: Collection
+      collection_type: list
+      element_count: 1
+      element_tests:
+        NA12878_R1:
+          ftype: vcf_bgzip
+          decompress: true
+          asserts:
+            - has_text:
+                text: "##fileformat=VCF"
+            - has_text:
+                text: "#CHROM"
+    Structural variants:
+      class: Collection
+      collection_type: list
+      element_count: 1
+      element_tests:
+        NA12878_R1:
+          ftype: vcf_bgzip
+          decompress: true
+          asserts:
+            - has_text:
+                text: "##fileformat=VCF"
+            - has_text:
+                text: Sniffles
+            - has_text:
+                text: "#CHROM"
+    Coverage bigWig:
+      class: Collection
+      collection_type: list
+      element_count: 1
+      element_tests:
+        NA12878_R1:
+          ftype: bigwig
+          asserts:
+            - has_size:
+                min: 1
+    NanoPlot reports:
+      class: Collection
+      collection_type: list
+      element_count: 1
+      element_tests:
+        NA12878_R1:
+          asserts:
+            - has_text:
+                text: NanoPlot
+    FastQC reports:
+      class: Collection
+      collection_type: list
+      element_count: 1
+      element_tests:
+        NA12878_R1:
+          asserts:
+            - has_text:
+                text: Basic Statistics
+    MultiQC report:
+      asserts:
+        - has_text:
+            text: MultiQC
+        - has_text:
+            text: FastQC
+        - has_text:
+            text: Samtools
