@@ -1,0 +1,40 @@
+- doc: Concatenate two chr21 roast pieces, restore species names, and build a UCSC bigMaf BigBed track.
+  job:
+    Roasted alignment pieces:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: chr21.00
+          path: test-data/piece1.maf
+          filetype: maf
+        - class: File
+          identifier: chr21.01
+          path: test-data/piece2.maf
+          filetype: maf
+    Reference species name: hg38
+    Species alias rename map:
+      class: File
+      path: test-data/species_renames.tsv
+      filetype: tabular
+    Reference chromosome sizes:
+      class: File
+      path: test-data/hg38.chrom.sizes
+      filetype: tabular
+    bigMaf autoSql schema:
+      class: File
+      path: test-data/bigMaf.as
+      filetype: txt
+  outputs:
+    Per-sequence multiple alignments:
+      element_tests:
+        chr21:
+          asserts:
+            - that: has_text
+              text: "##maf version=1"
+            - that: has_text
+              text: "s hg38.chr21"
+    UCSC bigMaf track:
+      asserts:
+        - that: has_size
+          min: 100
