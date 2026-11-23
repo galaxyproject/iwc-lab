@@ -1,0 +1,59 @@
+class: GalaxyWorkflow
+label: Reference-Guided Multiple Genome Alignment (multiz roast)
+doc: |
+  This workflow runs reference-guided progressive multiple genome alignment
+  (multiz roast / autoMZ) once per genomic piece over a nested piece:species
+  collection of pairwise MAF alignments, producing one multiple-alignment MAF
+  per reference piece.
+release: "0.1"
+license: MIT
+creator:
+  - class: Person
+    name: Richard Burhans
+    identifier: https://orcid.org/0009-0006-5949-0958
+tags:
+  - comparative-genomics
+  - whole-genome-alignment
+  - multiz
+  - roast
+  - maf
+
+inputs:
+  Pairwise MAF pieces:
+    type: collection
+    collection_type: list:list
+    doc: Nested list:list collection (outer = reference piece, inner = query species) of pairwise MAF alignments, typically produced by wfi-split.
+    position:
+      left: 0
+      top: 0
+  Species guide tree:
+    type: data
+    format: newick
+    doc: Rooted Newick guide tree whose leaves match the species prefixes in the pairwise MAF rows (including the reference species).
+    position:
+      left: 0
+      top: 140
+  Reference species name:
+    type: string
+    doc: Reference species prefix used in the MAF s-lines (e.g. hg38). Must match a leaf of the guide tree.
+    position:
+      left: 0
+      top: 280
+
+outputs:
+  Multiple alignment pieces:
+    outputSource: roast/output
+    doc: List collection of reference-guided multiple-alignment MAFs, one per genomic piece.
+
+steps:
+  roast:
+    doc: Runs multiz roast (autoMZ) over each piece's inner list of species pairwise MAFs.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/multiz_roast/multiz_roast/11.10+galaxy0
+    tool_version: "11.10+galaxy0"
+    in:
+      pairwise: Pairwise MAF pieces
+      tree: Species guide tree
+      reference: Reference species name
+    position:
+      left: 340
+      top: 100
