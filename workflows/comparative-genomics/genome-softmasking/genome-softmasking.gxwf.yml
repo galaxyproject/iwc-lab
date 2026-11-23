@@ -1,0 +1,390 @@
+class: GalaxyWorkflow
+label: Four-Masker Genome Soft-Masking and Repeat Track Generation
+doc: |
+  This workflow soft-masks a collection of genome assemblies consistently by
+  uppercasing any pre-existing masking, running four complementary repeat and
+  low-complexity maskers (DustMasker, WindowMasker, tantan, and FasTAN),
+  classifying low-complexity intervals into content-annotated BED6 hub tracks,
+  soft-masking the union of all four interval sets with bedtools maskfasta,
+  indexing with samtools faidx, and tabulating per-assembly masking proportions
+  for MultiQC.
+release: "0.1"
+license: MIT
+creator:
+  - class: Person
+    name: Richard Burhans
+    identifier: https://orcid.org/0009-0006-5949-0958
+  - class: Person
+    name: Anton Nekrutenko
+    identifier: https://orcid.org/0000-0002-5987-8032
+tags:
+  - comparative-genomics
+  - repeat-masking
+  - softmasking
+  - whole-genome-alignment
+  - ucsc-hub
+
+inputs:
+  Genome assemblies:
+    type: collection
+    collection_type: list
+    doc: List collection of genome assembly FASTA files. Element identifiers label each assembly across all masked FASTAs, BED6 tracks, indexes, and the masking coverage table.
+    position:
+      left: 0
+      top: 260
+
+outputs:
+  Soft-masked assemblies:
+    outputSource: maskfasta/output
+    doc: List collection of soft-masked genome FASTAs carrying the union of DustMasker, WindowMasker, tantan, and FasTAN intervals.
+  FASTA indexes:
+    outputSource: faidx/output
+    doc: Per-assembly samtools .fai indexes for the soft-masked FASTAs.
+  Chromosome sizes:
+    outputSource: sizes_cut/out_file1
+    doc: Per-assembly chrom.sizes tables (chrom<TAB>length) derived from the FASTA indexes.
+  DustMasker BED6 tracks:
+    outputSource: classify_dust/output
+    doc: Content-annotated BED6 low-complexity intervals from NCBI DustMasker (for UCSC hub tracks).
+  WindowMasker BED6 tracks:
+    outputSource: classify_window/output
+    doc: Content-annotated BED6 repeat intervals from NCBI WindowMasker (for UCSC hub tracks).
+  Tantan BED6 tracks:
+    outputSource: classify_tantan/output
+    doc: Content-annotated BED6 simple-repeat intervals from tantan (for UCSC hub tracks).
+  FasTAN BED6 tracks:
+    outputSource: fastan/output
+    doc: Tandem-repeat array BED6 intervals from FasTAN (for UCSC hub tracks).
+  Masking coverage table:
+    outputSource: coverage_table/output
+    doc: Sample-by-masker tabular summary of percent genome masked (dustmasker, windowmasker, tantan, fastan, union).
+  Masking MultiQC report:
+    outputSource: masking_multiqc/html_report
+    doc: MultiQC HTML report rendering per-assembly masking proportions.
+
+steps:
+  uppercase:
+    doc: Strip any pre-existing soft-masking so every assembly receives a uniform de novo mask.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/fasta_uppercase/fasta_uppercase/1.0.0+galaxy0
+    tool_version: "1.0.0+galaxy0"
+    in:
+      input: Genome assemblies
+    position:
+      left: 240
+      top: 260
+
+  dustmasker:
+    doc: Identify symmetric-DUST low-complexity intervals in BED format.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/dustmasker/dustmasker/2.17.0+galaxy1
+    tool_version: "2.17.0+galaxy1"
+    in:
+      input: uppercase/output
+    state:
+      output_format: bed
+    position:
+      left: 500
+      top: 0
+
+  classify_dust:
+    doc: Classify DustMasker intervals by repeat unit and purity into BED6.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/lc_classify/lc_classify/1.0.0+galaxy1
+    tool_version: "1.0.0+galaxy1"
+    in:
+      input_fasta: uppercase/output
+      intervals: dustmasker/output
+    position:
+      left: 780
+      top: 0
+
+  windowmasker_mkcounts:
+    doc: Build WindowMasker k-mer unit frequency counts for each assembly.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/windowmasker/windowmasker_mkcounts/2.17.0+galaxy1
+    tool_version: "2.17.0+galaxy1"
+    in:
+      fasta_input: uppercase/output
+    position:
+      left: 500
+      top: 180
+
+  windowmasker_ustat:
+    doc: Call WindowMasker genome-frequency repeat intervals in BED format (DUST disabled to avoid duplicating DustMasker).
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/windowmasker/windowmasker_ustat/2.17.0+galaxy1
+    tool_version: "2.17.0+galaxy1"
+    in:
+      fasta_input: uppercase/output
+      mkcount_input: windowmasker_mkcounts/mkcount_output
+    state:
+      use_dust:
+        use_dust_selector: "no"
+      output_format: bed
+    position:
+      left: 780
+      top: 180
+
+  classify_window:
+    doc: Classify WindowMasker intervals by repeat unit and purity into BED6.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/lc_classify/lc_classify/1.0.0+galaxy1
+    tool_version: "1.0.0+galaxy1"
+    in:
+      input_fasta: uppercase/output
+      intervals: windowmasker_ustat/mask_output
+    position:
+      left: 1060
+      top: 180
+
+  tantan:
+    doc: Identify simple repeats with tantan in BED format.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/tantan/tantan/51+galaxy1
+    tool_version: "51+galaxy1"
+    in:
+      input: uppercase/output
+    state:
+      output_type:
+        f: "3"
+    position:
+      left: 500
+      top: 380
+
+  classify_tantan:
+    doc: Classify tantan intervals by repeat unit and purity into BED6.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/lc_classify/lc_classify/1.0.0+galaxy1
+    tool_version: "1.0.0+galaxy1"
+    in:
+      input_fasta: uppercase/output
+      intervals: tantan/output
+    position:
+      left: 780
+      top: 380
+
+  fastan:
+    doc: Identify tandem-repeat arrays as content-annotated BED6 with FasTAN.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/fastan/fastan/0.8+galaxy2
+    tool_version: "0.8+galaxy2"
+    in:
+      input: uppercase/output
+    position:
+      left: 500
+      top: 560
+
+  union_cat:
+    doc: Concatenate all four per-assembly BED6 interval sets prior to sorting and merging.
+    tool_id: cat1
+    tool_version: "1.0.0"
+    in:
+      input1: classify_dust/output
+      queries_0|input2: classify_window/output
+      queries_1|input2: classify_tantan/output
+      queries_2|input2: fastan/output
+    state:
+      queries:
+        - input2:
+            __class__: ConnectedValue
+        - input2:
+            __class__: ConnectedValue
+        - input2:
+            __class__: ConnectedValue
+    position:
+      left: 1340
+      top: 260
+
+  sort_bed:
+    doc: Sort concatenated masking intervals by chromosome and start coordinate.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_sortbed/2.31.1+galaxy1
+    tool_version: "2.31.1+galaxy1"
+    in:
+      input: union_cat/out_file1
+    position:
+      left: 1600
+      top: 260
+
+  merge_bed:
+    doc: Merge overlapping repeat intervals across all four maskers into a single union BED.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_mergebed/2.31.1+galaxy2
+    tool_version: "2.31.1+galaxy2"
+    in:
+      input: sort_bed/output
+    position:
+      left: 1860
+      top: 260
+
+  maskfasta:
+    doc: Soft-mask the uppercased assembly at the merged union repeat intervals.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_maskfastabed/2.31.1
+    tool_version: "2.31.1"
+    in:
+      fasta: uppercase/output
+      input: merge_bed/output
+    state:
+      soft: true
+    position:
+      left: 2120
+      top: 260
+
+  faidx:
+    doc: Build a samtools .fai index for each soft-masked assembly.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_faidx/samtools_faidx/1.22+galaxy1
+    tool_version: "1.22+galaxy1"
+    in:
+      input: maskfasta/output
+    position:
+      left: 2380
+      top: 260
+
+  sizes_cut:
+    doc: Extract chrom<TAB>length sizes from each .fai index for bedtools genomecov and downstream alignment.
+    tool_id: Cut1
+    tool_version: "1.0.2"
+    in:
+      input: faidx/output
+    state:
+      columnList: "c1,c2"
+      delimiter: "T"
+    position:
+      left: 2640
+      top: 260
+
+  gcov_dust:
+    doc: Compute DustMasker genome coverage histogram (max depth 1).
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_genomecoveragebed/2.31.1+galaxy0
+    tool_version: "2.31.1+galaxy0"
+    in:
+      input_type|input: classify_dust/output
+      input_type|genome_file_opts|genome: sizes_cut/out_file1
+    state:
+      input_type:
+        input_type_select: bed
+        genome_file_opts:
+          genome_file_opts_selector: hist
+      report:
+        report_select: hist
+        max: 1
+    position:
+      left: 2920
+      top: 0
+
+  gcov_window:
+    doc: Compute WindowMasker genome coverage histogram (max depth 1).
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_genomecoveragebed/2.31.1+galaxy0
+    tool_version: "2.31.1+galaxy0"
+    in:
+      input_type|input: classify_window/output
+      input_type|genome_file_opts|genome: sizes_cut/out_file1
+    state:
+      input_type:
+        input_type_select: bed
+        genome_file_opts:
+          genome_file_opts_selector: hist
+      report:
+        report_select: hist
+        max: 1
+    position:
+      left: 2920
+      top: 150
+
+  gcov_tantan:
+    doc: Compute tantan genome coverage histogram (max depth 1).
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_genomecoveragebed/2.31.1+galaxy0
+    tool_version: "2.31.1+galaxy0"
+    in:
+      input_type|input: classify_tantan/output
+      input_type|genome_file_opts|genome: sizes_cut/out_file1
+    state:
+      input_type:
+        input_type_select: bed
+        genome_file_opts:
+          genome_file_opts_selector: hist
+      report:
+        report_select: hist
+        max: 1
+    position:
+      left: 2920
+      top: 300
+
+  gcov_fastan:
+    doc: Compute FasTAN genome coverage histogram (max depth 1).
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_genomecoveragebed/2.31.1+galaxy0
+    tool_version: "2.31.1+galaxy0"
+    in:
+      input_type|input: fastan/output
+      input_type|genome_file_opts|genome: sizes_cut/out_file1
+    state:
+      input_type:
+        input_type_select: bed
+        genome_file_opts:
+          genome_file_opts_selector: hist
+      report:
+        report_select: hist
+        max: 1
+    position:
+      left: 2920
+      top: 450
+
+  gcov_union:
+    doc: Compute merged union genome coverage histogram (max depth 1).
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_genomecoveragebed/2.31.1+galaxy0
+    tool_version: "2.31.1+galaxy0"
+    in:
+      input_type|input: merge_bed/output
+      input_type|genome_file_opts|genome: sizes_cut/out_file1
+    state:
+      input_type:
+        input_type_select: bed
+        genome_file_opts:
+          genome_file_opts_selector: hist
+      report:
+        report_select: hist
+        max: 1
+    position:
+      left: 2920
+      top: 600
+
+  coverage_table:
+    doc: Pivot the five per-assembly genomecov histogram collections into a Sample x Masker percent-masked table.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/genomecov_coverage_table/genomecov_coverage_table/1.0.0+galaxy0
+    tool_version: "1.0.0+galaxy0"
+    in:
+      columns_0|histograms: gcov_dust/output
+      columns_1|histograms: gcov_window/output
+      columns_2|histograms: gcov_tantan/output
+      columns_3|histograms: gcov_fastan/output
+      columns_4|histograms: gcov_union/output
+    state:
+      columns:
+        - label: dustmasker
+          histograms:
+            __class__: ConnectedValue
+        - label: windowmasker
+          histograms:
+            __class__: ConnectedValue
+        - label: tantan
+          histograms:
+            __class__: ConnectedValue
+        - label: fastan
+          histograms:
+            __class__: ConnectedValue
+        - label: union
+          histograms:
+            __class__: ConnectedValue
+      min_depth: 1
+      decimals: 2
+    position:
+      left: 3220
+      top: 300
+
+  masking_multiqc:
+    doc: Render the masking coverage table as a MultiQC custom-content report.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy6
+    tool_version: "1.35+galaxy6"
+    in:
+      results_0|software_cond|input: coverage_table/output
+    state:
+      results:
+        - software_cond:
+            software: custom_content
+            plot_type: table
+            section_name: "Soft-masking proportions"
+            title: "Per-assembly percent genome masked"
+            description: "Percent of each genome soft-masked by dustmasker, windowmasker, tantan, fastan, and their union."
+    position:
+      left: 3520
+      top: 300

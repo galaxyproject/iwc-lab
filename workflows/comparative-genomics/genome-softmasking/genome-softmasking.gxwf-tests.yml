@@ -1,0 +1,47 @@
+- doc: Soft-mask two small genomic sequence slices across all four maskers, verify BED6 tracks, soft-masked FASTA, chromosome sizes, and coverage summary table.
+  job:
+    Genome assemblies:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: sampleA
+          path: test-data/cs10_A.fa
+          filetype: fasta
+        - class: File
+          identifier: sampleB
+          path: test-data/cs10_B.fa
+          filetype: fasta
+  outputs:
+    Soft-masked assemblies:
+      element_tests:
+        sampleA:
+          asserts:
+            - that: has_size
+              min: 1000
+        sampleB:
+          asserts:
+            - that: has_size
+              min: 1000
+    Chromosome sizes:
+      element_tests:
+        sampleA:
+          asserts:
+            - that: has_n_columns
+              n: 2
+    Masking coverage table:
+      asserts:
+        - that: has_text
+          text: "dustmasker"
+        - that: has_text
+          text: "windowmasker"
+        - that: has_text
+          text: "tantan"
+        - that: has_text
+          text: "fastan"
+        - that: has_text
+          text: "union"
+        - that: has_text
+          text: "sampleA"
+        - that: has_text
+          text: "sampleB"
