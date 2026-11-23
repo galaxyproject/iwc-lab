@@ -1,0 +1,152 @@
+class: GalaxyWorkflow
+label: Multiz Roast Pieces to UCSC bigMaf Track (WF-I Track)
+doc: |
+  This workflow regroups piece-wise multiz roast MAF outputs by reference
+  sequence, concatenates each sequence's pieces in coordinate order, restores
+  hub-display species names from roast-safe aliases, converts each sequence MAF
+  to bigMaf text, and builds a single UCSC bigMaf BigBed track for an assembly
+  hub.
+release: "0.1"
+license: MIT
+creator:
+  - class: Person
+    name: Richard Burhans
+    identifier: https://orcid.org/0009-0006-5949-0958
+tags:
+  - comparative-genomics
+  - whole-genome-alignment
+  - multiz
+  - bigmaf
+  - ucsc-hub
+
+inputs:
+  Roasted alignment pieces:
+    type: collection
+    collection_type: list
+    doc: List collection of piece-wise multiple-alignment MAFs from multiz-roast, with element identifiers named `<sequence>.<NN>` (e.g. `chr21.00`, `chr21.01`).
+    position:
+      left: 0
+      top: 0
+  Reference species name:
+    type: string
+    doc: Reference species name prefixing the reference MAF rows (e.g. hg38).
+    position:
+      left: 0
+      top: 120
+  Species alias rename map:
+    type: data
+    format: tabular
+    doc: Two-column TSV with header (`from<TAB>to`) mapping roast-safe species aliases back to UCSC hub species names.
+    position:
+      left: 0
+      top: 240
+  Reference chromosome sizes:
+    type: data
+    format: tabular
+    doc: Reference genome chrom.sizes (`chrom<TAB>length`).
+    position:
+      left: 0
+      top: 360
+  bigMaf autoSql schema:
+    type: data
+    format: txt
+    doc: UCSC kent `bigMaf.as` autoSql schema file required by `bedToBigBed -type=bed3+1`.
+    position:
+      left: 0
+      top: 480
+
+outputs:
+  Per-sequence multiple alignments:
+    outputSource: rename_back/output
+    doc: List collection of coordinate-ordered multiple-alignment MAFs, one per reference sequence, with hub species names restored.
+  UCSC bigMaf track:
+    outputSource: bigmaf/output
+    doc: Whole-genome UCSC bigMaf BigBed track (`bed3+1`) ready for an assembly hub.
+
+steps:
+  by_sequence:
+    doc: Regroups flat `<sequence>.<NN>` piece collection into nested `sequence:piece` collection.
+    tool_id: __APPLY_RULES__
+    tool_version: "1.1.0"
+    in:
+      input: Roasted alignment pieces
+    state:
+      rules:
+        rules:
+          - type: add_column_metadata
+            value: identifier0
+          - type: add_column_regex
+            target_column: 0
+            expression: ^(.*)\.([0-9]+)$
+            group_count: 2
+        mapping:
+          - type: list_identifiers
+            columns:
+              - 1
+              - 2
+    position:
+      left: 280
+      top: 0
+
+  concat:
+    doc: Concatenates all pieces of each reference sequence in coordinate order.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/maf_concat/maf_concat/1.1.0+galaxy0
+    tool_version: "1.1.0+galaxy0"
+    in:
+      pieces: by_sequence/output
+      reference: Reference species name
+    position:
+      left: 560
+      top: 0
+
+  rename_back:
+    doc: Restores hub species names from roast-safe aliases (species mode).
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/maf_name_rows/maf_name_rows/1.0.0+galaxy0
+    tool_version: "1.0.0+galaxy0"
+    in:
+      input: concat/output
+      renames: Species alias rename map
+      species: Species alias rename map
+      sizes: Reference chromosome sizes
+      reference: Reference species name
+    state:
+      mode: species
+    position:
+      left: 840
+      top: 100
+
+  tobigmaf:
+    doc: Converts each per-sequence MAF into UCSC bigMaf text via `mafToBigMaf`.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/ucsc_maftobigmaf/ucsc_maftobigmaf/482+galaxy0
+    tool_version: "482+galaxy0"
+    in:
+      input: rename_back/output
+      reference: Reference species name
+    position:
+      left: 1120
+      top: 100
+
+  bigmaf_text:
+    doc: Concatenates per-sequence bigMaf text datasets into one file keeping each sequence contiguous.
+    tool_id: toolshed.g2.bx.psu.edu/repos/mvdbeek/concatenate_multiple_datasets/cat_multiple/0.2
+    tool_version: "0.2"
+    in:
+      input: tobigmaf/output
+    position:
+      left: 1400
+      top: 100
+
+  bigmaf:
+    doc: Compiles bigMaf text into a UCSC BigBed (`bed3+1`) track with `bedToBigBed`.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/ucsc_bedtobigbed/ucsc_bedtobigbed/482+galaxy1
+    tool_version: "482+galaxy1"
+    in:
+      bed: bigmaf_text/out_file1
+      chrom_sizes: Reference chromosome sizes
+      as_file: bigMaf autoSql schema
+    state:
+      type: bed3+1
+      tab: true
+    position:
+      left: 1680
+      top: 200
