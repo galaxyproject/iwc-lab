@@ -1,0 +1,194 @@
+class: GalaxyWorkflow
+label: Comparative Panel Inventory and Completeness QC
+doc: |
+  This workflow profiles a multi-genome comparative panel prior to whole-genome
+  alignment by sketching every genome assembly with sourmash, computing both
+  Jaccard and size-robust max-containment similarity matrices, assessing
+  proteome annotation completeness with BUSCO and MultiQC, indexing assemblies
+  with samtools faidx, deriving per-assembly chrom.sizes tables, and extracting
+  ordered panel identifiers.
+release: "0.1"
+license: MIT
+creator:
+  - class: Person
+    name: Richard Burhans
+    identifier: https://orcid.org/0009-0006-5949-0958
+  - class: Person
+    name: Anton Nekrutenko
+    identifier: https://orcid.org/0000-0002-5987-8032
+tags:
+  - comparative-genomics
+  - quality-control
+  - sourmash
+  - busco
+  - whole-genome-alignment
+
+inputs:
+  Genome assemblies:
+    type: collection
+    collection_type: list
+    doc: List collection of genome assembly FASTA files. Element identifiers define panel member names across all downstream similarity matrices, indexes, and chromosome sizes.
+    position:
+      left: 0
+      top: 0
+  Annotated proteomes:
+    type: collection
+    collection_type: list
+    doc: List collection of protein FASTA files for annotated panel members (may be a subset of Genome assemblies) evaluated by BUSCO in protein mode.
+    position:
+      left: 0
+      top: 180
+  BUSCO lineage:
+    type: string
+    default: eukaryota_odb10
+    doc: BUSCO lineage dataset name matching a cached lineage on the Galaxy server (e.g. apicomplexa_odb12, saccharomycetes_odb10, eukaryota_odb10).
+    position:
+      left: 0
+      top: 320
+
+outputs:
+  Sourmash signatures:
+    outputSource: sourmash_sketch/out_file1
+    doc: Per-assembly scaled MinHash DNA signatures (.sig).
+  Jaccard similarity matrix CSV:
+    outputSource: sourmash_compare_jaccard/matrix_csv
+    doc: N x N Jaccard similarity matrix in CSV format.
+  Jaccard similarity labels:
+    outputSource: sourmash_compare_jaccard/labels_csv
+    doc: Signature label mapping corresponding to rows/columns of the Jaccard similarity matrix.
+  Max-containment similarity matrix CSV:
+    outputSource: sourmash_compare_maxc/matrix_csv
+    doc: Symmetric N x N max-containment similarity matrix in CSV format (robust to assembly size differences).
+  BUSCO summaries:
+    outputSource: busco/busco_sum
+    doc: Per-proteome BUSCO short summary reports.
+  BUSCO MultiQC report:
+    outputSource: multiqc/html_report
+    doc: MultiQC HTML report aggregating BUSCO completeness across annotated panel members.
+  FASTA indexes:
+    outputSource: panel_faidx/output
+    doc: Per-assembly samtools .fai indexes.
+  Chromosome sizes:
+    outputSource: panel_sizes/out_file1
+    doc: Per-assembly chrom.sizes tables (chrom<TAB>length) ready for UCSC chaining, netting, and hub construction.
+  Panel member identifiers:
+    outputSource: panel_identifiers/output
+    doc: Ordered list of genome assembly element identifiers in the panel.
+
+steps:
+  sourmash_sketch:
+    doc: Compute scaled MinHash DNA signatures for every assembly in the panel.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/sourmash_sketch/sourmash_sketch/4.9.4+galaxy0
+    tool_version: "4.9.4+galaxy0"
+    in:
+      input: Genome assemblies
+    state:
+      input_type_cond:
+        input_type_param: dna
+        sketch_type: dna
+      advanced_settings:
+        resolution_cond:
+          resolution_param: scaled
+          scaled: 1000
+        abund: false
+        seed: 42
+    position:
+      left: 300
+      top: 0
+
+  sourmash_compare_jaccard:
+    doc: Compute N x N Jaccard similarity matrix across all panel signatures.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/sourmash_compare/sourmash_compare/4.9.4+galaxy0
+    tool_version: "4.9.4+galaxy0"
+    in:
+      signatures: sourmash_sketch/out_file1
+    state:
+      matrix_type: ""
+      output_options:
+        - "--labels-to labels.csv"
+        - "--csv cmp.csv"
+    position:
+      left: 620
+      top: 0
+
+  sourmash_compare_maxc:
+    doc: Compute symmetric N x N max-containment similarity matrix (robust to assembly length differences).
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/sourmash_compare/sourmash_compare/4.9.4+galaxy0
+    tool_version: "4.9.4+galaxy0"
+    in:
+      signatures: sourmash_sketch/out_file1
+    state:
+      matrix_type: "--max-containment"
+      output_options:
+        - "--labels-to labels.csv"
+        - "--csv cmp.csv"
+    position:
+      left: 620
+      top: 160
+
+  busco:
+    doc: Run BUSCO in protein mode over each annotated proteome.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/busco/busco/6.1.0+galaxy1
+    tool_version: "6.1.0+galaxy1"
+    in:
+      input: Annotated proteomes
+      lineage|lineage_dataset: BUSCO lineage
+    state:
+      busco_mode:
+        mode: prot
+      lineage:
+        lineage_mode: select_lineage
+      outputs:
+        - short_summary
+      adv:
+        evalue: 0.001
+    position:
+      left: 300
+      top: 320
+
+  multiqc:
+    doc: Aggregate BUSCO short summaries into one panel MultiQC HTML report.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy6
+    tool_version: "1.35+galaxy6"
+    in:
+      results_0|software_cond|input: busco/busco_sum
+    state:
+      results:
+        - software_cond:
+            software: busco
+    position:
+      left: 620
+      top: 320
+
+  panel_faidx:
+    doc: Index every assembly FASTA with samtools faidx.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_faidx/samtools_faidx/1.22+galaxy1
+    tool_version: "1.22+galaxy1"
+    in:
+      input: Genome assemblies
+    position:
+      left: 300
+      top: 500
+
+  panel_sizes:
+    doc: Extract chrom<TAB>length sizes from each .fai index.
+    tool_id: Cut1
+    tool_version: "1.0.2"
+    in:
+      input: panel_faidx/output
+    state:
+      columnList: "c1,c2"
+      delimiter: "T"
+    position:
+      left: 620
+      top: 500
+
+  panel_identifiers:
+    doc: Extract ordered element identifiers of the panel genome collection.
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/collection_element_identifiers/collection_element_identifiers/0.0.3
+    tool_version: "0.0.3"
+    in:
+      input_collection: Genome assemblies
+    position:
+      left: 300
+      top: 660
