@@ -1,0 +1,92 @@
+- doc: Build 2bit, bigMaf, bigChain, bigLink, annotation BigBed12, and genomes.txt from tiny self-contained fixtures.
+  job:
+    Genome assemblies:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: GCA_900093555.2
+          path: test-data/test.fa
+          filetype: fasta
+    Multiple alignment MAFs:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: GCA_900093555.2
+          path: test-data/in.maf
+          filetype: maf
+    Directed pairwise chains:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: GCA_900093555.2_to_GCA_000002415.2
+          path: test-data/tiny.chain
+          filetype: chain
+    Gene annotation GFF3s:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: GCA_900093555.2
+          path: test-data/tiny.gff3
+          filetype: gff3
+    Reference chromosome sizes:
+      class: File
+      path: test-data/ref.chrom.sizes
+      filetype: tabular
+    Hub genome metadata:
+      class: File
+      path: test-data/metadata.tsv
+      filetype: tabular
+    bigMaf autoSql schema:
+      class: File
+      path: test-data/bigMaf.as
+      filetype: txt
+    bigChain autoSql schema:
+      class: File
+      path: test-data/bigChain.as
+      filetype: txt
+    bigLink autoSql schema:
+      class: File
+      path: test-data/bigLink.as
+      filetype: txt
+    Reference genome identifier: GCA_900093555.2
+  outputs:
+    TwoBit assemblies:
+      element_tests:
+        GCA_900093555.2:
+          asserts:
+            - that: has_size
+              min: 10
+    UCSC bigMaf tracks:
+      element_tests:
+        GCA_900093555.2:
+          asserts:
+            - that: has_size
+              min: 100
+    UCSC bigChain tracks:
+      element_tests:
+        GCA_900093555.2_to_GCA_000002415.2:
+          asserts:
+            - that: has_size
+              min: 100
+    UCSC bigLink tracks:
+      element_tests:
+        GCA_900093555.2_to_GCA_000002415.2:
+          asserts:
+            - that: has_size
+              min: 100
+    Gene annotation BigBed tracks:
+      element_tests:
+        GCA_900093555.2:
+          asserts:
+            - that: has_size
+              min: 100
+    Hub genomes definition:
+      asserts:
+        - that: has_text
+          text: "genome GCA_900093555.2"
+        - that: has_text
+          text: "twoBitPath"

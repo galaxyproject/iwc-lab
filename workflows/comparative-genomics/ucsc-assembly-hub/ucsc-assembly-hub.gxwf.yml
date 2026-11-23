@@ -1,0 +1,318 @@
+class: GalaxyWorkflow
+label: UCSC Assembly Hub Track and Manifest Builder
+doc: |
+  This workflow builds the core binary track and manifest artifacts required for
+  a UCSC Genome Browser assembly hub from comparative genomics outputs: 2bit
+  genome sequences, reference-anchored bigMaf multiple-alignment tracks,
+  directed pairwise bigChain and bigLink tracks, BigBed12 gene annotation
+  tracks, and the hub genomes.txt manifest.
+release: "0.1"
+license: MIT
+creator:
+  - class: Person
+    name: Richard Burhans
+    identifier: https://orcid.org/0009-0006-5949-0958
+  - class: Person
+    name: Anton Nekrutenko
+    identifier: https://orcid.org/0000-0002-5987-8032
+tags:
+  - comparative-genomics
+  - ucsc-hub
+  - bigmaf
+  - bigchain
+  - bigbed
+
+inputs:
+  Genome assemblies:
+    type: collection
+    collection_type: list
+    doc: List collection of genome FASTA files (one per assembly in the hub, keyed by assembly identifier) converted to 2bit via faToTwoBit.
+    position:
+      left: 0
+      top: 0
+  Multiple alignment MAFs:
+    type: collection
+    collection_type: list
+    doc: List collection of multi-species MAF files whose s-lines are prefixed with assembly identifiers matching Reference genome identifier.
+    position:
+      left: 0
+      top: 120
+  Directed pairwise chains:
+    type: collection
+    collection_type: list
+    doc: List collection of directed cleaned pairwise UCSC chain files converted to bigChain and bigLink BigBed tracks (using target chrom.sizes derived from each chain header).
+    position:
+      left: 0
+      top: 240
+  Gene annotation GFF3s:
+    type: collection
+    collection_type: list
+    doc: List collection of GFF3 gene annotation files on the reference assembly converted to BigBed12 tracks.
+    position:
+      left: 0
+      top: 360
+  Reference chromosome sizes:
+    type: data
+    format: tabular
+    doc: Reference assembly chrom.sizes (`chrom<TAB>length`) used for bigMaf and annotation BigBed compilation.
+    position:
+      left: 0
+      top: 480
+  Hub genome metadata:
+    type: data
+    format: tabular
+    doc: Per-assembly metadata TSV (`accession`, `defaultPos`, `organism`, `scientificName`, `description`) for build_genomes_txt.
+    position:
+      left: 0
+      top: 600
+  bigMaf autoSql schema:
+    type: data
+    format: txt
+    doc: UCSC bigMaf.as autoSql schema for bedToBigBed -type=bed3+1.
+    position:
+      left: 0
+      top: 720
+  bigChain autoSql schema:
+    type: data
+    format: txt
+    doc: UCSC bigChain.as autoSql schema for bedToBigBed -type=bed6+6.
+    position:
+      left: 0
+      top: 840
+  bigLink autoSql schema:
+    type: data
+    format: txt
+    doc: UCSC bigLink.as autoSql schema for bedToBigBed -type=bed4+1.
+    position:
+      left: 0
+      top: 960
+  Reference genome identifier:
+    type: string
+    doc: Reference assembly identifier prefixing reference rows in Multiple alignment MAFs (e.g. GCA_900093555.2).
+    position:
+      left: 0
+      top: 1080
+
+outputs:
+  TwoBit assemblies:
+    outputSource: fa_to_2bit/output
+    doc: Per-assembly UCSC 2bit sequence files.
+  UCSC bigMaf tracks:
+    outputSource: bigmaf_bb/output
+    doc: Per-MAF UCSC bigMaf BigBed tracks (`bed3+1`).
+  UCSC bigChain tracks:
+    outputSource: bigchain_bb/output
+    doc: Per-pair UCSC bigChain BigBed tracks (`bed6+6`).
+  UCSC bigLink tracks:
+    outputSource: biglink_bb/output
+    doc: Per-pair UCSC bigLink BigBed tracks (`bed4+1`).
+  Gene annotation BigBed tracks:
+    outputSource: annot_bb/output
+    doc: Per-GFF3 gene annotation BigBed12 tracks.
+  Hub genomes definition:
+    outputSource: build_genomes_txt/output
+    doc: Global UCSC assembly hub genomes.txt manifest.
+
+steps:
+  fa_to_2bit:
+    doc: Convert each assembly FASTA to UCSC 2bit format.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/ucsc_fatotwobit/ucsc_fatotwobit/482+galaxy1
+    tool_version: "482+galaxy1"
+    in:
+      input: Genome assemblies
+    position:
+      left: 340
+      top: 0
+
+  process_maf:
+    doc: Filter to blocks containing the reference genome, reorder s-lines reference-first, and sort by reference coordinates.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/process_maf/process_maf/1.0.0+galaxy0
+    tool_version: "1.0.0+galaxy0"
+    in:
+      input_maf: Multiple alignment MAFs
+      ref_acc: Reference genome identifier
+    position:
+      left: 340
+      top: 140
+
+  maf_to_bigmaf_bed:
+    doc: Convert normalized MAF blocks to bigMaf BED3+1 text.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/maf_to_bigmaf_bed/maf_to_bigmaf_bed/1.0.0+galaxy0
+    tool_version: "1.0.0+galaxy0"
+    in:
+      input_maf: process_maf/output_maf
+      ref_acc: Reference genome identifier
+    position:
+      left: 640
+      top: 140
+
+  sort_bigmaf_bed:
+    doc: Sort bigMaf BED by chromosome (lexical) and start coordinate (numeric).
+    tool_id: sort1
+    tool_version: "1.2.0"
+    in:
+      input: maf_to_bigmaf_bed/output_bed
+    state:
+      column: "1"
+      style: alpha
+      order: ASC
+      column_set:
+        - other_column: "2"
+          other_style: num
+          other_order: ASC
+    position:
+      left: 940
+      top: 140
+
+  bigmaf_bb:
+    doc: Compile sorted bigMaf BED3+1 into a UCSC BigBed track.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/ucsc_bedtobigbed/ucsc_bedtobigbed/482+galaxy1
+    tool_version: "482+galaxy1"
+    in:
+      bed: sort_bigmaf_bed/out_file1
+      chrom_sizes: Reference chromosome sizes
+      as_file: bigMaf autoSql schema
+    state:
+      type: bed3+1
+      tab: true
+    position:
+      left: 1240
+      top: 140
+
+  chain_to_bigchain:
+    doc: Convert each directed UCSC chain into bigChain BED6+6, bigLink BED4+1, and element-specific target chrom.sizes.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/chain_to_bigchain/chain_to_bigChain/1.0.0+galaxy0
+    tool_version: "1.0.0+galaxy0"
+    in:
+      chain: Directed pairwise chains
+    position:
+      left: 340
+      top: 320
+
+  sort_bigchain_bed:
+    doc: Sort bigChain BED by chromosome and start coordinate.
+    tool_id: sort1
+    tool_version: "1.2.0"
+    in:
+      input: chain_to_bigchain/bigchain_bed
+    state:
+      column: "1"
+      style: alpha
+      order: ASC
+      column_set:
+        - other_column: "2"
+          other_style: num
+          other_order: ASC
+    position:
+      left: 640
+      top: 280
+
+  bigchain_bb:
+    doc: Compile sorted bigChain BED6+6 into a UCSC BigBed track using chain-derived target chrom.sizes.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/ucsc_bedtobigbed/ucsc_bedtobigbed/482+galaxy1
+    tool_version: "482+galaxy1"
+    in:
+      bed: sort_bigchain_bed/out_file1
+      chrom_sizes: chain_to_bigchain/target_sizes
+      as_file: bigChain autoSql schema
+    state:
+      type: bed6+6
+      tab: true
+    position:
+      left: 940
+      top: 280
+
+  sort_biglink_bed:
+    doc: Sort bigLink BED by chromosome and start coordinate.
+    tool_id: sort1
+    tool_version: "1.2.0"
+    in:
+      input: chain_to_bigchain/biglink_bed
+    state:
+      column: "1"
+      style: alpha
+      order: ASC
+      column_set:
+        - other_column: "2"
+          other_style: num
+          other_order: ASC
+    position:
+      left: 640
+      top: 420
+
+  biglink_bb:
+    doc: Compile sorted bigLink BED4+1 into a UCSC BigBed track using chain-derived target chrom.sizes.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/ucsc_bedtobigbed/ucsc_bedtobigbed/482+galaxy1
+    tool_version: "482+galaxy1"
+    in:
+      bed: sort_biglink_bed/out_file1
+      chrom_sizes: chain_to_bigchain/target_sizes
+      as_file: bigLink autoSql schema
+    state:
+      type: bed4+1
+      tab: true
+    position:
+      left: 940
+      top: 420
+
+  gff3_to_genepred:
+    doc: Convert GFF3 gene models to UCSC genePred format.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/ucsc_gff3togenepred/ucsc_gff3togenepred/482+galaxy1
+    tool_version: "482+galaxy1"
+    in:
+      input: Gene annotation GFF3s
+    position:
+      left: 340
+      top: 560
+
+  genepred_to_bed:
+    doc: Convert UCSC genePred gene models to BED12 format.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/ucsc_genepredtobed/ucsc_genepredtobed/482+galaxy1
+    tool_version: "482+galaxy1"
+    in:
+      input: gff3_to_genepred/output
+    position:
+      left: 640
+      top: 560
+
+  sort_annot_bed:
+    doc: Sort gene annotation BED12 by chromosome and start coordinate.
+    tool_id: sort1
+    tool_version: "1.2.0"
+    in:
+      input: genepred_to_bed/output
+    state:
+      column: "1"
+      style: alpha
+      order: ASC
+      column_set:
+        - other_column: "2"
+          other_style: num
+          other_order: ASC
+    position:
+      left: 940
+      top: 560
+
+  annot_bb:
+    doc: Compile sorted BED12 gene models into a UCSC BigBed12 track.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/ucsc_bedtobigbed/ucsc_bedtobigbed/482+galaxy1
+    tool_version: "482+galaxy1"
+    in:
+      bed: sort_annot_bed/out_file1
+      chrom_sizes: Reference chromosome sizes
+    state:
+      type: bed12
+      tab: true
+    position:
+      left: 1240
+      top: 560
+
+  build_genomes_txt:
+    doc: Generate the global UCSC assembly hub genomes.txt manifest from assembly metadata.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/build_genomes_txt/build_genomes_txt/1.0.0+galaxy0
+    tool_version: "1.0.0+galaxy0"
+    in:
+      metadata: Hub genome metadata
+    position:
+      left: 340
+      top: 720
