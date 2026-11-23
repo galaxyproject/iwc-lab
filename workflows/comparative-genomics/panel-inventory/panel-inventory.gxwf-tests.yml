@@ -1,0 +1,44 @@
+- doc: Profile two small genomic sequence slices and a tiny proteome with sourmash (Jaccard + max-containment), BUSCO, samtools faidx, chrom.sizes, and element identifiers.
+  job:
+    Genome assemblies:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: sampleA
+          path: test-data/cs10_A.fa
+          filetype: fasta
+        - class: File
+          identifier: sampleB
+          path: test-data/cs10_B.fa
+          filetype: fasta
+    Annotated proteomes:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: sampleA
+          path: test-data/tiny_proteome.faa
+          filetype: fasta
+    BUSCO lineage: eukaryota_odb10
+  outputs:
+    Jaccard similarity matrix CSV:
+      asserts:
+        - that: has_n_lines
+          n: 3
+    Max-containment similarity matrix CSV:
+      asserts:
+        - that: has_n_lines
+          n: 3
+    Chromosome sizes:
+      element_tests:
+        sampleA:
+          asserts:
+            - that: has_n_columns
+              n: 2
+    Panel member identifiers:
+      asserts:
+        - that: has_line
+          line: sampleA
+        - that: has_line
+          line: sampleB
