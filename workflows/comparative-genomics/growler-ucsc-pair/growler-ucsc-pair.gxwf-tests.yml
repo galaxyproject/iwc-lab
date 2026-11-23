@@ -1,0 +1,35 @@
+- doc: Pairwise KegAlign + LASTZ + UCSC chain/net/rbest test on two small soft-masked sequences (requires a CUDA GPU runner for KegAlign).
+  job:
+    Target genome FASTA:
+      class: File
+      path: test-data/cs10_A.fa
+      filetype: fasta
+    Query genome FASTA:
+      class: File
+      path: test-data/cs10_B.fa
+      filetype: fasta
+    Target chromosome sizes:
+      class: File
+      path: test-data/cs10_A.sizes
+      filetype: tabular
+    Query chromosome sizes:
+      class: File
+      path: test-data/cs10_B.sizes
+      filetype: tabular
+    LASTZ scoring matrix:
+      class: File
+      path: test-data/scores.txt
+      filetype: tabular
+    axtChain linear gap table:
+      class: File
+      path: test-data/medium.lineargap
+      filetype: tabular
+  outputs:
+    All chains:
+      asserts:
+        - that: has_size
+          min: 0
+    Reciprocal-best MAF:
+      asserts:
+        - that: has_text
+          text: "##maf version=1"
