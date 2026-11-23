@@ -1,0 +1,50 @@
+- doc: Name rows for two pairwise MAFs (FL02 and 79X against cs10), split on NC_044376.1, and regroup into piece:species.
+  job:
+    Pairwise synNet MAFs:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: FL02
+          path: test-data/FL02.pair.maf
+          filetype: maf
+        - class: File
+          identifier: 79X
+          path: test-data/79X.pair.maf
+          filetype: maf
+    Species name tables:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: FL02
+          path: test-data/FL02.species.txt
+          filetype: tabular
+        - class: File
+          identifier: 79X
+          path: test-data/79X.species.txt
+          filetype: tabular
+    Sequence rename map:
+      class: File
+      path: test-data/hub_sequence_renames.tsv
+      filetype: tabular
+    Reference chromosome sizes:
+      class: File
+      path: test-data/cs10.chrom.sizes
+      filetype: tabular
+    Cut intervals BED:
+      class: File
+      path: test-data/cs10_cuts.bed
+      filetype: bed
+    Reference species name: cs10
+  outputs:
+    Regrouped MAF pieces:
+      element_tests:
+        NC_044376.1.00:
+          element_tests:
+            FL02:
+              asserts:
+                - that: has_text
+                  text: "s cs10.NC_044376.1"
+                - that: has_text
+                  text: "s FL02_coge60295.lcl_fl02_chr_009"

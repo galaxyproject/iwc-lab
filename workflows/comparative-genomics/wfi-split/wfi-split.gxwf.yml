@@ -1,0 +1,117 @@
+class: GalaxyWorkflow
+label: Pairwise MAF Split and Regroup for Multiz Roast (WF-I Split)
+doc: |
+  This workflow prepares pairwise MAF alignments for piece-wise multiz roast by
+  prefixing target and query rows with species names, splitting each pairwise
+  MAF at a reference BED cut list with UCSC mafSplit, and transposing the
+  resulting species:piece collection into piece:species for multiz-roast.
+release: "0.1"
+license: MIT
+creator:
+  - class: Person
+    name: Richard Burhans
+    identifier: https://orcid.org/0009-0006-5949-0958
+tags:
+  - comparative-genomics
+  - whole-genome-alignment
+  - multiz
+  - maf
+  - ucsc-hub
+
+inputs:
+  Pairwise synNet MAFs:
+    type: collection
+    collection_type: list
+    doc: List collection of pairwise synNet or reciprocal-best MAF alignments (unprefixed axtToMaf output), keyed by panel species label.
+    position:
+      left: 0
+      top: 0
+  Species name tables:
+    type: collection
+    collection_type: list
+    doc: Parallel list collection with the same element identifiers as Pairwise synNet MAFs, each holding one line of `label<TAB>species`.
+    position:
+      left: 0
+      top: 120
+  Sequence rename map:
+    type: data
+    format: tabular
+    doc: Tabular mapping (`genome`, `hub_name`, `original_name`) translating assembly sequence names to UCSC hub-safe sequence names.
+    position:
+      left: 0
+      top: 240
+  Reference chromosome sizes:
+    type: data
+    format: tabular
+    doc: Reference genome chrom.sizes (`chrom<TAB>length`).
+    position:
+      left: 0
+      top: 360
+  Cut intervals BED:
+    type: data
+    format: bed
+    doc: BED cut list (`chrom<TAB>pos<TAB>pos+1`) specifying where mafSplit partitions reference chromosomes into pieces.
+    position:
+      left: 0
+      top: 480
+  Reference species name:
+    type: string
+    doc: Reference species name used to prefix row 1 of every MAF block (e.g. cs10).
+    position:
+      left: 0
+      top: 600
+
+outputs:
+  Regrouped MAF pieces:
+    outputSource: by_piece/output
+    doc: Nested list:list collection (piece:species) ready to feed directly into multiz-roast.
+
+steps:
+  name_rows:
+    doc: Prefixes row 1 with <reference>.<seq> and row 2 with <species>.<hub_seq> by row position.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/maf_name_rows/maf_name_rows/1.0.0+galaxy0
+    tool_version: "1.0.0+galaxy0"
+    in:
+      input: Pairwise synNet MAFs
+      species: Species name tables
+      renames: Sequence rename map
+      sizes: Reference chromosome sizes
+      reference: Reference species name
+    state:
+      mode: forward
+    position:
+      left: 320
+      top: 140
+
+  split:
+    doc: Runs UCSC mafSplit at the cut list; sequences without cuts are bundled into small.00.
+    tool_id: toolshed.g2.bx.psu.edu/repos/richard-burhans/ucsc_mafsplit_bed/ucsc_mafsplit_bed/482+galaxy0
+    tool_version: "482+galaxy0"
+    in:
+      input: name_rows/output
+      splits: Cut intervals BED
+    position:
+      left: 640
+      top: 140
+
+  by_piece:
+    doc: Applies Galaxy collection rules to swap outer and inner list identifiers from species:piece to piece:species.
+    tool_id: __APPLY_RULES__
+    tool_version: "1.1.0"
+    in:
+      input: split/pieces
+    state:
+      rules:
+        rules:
+          - type: add_column_metadata
+            value: identifier0
+          - type: add_column_metadata
+            value: identifier1
+        mapping:
+          - type: list_identifiers
+            columns:
+              - 1
+              - 0
+    position:
+      left: 960
+      top: 140
