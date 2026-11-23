@@ -1,0 +1,236 @@
+{
+  "run": {
+    "pipeline": "nextflow-to-galaxy",
+    "run_slug": "egor-codex-text-uppercase-count-20261111",
+    "status": "complete",
+    "phases": [
+      {
+        "n": 1,
+        "kind": "mold",
+        "skill": "summarize-nextflow",
+        "status": "done",
+        "artifacts": [],
+        "feedback_checked": true
+      },
+      {
+        "n": 2,
+        "kind": "mold",
+        "skill": "nextflow-summary-to-galaxy-reference-data",
+        "status": "done",
+        "artifacts": [],
+        "feedback_checked": true
+      },
+      {
+        "n": 3,
+        "kind": "mold",
+        "skill": "nextflow-summary-to-galaxy-interface",
+        "status": "done",
+        "artifacts": [],
+        "feedback_checked": true
+      },
+      {
+        "n": 4,
+        "kind": "mold",
+        "skill": "nextflow-summary-to-galaxy-data-flow",
+        "status": "done",
+        "artifacts": [],
+        "feedback_checked": true
+      },
+      {
+        "n": 5,
+        "kind": "mold",
+        "skill": "compare-against-iwc-exemplar",
+        "status": "done",
+        "artifacts": [],
+        "feedback_checked": true
+      },
+      {
+        "n": 6,
+        "kind": "mold",
+        "skill": "nextflow-summary-to-galaxy-template",
+        "status": "done",
+        "artifacts": [],
+        "feedback_checked": true
+      },
+      {
+        "n": 7,
+        "kind": "mold",
+        "skill": "advance-galaxy-draft-step",
+        "status": "done",
+        "artifacts": [],
+        "feedback_checked": true,
+        "iterations": 2
+      },
+      {
+        "n": 8,
+        "kind": "branch",
+        "pattern": "test-data-resolution",
+        "status": "done",
+        "artifacts": [],
+        "feedback_checked": true,
+        "selected": "nextflow-to-test-data"
+      },
+      {
+        "n": 9,
+        "kind": "mold",
+        "skill": "nextflow-test-to-galaxy-test-plan",
+        "status": "done",
+        "artifacts": [],
+        "feedback_checked": true
+      },
+      {
+        "n": 10,
+        "kind": "mold",
+        "skill": "implement-galaxy-workflow-test",
+        "status": "done",
+        "artifacts": [],
+        "feedback_checked": true
+      },
+      {
+        "n": 11,
+        "kind": "mold",
+        "skill": "validate-galaxy-workflow",
+        "status": "done",
+        "artifacts": [],
+        "feedback_checked": true
+      },
+      {
+        "n": 12,
+        "kind": "mold",
+        "skill": "run-workflow-test",
+        "status": "done",
+        "artifacts": [],
+        "feedback_checked": true
+      },
+      {
+        "n": 13,
+        "kind": "mold",
+        "skill": "debug-galaxy-workflow-output",
+        "status": "done",
+        "artifacts": [],
+        "feedback_checked": true
+      }
+    ]
+  },
+  "entries": [
+    {
+      "id": "summarize-nextflow-implicit-test-profile",
+      "raised_by": "summarize-nextflow",
+      "observed_in": {
+        "mold": "summarize-nextflow",
+        "path": "content/molds/summarize-nextflow/index.md",
+        "revision": 20,
+        "content_hash": "d8e6759095994ad000fb8b78018da070761a5abfb8cf0a80c6c59b550a272501",
+        "foundry_head": "871b5e6deadfd56aeb5e2ba92eb8f6f50c8449ee"
+      },
+      "subject": {
+        "kind": "mold",
+        "label": "summarize-nextflow",
+        "locator": "content/molds/summarize-nextflow/index.md",
+        "content_hash": "d8e6759095994ad000fb8b78018da070761a5abfb8cf0a80c6c59b550a272501"
+      },
+      "kind": "defect",
+      "severity": "major",
+      "what": "Обычный вызов foundry summarize-nextflow source без --profile создал и выбрал profile:test, хотя profiles пуст и в source/ нет конфигурации профилей. rationale ошибочно утверждает explicit caller profile override.",
+      "expected": "Согласовать CLI с правилом Mold об отсутствии неявного профиля test: без явно заданного профиля выбирать реальный pipeline-defaults и не добавлять несуществующие профили.",
+      "evidence": "<run>/logs/phase1-cli-summary.raw.json: profiles=[], test_candidates[0].id=profile:test, effective_profiles=[test]. Повторный вызов с --profile пустой строкой дал pipeline-defaults в <run>/logs/phase1-cli-no-profile.raw.json. Оба вызова завершились с кодом 0.",
+      "status": "open",
+      "issue": null
+    },
+    {
+      "id": "summarize-nextflow-nested-source-provenance",
+      "raised_by": "summarize-nextflow",
+      "observed_in": {
+        "mold": "summarize-nextflow",
+        "path": "content/molds/summarize-nextflow/index.md",
+        "revision": 20,
+        "content_hash": "d8e6759095994ad000fb8b78018da070761a5abfb8cf0a80c6c59b550a272501",
+        "foundry_head": "871b5e6deadfd56aeb5e2ba92eb8f6f50c8449ee"
+      },
+      "subject": {
+        "kind": "mold",
+        "label": "summarize-nextflow",
+        "locator": "content/molds/summarize-nextflow/index.md",
+        "content_hash": "d8e6759095994ad000fb8b78018da070761a5abfb8cf0a80c6c59b550a272501"
+      },
+      "kind": "defect",
+      "severity": "major",
+      "what": "Для локального дерева source/ без собственного репозитория CLI указал URL и коммит родительского iwc-lab, в котором этих исходных файлов нет. Сводка получает ложное git-происхождение.",
+      "expected": "Уточнить в Mold проверку принадлежности исходных файлов git-коммиту и согласовать CLI: наследовать git-метаданные родителя только при проверяемой принадлежности, иначе явно сохранять локальное происхождение и содержательный хеш либо отсутствие git-пина.",
+      "evidence": "<run>/logs/phase1-cli-no-profile.raw.json: source.url=https://github.com/galaxyproject/iwc-lab.git, source.version=b2638c02991f5b1521f1571f2a5aa2732660f681. Локальный источник состоит из source/main.nf и source/data/words.txt. Итоговый source.version и проверяемый манифест находятся в <run>/logs/phase1-source-provenance.json.",
+      "status": "open",
+      "issue": null
+    },
+    {
+      "id": "summarize-nextflow-anonymous-dsl2-handoff",
+      "raised_by": "summarize-nextflow",
+      "observed_in": {
+        "mold": "summarize-nextflow",
+        "path": "content/molds/summarize-nextflow/index.md",
+        "revision": 20,
+        "content_hash": "d8e6759095994ad000fb8b78018da070761a5abfb8cf0a80c6c59b550a272501",
+        "foundry_head": "871b5e6deadfd56aeb5e2ba92eb8f6f50c8449ee"
+      },
+      "subject": {
+        "kind": "mold",
+        "label": "summarize-nextflow",
+        "locator": "content/molds/summarize-nextflow/index.md",
+        "content_hash": "d8e6759095994ad000fb8b78018da070761a5abfb8cf0a80c6c59b550a272501"
+      },
+      "kind": "gap",
+      "severity": "major",
+      "what": "Для простого ad-hoc DSL2 с двумя процессами CLI вернул пустые params, workflow.channels и workflow.edges при наличии явных params.input, params.outdir, Channel.fromPath и двух вызовов в безымянном workflow. Текстовый вход дополнительно назван samplesheet. При этом проверка схемы успешна, а инструкция обещает поддержку ad-hoc DSL2 и не объясняет завершение такого неполного handoff; описание Workflow в схеме считает единственный безымянный блок слишком малым.",
+      "expected": "Согласовать контракт Mold, схему и возможности CLI для единственного безымянного workflow. Либо извлекать простые параметры и связи и требовать явной проверки полноты после CLI, либо выдавать четкую неподдерживаемую границу до перевода. Не классифицировать обычный .txt как samplesheet без свидетельства таблицы.",
+      "evidence": "<run>/source/main.nf: params.input, params.outdir и source = Channel.fromPath(params.input, checkIfExists: true); upper = UPPERCASE(source); COUNT_LINES(upper). В <run>/logs/phase1-cli-no-profile.raw.json params=[], workflow.channels=[], workflow.edges=[], inputs[0].role=samplesheet. Сырая сводка проходит проверку: <run>/logs/phase1-cli-raw-validation.log. Агент дополнил итоговую сводку и явно описал изменения в <run>/phase1-notes.md.",
+      "status": "open",
+      "issue": null
+    },
+    {
+      "id": "nextflow-test-plan-assumes-nf-test-evidence",
+      "raised_by": "nextflow-test-to-galaxy-test-plan",
+      "observed_in": {
+        "mold": "nextflow-test-to-galaxy-test-plan",
+        "path": "content/molds/nextflow-test-to-galaxy-test-plan/index.md",
+        "revision": 8,
+        "content_hash": "fa769216f621ef25470c9fb907df1278635c0a1e022b647b9462ff7b92469291",
+        "foundry_head": "871b5e6deadfd56aeb5e2ba92eb8f6f50c8449ee"
+      },
+      "subject": {
+        "kind": "mold",
+        "label": "nextflow-test-to-galaxy-test-plan",
+        "locator": "content/molds/nextflow-test-to-galaxy-test-plan/index.md",
+        "content_hash": "fa769216f621ef25470c9fb907df1278635c0a1e022b647b9462ff7b92469291"
+      },
+      "kind": "defect",
+      "severity": "minor",
+      "what": "Процедура безусловно требует source.derived_from: test-evidence, поскольку предполагает реальные nf-test evidence. Но summarize-nextflow допускает выбранный кандидат pipeline-defaults без исходных assertions; именно такой кандидат поступил в этом запуске.",
+      "expected": "Разветвить процедуру по фактическому наличию исходных assertions: для pipeline-defaults без них разрешить derived_from: intent, явно указать происхождение наблюденных результатов запуска и предупреждение no-upstream-expected-outputs; не требовать выдуманного nf-test evidence.",
+      "evidence": "В <run>/summary-nextflow.json выбран pipeline-defaults, assert_workflow_success:null, snapshot:null, prose_assertions:[]. Реальные запуски Nextflow дают ожидаемые файлы, но это новые наблюдения данного запуска, а не исходный набор утверждений. В galaxy-test-plan.yml значения поэтому помечены fixture-derived, dominant source intent.",
+      "status": "open",
+      "issue": null
+    },
+    {
+      "id": "galaxy-stager-ignores-file-newline-override",
+      "raised_by": "implement-galaxy-workflow-test",
+      "observed_in": {
+        "mold": "implement-galaxy-workflow-test",
+        "path": "content/molds/implement-galaxy-workflow-test/index.md",
+        "revision": 11,
+        "content_hash": "34855691581889d36265e00178088b8a52a51ee72119329261bca186f7cb480e",
+        "foundry_head": "4c747d65e84f0100611458b5e869e9641bc50a21"
+      },
+      "subject": {
+        "kind": "related-project",
+        "label": "galaxy-tool-util 26.1.2: FileUploadTarget; Planemo 0.75.48 caller",
+        "locator": "https://github.com/galaxyproject/galaxy"
+      },
+      "kind": "defect",
+      "severity": "minor",
+      "what": "Схема workflow tests принимает у File поле to_posix_lines:false. Но установленный Planemo передает для Galaxy глобальное True, а FileUploadTarget в galaxy.tool_util.client.staging использует его при создании fetch payload вместо свойства конкретного File. Поэтому одним принятым схемой флагом нельзя сохранить вход без последнего LF.",
+      "expected": "Уважать явное свойство to_posix_lines у конкретного File при построении payload, используя глобальный флаг только как default. Пока Foundry может документировать contents для маленьких UTF-8 fixtures как обход без изменения инструментов.",
+      "evidence": "Проверены установленный planemo/galaxy/activity.py:stage_in и galaxy/tool_util/client/staging.py:upload_func_fetch. Пробный payload передает to_posix_lines:true для FileUploadTarget; FileLiteralTarget с contents явно передает false. Это проверка кода и payload до запуска Galaxy, а не утверждение о неудачном Galaxy job. В <run>/galaxy-workflow.gxwf-tests.yml переданы точные contents исходных файлов, а test-data/manifest.json сохраняет SHA-256 материализованных байтов.",
+      "status": "open",
+      "issue": null
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+class: GalaxyWorkflowDraft
+id: text-uppercase-count
+label: Преобразование ASCII-регистра и подсчет строк
+doc: 'Два последовательных процесса исходного Nextflow: преобразование строчных ASCII-букв в прописные
+  и подсчет записей с точной русской подписью. Оба результата являются публичными выходами. Происхождение:
+  file:source/, sha256:81abf32dc874c8aab7db43ae1a5a7b959a5cb57017b84abc908f3384bee7740d.'
+inputs:
+- id: text_input
+  label: text_input
+  type: data
+  format:
+  - txt
+  optional: false
+  doc: Один обычный текстовый файл. Пустой файл допустим; отсутствие dataset не допускается.
+  position:
+    left: 0
+    top: 0
+outputs:
+- id: uppercase_text
+  label: uppercase_text
+  type: data
+  doc: 'Преобразованный текст: изменяются только ASCII a-z, остальные байты и последний перевод строки
+    сохраняются.'
+  outputSource: uppercase/TODO_uppercase_text
+- id: line_count_summary
+  label: line_count_summary
+  type: data
+  doc: 'UTF-8 отчет: Количество строк: <число записей AWK NR> и завершающий перевод строки.'
+  outputSource: count_lines/TODO_line_count_summary
+steps:
+- id: uppercase
+  label: uppercase
+  type: tool
+  tool_id: TODO
+  position:
+    left: 300
+    top: 0
+  in:
+  - id: TODO_input
+    source: text_input
+  out:
+  - id: TODO_uppercase_text
+    rename: uppercase.txt
+    change_datatype: txt
+  _plan_state: 'Сохранить действие LC_ALL=C tr: ASCII a-z -> A-Z, не преобразовывать Unicode-регистр.
+    Не менять не-ASCII-байты, порядок, пустые строки и наличие последнего LF. Пустой вход должен давать
+    пустой выход. Реальные параметры и версию выбрать после проверки обертки.'
+  _plan_context: 'Источник: source/main.nf, UPPERCASE. Команда из summary-nextflow.json:
+
+    """
+
+    LC_ALL=C tr ''[:lower:]'' ''[:upper:]'' < "${source_text}" > uppercase.txt
+
+    """
+
+    В источнике нет контейнера, conda и закрепленной версии tr. Кандидаты инструментов требуют последующей
+    проверки семантики; подходящего IWC domain exemplar нет.
+
+    Тестировать оба опубликованных результата на фактических Nextflow-эталонах; не переписывать эталон
+    из результатов Galaxy.'
+  _plan_in: Один dataset txt из обязательного workflow-входа text_input. TODO_input обозначает неизвестное
+    имя порта обертки; арность и источник уже определены. Не создавать коллекцию.
+  _plan_out: Один dataset txt с содержимым исходного uppercase.txt. TODO_uppercase_text является неизвестным
+    именем порта. Этот же результат одновременно опубликован как uppercase_text и передан в count_lines;
+    сохранить обе ссылки при замене порта. Статическое имя dataset uppercase.txt не меняет публичный label.
+- id: count_lines
+  label: count_lines
+  type: tool
+  tool_id: TODO
+  position:
+    left: 600
+    top: 0
+  in:
+  - id: TODO_input
+    source: uppercase/TODO_uppercase_text
+  out:
+  - id: TODO_line_count_summary
+    rename: summary.txt
+    change_datatype: txt
+  _plan_state: 'Сохранить AWK NR с обычным разделителем записей LF. Считать пустые записи и последнюю
+    непустую запись без LF. Пустой вход дает 0. Вывести ровно Количество строк: <NR> и один завершающий
+    LF в UTF-8. Реальные параметры и версию выбрать после проверки обертки; не подменять NR счетчиком
+    символов LF.'
+  _plan_context: 'Источник: source/main.nf, COUNT_LINES. Команда из summary-nextflow.json:
+
+    """
+
+    awk ''END { print "Количество строк: " NR }'' "${upper_text}" > summary.txt
+
+    """
+
+    В источнике нет контейнера, conda и закрепленной версии awk. Потребляется именно результат UPPERCASE.
+    Отсутствие предметного IWC exemplar не меняет цель или граф.'
+  _plan_in: Один dataset txt из uppercase/TODO_uppercase_text. TODO_input обозначает имя порта будущей
+    обертки. Не подключать text_input напрямую вместо результата первого процесса.
+  _plan_out: Один dataset txt для публичного line_count_summary, соответствующий source summary.txt. TODO_line_count_summary
+    является неизвестным именем порта. Сохранить UTF-8 подпись, десятичное число и LF; статическое имя
+    dataset summary.txt не меняет публичный label.

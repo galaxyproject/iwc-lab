@@ -1,0 +1,89 @@
+class: GalaxyWorkflowDraft
+id: text-uppercase-count
+label: Преобразование ASCII-регистра и подсчет строк
+doc: 'Два последовательных процесса исходного Nextflow: преобразование строчных ASCII-букв в прописные
+  и подсчет записей с точной русской подписью. Оба результата являются публичными выходами. Происхождение:
+  file:source/, sha256:81abf32dc874c8aab7db43ae1a5a7b959a5cb57017b84abc908f3384bee7740d.'
+inputs:
+- id: text_input
+  label: text_input
+  type: data
+  format:
+  - txt
+  optional: false
+  doc: Один обычный текстовый файл. Пустой файл допустим; отсутствие dataset не допускается.
+  position:
+    left: 0
+    top: 0
+outputs:
+- id: uppercase_text
+  label: uppercase_text
+  type: data
+  doc: 'Преобразованный текст: изменяются только ASCII a-z, остальные байты и последний перевод строки
+    сохраняются.'
+  outputSource: uppercase/output
+- id: line_count_summary
+  label: line_count_summary
+  type: data
+  doc: 'UTF-8 отчет: Количество строк: <число записей AWK NR> и завершающий перевод строки.'
+  outputSource: count_lines/TODO_line_count_summary
+steps:
+- id: uppercase
+  label: uppercase
+  type: tool
+  tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_sed_tool/9.5+galaxy3
+  position:
+    left: 300
+    top: 0
+  in:
+  - id: infile
+    source: text_input
+  out:
+  - id: output
+    rename: uppercase.txt
+    change_datatype: txt
+  tool_version: 9.5+galaxy3
+  tool_shed_repository:
+    name: text_processing
+    owner: bgruening
+    changeset_revision: ab83aa685821
+    tool_shed: toolshed.g2.bx.psu.edu
+  state:
+    infile:
+      __class__: ConnectedValue
+    code: y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/
+    adv_opts:
+      adv_opts_selector: basic
+- id: count_lines
+  label: count_lines
+  type: tool
+  tool_id: TODO
+  position:
+    left: 600
+    top: 0
+  in:
+  - id: TODO_input
+    source: uppercase/output
+  out:
+  - id: TODO_line_count_summary
+    rename: summary.txt
+    change_datatype: txt
+  _plan_state: 'Сохранить AWK NR с обычным разделителем записей LF. Считать пустые записи и последнюю
+    непустую запись без LF. Пустой вход дает 0. Вывести ровно Количество строк: <NR> и один завершающий
+    LF в UTF-8. Реальные параметры и версию выбрать после проверки обертки; не подменять NR счетчиком
+    символов LF.'
+  _plan_context: 'Источник: source/main.nf, COUNT_LINES. Команда из summary-nextflow.json:
+
+    """
+
+    awk ''END { print "Количество строк: " NR }'' "${upper_text}" > summary.txt
+
+    """
+
+    В источнике нет контейнера, conda и закрепленной версии awk. Потребляется именно результат UPPERCASE.
+    Отсутствие предметного IWC exemplar не меняет цель или граф.'
+  _plan_in: Один dataset txt из uppercase/TODO_uppercase_text. TODO_input обозначает имя порта будущей
+    обертки. Не подключать text_input напрямую вместо результата первого процесса.
+  _plan_out: Один dataset txt для публичного line_count_summary, соответствующий source summary.txt. TODO_line_count_summary
+    является неизвестным именем порта. Сохранить UTF-8 подпись, десятичное число и LF; статическое имя
+    dataset summary.txt не меняет публичный label.

@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-11-11T21:24:24.387008+00:00",
+  "description": "Проверка фактического формирования payload установленным клиентским кодом; ответы API заменены локальной заглушкой.",
+  "scope": {
+    "network_requests": 0,
+    "galaxy_jobs_started": 0,
+    "galaxy_workflows_invoked": 0,
+    "server_started": false,
+    "fake_post_callback_calls": 3
+  },
+  "versions": {
+    "planemo": "0.75.48",
+    "galaxy-tool-util": "26.1.2",
+    "galaxy-tool-util-models": "26.1.2",
+    "galaxy-util": "26.1.2"
+  },
+  "galaxy_source_version": "26.1.3.dev0",
+  "path_normalization": {
+    "<run>": "Каталог текущего Foundry run; префикс заменен после реального формирования payload.",
+    "<galaxy_root>": "Значение galaxy_root из tooling/galaxy-runtime.json."
+  },
+  "cases": [
+    {
+      "case": "path-false-property",
+      "passed": true,
+      "requested_global_to_posix_lines": true,
+      "observed_to_posix_lines": true,
+      "input": {
+        "class": "File",
+        "path": "<run>/nextflow-reference/inputs/mixed-no-final-newline.txt",
+        "filetype": "txt",
+        "to_posix_lines": false
+      },
+      "observed_call": {
+        "api_path": "tools/fetch",
+        "payload": {
+          "history_id": "synthetic-history",
+          "targets": [
+            {
+              "destination": {
+                "type": "hdas"
+              },
+              "elements": [
+                {
+                  "ext": "txt",
+                  "dbkey": "?",
+                  "to_posix_lines": true,
+                  "auto_decompress": false,
+                  "src": "url",
+                  "url": "file://<run>/nextflow-reference/inputs/mixed-no-final-newline.txt",
+                  "name": "mixed-no-final-newline.txt"
+                }
+              ],
+              "auto_decompress": false
+            }
+          ],
+          "__files": {}
+        }
+      },
+      "staged_job": {
+        "text_input": {
+          "src": "hda",
+          "id": "synthetic-id"
+        }
+      },
+      "synthetic_datasets": [
+        {
+          "id": "synthetic-id"
+        }
+      ]
+    },
+    {
+      "case": "mixed-literal",
+      "passed": true,
+      "requested_global_to_posix_lines": true,
+      "observed_to_posix_lines": false,
+      "input": {
+        "class": "File",
+        "contents": "MiXeD café\nlast LINE",
+        "filetype": "txt"
+      },
+      "observed_call": {
+        "api_path": "tools/fetch",
+        "payload": {
+          "history_id": "synthetic-history",
+          "targets": [
+            {
+              "destination": {
+                "type": "hdas"
+              },
+              "elements": [
+                {
+                  "ext": "txt",
+                  "dbkey": "?",
+                  "src": "pasted",
+                  "paste_content": "MiXeD café\nlast LINE",
+                  "to_posix_lines": false
+                }
+              ],
+              "auto_decompress": false
+            }
+          ],
+          "__files": {}
+        }
+      },
+      "staged_job": {
+        "text_input": {
+          "src": "hda",
+          "id": "synthetic-id"
+        }
+      },
+      "synthetic_datasets": [
+        {
+          "id": "synthetic-id"
+        }
+      ]
+    },
+    {
+      "case": "empty-literal",
+      "passed": true,
+      "requested_global_to_posix_lines": true,
+      "observed_to_posix_lines": false,
+      "input": {
+        "class": "File",
+        "contents": "",
+        "filetype": "txt"
+      },
+      "observed_call": {
+        "api_path": "tools/fetch",
+        "payload": {
+          "history_id": "synthetic-history",
+          "targets": [
+            {
+              "destination": {
+                "type": "hdas"
+              },
+              "elements": [
+                {
+                  "ext": "txt",
+                  "dbkey": "?",
+                  "src": "pasted",
+                  "paste_content": "",
+                  "to_posix_lines": false
+                }
+              ],
+              "auto_decompress": false
+            }
+          ],
+          "__files": {}
+        }
+      },
+      "staged_job": {
+        "text_input": {
+          "src": "hda",
+          "id": "synthetic-id"
+        }
+      },
+      "synthetic_datasets": [
+        {
+          "id": "synthetic-id"
+        }
+      ]
+    }
+  ],
+  "source_references": [
+    {
+      "path": "tooling/venv/lib/python3.12/site-packages/planemo/galaxy/activity.py",
+      "start_line": 480,
+      "end_line": 507,
+      "sha256": "de62608dcad8da19152c16d17253a1eb08ef0713965d2b3f97b7545a6d75c600",
+      "evidence": "Planemo задает to_posix_lines для Galaxy-артефактов на уровне всего staging."
+    },
+    {
+      "path": "tooling/venv/lib/python3.12/site-packages/galaxy/tool_util/cwl/util.py",
+      "start_line": 242,
+      "end_line": 277,
+      "sha256": "949d622675b4846e6f2a1739a14ae9b62f28c97df1e086ed573dc64f5ee6b68b",
+      "evidence": "Свойство to_posix_lines файла не переносится в kwargs; contents проверяется через is not None."
+    },
+    {
+      "path": "tooling/venv/lib/python3.12/site-packages/galaxy/tool_util/client/staging.py",
+      "start_line": 103,
+      "end_line": 145,
+      "sha256": "522e910af60837968e89a1de2cf704068654736e5c387eaa9947721bb2d933ac",
+      "evidence": "Файловый upload берет глобальный флаг; literal явно задает false."
+    },
+    {
+      "path": "<galaxy_root>/lib/galaxy/datatypes/sniff.py",
+      "start_line": 181,
+      "end_line": 189,
+      "sha256": "716c64d9dd934f00fb86d6c0bd159c5b8dda5df919d1380c76c48c3d1b32da4f",
+      "evidence": "При преобразовании непустой текст без конечного LF получает LF."
+    },
+    {
+      "path": "<galaxy_root>/lib/galaxy/tools/data_fetch.py",
+      "start_line": 613,
+      "end_line": 614,
+      "sha256": "3a3e8e70eb8109796fe3a7663c148115a3fdee09e6bd36fb4e3996907b6a0eaa",
+      "evidence": "Literal передается в StringIO и сохраняется через stream_to_file."
+    },
+    {
+      "path": "<galaxy_root>/lib/galaxy/tools/parameters/basic.py",
+      "start_line": 2324,
+      "end_line": 2331,
+      "sha256": "1433537d36d3f3209f31724ad56245740c968f5249b8d22a89fe832b86188665",
+      "evidence": "Data-параметр по умолчанию добавляет проверку метаданных, без проверки ненулевого размера."
+    },
+    {
+      "path": "<galaxy_root>/lib/galaxy/tools/parameters/validation.py",
+      "start_line": 173,
+      "end_line": 184,
+      "sha256": "b647c98694575b9524ba547c419e6c06b6cb861cd6fc5ec2f9acb0428d7e5b34",
+      "evidence": "Проверка ненулевого размера существует как отдельный DatasetEmptyValidator."
+    },
+    {
+      "path": "<galaxy_root>/lib/galaxy/datatypes/data.py",
+      "start_line": 1042,
+      "end_line": 1061,
+      "sha256": "92335df0890a445682799e696de07b6ac0a090d1127f3f449ea25c94389f24bf",
+      "evidence": "txt имеет необязательные метаданные data_lines с default 0."
+    }
+  ],
+  "conclusions": {
+    "file_path_to_posix_lines_false_honored": false,
+    "literal_preserves_no_final_newline_payload": true,
+    "empty_literal_accepted_by_client": true,
+    "standalone_empty_file_class_supported": false,
+    "live_galaxy_execution_verified": false
+  },
+  "passed": 3,
+  "failed": 0,
+  "skipped": 0
+}

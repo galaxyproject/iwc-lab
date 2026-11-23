@@ -1,0 +1,356 @@
+{
+  "schema_version": 1,
+  "tool_id": "tp_sed_tool",
+  "tool_version": "9.5+galaxy3",
+  "cache_key": "14ea21e9ba966c00a637eafc28acee22f107ee6e08644713a8e7f10dab9f0dc0",
+  "source": {
+    "kind": "orphan",
+    "label": "orphan",
+    "url": "",
+    "cached_at": "2026-11-11T21:21:40.040Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": "../../../tooling/tool-cache/14ea21e9ba966c00a637eafc28acee22f107ee6e08644713a8e7f10dab9f0dc0.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "tp_sed_tool",
+    "version": "9.5+galaxy3",
+    "name": "Text transformation",
+    "description": "with sed",
+    "inputs": [
+      {
+        "name": "infile",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "File to process",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "txt"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "code",
+        "parameter_type": "gx_text",
+        "hidden": false,
+        "label": "SED Program",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "text",
+        "area": false,
+        "value": null,
+        "default_options": [],
+        "validators": []
+      },
+      {
+        "name": "adv_opts",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "adv_opts_selector",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Advanced Options",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Hide Advanced Options",
+              "value": "basic",
+              "selected": true
+            },
+            {
+              "label": "Show Advanced Options",
+              "value": "advanced",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "basic",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "advanced",
+            "parameters": [
+              {
+                "name": "silent",
+                "parameter_type": "gx_select",
+                "hidden": false,
+                "label": "Operation mode",
+                "help": "Same as 'sed -n', leave at 'normal' unless you know what you're doing.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "select",
+                "options": [
+                  {
+                    "label": "normal",
+                    "value": "",
+                    "selected": false
+                  },
+                  {
+                    "label": "silent",
+                    "value": "-n",
+                    "selected": false
+                  }
+                ],
+                "multiple": false,
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output",
+        "label": null,
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "infile",
+        "metadata_source": "infile",
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.5281/zenodo.1419255"
+      }
+    ],
+    "license": null,
+    "profile": "23.1",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n**What it does**\n\nThis tool runs the unix **sed** command on the selected data file.\n\n.. class:: infomark\n\n**TIP:** This tool uses the **extended regular** expression syntax (same as running 'sed -r').\n\n\n\n**Further reading**\n\n- Short sed tutorial (http://www.linuxhowtos.org/System/sed_tutorial.htm)\n- Long sed tutorial (http://www.grymoire.com/Unix/Sed.html)\n- sed faq with good examples (https://www.pement.org/sed/sedfaq.html)\n- sed cheat-sheet (http://www.catonmat.net/download/sed.stream.editor.cheat.sheet.pdf)\n\n-----\n\n**Sed commands**\n\nThe most useful sed command is **s** (substitute).\n\n**Examples**\n\n- **s/hsa//**  will remove the first instance of 'hsa' in every line.\n- **s/hsa//g**  will remove all instances (beacuse of the **g**) of 'hsa' in every line.\n- **s/A{4,}/--&--/g**  will find sequences of 4 or more consecutive A's, and once found, will surround them with two dashes from each side. The **&** marker is a place holder for 'whatever matched the regular expression'.\n- **s/hsa-mir-([^ ]+)/short name: \\\\1 full name: &/**  will find strings such as 'hsa-mir-43a' (the regular expression is 'hsa-mir-' followed by non-space characters) and will replace it will string such as 'short name: 43a full name: hsa-mir-43a'.  The **\\\\1** marker is a place holder for 'whatever matched the first parenthesis' (similar to perl's **$1**) .\n\n\n**sed's Regular Expression Syntax**\n\nThe select tool searches the data for lines containing or not containing a match to the given pattern. A Regular Expression is a pattern descibing a certain amount of text.\n\n- **( ) { } [ ] . * ? + \\ ^ $** are all special characters. **\\\\** can be used to \"escape\" a special character, allowing that special character to be searched for.\n- **^** matches the beginning of a string(but not an internal line).\n- **(** .. **)** groups a particular pattern.\n- **{** n or n, or n,m **}** specifies an expected number of repetitions of the preceding pattern.\n\n  - **{n}** The preceding item is matched exactly n times.\n  - **{n,}** The preceding item ismatched n or more times.\n  - **{n,m}** The preceding item is matched at least n times but not more than m times.\n\n- **[** ... **]** creates a character class. Within the brackets, single characters can be placed. A dash (-) may be used to indicate a range such as **a-z**.\n- **.** Matches any single character except a newline.\n- ***** The preceding item will be matched zero or more times.\n- **?** The preceding item is optional and matched at most once.\n- **+** The preceding item will be matched one or more times.\n- **^** has two meaning:\n  - matches the beginning of a line or string.\n  - indicates negation in a character class. For example, [^...] matches every character except the ones inside brackets.\n- **$** matches the end of a line or string.\n- **\\|** Separates alternate possibilities.\n\n\n**Note**: SED uses extended regular expression syntax, not Perl syntax. **\\\\d**, **\\\\w**, **\\\\s** etc. are **not** supported.\n\n\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "infile": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "adv_opts": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "adv_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "basic"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "adv_opts_selector"
+              ],
+              "properties": {
+                "adv_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "advanced"
+                  ]
+                },
+                "silent": {
+                  "type": "string",
+                  "enum": [
+                    "",
+                    "-n"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [
+        "infile"
+      ],
+      "properties": {
+        "infile": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "code": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "adv_opts": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "adv_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "basic"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "adv_opts_selector"
+                  ],
+                  "properties": {
+                    "adv_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "advanced"
+                      ]
+                    },
+                    "silent": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "",
+                            "-n"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}
