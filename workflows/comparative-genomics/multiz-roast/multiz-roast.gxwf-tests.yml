@@ -1,0 +1,44 @@
+- doc: Five-species mammalian chr21 slice roasted on hg38 as a single piece in a piece:species nested collection.
+  job:
+    Pairwise MAF pieces:
+      class: Collection
+      collection_type: list:list
+      elements:
+        - class: Collection
+          identifier: chr21.00
+          type: list
+          elements:
+            - class: File
+              identifier: tupChi1
+              path: test-data/chr21_20M.hg38.tupChi1.maf
+              filetype: maf
+            - class: File
+              identifier: galVar1
+              path: test-data/chr21_20M.hg38.galVar1.maf
+              filetype: maf
+            - class: File
+              identifier: mm10
+              path: test-data/chr21_20M.hg38.mm10.maf
+              filetype: maf
+            - class: File
+              identifier: cavPor3
+              path: test-data/chr21_20M.hg38.cavPor3.maf
+              filetype: maf
+    Species guide tree:
+      class: File
+      path: test-data/hg38.5way.nh
+      filetype: newick
+    Reference species name: hg38
+  outputs:
+    Multiple alignment pieces:
+      element_tests:
+        chr21.00:
+          asserts:
+            - that: has_text
+              text: "##maf version=1"
+            - that: has_text
+              text: "s hg38.chr21"
+            - that: has_text
+              text: "s mm10."
+            - that: has_text
+              text: "s tupChi1."
