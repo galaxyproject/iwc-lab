@@ -1,0 +1,65 @@
+- doc: Three-species reference-free TBA alignment from bare FASTAs and bare ordered pairwise MAFs using accession-style identifiers mapped via species_map.
+  job:
+    Species genome assemblies:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: GCA_000001.1
+          path: test-data/tba_spA.bare.fa
+          filetype: fasta
+        - class: File
+          identifier: GCA_000002.1
+          path: test-data/tba_spB.bare.fa
+          filetype: fasta
+        - class: File
+          identifier: GCA_000003.1
+          path: test-data/tba_spC.bare.fa
+          filetype: fasta
+    Pairwise reciprocal-best MAFs:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: GCA_000001.1__GCA_000002.1
+          path: test-data/tba_spA.spB.bare.maf
+          filetype: maf
+        - class: File
+          identifier: GCA_000002.1__GCA_000001.1
+          path: test-data/tba_spB.spA.bare.maf
+          filetype: maf
+        - class: File
+          identifier: GCA_000001.1__GCA_000003.1
+          path: test-data/tba_spA.spC.bare.maf
+          filetype: maf
+        - class: File
+          identifier: GCA_000003.1__GCA_000001.1
+          path: test-data/tba_spC.spA.bare.maf
+          filetype: maf
+        - class: File
+          identifier: GCA_000002.1__GCA_000003.1
+          path: test-data/tba_spB.spC.bare.maf
+          filetype: maf
+        - class: File
+          identifier: GCA_000003.1__GCA_000002.1
+          path: test-data/tba_spC.spB.bare.maf
+          filetype: maf
+    Species guide tree:
+      class: File
+      path: test-data/tba_3sp.nh
+      filetype: newick
+    Identifier to species map:
+      class: File
+      path: test-data/tba_species_map.tsv
+      filetype: tabular
+  outputs:
+    Multiple genome alignment:
+      asserts:
+        - that: has_text
+          text: "##maf version=1"
+        - that: has_text
+          text: "s spA."
+        - that: has_text
+          text: "s spB."
+        - that: has_text
+          text: "s spC."
