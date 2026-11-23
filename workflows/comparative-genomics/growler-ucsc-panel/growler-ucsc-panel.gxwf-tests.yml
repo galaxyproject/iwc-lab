@@ -1,0 +1,41 @@
+- doc: One-target vs query-list Growler UCSC panel alignment test on small soft-masked sequences (requires a CUDA GPU runner for KegAlign).
+  job:
+    Target genome FASTA:
+      class: File
+      path: test-data/cs10_A.fa
+      filetype: fasta
+    Query genome FASTAs:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: queryB
+          path: test-data/cs10_B.fa
+          filetype: fasta
+    Target chromosome sizes:
+      class: File
+      path: test-data/cs10_A.sizes
+      filetype: tabular
+    Query chromosome sizes:
+      class: Collection
+      collection_type: list
+      elements:
+        - class: File
+          identifier: queryB
+          path: test-data/cs10_B.sizes
+          filetype: tabular
+    LASTZ scoring matrix:
+      class: File
+      path: test-data/scores.txt
+      filetype: tabular
+    axtChain linear gap table:
+      class: File
+      path: test-data/medium.lineargap
+      filetype: tabular
+  outputs:
+    Reciprocal-best MAFs:
+      element_tests:
+        queryB:
+          asserts:
+            - that: has_text
+              text: "##maf version=1"
