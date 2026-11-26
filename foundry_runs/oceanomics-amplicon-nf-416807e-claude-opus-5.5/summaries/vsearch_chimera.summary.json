@@ -1,0 +1,801 @@
+{
+  "schema_version": 1,
+  "tool_id": "vsearch_chimera_detection",
+  "tool_version": "2.8.3.1",
+  "cache_key": "8506629ee90d5ac885bbc77afa497e3765b6ce2083ef63c55c89c93280793a94",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~vsearch~vsearch_chimera_detection/versions/2.8.3.1",
+    "cached_at": "2026-11-10T03:54:48.620Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/8506629ee90d5ac885bbc77afa497e3765b6ce2083ef63c55c89c93280793a94.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "vsearch_chimera_detection",
+    "version": "2.8.3.1",
+    "name": "VSearch chimera detection",
+    "description": null,
+    "inputs": [
+      {
+        "name": "detection_mode",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "detection_mode_select",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Detect chimeras",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "de novo",
+              "value": "denovo",
+              "selected": false
+            },
+            {
+              "label": "using a reference database",
+              "value": "reference",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "denovo",
+            "parameters": [
+              {
+                "name": "infile_denovo",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Select your FASTA file",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fasta"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "reference",
+            "parameters": [
+              {
+                "name": "infile_reference",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Select your FASTA file",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fasta"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "db",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Select your reference database",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "fasta"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "abskew",
+        "parameter_type": "gx_float",
+        "hidden": false,
+        "label": "Minimal abundance ratio of parent vs chimera",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "float",
+        "value": 2,
+        "min": null,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "dn",
+        "parameter_type": "gx_float",
+        "hidden": false,
+        "label": "'no' vote pseudo count",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "float",
+        "value": 1.4,
+        "min": null,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "xn",
+        "parameter_type": "gx_float",
+        "hidden": false,
+        "label": "'no' vote weight",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "float",
+        "value": 8,
+        "min": null,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "mindiffs",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "Minimum number of differences in segment",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "integer",
+        "value": 3,
+        "min": null,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "mindiv",
+        "parameter_type": "gx_float",
+        "hidden": false,
+        "label": "Minimum divergence from closest parent",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "float",
+        "value": 0.8,
+        "min": null,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "minh",
+        "parameter_type": "gx_float",
+        "hidden": false,
+        "label": "Minimum score",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "float",
+        "value": 0.28,
+        "min": null,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "self_param",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Exclude identical labels for --uchime_ref",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "--self",
+        "falsevalue": ""
+      },
+      {
+        "name": "selfid_param",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Exclude identical sequences for --uchime_ref",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "--selfid",
+        "falsevalue": ""
+      },
+      {
+        "name": "outputs",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Select output formats",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "select",
+        "options": [
+          {
+            "label": "Non-chimeric sequences (--nonchimeras)",
+            "value": "nonchimeras",
+            "selected": false
+          },
+          {
+            "label": "Chimera alignments (--uchimealns)",
+            "value": "uchimealns",
+            "selected": false
+          },
+          {
+            "label": "Chimera info to tab-separated (--uchimeout)",
+            "value": "uchimeout",
+            "selected": false
+          }
+        ],
+        "multiple": true,
+        "validators": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "outfile",
+        "label": "${tool.name} on ${on_string}",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "nonchimeras",
+        "label": "${tool.name} on ${on_string}: Non Chimera",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "uchimealns",
+        "label": "${tool.name} on ${on_string}: Chimera Alignments",
+        "hidden": false,
+        "type": "data",
+        "format": "fasta",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "uchimeout",
+        "label": "${tool.name} on ${on_string}: Chimera Information",
+        "hidden": false,
+        "type": "data",
+        "format": "tabular",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.5281/zenodo.15524"
+      }
+    ],
+    "license": null,
+    "profile": "25.1",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "vsearch",
+        "type": "bio.tools"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n**What it does**\n\nSequence chimera detection based on a different scoring functions.\n\nChimera detection options\n  --abskew REAL               min abundance ratio of parent vs chimera (2.0)\n  --alignwidth INT            width of alignment in uchimealn output (80)\n  --chimeras FILENAME         output chimeric sequences to file\n  --db FILENAME               reference database for --uchime_ref\n  --dn REAL                   'no' vote pseudo-count (1.4)\n  --mindiffs INT              minimum number of differences in segment (3)\n  --mindiv REAL               minimum divergence from closest parent (0.8)\n  --minh REAL                 minimum score (0.28)\n  --nonchimeras FILENAME      output non-chimeric sequences to file\n  --self                      exclude identical labels for --uchime_ref\n  --selfid                    exclude identical sequences for --uchime_ref\n  --uchime_denovo FILENAME    detect chimeras de novo\n  --uchime_ref FILENAME       detect chimeras using a reference database\n  --uchimealns FILENAME       output chimera alignments to file\n  --uchimeout FILENAME        output to chimera info to tab-separated file\n  --uchimeout5                make output compatible with uchime version 5\n  --xn REAL                   'no' vote weight (8.0)\n\n\n\n\nFor details about this tool, please refer to the `GitHub repository <https://github.com/torognes/vsearch>`_ or the `vsearch manual <https://github.com/torognes/vsearch/releases/download/v2.8.3/vsearch_manual.pdf>`_.\n\n\n    \n\n\n\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "detection_mode": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "detection_mode_select": {
+                  "type": "string",
+                  "enum": [
+                    "denovo"
+                  ]
+                },
+                "infile_denovo": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "detection_mode_select"
+              ],
+              "properties": {
+                "detection_mode_select": {
+                  "type": "string",
+                  "enum": [
+                    "reference"
+                  ]
+                },
+                "infile_reference": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "db": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "abskew": {
+          "type": "number",
+          "description": "a finite number",
+          "title": "finite"
+        },
+        "dn": {
+          "type": "number",
+          "description": "a finite number",
+          "title": "finite"
+        },
+        "xn": {
+          "type": "number",
+          "description": "a finite number",
+          "title": "finite"
+        },
+        "mindiffs": {
+          "$ref": "#/$defs/Int"
+        },
+        "mindiv": {
+          "type": "number",
+          "description": "a finite number",
+          "title": "finite"
+        },
+        "minh": {
+          "type": "number",
+          "description": "a finite number",
+          "title": "finite"
+        },
+        "self_param": {
+          "type": "boolean"
+        },
+        "selfid_param": {
+          "type": "boolean"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "nonchimeras",
+                  "uchimealns",
+                  "uchimeout"
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "detection_mode": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "infile_denovo"
+                  ],
+                  "properties": {
+                    "detection_mode_select": {
+                      "type": "string",
+                      "enum": [
+                        "denovo"
+                      ]
+                    },
+                    "infile_denovo": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "detection_mode_select",
+                    "infile_reference",
+                    "db"
+                  ],
+                  "properties": {
+                    "detection_mode_select": {
+                      "type": "string",
+                      "enum": [
+                        "reference"
+                      ]
+                    },
+                    "infile_reference": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "db": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "abskew": {
+          "anyOf": [
+            {
+              "type": "number",
+              "description": "a finite number",
+              "title": "finite"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "dn": {
+          "anyOf": [
+            {
+              "type": "number",
+              "description": "a finite number",
+              "title": "finite"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "xn": {
+          "anyOf": [
+            {
+              "type": "number",
+              "description": "a finite number",
+              "title": "finite"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "mindiffs": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "mindiv": {
+          "anyOf": [
+            {
+              "type": "number",
+              "description": "a finite number",
+              "title": "finite"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "minh": {
+          "anyOf": [
+            {
+              "type": "number",
+              "description": "a finite number",
+              "title": "finite"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "self_param": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "selfid_param": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "nonchimeras",
+                      "uchimealns",
+                      "uchimeout"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "__class__"
+                    ],
+                    "properties": {
+                      "__class__": {
+                        "type": "string",
+                        "enum": [
+                          "ConnectedValue"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

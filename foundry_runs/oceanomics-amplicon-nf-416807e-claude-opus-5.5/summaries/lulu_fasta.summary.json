@@ -1,0 +1,786 @@
+{
+  "schema_version": 1,
+  "tool_id": "seq_filter_by_id",
+  "tool_version": "0.2.9",
+  "cache_key": "ac21c9b21e7b5de5946762232ac982d32cf2648f614430e29d323fc797f29daa",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/peterjc~seq_filter_by_id~seq_filter_by_id/versions/0.2.9",
+    "cached_at": "2026-11-10T03:59:58.406Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/ac21c9b21e7b5de5946762232ac982d32cf2648f614430e29d323fc797f29daa.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "seq_filter_by_id",
+    "version": "0.2.9",
+    "name": "Filter sequences by ID",
+    "description": "from a tabular file",
+    "inputs": [
+      {
+        "name": "input_file",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Sequence file to be filtered",
+        "help": "FASTA, FASTQ, or SFF format.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "fasta",
+          "fastq",
+          "sff"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "id_opts",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "id_opts_selector",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Filter using the ID list from",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "tabular file",
+              "value": "tabular",
+              "selected": true
+            },
+            {
+              "label": "provided list",
+              "value": "list",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "tabular",
+            "parameters": [
+              {
+                "name": "input_tabular",
+                "parameter_type": "gx_data",
+                "hidden": false,
+                "label": "Tabular file containing sequence identifiers",
+                "help": null,
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data",
+                "extensions": [
+                  "tabular"
+                ],
+                "multiple": false,
+                "min": null,
+                "max": null,
+                "url_default": null
+              },
+              {
+                "name": "columns",
+                "parameter_type": "gx_data_column",
+                "hidden": false,
+                "label": "Column(s) containing sequence identifiers",
+                "help": "Multi-select list - hold the appropriate key while clicking to select multiple columns",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "data_column",
+                "multiple": true,
+                "value": null
+              }
+            ],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "list",
+            "parameters": [
+              {
+                "name": "id_list",
+                "parameter_type": "gx_text",
+                "hidden": false,
+                "label": "List of sequence identifiers (white space separated)",
+                "help": "You can use both spaces and new lines to separate your identifiers.",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": true,
+                "type": "text",
+                "area": false,
+                "value": null,
+                "default_options": [],
+                "validators": []
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "output_choice_cond",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "output_choice",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Output positive matches, negative matches, or both?",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Both positive matches (ID on list) and negative matches (ID not on list), as two files",
+              "value": "both",
+              "selected": false
+            },
+            {
+              "label": "Just positive matches (ID on list), as a single file",
+              "value": "pos",
+              "selected": false
+            },
+            {
+              "label": "Just negative matches (ID not on list), as a single file",
+              "value": "neg",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "both",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "pos",
+            "parameters": [],
+            "is_default_when": false
+          },
+          {
+            "discriminator": "neg",
+            "parameters": [],
+            "is_default_when": false
+          }
+        ]
+      },
+      {
+        "name": "adv_opts",
+        "parameter_type": "gx_conditional",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "conditional",
+        "test_parameter": {
+          "name": "adv_opts_selector",
+          "parameter_type": "gx_select",
+          "hidden": false,
+          "label": "Advanced Options",
+          "help": null,
+          "argument": null,
+          "is_dynamic": false,
+          "optional": false,
+          "type": "select",
+          "options": [
+            {
+              "label": "Hide Advanced Options",
+              "value": "basic",
+              "selected": true
+            },
+            {
+              "label": "Show Advanced Options",
+              "value": "advanced",
+              "selected": false
+            }
+          ],
+          "multiple": false,
+          "validators": []
+        },
+        "whens": [
+          {
+            "discriminator": "basic",
+            "parameters": [],
+            "is_default_when": true
+          },
+          {
+            "discriminator": "advanced",
+            "parameters": [
+              {
+                "name": "strip_suffix",
+                "parameter_type": "gx_boolean",
+                "hidden": false,
+                "label": "Remove typical pair read name suffixes when matching identifiers?",
+                "help": "Will remove suffixes including Illumina /1 and /2, Roche 454 .f and .r, and assorted Sanger names like .p* and .q*",
+                "argument": null,
+                "is_dynamic": false,
+                "optional": false,
+                "type": "boolean",
+                "value": false,
+                "truevalue": null,
+                "falsevalue": null
+              }
+            ],
+            "is_default_when": false
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output_pos",
+        "label": "$input_file.name with matched ID",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "input_file",
+        "metadata_source": "input_file",
+        "discover_datasets": [
+          {
+            "discover_via": "pattern",
+            "format": null,
+            "visible": false,
+            "assign_primary_output": false,
+            "directory": null,
+            "recurse": false,
+            "match_relative_path": false,
+            "sort_key": "filename",
+            "sort_comp": "lexical",
+            "sort_reverse": false,
+            "pattern": "primary_DATASET_ID_(?P<designation>[^_]+)_(?P<visible>[^_]+)_(?P<ext>[^_]+)(_(?P<dbkey>[^_]+))?"
+          }
+        ],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "output_neg",
+        "label": "$input_file.name without matched ID",
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "input_file",
+        "metadata_source": "input_file",
+        "discover_datasets": [
+          {
+            "discover_via": "pattern",
+            "format": null,
+            "visible": false,
+            "assign_primary_output": false,
+            "directory": null,
+            "recurse": false,
+            "match_relative_path": false,
+            "sort_key": "filename",
+            "sort_comp": "lexical",
+            "sort_reverse": false,
+            "pattern": "primary_DATASET_ID_(?P<designation>[^_]+)_(?P<visible>[^_]+)_(?P<ext>[^_]+)(_(?P<dbkey>[^_]+))?"
+          }
+        ],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.7717/peerj.167"
+      },
+      {
+        "type": "doi",
+        "content": "10.1093/bioinformatics/btp163"
+      }
+    ],
+    "license": null,
+    "profile": "16.01",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n**What it does**\n\nBy default it divides a FASTA, FASTQ or Standard Flowgram Format (SFF) file in\ntwo, those sequences with or without an ID present in the tabular file column(s)\nspecified. You can opt to have a single output file of just the matching records,\nor just the non-matching ones.\n\nInstead of providing the identifiers in a tabular file, you can alternatively\nprovide them as a parameter (type or paste them into the text box). This is a\nuseful shortcut for extracting a few sequences of interest without first having\nto prepare a tabular file.\n\nNote that the order of sequences in the original sequence file is preserved, as\nis any Roche XML Manifest in an SFF file. Also, if any sequences share an\nidentifier (which would be very unusual in SFF files), duplicates are not removed.\n\n**Example Usage**\n\nYou may have performed some kind of contamination search, for example running\nBLASTN against a database of cloning vectors or bacteria, giving you a tabular\nfile containing read identifiers. You could use this tool to extract only the\nreads without BLAST matches (i.e. those which do not match your contaminant\ndatabase).\n\nYou may have a file of FASTA sequences which has been used with some analysis\ntool giving tabular output, which has then been filtered on some criteria.\nYou can then use this tool to divide the original FASTA file into those entries\nmatching or not matching your criteria (those with or without their identifier\nin the filtered tabular file).\n\n**References**\n\nIf you use this Galaxy tool in work leading to a scientific publication please\ncite the following papers:\n\nPeter J.A. Cock, Björn A. Grüning, Konrad Paszkiewicz and Leighton Pritchard (2013).\nGalaxy tools and workflows for sequence analysis with applications\nin molecular plant pathology. PeerJ 1:e167\nhttps://doi.org/10.7717/peerj.167\n\nThis tool uses Biopython to read and write SFF files, so you may also wish to\ncite the Biopython application note (and Galaxy too of course):\n\nCock et al (2009). Biopython: freely available Python tools for computational\nmolecular biology and bioinformatics. Bioinformatics 25(11) 1422-3.\nhttps://doi.org/10.1093/bioinformatics/btp163 pmid:19304878.\n\nThis tool is available to install into other Galaxy Instances via the Galaxy\nTool Shed at http://toolshed.g2.bx.psu.edu/view/peterjc/seq_filter_by_id\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "input_file": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "id_opts": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "id_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "tabular"
+                  ]
+                },
+                "input_tabular": {
+                  "$id": "/schemas/never",
+                  "not": {},
+                  "title": "never"
+                },
+                "columns": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/Int"
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "id_opts_selector"
+              ],
+              "properties": {
+                "id_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "list"
+                  ]
+                },
+                "id_list": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "output_choice_cond": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "output_choice": {
+                  "type": "string",
+                  "enum": [
+                    "both"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "output_choice"
+              ],
+              "properties": {
+                "output_choice": {
+                  "type": "string",
+                  "enum": [
+                    "pos"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "output_choice"
+              ],
+              "properties": {
+                "output_choice": {
+                  "type": "string",
+                  "enum": [
+                    "neg"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "adv_opts": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "adv_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "basic"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "adv_opts_selector"
+              ],
+              "properties": {
+                "adv_opts_selector": {
+                  "type": "string",
+                  "enum": [
+                    "advanced"
+                  ]
+                },
+                "strip_suffix": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "input_file"
+      ],
+      "properties": {
+        "input_file": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "id_opts": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "input_tabular",
+                    "columns"
+                  ],
+                  "properties": {
+                    "id_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "tabular"
+                      ]
+                    },
+                    "input_tabular": {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "columns": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/$defs/Int"
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id_opts_selector"
+                  ],
+                  "properties": {
+                    "id_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "list"
+                      ]
+                    },
+                    "id_list": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "output_choice_cond": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "output_choice": {
+                      "type": "string",
+                      "enum": [
+                        "both"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "output_choice"
+                  ],
+                  "properties": {
+                    "output_choice": {
+                      "type": "string",
+                      "enum": [
+                        "pos"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "output_choice"
+                  ],
+                  "properties": {
+                    "output_choice": {
+                      "type": "string",
+                      "enum": [
+                        "neg"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "adv_opts": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "adv_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "basic"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "adv_opts_selector"
+                  ],
+                  "properties": {
+                    "adv_opts_selector": {
+                      "type": "string",
+                      "enum": [
+                        "advanced"
+                      ]
+                    },
+                    "strip_suffix": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "__class__"
+                          ],
+                          "properties": {
+                            "__class__": {
+                              "type": "string",
+                              "enum": [
+                                "ConnectedValue"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

@@ -1,0 +1,36 @@
+class: GalaxyUserTool
+id: oceanomics_adapterremoval_collapse
+version: 2.3.2
+name: AdapterRemoval collapse read pairs (OceanOmics)
+description: merge overlapping read pairs and quality-trim, keeping collapsed reads
+license: MIT
+container: quay.io/biocontainers/adapterremoval:2.3.2--hb7ba0dd_0
+shell_command: |
+  AdapterRemoval --threads \${GALAXY_SLOTS:-1} --file1 '$(inputs.reads.elements.forward.path)' --file2 '$(inputs.reads.elements.reverse.path)' --basename ar --collapse --trimns --trimqualities --minquality $(inputs.minquality) --minalignmentlength $(inputs.minalignmentlength) &&
+  sed 's/^@M_/@/; s/^@MT_/@/' ar.collapsed | gzip -c > collapsed.fq.gz
+inputs:
+  - name: reads
+    type: data_collection
+    collection_type: paired
+    format: [fastqsanger.gz, fastqsanger]
+    label: Paired reads for one sample
+  - name: minquality
+    type: integer
+    value: 10
+    label: Minimum base quality (--minquality)
+  - name: minalignmentlength
+    type: integer
+    value: 6
+    label: Minimum overlap for collapsing (--minalignmentlength)
+outputs:
+  - name: collapsed
+    type: data
+    format: fastqsanger.gz
+    from_work_dir: collapsed.fq.gz
+    label: Collapsed reads
+help:
+  format: markdown
+  content: |
+    Port of OceanOmics-amplicon-nf ADAPTERREMOVAL (paired branch, AdapterRemoval 2.3.2):
+    `--collapse --trimns --trimqualities --minquality 10 --minalignmentlength 6`, keeping `.collapsed` reads
+    with the M_/MT_ header prefixes removed.

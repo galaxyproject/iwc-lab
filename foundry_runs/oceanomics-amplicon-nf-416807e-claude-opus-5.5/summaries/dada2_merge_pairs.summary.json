@@ -1,0 +1,475 @@
+{
+  "schema_version": 1,
+  "tool_id": "dada2_mergePairs",
+  "tool_version": "1.38.0+galaxy2",
+  "cache_key": "555fd27810b943eb0cf45a191adfa4218c360baaac58322d6a0d7af4252089d1",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~dada2_mergepairs~dada2_mergePairs/versions/1.38.0+galaxy2",
+    "cached_at": "2026-11-10T03:50:34.141Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/555fd27810b943eb0cf45a191adfa4218c360baaac58322d6a0d7af4252089d1.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "dada2_mergePairs",
+    "version": "1.38.0+galaxy2",
+    "name": "dada2: mergePairs",
+    "description": "Merge denoised forward and reverse reads",
+    "inputs": [
+      {
+        "name": "dadaF",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Dada results for forward reads",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "dada2_dada"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "derepF",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Forward reads",
+        "help": "despite the parameter name the sequences don't need to be dereplicated ",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "fastq",
+          "fastq.gz"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "dadaR",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Dada results for reverse reads",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "dada2_dada"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "derepR",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Reverse reads",
+        "help": "despite the parameter name the sequences don't need to be dereplicated ",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "fastq",
+          "fastq.gz"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "minOverlap",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "Minimum length of the overlap",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "integer",
+        "value": 12,
+        "min": 0,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "maxMismatch",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "Maximum number of mismatches",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "integer",
+        "value": 0,
+        "min": 0,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "justConcatenate",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Concatenated rather than merge",
+        "help": "The forward and reverse-complemented reverse read are concatenated rather than merged, with a 10 Ns spacer inserted between them",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "TRUE",
+        "falsevalue": "FALSE"
+      },
+      {
+        "name": "trimOverhang",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Trim overhangs",
+        "help": "Overhangs are when the reverse read extends past the start of the forward read, and vice-versa, as can happen when reads are longer than the amplicon and read into the other-direction primer region",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": "TRUE",
+        "falsevalue": "FALSE"
+      },
+      {
+        "name": "output_details",
+        "parameter_type": "gx_boolean",
+        "hidden": false,
+        "label": "Output detailed table",
+        "help": "Contains detailed information on the merged sequences, e.g. number of matched/mismatches",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "boolean",
+        "value": false,
+        "truevalue": null,
+        "falsevalue": null
+      }
+    ],
+    "outputs": [
+      {
+        "name": "merged",
+        "label": "${tool.name} on ${on_string}",
+        "hidden": false,
+        "type": "data",
+        "format": "dada2_mergepairs",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "merged_details",
+        "label": "${tool.name} on ${on_string}: details",
+        "hidden": false,
+        "type": "data",
+        "format": "tabular",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1038/nmeth.3869"
+      }
+    ],
+    "license": null,
+    "profile": "24.2",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "dada2",
+        "type": "bio.tools"
+      },
+      {
+        "value": "dada2",
+        "type": "bioconductor"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\nDescription\n...........\n\nThis function attempts to merge each denoised pair of forward and reverse reads, rejecting any pairs which do not sufficiently overlap (at least 12bp by default) or which contain too many (>0 by default) mismatches in the overlap region.\n\nUsage\n.....\n\n**Input**\n\n- reads and learned error rates of the forward reads\n- reads and learned error rates of the reverse reads\n\n**Output**\n\n- a data set of type dada2_mergepairs (which is a RData file containing the output of dada2's mergePairs function).\n\nDetails\n.......\n\n\nOverview\n........\n\nThe intended use of the dada2 tools for paired sequencing data is shown in the following image.\n\n.. image:: pairpipe.png\n\nNote: In particular for the analysis of paired collections the collections should be sorted lexicographical\nbefore the analysis.\n\nFor single end data you the steps \"Unzip collection\" and \"mergePairs\" are not necessary.\n\nMore information may be found on the dada2 homepage:: https://benjjneb.github.io/dada2/index.html (in particular tutorials) or the documentation of dada2's R package https://bioconductor.org/packages/release/bioc/html/dada2.html (in particular the pdf which contains the full documentation of all parameters)\n    \n\n\n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "dadaF": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "derepF": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "dadaR": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "derepR": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "minOverlap": {
+          "$ref": "#/$defs/Int",
+          "description": "a non-negative number",
+          "title": "greaterThanOrEqualTo(0)",
+          "minimum": 0
+        },
+        "maxMismatch": {
+          "$ref": "#/$defs/Int",
+          "description": "a non-negative number",
+          "title": "greaterThanOrEqualTo(0)",
+          "minimum": 0
+        },
+        "justConcatenate": {
+          "type": "boolean"
+        },
+        "trimOverhang": {
+          "type": "boolean"
+        },
+        "output_details": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "dadaF",
+        "derepF",
+        "dadaR",
+        "derepR"
+      ],
+      "properties": {
+        "dadaF": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "derepF": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "dadaR": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "derepR": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "minOverlap": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "maxMismatch": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "justConcatenate": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "trimOverhang": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "output_details": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

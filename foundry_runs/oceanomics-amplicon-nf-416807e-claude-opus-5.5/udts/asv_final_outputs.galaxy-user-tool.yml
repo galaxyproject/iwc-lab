@@ -1,0 +1,56 @@
+class: GalaxyUserTool
+id: oceanomics_dada2_final_outputs
+version: 1.0.1
+name: DADA2 ASV final outputs
+description: name ASVs and write ASV FASTA, ASV table and LCA input table
+license: MIT
+container: quay.io/biocontainers/gawk:5.1.0--2
+configfiles:
+- filename: final_outputs.awk
+  content: |
+    BEGIN { FS = OFS = "\t" }
+    NR == 1 {
+      n = NF - 1
+      if (n < 2) { print "Error: Couldn't create DADA2 final outputs. At least two samples are needed." > "/dev/stderr"; exit 1 }
+      hdr = ""
+      for (i = 2; i <= NF; i++) hdr = hdr OFS $i
+      print "ASV" hdr, "ASV_sequence" > "asv_final_table.tsv"
+      print "#ID" hdr > "lca_input.tsv"
+      next
+    }
+    {
+      id = "ASV_" (NR - 1)
+      counts = ""
+      for (i = 2; i <= NF; i++) counts = counts OFS $i
+      print ">" id > "asv.fa"
+      print $1 > "asv.fa"
+      print id counts, $1 > "asv_final_table.tsv"
+      print id counts > "lca_input.tsv"
+    }
+shell_command: awk -f final_outputs.awk '$(inputs.seqtab.path)'
+inputs:
+- name: seqtab
+  type: data
+  format: [dada2_sequencetable]
+  label: Chimera-free DADA2 sequence table (sequences x samples)
+outputs:
+- name: asv_fasta
+  type: data
+  format: fasta
+  from_work_dir: asv.fa
+  label: ASV sequences
+- name: asv_table
+  type: data
+  format: tabular
+  from_work_dir: asv_final_table.tsv
+  label: ASV table with sequences
+- name: asv_lca_input
+  type: data
+  format: tabular
+  from_work_dir: lca_input.tsv
+  label: ASV count table for LCA (#ID header)
+help:
+  format: markdown
+  content: |
+    Port of OceanOmics-amplicon-nf DADA2_FINALOUTPUTS. ASVs are numbered ASV_1..ASV_n in sequence-table
+    row order (abundance order from makeSequenceTable). Fails with fewer than two samples, as the source does.

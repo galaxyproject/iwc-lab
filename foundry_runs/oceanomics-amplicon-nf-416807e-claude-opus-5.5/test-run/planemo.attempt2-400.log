@@ -1,0 +1,65 @@
+Traceback (most recent call last):
+  File "<home>/.local/share/uv/tools/planemo/bin/planemo", line 10, in <module>
+    sys.exit(planemo())
+             ~~~~~~~^^
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/click/core.py", line 1653, in __call__
+    return self.main(*args, **kwargs)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/click/core.py", line 1560, in main
+    rv = self.invoke(ctx)
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/click/core.py", line 2054, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/click/core.py", line 1414, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/click/core.py", line 911, in invoke
+    return callback(*args, **kwargs)
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/click/decorators.py", line 93, in new_func
+    return ctx.invoke(f, obj, *args, **kwargs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/click/core.py", line 911, in invoke
+    return callback(*args, **kwargs)
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/planemo/cli.py", line 150, in handle_blended_options
+    return f(*args, **kwds)
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/planemo/commands/cmd_test.py", line 92, in cli
+    return_value = test_runnables(ctx, runnables, original_paths=uris, **kwds)
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/planemo/engine/test.py", line 13, in test_runnables
+    test_data = engine.test(runnables, test_timeout=kwds.get("test_timeout"))
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/planemo/engine/interface.py", line 114, in test
+    test_results = self._collect_test_results(test_cases, test_timeout)
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/planemo/engine/interface.py", line 128, in _collect_test_results
+    run_responses = self._run_test_cases(test_cases, test_timeout)
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/planemo/engine/galaxy.py", line 102, in _run_test_cases
+    test_results.extend(super()._run_test_cases(file_based_test_cases, test_timeout))
+                        ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/planemo/engine/interface.py", line 157, in _run_test_cases
+    run_responses = self._run(runnables, job_paths, output_collectors)
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/planemo/engine/galaxy.py", line 74, in _run
+    with self.ensure_runnables_served(runnables) as config:
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "<home>/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/planemo/engine/galaxy.py", line 219, in ensure_runnables_served
+    config.install_workflows()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/planemo/galaxy/config.py", line 965, in install_workflows
+    self._install_workflow(runnable)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/planemo/galaxy/config.py", line 1009, in _install_workflow
+    workflow = import_workflow(runnable.path, user_gi=self.user_gi, from_path=from_path)
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/planemo/galaxy/workflows.py", line 517, in import_workflow
+    return user_gi.workflows.import_workflow_dict(workflow)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/bioblend/galaxy/workflows/__init__.py", line 161, in import_workflow_dict
+    return self._post(url=url, payload=payload)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/bioblend/galaxy/client.py", line 196, in _post
+    return self.gi.make_post_request(url, payload=payload, files_attached=files_attached)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<home>/.local/share/uv/tools/planemo/lib/python3.13/site-packages/bioblend/galaxyclient.py", line 206, in make_post_request
+    raise ConnectionError(
+    ...<3 lines>...
+    )
+bioblend.ConnectionError: Unexpected HTTP status code: 400: {"err_msg": "Unterminated expression in tool configfile 'run_lca.sh' at line 12, column 64: '$( is reserved for Galaxy expressions\\nif [ \"$rows\" -lt 2 ]; then\\n  echo \"Error: ...'. '$(' opens a Galaxy expression, so the parentheses and quotes inside it have to balance; write '\\$(' to pass a literal shell command substitution through to the shell.", "err_code": 400008}
+planemo exit=1

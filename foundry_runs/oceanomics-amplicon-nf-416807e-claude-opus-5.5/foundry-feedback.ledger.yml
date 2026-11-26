@@ -1,0 +1,827 @@
+run:
+  pipeline: nextflow-to-galaxy
+  run_slug: minderoo-module2
+  status: complete
+  phases:
+  - n: 1
+    kind: mold
+    skill: summarize-nextflow
+    status: done
+    feedback_checked: true
+  - n: 2
+    kind: mold
+    skill: nextflow-summary-to-galaxy-reference-data
+    status: done
+    feedback_checked: true
+  - n: 3
+    kind: mold
+    skill: nextflow-summary-to-galaxy-interface
+    status: done
+    feedback_checked: true
+  - n: 4
+    kind: mold
+    skill: nextflow-summary-to-galaxy-data-flow
+    status: done
+    feedback_checked: true
+  - n: 5
+    kind: mold
+    skill: compare-against-iwc-exemplar
+    status: done
+    feedback_checked: true
+  - n: 6
+    kind: mold
+    skill: nextflow-summary-to-galaxy-template
+    status: done
+    feedback_checked: true
+  - n: 7
+    kind: mold
+    skill: advance-galaxy-draft-step
+    status: done
+    iterations: 51
+    feedback_checked: true
+  - n: 8
+    kind: branch
+    pattern: test-data-resolution
+    status: done
+    feedback_checked: true
+    selected: find-test-data
+  - n: 9
+    kind: mold
+    skill: nextflow-test-to-galaxy-test-plan
+    status: done
+    feedback_checked: true
+  - n: 10
+    kind: mold
+    skill: implement-galaxy-workflow-test
+    status: done
+    feedback_checked: true
+  - n: 11
+    kind: mold
+    skill: validate-galaxy-workflow
+    status: done
+    feedback_checked: true
+  - n: 12
+    kind: mold
+    skill: run-workflow-test
+    status: done
+    feedback_checked: true
+  - n: 13
+    kind: mold
+    skill: debug-galaxy-workflow-output
+    status: done
+    feedback_checked: true
+entries:
+- id: summarize-nextflow-cli-drops-draft07-definitions-params
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: cli-command
+    label: foundry summarize-nextflow (@galaxy-foundry/gxwf-foundry)
+    locator: content/cli/foundry/index.md
+  kind: defect
+  severity: major
+  what: 'foundry summarize-nextflow emitted params: [] and sample_sheets: [] for a draft-07 nextflow_schema.json whose groups live under ''definitions'' (106 schema params) and whose input property carries
+    schema: assets/schema_input.json.'
+  expected: Read both draft-07 'definitions' and 2020-12 '$defs' groups when extracting params[]; apply the sample-sheet branch whenever a param carries 'schema:'.
+  evidence: OceanOmics-amplicon-nf @416807e (legacy nf-core template, ad-hoc DSL2). Skill rebuilt 109 params (106 schema + params-block-only) by hand.
+  status: filed
+  issue: https://github.com/galaxyproject/foundry/issues/771
+- id: summarize-nextflow-cli-ignores-literal-container-directives
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: cli-command
+    label: foundry summarize-nextflow (@galaxy-foundry/gxwf-foundry)
+    locator: content/cli/foundry/index.md
+  kind: defect
+  severity: major
+  what: 'tools[] held 4 entries for 76 processes. Single-literal container directives (container ''quay.io/biocontainers/blast:2.13.0--hf3cf87c_0'') were copied to processes[].container but never resolved
+    into tools[] or processes[].tool. FASTQCONCAT (ubuntu image, zcat|gzip) got tool FK ''fastqc'' and CUSTOM_DUMPSOFTWAREVERSIONS got ''multiqc'' by name/conda only. BLAST_MAKEBLASTDB''s directive written
+    with no space (container''quay.io/...'') was dropped entirely (container: null).'
+  expected: Resolve literal container strings through the same biocontainer/docker/singularity classifier used for ternaries; never assign a tool FK by name substring; tolerate a missing space after the
+    directive keyword.
+  evidence: 'After hand resolution: 28 tools, 44 processes with a tool FK.'
+  status: filed
+  issue: https://github.com/galaxyproject/foundry/issues/772
+- id: summarize-nextflow-cli-misses-backslash-multi-alias-include
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: cli-command
+    label: foundry summarize-nextflow (@galaxy-foundry/gxwf-foundry)
+    locator: content/cli/foundry/index.md
+  kind: defect
+  severity: minor
+  what: include { SEQKIT_STATS as \ ASSIGNED_STATS; SEQKIT_STATS as \ UNKNOWN_STATS; SEQKIT_STATS as \ RAW_STATS } (line-continued, semicolon-separated) produced no aliases, and the subworkflow calls[]
+    omitted them. Two module files declaring process GET_AQUAMAP_PROBS (one never included) produced two processes[] rows with the same name, breaking name-as-key lookups.
+  expected: Parse semicolon-separated and backslash-continued alias lists; on duplicate process names keep the declaration reached by a live include and warn about the shadowed one.
+  evidence: subworkflows/local/cutadapt_workflow.nf, alt_cutadapt_workflow.nf; modules/local/custom/nctocsv vs getaquamapprobs.
+  status: open
+  issue: null
+- id: summarize-nextflow-cli-test-candidate-profile-default-and-inputs
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: cli-command
+    label: foundry summarize-nextflow (@galaxy-foundry/gxwf-foundry)
+    locator: content/cli/foundry/index.md
+  kind: defect
+  severity: major
+  what: With no --profile passed, the CLI defaulted to 'test' and wrote rationale 'explicit caller profile override'. The candidate's inputs[] listed only the samplesheet plus the inherited nextflow.config
+    aquamaps_db (described 'from test'), omitting raw_data, filter_table and the 9-URL list-valued dbfiles that conf/test.config sets; params_delta also dropped dbfiles and several numeric overrides.
+  expected: Do not silently default --profile (the Mold says there is no silent default), or label it as a default; extract every URL-valued param including list values into inputs[]; mark inherited defaults
+    as inherited.
+  evidence: conf/test.config sets input, dbfiles[9], raw_data, filter_table and 10 numeric params; candidate had 2 inputs.
+  status: filed
+  issue:
+  - https://github.com/galaxyproject/foundry/issues/666#issuecomment-6786392585
+  - https://github.com/galaxyproject/foundry/issues/763
+- id: summarize-nextflow-samplesheet-schema-vs-live-consumer-drift
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: mold
+    label: summarize-nextflow procedure
+    locator: content/molds/summarize-nextflow/index.md
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+  kind: gap
+  severity: minor
+  what: '§3.5 ranks nf-schema discovery first and treats the schema: file as authoritative, but here assets/schema_input.json (sample,fastq_1,fastq_2) disagrees with the live consumer bin/check_samplesheet.py
+    + splitCsv (samp_name, fw_index, rv_index required in default demux mode). The procedure gives no rule for which wins or how to record the conflict.'
+  expected: 'When a schema: file and a live splitCsv/validator both exist, record the shape the workflow actually consumes, keep schema_path, and require a warnings[] entry naming the drift.'
+  evidence: 'Skill chose discovered_via: splitCsv with columns from check_samplesheet.py and warned; the published test samplesheet itself uses ''sample'' and would fail SAMPLESHEET_CHECK.'
+  status: open
+  issue: null
+- id: summary-nextflow-schema-no-field-for-ext-args
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: schema
+    label: summary-nextflow schema
+    locator: package://@galaxy-foundry/summarize-nextflow#summaryNextflowSchema
+    content_hash: 839e11b1892af74df3158377027e7d340a67dafdb9b5965d79e9715a1a109d54
+  kind: gap
+  severity: major
+  what: The summary schema has nowhere to record per-process task.ext.args / args1 / args2 / prefix / when from conf/modules.config withName blocks. In this pipeline nearly all tool parameters (cutadapt
+    barcode/error settings, DADA2 filterAndTrim/mergePairs, BLAST pid/qcov/evalue/outfmt columns, LULU minimum_match, vsearch minsize) live there, so the summary alone cannot drive Galaxy tool-state choices.
+  expected: Add an optional processes[].ext block (or a top-level process_config[] keyed by withName selector) carrying verbatim ext.* expressions and the params they reference, populated deterministically
+    from conf/modules.config.
+  evidence: conf/modules.config has 70+ withName blocks; recorded only as a warnings[] pointer telling downstream molds to read the file directly.
+  status: duplicate
+  issue: https://github.com/galaxyproject/foundry/issues/665
+- id: summarize-nextflow-procedure-omits-foundry-cli-entrypoint
+  raised_by: summarize-nextflow
+  observed_in:
+    mold: summarize-nextflow
+    path: content/molds/summarize-nextflow/index.md
+    revision: 18
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+    foundry_head: d1b4cabede5bc91a5ab8603d5c2d589ad7f0d100
+  subject:
+    kind: mold
+    label: summarize-nextflow procedure
+    locator: content/molds/summarize-nextflow/index.md
+    content_hash: fb19fff9162cc36fae916a456cfbbe31a33c4565063a522846c48222d02f7c37
+  kind: friction
+  severity: minor
+  what: The procedure names a standalone summarize-nextflow bin (@galaxy-foundry/summarize-nextflow) as the preferred generator, but the required-tools block installs only @galaxy-foundry/gxwf-foundry,
+    whose 'foundry summarize-nextflow' subcommand is what is available. Its defaults (profile=test, nextflow shell-out) and which fields the skill must enrich afterwards (script_summary, edges, conditionals)
+    are not described.
+  expected: Point at 'foundry summarize-nextflow' as the deterministic pass, state its defaults, and list which fields the skill must enrich or audit afterwards.
+  evidence: Subcommand discovered via foundry --help; CLI output had 0 script_summary, 0 conditionals, edges only from naive regex.
+  status: open
+  issue: null
+- id: refdata-classification-misses-hidden-runtime-references
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in:
+    mold: nextflow-summary-to-galaxy-reference-data
+    path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+    revision: 5
+    content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: research
+    label: nextflow-reference-data-classification
+    locator: content/research/nextflow-reference-data-classification/index.md
+    content_hash: 2b33f3bddb635c9d700e506784b4bf16f8c387369bc66194a15cb75be9ad8a1f
+  kind: gap
+  severity: major
+  what: 'The eight classifications cover only param-declared assets. This pipeline''s load-bearing references have no param: LCA''s script wgets NCBI new_taxdump at run time, the NBC classifier loads models
+    baked into its container, LCA_WITH_FISHBASE reads a hard-coded WoRMS URL, and the aquamaps_db fallback downloads NetCDF from a public server. Following the Mold literally (do not re-parse source) would
+    miss all of them, and fetch-if-missing is not the same as the compute-if-missing rebuild class.'
+  expected: Add a 'hidden / runtime-fetched reference' classification (network fetch inside script or bin/, container-baked model/DB, hard-coded URL channel) and a 'fetch-if-missing' variant, with the Galaxy
+    mapping (promote to explicit input; else pin container and flag), and have summarize-nextflow surface such evidence.
+  evidence: Found only by reading bin/runAssign_collapsedTaxonomy.py, the OCOMNBC module and workflows/oceanomics_amplicon.nf ch_worms; the summary carried them only as a warnings[] string the phase-1 skill
+    wrote by hand.
+  status: open
+  issue: null
+- id: refdata-mapping-no-blastdb-guidance
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  observed_in:
+    mold: nextflow-summary-to-galaxy-reference-data
+    path: content/molds/nextflow-summary-to-galaxy-reference-data/index.md
+    revision: 5
+    content_hash: b49bae31e3b8918b45f852b8f50e1101e71837380b97f8e8ec237a5dd2955f7f
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: research
+    label: nextflow-to-galaxy-reference-data-mapping datatype table
+    locator: content/research/nextflow-to-galaxy-reference-data-mapping/index.md
+    content_hash: 4676cdf3de4bcec6161b6102c9e842efa7b3c953f9c2f2787b4debea48e4a7eb
+  kind: gap
+  severity: minor
+  what: The datatype table covers genomics indexes but not BLAST databases (blastdbn/blastdbp composites), and gives no rule for a prebuilt multi-file DB passed as a glob (BLAST v5 .ndb/.nhr/.../.nto),
+    the common reference shape for amplicon/eDNA and metagenomics pipelines; nor does it say that rebuilding from FASTA loses an embedded taxid map.
+  expected: Add blastdbn/blastdbp rows, note the v5 extra-volume question for composite upload, and give the default posture for prebuilt DB volume globs (composite upload vs FASTA + makeblastdb -taxid_map).
+  evidence: params.dbfiles in conf/test.config is a 9-URL list of v5 volumes with no FASTA; the brief had to leave the shape as OQ-1.
+  status: open
+  issue: null
+- id: interface-no-rule-for-entry-branch-selection
+  raised_by: nextflow-summary-to-galaxy-interface
+  observed_in:
+    mold: nextflow-summary-to-galaxy-interface
+    path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+    revision: 6
+    content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: research
+    label: nextflow-params-to-galaxy-inputs
+    locator: content/research/nextflow-params-to-galaxy-inputs/index.md
+    content_hash: b65bf1a16cb986bc04ff7926e6ca0eea9ce35980aa4d4c47d8a102a28ffae085
+  kind: gap
+  severity: major
+  what: 'The source has several mutually exclusive entry modes that change what the top-level inputs are: default demux from raw pooled reads + barcode samplesheet, alt_demux, skip_demux (per-sample fastq),
+    start_from_blast and start_from_lca (fasta + OTU table). The params note classifies skip_/mode flags one param at a time but gives no rule for choosing which entry branch defines the Galaxy interface,
+    or for when the source''s own test profile cannot exercise the default branch.'
+  expected: 'Add an ''entry-branch selection'' step: enumerate guard-selected entry modes from workflow.conditionals[] and channel materializations, pick the one the selected test candidate can actually
+    exercise (else the default), and record the others as kind: dropped with citations.'
+  evidence: Skill picked skip_demux because conf/test.config raw_data is a single R1 into fromFilePairs and the test samplesheet fails SAMPLESHEET_CHECK; that reasoning appears in no packaged note.
+  status: open
+  issue: null
+- id: interface-no-guidance-for-config-preset-maps
+  raised_by: nextflow-summary-to-galaxy-interface
+  observed_in:
+    mold: nextflow-summary-to-galaxy-interface
+    path: content/molds/nextflow-summary-to-galaxy-interface/index.md
+    revision: 6
+    content_hash: 43966773391578490688098c9333f6eb2eaa94574755f5b6554e7f9b72a605c0
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: research
+    label: nextflow-params-to-galaxy-inputs
+    locator: content/research/nextflow-params-to-galaxy-inputs/index.md
+    content_hash: b65bf1a16cb986bc04ff7926e6ca0eea9ce35980aa4d4c47d8a102a28ffae085
+  kind: gap
+  severity: minor
+  what: params.assay indexes a config-load-time map (conf/assay_params.config) that overwrites eight scalar params (primers, length bounds, trim settings). It is the scalar analogue of the iGenomes key-expanded
+    bundle, but neither the params note nor the reference-data notes say whether to expose the key as a restricted string, expand the presets into explicit scalars, or both.
+  expected: 'State a default for preset-map keys: expose the derived scalars explicitly (defaults from the base params), and optionally list the preset table in the input help; never reproduce a config-time
+    lookup inside Galaxy.'
+  evidence: nextflow.config lines 'if (params.assay) { params.fw_primer = params.assay_params[params.assay][...] }'; summary records the eight params with source_kind computed.
+  status: open
+  issue: null
+- id: operators-note-no-recipe-for-key-rewriting-map-mix-join
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  observed_in:
+    mold: nextflow-summary-to-galaxy-data-flow
+    path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+    revision: 8
+    content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+    foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+  subject:
+    kind: research
+    label: nextflow-operators-to-galaxy-collection-recipes
+    locator: content/research/nextflow-operators-to-galaxy-collection-recipes/index.md
+    content_hash: 59d97f05e7839f78cb7f42e17299fe6bc373bde8a32eca506238633a3dff9282
+  kind: gap
+  severity: major
+  what: The pipeline's dominant topology is string-keyed tuples whose key is rewritten by map closures (prefix + '_' + params.dbname, + '_lulucurated'), duplicated via mix of relabelled copies, then re-joined
+    by key across three or four channels. The note treats map that mutates metadata only as a user-review trigger and gives no recipe for it; the skill had to invent 'parallel lists keyed by element identifier
+    + relabel-suffix + merge-collections + multi-input map-over'.
+  expected: 'Add a recipe for keyed fan-out: when tuple keys are non-sample labels (method/variant prefixes), model them as element identifiers of parallel list collections; map(key rewrite) → identifier
+    relabel; mix of relabelled copies → merge collections; join(by key) → multi-input map-over with matching identifiers. Note when a constant suffix can be dropped.'
+  evidence: workflows/oceanomics_amplicon.nf lines 459-529, 569-689, 699-740, 769-779 (summary edges flag them low confidence).
+  status: open
+  issue: null
+- id: operators-note-no-split-chunk-scatter-recipe
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  observed_in:
+    mold: nextflow-summary-to-galaxy-data-flow
+    path: content/molds/nextflow-summary-to-galaxy-data-flow/index.md
+    revision: 8
+    content_hash: f71cc2b4ceb115d7d93c3dd2e622cbfafb8b9f338f1dd450ee5773f3c0a0e247
+    foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+  subject:
+    kind: research
+    label: nextflow-operators-to-galaxy-collection-recipes
+    locator: content/research/nextflow-operators-to-galaxy-collection-recipes/index.md
+    content_hash: 59d97f05e7839f78cb7f42e17299fe6bc373bde8a32eca506238633a3dff9282
+  kind: gap
+  severity: minor
+  what: 'splitFasta(by: N, file: true) → per-chunk process → groupTuple → concatenate is a performance-only scatter/gather. The note has no row for split* operators, so there is no guidance on whether to
+    reproduce it (split + map-over + collapse) or drop it as a semantic no-op.'
+  expected: 'Add split* operators (splitFasta, splitFastq, splitText) with a default: drop chunking that is followed by a pure gather/concatenate and record it as a dropped performance scatter; reproduce
+    it only when chunks are consumed individually downstream.'
+  evidence: 'ch_fasta_split = ch_fasta_filtered.splitFasta(by: 500, file: true) feeding BLAST_BLASTN then groupTuple + CONCAT_BLASTN_RESULTS.'
+  status: open
+  issue: null
+- id: iwc-compare-no-retrieval-procedure
+  raised_by: compare-against-iwc-exemplar
+  observed_in:
+    mold: compare-against-iwc-exemplar
+    path: content/molds/compare-against-iwc-exemplar/index.md
+    revision: 12
+    content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: mold
+    label: compare-against-iwc-exemplar procedure
+    locator: content/molds/compare-against-iwc-exemplar/index.md
+    content_hash: 84abb427cbcbae5616ae22e4a7fa803f14350605c246638575b3a32c5ad9c6fb
+  kind: friction
+  severity: minor
+  what: The procedure says 'find the closest workflow and rank it' over a cloned IWC tree but supplies no retrieval aid (no index, no tool-id/domain query command, no packaged corpus survey); the skill
+    grepped .ga files for tool ids and directory names by hand. The convert reference was the only CLI packaged.
+  expected: Package a corpus index (workflow id → domain tags, input collection types, tool-family set) or a gxwf/foundry query subcommand, and describe the retrieval steps (domain dir first, then tool-family
+    overlap) so ranking is reproducible.
+  evidence: Ranking used ls workflows/amplicon plus xargs grep over tool_id strings across iwc @9f111cb.
+  status: open
+  issue: null
+- id: draft-format-identity-pin-vs-versioned-tool-id
+  raised_by: nextflow-summary-to-galaxy-template
+  observed_in:
+    mold: nextflow-summary-to-galaxy-template
+    path: content/molds/nextflow-summary-to-galaxy-template/index.md
+    revision: 10
+    content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+    foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+  subject:
+    kind: research
+    label: galaxy-workflow-draft-format
+    locator: content/research/galaxy-workflow-draft-format/index.md
+  kind: friction
+  severity: minor
+  what: 'The Identity-pinned tier says ''concrete tool_id with tool_version: TODO (changeset deferred)'', but Tool Shed tool ids embed the version (…/dada2_dada/dada2_dada/1.38.0+galaxy1). Pinning identity
+    therefore also pins a version inside tool_id while tool_version says TODO, and the note does not say whether to write the versionless guid prefix, the exemplar''s full id, or which wins when they disagree.'
+  expected: State that an identity-pinned Tool Shed step uses the versionless guid (toolshed/repos/owner/repo/tool_id) or explicitly allow the exemplar's full versioned id with tool_version TODO meaning
+    'confirm or bump', and say how discover-shed-tool should treat an embedded version.
+  evidence: 'Draft pins 22 steps with full versioned ids taken from IWC exemplars (dada2 1.38.0+galaxy1, cutadapt 5.2+galaxy2, multiqc 1.35+galaxy4) plus tool_version: TODO; draft-validate accepted it.'
+  status: open
+  issue: null
+- id: draft-format-combine-node-smell-misfires-on-key-join
+  raised_by: nextflow-summary-to-galaxy-template
+  observed_in:
+    mold: nextflow-summary-to-galaxy-template
+    path: content/molds/nextflow-summary-to-galaxy-template/index.md
+    revision: 10
+    content_hash: 77f885d640900cca7dac4a3bbb33308d4d8065e871c919c672487db61caf93ab
+    foundry_head: ae8beb6df85b09a61706d0f6990e99bccd718394
+  subject:
+    kind: research
+    label: galaxy-workflow-draft-format
+    locator: content/research/galaxy-workflow-draft-format/index.md
+  kind: gap
+  severity: minor
+  what: The note flags any step declaring >=2 dataset inputs under a reshape intent as a missing-combine-node smell and points at concat/merge/union recipes. A keyed join (OTU table + FASTA joined by id
+    to add a sequence column) has two inputs but is neither a concatenation nor a single-input reshape, so the rule is ambiguous; the skill had to decide to keep it as one Deferred 'join intent' step.
+  expected: Distinguish keyed joins (join-by-column, add-column-from-lookup) from N-way concatenation in the smell rule, and point join intents at the tabular join recipes rather than requiring a split.
+  evidence: Step zotu_table_with_seq (vsearch otutab + zotu fasta)
+  status: open
+  issue: null
+- id: galaxy-tool-cache-summarize-bare-id-with-version-fails
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 11
+    content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: related-project
+    label: galaxy-tool-cache summarize (@galaxy-tool-util/cli 1.15.0)
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts/tree/main/packages/cli
+  kind: defect
+  severity: minor
+  what: For stock tools, 'galaxy-tool-cache summarize __BUILD_LIST__ --tool-version 1.2.0 --cache-dir D' fails with "Tool not found in cache" right after 'add __BUILD_LIST__' cached it at 1.2.0 (list and
+    info show it). The same summarize without --tool-version succeeds. Same for __APPLY_RULES__, __UNZIP_COLLECTION__, __MERGE_COLLECTION__.
+  expected: Resolve bare/stock ids with an explicit --tool-version against the cache key that add writes; the advance-galaxy-draft-step procedure explicitly says to summarize stock tools with --tool-version.
+  evidence: galaxy-tool-cache 1.15.0 on macOS; run worked around by omitting --tool-version.
+  status: open
+  issue: null
+- id: udt-authoring-note-missing-element-identifier-and-collection-inputs
+  raised_by: author-galaxy-tool-wrapper
+  observed_in:
+    mold: author-galaxy-tool-wrapper
+    path: content/molds/author-galaxy-tool-wrapper/index.md
+    revision: 7
+    content_hash: 9902b753cdc5228221107dd8c26785173985734aab8775380ab8a3529e93d7c7
+    foundry_head: 7cbb53a2107d14c2458218eb9799c9f34949ef7d
+  subject:
+    kind: research
+    label: galaxy-user-tool-authoring
+    locator: content/research/galaxy-user-tool-authoring/index.md
+    content_hash: 365fad455369945a34bda537c8dbf409a0966f0f88da9fe78b61cff32d5b0d0d
+  kind: gap
+  severity: major
+  what: Five authored tools needed the collection element identifier (FASTQ relabel to sample name, LULU/phyloseq/filters keyed on the OTU-set name). The note documents only .path for data inputs, lists
+    six input types (no data_collection), and says nothing about whether ${...} as well as $(...) is an expression in configfiles. The skill had to read Galaxy dev source (tool_util_models DataInternalJson.element_identifier)
+    to confirm $(inputs.x.element_identifier) exists on a mapped-over gx_data input, and could not confirm what a paired-collection input exposes, which forced a topology repair.
+  expected: Document the runtime File object fields (path, basename, element_identifier, ext, ...), whether data_collection inputs are allowed and what they expose, the minimum Galaxy version for element_identifier,
+    and the escaping rule for both $( and ${ inside configfiles.
+  evidence: Steps relabel_reads, lulu, phyloseq, flag_length, proportional_filter; repair escalation 1 (relabel-reads-needs-element-identifier).
+  status: open
+  issue: null
+- id: discover-shed-tool-fixed-pin-filename-clobbers-in-loop
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: discover-shed-tool
+    path: content/molds/discover-shed-tool/index.md
+    revision: 5
+    content_hash: 05c99cbac2ec6a4d130b06204c15d0e76cf4fd0e00cdc8164dd606dac72809e2
+    foundry_head: 63a3f9cf9c97a637fe1628d298e524f35709e289
+  subject:
+    kind: mold
+    label: discover-shed-tool outputs
+    locator: content/molds/discover-shed-tool/index.md
+    content_hash: 05c99cbac2ec6a4d130b06204c15d0e76cf4fd0e00cdc8164dd606dac72809e2
+  kind: friction
+  severity: minor
+  what: discover-shed-tool writes a single galaxy-tool-pin.json and summarize-galaxy-tool a single summary file, but advance-galaxy-draft-step invokes them once per step across ~50 iterations in one run
+    directory, so each iteration overwrites the previous pin; the procedure gives no per-step naming. The skill wrote pins/<step>.galaxy-tool-pin.json and summaries/<step>.summary.json instead.
+  expected: Have advance-galaxy-draft-step (or the pipeline harness) declare a per-step artifact path convention for galaxy-tool-pin and galaxy-tool-summary, so the loop's discovery evidence survives for
+    audit.
+  evidence: 50 drafty steps; 27 pins and summaries kept under pins/ and summaries/.
+  status: open
+  issue: null
+- id: loop-per-iteration-subskill-invocation-cost
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 11
+    content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: pipeline
+    label: nextflow-to-galaxy harness phase 7
+    locator: content/pipelines/nextflow-to-galaxy/index.md
+  kind: friction
+  severity: major
+  what: Phase 7 says invoke advance-galaxy-draft-step once per step, which itself invokes discover-shed-tool, summarize-galaxy-tool and implement-galaxy-tool-step (and author/repair on fall-through). For
+    a 50-step draft that is ~200 skill loads of identical instruction text into one context. The run loaded each sub-skill once and then applied its procedure per iteration with helper scripts, deviating
+    from the literal invocation contract.
+  expected: Allow a batched loop mode (or make --use-subagents the default for loop phases), or let the orchestrator state that sub-skill procedures only need loading once per run.
+  evidence: '51 recorded iterations, 1 topology repair; skill loads: advance x1, discover x1, implement x1, author x1, repair x1.'
+  status: open
+  issue: null
+- id: blastn-wrapper-column-group-order-undocumented
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 11
+    content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: related-project
+    label: ncbi_blast_plus ncbi_blastn_wrapper 2.16.0+galaxy1 custom columns
+    locator: toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/ncbi_blastn_wrapper
+  kind: gap
+  severity: minor
+  what: With out_format=cols the wrapper builds -outfmt from std_cols, ext_cols, ids_cols, misc_cols, tax_cols concatenated in that fixed group order (ncbi_macros.xml line 665), so a source pipeline's arbitrary
+    'outfmt 6 <cols>' order cannot be reproduced, and positional downstream parsers silently read the wrong columns. Nothing in the Foundry's Nextflow-to-Galaxy notes or tool summaries flags this.
+  expected: Record in a Foundry pattern/research note that BLAST+ custom-column order is group-ordered in Galaxy and that translations must add an explicit column reorder (Cut/awk) when the source parses
+    by position; ideally the wrapper would accept a free-text column list.
+  evidence: Source BLAST_BLASTN outfmt 6 qseqid sseqid staxids ...; working_function.py reads ll[2] as staxids. LCA UDT reorders columns.
+  status: open
+  issue: null
+- id: iuc-vsearch-wrappers-lack-unoise-uchime3-otutab
+  raised_by: advance-galaxy-draft-step
+  observed_in:
+    mold: advance-galaxy-draft-step
+    path: content/molds/advance-galaxy-draft-step/index.md
+    revision: 11
+    content_hash: 677bb3288b4b88a5c4d66c878318c4d46bdc15f9ebcb01698ade2100a70ea835
+    foundry_head: e2c26d735ea338046c61917fcf7627a7f1dc462e
+  subject:
+    kind: related-project
+    label: iuc vsearch suite 2.8.3
+    locator: toolshed.g2.bx.psu.edu/repos/iuc/vsearch
+  kind: gap
+  severity: minor
+  what: The iuc vsearch wrappers are at vsearch 2.8.3 and expose no --cluster_unoise (clustering offers cluster_fast/cluster_smallmem), no --uchime3_denovo (chimera detection offers uchime_denovo/uchime_ref)
+    and no --otutabout on usearch_global, which are the standard ZOTU commands; three steps had to be authored as user tools on quay.io/biocontainers/vsearch:2.21.1.
+  expected: 'Upstream: bump the iuc vsearch suite and add cluster_unoise, uchime3_denovo and otutabout options.'
+  evidence: Steps vsearch_denoise, vsearch_chimera, vsearch_otutab.
+  status: open
+  issue: null
+- id: nextflow-to-test-data-no-rule-for-dead-declared-urls-and-derived-fixtures
+  raised_by: nextflow-to-test-data
+  observed_in:
+    mold: nextflow-to-test-data
+    path: content/molds/nextflow-to-test-data/index.md
+    revision: 4
+    content_hash: 842e097edfb5bfbc37b62a35d5870ee2087df33919212a7965fd70dae799b189
+    foundry_head: 2f8792a62ca53f074605ddbcfb25e75871f52b24
+  subject:
+    kind: mold
+    label: nextflow-to-test-data procedure
+    locator: content/molds/nextflow-to-test-data/index.md
+    content_hash: 842e097edfb5bfbc37b62a35d5870ee2087df33919212a7965fd70dae799b189
+  kind: gap
+  severity: minor
+  what: 'The declared samplesheet lists fastq URLs (…-reads-1.fq.gz) that return 404, while the same declared repo holds …-reads-R1.fq.gz. The procedure''s No-fabrication rule does not say whether a verified
+    same-repo sibling counts as a declared fixture or must fall through to find-test-data. It also has no notion of a derived fixture: two inputs needed import-boundary derivation (samplesheet header sample->samp_name
+    that the workflow''s consumer requires; 9 declared DB volume URLs packed into one archive), which the schema can only express as in-repo files with a prep note.'
+  expected: State that declared URLs must be liveness-checked; allow a same-origin, listing-verified substitute with provenance (or require fall-through), and add guidance for derived in-repo fixtures (what
+    counts as prep vs fabrication, how to record the source checksum).
+  evidence: GitHub contents API for a4000/test_data/fqs lists only -R1/-R2 names; refs record both URLs in provenance.
+  status: open
+  issue: null
+- id: galaxy-blastdbn-composite-lacks-v5-volumes
+  raised_by: nextflow-to-test-data
+  observed_in:
+    mold: nextflow-to-test-data
+    path: content/molds/nextflow-to-test-data/index.md
+    revision: 4
+    content_hash: 842e097edfb5bfbc37b62a35d5870ee2087df33919212a7965fd70dae799b189
+    foundry_head: 2f8792a62ca53f074605ddbcfb25e75871f52b24
+  subject:
+    kind: related-project
+    label: Galaxy datatypes BlastNucDb (blastdbn) composite
+    locator: https://github.com/galaxyproject/galaxy/blob/dev/lib/galaxy/datatypes/blast.py
+  kind: gap
+  severity: major
+  what: Galaxy's blastdbn composite lists blastdb.nhr/nin/nsq plus optional nal/nhd/nhi/nnd/nni/nog/nsd/nsi/00/shd/naa, but none of the BLAST v5 volumes (.ndb, .nos, .not, .ntf, .nto). makeblastdb has written
+    v5 by default since BLAST+ 2.10, and the taxid map needed for staxids lives in those volumes, so an uploaded prebuilt v5 DB loses taxonomy and any staxids-based LCA silently fails.
+  expected: 'Upstream: add the v5 volumes as optional composite members of blastdbn/blastdbp. Foundry: note the limitation in the reference-data mapping research and default prebuilt v5 DB inputs to an
+    archive plus a user tool, or FASTA + taxid map + makeblastdb -taxid_map.'
+  evidence: OceanOmics params.dbfiles = 9 v5 volumes; workflow repaired to take blast_db as tar (ledger blastdb-v5-taxid-map-lost).
+  status: open
+  issue: null
+- id: find-test-data-no-guidance-for-moving-reference-snapshots
+  raised_by: find-test-data
+  observed_in:
+    mold: find-test-data
+    path: content/molds/find-test-data/index.md
+    revision: 8
+    content_hash: 854238aee01711044de686f74e789e843f19613e6740722b7d95e68d7ad89e03
+    foundry_head: 2f8792a62ca53f074605ddbcfb25e75871f52b24
+  subject:
+    kind: mold
+    label: find-test-data procedure
+    locator: content/molds/find-test-data/index.md
+    content_hash: 854238aee01711044de686f74e789e843f19613e6740722b7d95e68d7ad89e03
+  kind: gap
+  severity: minor
+  what: 'The input was a reference the source downloads live (NCBI new_taxdump, which changes daily, so no SHA-1 can hold). The procedure covers IWC fixtures and study datasets but not moving reference
+    releases: nothing says to prefer a dated archive URL, how to size a 400 MB reference for a fast test, or that the subset key (taxids in the test BLAST DB) may need a tool the harness cannot run.'
+  expected: 'Add a reference-data branch: prefer dated/versioned release URLs, record the member file and its hash when the release is an archive, and describe the subset-by-key prep with the command that
+    derives the key, marking it unperformed when unavailable.'
+  evidence: taxonomy_lineage resolved to taxdump_archive/new_taxdump_2026-11-01.zip; subset not computed (local BLAST+ execution denied; v5 taxid volumes undecodable without it).
+  status: open
+  issue: null
+- id: test-plan-assumes-nf-test-evidence
+  raised_by: nextflow-test-to-galaxy-test-plan
+  observed_in:
+    mold: nextflow-test-to-galaxy-test-plan
+    path: content/molds/nextflow-test-to-galaxy-test-plan/index.md
+    revision: 8
+    content_hash: fa769216f621ef25470c9fb907df1278635c0a1e022b647b9462ff7b92469291
+    foundry_head: 47aa5c1cf419386ea72929c8ee34aec0db65588f
+  subject:
+    kind: mold
+    label: nextflow-test-to-galaxy-test-plan procedure
+    locator: content/molds/nextflow-test-to-galaxy-test-plan/index.md
+    content_hash: fa769216f621ef25470c9fb907df1278635c0a1e022b647b9462ff7b92469291
+  kind: friction
+  severity: minor
+  what: 'The procedure states ''Because this plan is translated from real nf-test evidence, set source.derived_from: test-evidence'', but the selected candidate here is a profile (kind: profile) with no
+    nf-test, no snapshot and no assertions. Only the fixtures are test evidence; every expected value is intent. The skill had to decide between test-evidence and intent for source.derived_from without
+    a rule.'
+  expected: 'Condition the rule on candidate kind: nf-test with snapshot -> test-evidence; profile or pipeline-defaults with no outputs -> state that fixtures are test evidence but assertions are intent,
+    and say which value source.derived_from takes.'
+  evidence: summary-nextflow test_candidates[0].kind=profile, outputs=[]; plan sets source test-evidence, case mixed, warning no-upstream-expected-outputs.
+  status: open
+  issue: null
+- id: gxwf-connections-merge-collection-type-unresolved
+  raised_by: validate-galaxy-workflow
+  observed_in:
+    mold: validate-galaxy-workflow
+    path: content/molds/validate-galaxy-workflow/index.md
+    revision: 5
+    content_hash: 74e3743fc376f33c1eb37832ab4869c327d48f87e015c7a38597cf4c4ca939cd
+    foundry_head: 88eb241e0b7226af678c1a938ab2bfc89a31aa1e
+  subject:
+    kind: related-project
+    label: gxwf validate --connections (@galaxy-tool-util/cli 1.15.0)
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts/tree/main/packages/cli
+  kind: gap
+  severity: minor
+  what: 'The connection report resolves __MERGE_COLLECTION__ (and so every downstream step) to collection_type null even though both inputs are list collections built by __BUILD_LIST__/__APPLY_RULES__;
+    downstream map-over shows as None, so the checker cannot verify the most error-prone part of a multi-list fan-in design and still reports valid: true.'
+  expected: Propagate collection type through __MERGE_COLLECTION__ (output type = common input type) and other collection-op built-ins, or flag unresolved types as a warning rather than silently treating
+    consumers as unmapped.
+  evidence: 'valc connection_report: merge_otu_tables/merge_lca_tables/merge_blast_sets/merge_fasta_sets output collection_type None; nbc, lca, phyloseq map_over None.'
+  status: open
+  issue: null
+- id: no-preflight-for-user-tool-permission
+  raised_by: run-workflow-test
+  observed_in:
+    mold: run-workflow-test
+    path: content/molds/run-workflow-test/index.md
+    revision: 8
+    content_hash: 6e312c6ee27ef6e45a6ace74087cd28a6509ade11f788a51ee478efce58971b6
+    foundry_head: 0b06389d693ff56e7892349d90052de33156734c
+  subject:
+    kind: mold
+    label: run-workflow-test procedure (external Galaxy mode)
+    locator: content/molds/run-workflow-test/index.md
+    content_hash: 6e312c6ee27ef6e45a6ace74087cd28a6509ade11f788a51ee478efce58971b6
+  kind: gap
+  severity: major
+  what: The pipeline authors GalaxyUserTool steps whenever discovery misses (14 of 50 steps here), but neither run-workflow-test nor the authoring path checks that the target Galaxy lets the account run
+    unprivileged tools. The external run failed only at workflow import with 403 'User is not allowed to run unprivileged tools' (err_code 403005), after the user had supplied credentials. The procedure
+    also defaults to a Planemo-managed Galaxy without noting that user tools need a container runtime, which this macOS host lacked.
+  expected: 'Add a pre-flight: when the workflow embeds run: GalaxyUserTool steps, check the target''s user-tool permission (and, for managed mode, a container runtime) before uploading or importing, and
+    report not-run with the exact remedy up front; surface the same requirement to the harness before phase 12 asks for credentials.'
+  evidence: test-run/planemo.log ends in bioblend ConnectionError 403 from /api/workflows; no history created.
+  status: open
+  issue: null
+- id: debug-procedure-no-branch-for-not-run-or-permission-403
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: debug-galaxy-workflow-output
+    path: content/molds/debug-galaxy-workflow-output/index.md
+    revision: 6
+    content_hash: 0ea72a26de30b8086e4d11fea09bc269e94320ec97fb317f6c0232cd92841009
+    foundry_head: eec35c4bdb6f486a98372cbf022cced5b84e6556
+  subject:
+    kind: mold
+    label: debug-galaxy-workflow-output procedure
+    locator: content/molds/debug-galaxy-workflow-output/index.md
+    content_hash: 0ea72a26de30b8086e4d11fea09bc269e94320ec97fb317f6c0232cd92841009
+  kind: gap
+  severity: minor
+  what: The procedure assumes a failing run and lists import rejection (400/500 routed by bisection) as the first surface, but the harness invokes it unconditionally after run-workflow-test, which here
+    returned not-run because of a 403 permission refusal. There is no branch for a not-run input or for a 4xx authorization error, which neither bisection nor content routing applies to.
+  expected: State that a not-run handoff produces a short report with 'no runtime evidence' and the environment remedy, and that 401/403 import refusals are authorization, not content, so bisection is skipped;
+    alternatively let the harness skip phase 13 when phase 12 is not-run.
+  evidence: workflow-test-result.json status not-run, import 403 err_code 403005.
+  status: open
+  issue: null
+- id: report-feedback-runtime-note-contradicts-main-check
+  raised_by: report-foundry-run-feedback
+  observed_in:
+    mold: report-foundry-run-feedback
+    path: content/molds/report-foundry-run-feedback/index.md
+    revision: 1
+    content_hash: cffa8d8103479a92dd7282c6964cccfb7fb73d95f673f52e53e7743a2cb270da
+    foundry_head: 63a3f9cf9c97a637fe1628d298e524f35709e289
+  subject:
+    kind: mold
+    label: report-foundry-run-feedback procedure
+    locator: content/molds/report-foundry-run-feedback/index.md
+    content_hash: cffa8d8103479a92dd7282c6964cccfb7fb73d95f673f52e53e7743a2cb270da
+  kind: friction
+  severity: minor
+  what: Step 5 requires resolving each locator against current galaxyproject/foundry main and inspecting changed assets for the correction, but the generic Runtime Notes say 'Do not read Foundry source
+    files at runtime; use only files packaged in this skill bundle'. The skill had to choose; it shallow-cloned main read-only to compare hashes and grep for corrections. The procedure also does not say
+    how content_hash is computed (sha256 of raw file bytes matched the bundle provenance) or what to do when an entry recorded no hash.
+  expected: Exempt step 5 from the runtime note explicitly (or scope the note to authoring Molds), state the content_hash algorithm, and say how to recover a missing observed hash (bundle _provenance refs).
+  evidence: 29 clusters checked against main 94ce4ea; 4 subjects lacked observed hashes.
+  status: open
+  issue: null
+- id: udt-authoring-note-dollar-paren-parsed-in-comments
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: debug-galaxy-workflow-output
+    path: content/molds/debug-galaxy-workflow-output/index.md
+    revision: 6
+    content_hash: 0ea72a26de30b8086e4d11fea09bc269e94320ec97fb317f6c0232cd92841009
+    foundry_head: eec35c4bdb6f486a98372cbf022cced5b84e6556
+  subject:
+    kind: research
+    label: galaxy-user-tool-authoring
+    locator: content/research/galaxy-user-tool-authoring/index.md
+    content_hash: 365fad455369945a34bda537c8dbf409a0966f0f88da9fe78b61cff32d5b0d0d
+  kind: gap
+  severity: major
+  what: >-
+    The note says only 'Escape shell variables that are not Galaxy expressions: \$(date)'. It does not say that Galaxy scans every '$(' in shell_command and configfiles, including inside shell
+    comments. An authored LCA configfile had a trailing shell comment containing the literal text '$(' (explaining why it used backticks). Galaxy rejected the whole workflow import with 400 err_code 400008
+    'Unterminated expression in tool configfile run_lca.sh at line 12, column 64'.
+  expected: >-
+    State that '$(' is parsed as an expression anywhere in shell_command and configfile content, including comments and heredocs, and that every literal occurrence must be written '\$('. Same
+    cluster as udt-authoring-note-missing-element-identifier-and-collection-inputs (escaping rule).
+  evidence: >-
+    test-run/workflow-test-result.attempt2-400.json; test-run/planemo.attempt2-400.log; step lca, udts/lca.galaxy-user-tool.yml.
+  status: open
+  issue: null
+- id: gxwf-validate-accepts-unbalanced-udt-expression
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: debug-galaxy-workflow-output
+    path: content/molds/debug-galaxy-workflow-output/index.md
+    revision: 6
+    content_hash: 0ea72a26de30b8086e4d11fea09bc269e94320ec97fb317f6c0232cd92841009
+    foundry_head: eec35c4bdb6f486a98372cbf022cced5b84e6556
+  subject:
+    kind: related-project
+    label: gxwf validate / draft-validate (@galaxy-tool-util/cli 1.15.0) embedded GalaxyUserTool expressions
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts/tree/main/packages/cli
+  kind: gap
+  severity: major
+  what: >-
+    gxwf validate --connections, gxwf draft-validate --concrete --strict-state and gxwf validate-tests all passed a workflow whose embedded GalaxyUserTool configfile held an unbalanced '$(' expression.
+    Galaxy 27.0.dev0 rejected the import of that workflow with a handled 400 (err_code 400008). Static validation does not parse UDT shell_command/configfile expressions with Galaxy's rules.
+  expected: >-
+    Run Galaxy's UDT expression parse (balanced '$(...)', the same error message) over shell_command and configfiles of embedded run: GalaxyUserTool steps, so this fails statically and not after a
+    planemo run has started. Until then, the Foundry should tell authoring/implement skills to grep for unescaped '$(' that is not followed by inputs/outputs/runtime.
+  evidence: >-
+    test-run/workflow-test-result.attempt2-400.json import_response; galaxy-workflow-validation-result.json status pass on the same content.
+  status: open
+  issue: null
+- id: gxwf-strict-state-accepts-repeat-connection-without-instance
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: debug-galaxy-workflow-output
+    path: content/molds/debug-galaxy-workflow-output/index.md
+    revision: 6
+    content_hash: 0ea72a26de30b8086e4d11fea09bc269e94320ec97fb317f6c0232cd92841009
+    foundry_head: eec35c4bdb6f486a98372cbf022cced5b84e6556
+  subject:
+    kind: related-project
+    label: gxwf validate / draft-validate --strict-state (@galaxy-tool-util/cli 1.15.0) repeat connections
+    locator: https://github.com/jmchilton/galaxy-tool-util-ts/tree/main/packages/cli
+  kind: gap
+  severity: major
+  what: >-
+    Four __MERGE_COLLECTION__ 1.0.0 steps had in-keys inputs_0|input and inputs_1|input but no inputs repeat in state. gxwf validate --connections and draft-validate --concrete --strict-state reported
+    tool state OK. Galaxy 27.0.dev0 imported the step with tool_inputs.inputs [] (connections bound to no repeat instance), and the invocation failed at job creation with 'Output collection output has
+    type_source inputs_0|input, which does not name a collection input'. The __BUILD_LIST__ steps worked only because their state listed the datasets repeat instances for other reasons (identifiers).
+  expected: >-
+    Strict-state validation should fail (or the format2 converter should materialize instances) when an in-key addresses repeat index N but state has fewer than N+1 instances. Until then the Foundry
+    implement-galaxy-tool-step guidance should say to write one state entry per connected repeat instance (e.g. inputs - {} - {}).
+  evidence: >-
+    test-run/workflow-test-result.attempt3-merge.json invocation fb51e5d1ebf057a9 message; server workflow e45cf748ea18039a step 56 tool_inputs inputs [].
+  status: open
+  issue: null
+- id: udt-authoring-prefers-source-container-that-usegalaxy-refuses
+  raised_by: debug-galaxy-workflow-output
+  observed_in:
+    mold: debug-galaxy-workflow-output
+    path: content/molds/debug-galaxy-workflow-output/index.md
+    revision: 6
+    content_hash: 0ea72a26de30b8086e4d11fea09bc269e94320ec97fb317f6c0232cd92841009
+    foundry_head: eec35c4bdb6f486a98372cbf022cced5b84e6556
+  subject:
+    kind: research
+    label: galaxy-user-tool-authoring
+    locator: content/research/galaxy-user-tool-authoring/index.md
+    content_hash: 365fad455369945a34bda537c8dbf409a0966f0f88da9fe78b61cff32d5b0d0d
+  kind: gap
+  severity: major
+  what: >-
+    Section 7 says to prefer the container the source evidences over an inferred quay.io/biocontainers image. Following that, 8 of 14 authored tools named Docker Hub images (ubuntu:20.04,
+    mahsamousavi/lulu:2019, adbennett/*). On test.galaxyproject.org (Galaxy 27.0) every user-tool job with a Docker Hub image errored before running with dataset misc_info 'Failed to find a container
+    when required, contact Galaxy admin', while quay.io/biocontainers images ran. A one-line probe tool confirmed it for ubuntu:20.04, docker.io/library/ubuntu:20.04 and adbennett/phyloseq_readr:v1.0
+    (refused) versus two quay.io/biocontainers images (ran).
+  expected: >-
+    State that public Galaxy servers may resolve user-tool containers only from quay.io/biocontainers, and that authoring should map a source's Docker Hub image to a biocontainer (or mulled
+    biocontainer) carrying the same packages, keeping the source image only as provenance; flag custom source images with no biocontainer equivalent as a portability gap at authoring time.
+  evidence: >-
+    workflow-test-result.json (attempt 4) failed_jobs; probe history b1251ce3b0e2e90ffb0c6a138bed61f0 on test.galaxyproject.org, hids 1-5.
+  status: filed
+  issue: https://github.com/galaxyproject/foundry/issues/786

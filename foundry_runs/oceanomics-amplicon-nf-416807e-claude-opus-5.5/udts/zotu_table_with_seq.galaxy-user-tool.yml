@@ -1,0 +1,30 @@
+class: GalaxyUserTool
+id: oceanomics_zotu_table_with_sequences
+version: 1.0.1
+name: Add ZOTU sequences to ZOTU table
+description: rename the id column to ZOTU and append a ZOTU_sequence column
+license: MIT
+container: quay.io/biocontainers/gawk:5.1.0--2
+shell_command: |
+  tr -d '"' < '$(inputs.otutab.path)' | sed '1s/^#OTU ID/ZOTU/' > tmp.tsv &&
+  awk 'BEGIN { FS="\t"; OFS="\t" } FNR==NR { if (/^>/) { sub(">", "", $0); id=$0 } else { seq[id]=$0 } next } FNR==1 { print $0, "ZOTU_sequence"; next } { print $0, seq[$1] }' '$(inputs.zotus.path)' tmp.tsv > zotu_table.tsv
+inputs:
+- name: otutab
+  type: data
+  format: [tabular]
+  label: ZOTU count table from vsearch --otutabout
+- name: zotus
+  type: data
+  format: [fasta]
+  label: Single-line ZOTU FASTA
+outputs:
+- name: zotu_table
+  type: data
+  format: tabular
+  from_work_dir: zotu_table.tsv
+  label: ZOTU table with sequences
+help:
+  format: markdown
+  content: |
+    Port of the table post-processing in OceanOmics-amplicon-nf VSEARCH_USEARCHGLOBAL. Produces the
+    `ZOTU, <samples...>, ZOTU_sequence` layout that the PHYLOSEQ step expects.

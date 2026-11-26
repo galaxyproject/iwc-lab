@@ -1,0 +1,504 @@
+plan_version: '1'
+source:
+  kind: nextflow
+  name: OceanOmics-amplicon-nf @416807e
+  derived_from: test-evidence
+  notes: Fixtures translated from profile:test (conf/test.config); the pipeline has no nf-test suite and no assertions, so every expected value is intent read from the translated workflow's step state and
+    embedded scripts.
+workflow:
+  title: OceanOmics amplicon (eDNA) ASV/ZOTU taxonomy
+  label_source: draft
+  notes: Labels match galaxy-workflow.gxwf.yml inputs/outputs exactly.
+test_cases:
+- id: profile_test_two_simulated_samples
+  doc: Two simulated 12S/16S paired samples from the OceanOmics test profile through primer trimming, DADA2 ASVs, vsearch ZOTUs, LULU, BLAST/LCA, NBC, phyloseq and proportional filtering.
+  derived_from: mixed
+  provenance: summary-nextflow test_candidates[profile:test] (selected); params_delta fw_primer, asv_min_overlap, asv_max_mismatch, asv_pooled, blast_qcov, lca_qcov, zotu_min_size, blast_pid, lca_pid
+  job_inputs:
+  - workflow_label: reads
+    label_status: resolved
+    description: per-sample paired reads (index + primer still present)
+    collection_shape: list:paired
+    datatype: fastqsanger.gz
+    fixture:
+      storage: remote-url
+      location: null
+      checksum: null
+      provenance: 'conf/test.config input samplesheet (profile:test candidate); identifiers are the samplesheet ''sample'' values (unique per row, both rows paired); per-element URLs and SHA-1s in test-data-refs.json
+        elements[] (prep: none at import; reads still carry the fw index before the fw primer, which the non-anchored 5'' cutadapt adapter removes)'
+  - workflow_label: sample_metadata
+    label_status: resolved
+    description: samplesheet used as phyloseq sample metadata
+    collection_shape: null
+    datatype: csv
+    fixture:
+      storage: in-repo
+      location: test-data/sample_metadata.csv
+      checksum: SHA-1:d2c670e53a552e847c10d7dbbd3a275879104731
+      provenance: 'derived from https://raw.githubusercontent.com/a4000/test_data/main/sample_sheets/test_samplesheet.csv (SHA-1:d4e1ff18413f12a445cd92dbc97f4aa0c89cae63) (prep: header column ''sample''
+        renamed to ''samp_name'' (PHYLOSEQ keys metadata rows on samp_name; ledger sample-metadata-samp-name-column))'
+  - workflow_label: blast_db
+    label_status: resolved
+    description: test BLAST v5 database (12S v0.7 + 16S v0.2) as one archive
+    collection_shape: null
+    datatype: tar
+    fixture:
+      storage: in-repo
+      location: test-data/blast_db.tar
+      checksum: SHA-1:05c8f071a385d0cd9d0a6cc4ecaf22a99af33618
+      provenance: 'ustar archive of the 9 conf/test.config params.dbfiles volumes https://raw.githubusercontent.com/a4000/test_data/main/old_db/12S.v0.7.16S.v0.2.fasta.ndb, https://raw.githubusercontent.com/a4000/test_data/main/old_db/12S.v0.7.16S.v0.2.fasta.nhr,
+        https://raw.githubusercontent.com/a4000/test_data/main/old_db/12S.v0.7.16S.v0.2.fasta.nin, https://raw.githubusercontent.com/a4000/test_data/main/old_db/12S.v0.7.16S.v0.2.fasta.nog, https://raw.githubusercontent.com/a4000/test_data/main/old_db/12S.v0.7.16S.v0.2.fasta.nos,
+        https://raw.githubusercontent.com/a4000/test_data/main/old_db/12S.v0.7.16S.v0.2.fasta.not, https://raw.githubusercontent.com/a4000/test_data/main/old_db/12S.v0.7.16S.v0.2.fasta.nsq, https://raw.githubusercontent.com/a4000/test_data/main/old_db/12S.v0.7.16S.v0.2.fasta.ntf,
+        https://raw.githubusercontent.com/a4000/test_data/main/old_db/12S.v0.7.16S.v0.2.fasta.nto (prep: concatenation at the import boundary: 9 declared volume URLs packed into one tar (workflow input
+        is a v5 DB archive))'
+  - workflow_label: taxonomy_lineage
+    label_status: resolved
+    description: NCBI ranked lineage for LCA
+    collection_shape: null
+    datatype: tabular
+    fixture:
+      storage: remote-url
+      location: https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump_archive/new_taxdump_2026-11-01.zip
+      checksum: SHA-1:f5f414d5bcf6eab52950bb25c305ee326d6a232c
+      provenance: 'NCBI dated monthly taxonomy archive (stable URL; the live new_taxdump.zip the source wgets changes daily). Member rankedlineage.dmp: 401490991 bytes, SHA-1:37e0458c17ab35e2a9a6c0f6e9e071e0544162c9.
+        (prep: extract rankedlineage.dmp from the zip at the import boundary (Galaxy would otherwise stage a zip). Recommended further subset to the taxids present in blast_db (blastdbcmd -entry all -outfmt
+        %T) to keep the fixture small; not performed in this run because executing BLAST+ binaries locally was not permitted and the v5 taxid volumes could not be decoded without them.)'
+  - workflow_label: filter_table
+    label_status: resolved
+    description: taxa exclusion table for phyloseq
+    collection_shape: null
+    datatype: csv
+    fixture:
+      storage: remote-url
+      location: https://raw.githubusercontent.com/a4000/test_data/main/other_files/filter.csv
+      checksum: SHA-1:81e0551a3bcef0c7d9f22109186596c77a817e22
+      provenance: conf/test.config params.filter_table
+  - workflow_label: fw_primer
+    label_status: resolved
+    description: test profile parameter fw_primer
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: conf/test.config fw_primer = AAAACCCCTTTTGGGG
+  - workflow_label: asv_min_overlap
+    label_status: resolved
+    description: test profile parameter asv_min_overlap
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: conf/test.config asv_min_overlap = 0
+  - workflow_label: asv_max_mismatch
+    label_status: resolved
+    description: test profile parameter asv_max_mismatch
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: conf/test.config asv_max_mismatch = 12
+  - workflow_label: asv_pooled
+    label_status: resolved
+    description: test profile parameter asv_pooled
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: conf/test.config asv_pooled = false -> FALSE
+  - workflow_label: blast_qcov
+    label_status: resolved
+    description: test profile parameter blast_qcov
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: conf/test.config blast_qcov = 50
+  - workflow_label: blast_pid
+    label_status: resolved
+    description: test profile parameter blast_pid
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: conf/test.config blast_pid = 90
+  - workflow_label: lca_qcov
+    label_status: resolved
+    description: test profile parameter lca_qcov
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: conf/test.config lca_qcov = 50
+  - workflow_label: lca_pid
+    label_status: resolved
+    description: test profile parameter lca_pid
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: conf/test.config lca_pid = 90
+  - workflow_label: zotu_min_size
+    label_status: resolved
+    description: test profile parameter zotu_min_size
+    collection_shape: null
+    datatype: null
+    fixture:
+      storage: null
+      location: null
+      checksum: null
+      provenance: conf/test.config zotu_min_size = 1
+  expected_outputs:
+  - workflow_label: multiqc_report
+    label_status: resolved
+    description: MultiQC HTML over FastQC and cutadapt reports
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_text
+      intent: report is a MultiQC HTML page
+      expected_value: MultiQC
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: asv_track_reads
+    label_status: resolved
+    description: dada2 seqCounts read-retention table across stages
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_text
+      intent: table carries the FiltTrim stage column named in the step state
+      expected_value: FiltTrim
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: both test samples are tracked
+      expected_value: 12S_simulated-reads
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+  - workflow_label: asv_table
+    label_status: resolved
+    description: ASV table (ASV, per-sample counts, ASV_sequence) from the ported DADA2_FINALOUTPUTS
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_text
+      intent: header carries the ASV_sequence column PHYLOSEQ requires
+      expected_value: ASV_sequence
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_n_columns
+      intent: ASV id + 2 samples + sequence
+      expected_value: 4
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: asv_fasta
+    label_status: resolved
+    description: ASV sequences named ASV_<n>
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_text
+      intent: first ASV is named ASV_1
+      expected_value: '>ASV_1'
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: zotu_table
+    label_status: resolved
+    description: ZOTU table with ZOTU_sequence column
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_text
+      intent: header carries ZOTU_sequence
+      expected_value: ZOTU_sequence
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+    - family: has_n_columns
+      intent: ZOTU id + 2 samples + sequence (vsearch otutab columns follow relabelled sample names)
+      expected_value: 4
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+  - workflow_label: zotu_fasta
+    label_status: resolved
+    description: ZOTU sequences relabelled zotu<n>
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_text
+      intent: uchime3 --relabel zotu naming
+      expected_value: '>zotu1'
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: lulu_curated_table
+    label_status: resolved
+    description: LULU curated tables per OTU set
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_text
+      intent: 'curated asv table has #ID header'
+      expected_value: '#ID'
+      tolerance: null
+      element_identifier: asv
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: 'curated zotu table has #ID header'
+      expected_value: '#ID'
+      tolerance: null
+      element_identifier: zotu
+      evidence: intent
+      confidence: high
+  - workflow_label: blast_results
+    label_status: resolved
+    description: BLAST hits per OTU set in source outfmt 6 order
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_n_columns
+      intent: 22 outfmt-6 columns
+      expected_value: 22
+      tolerance: null
+      element_identifier: asv
+      evidence: intent
+      confidence: medium
+    - family: has_n_columns
+      intent: 22 outfmt-6 columns
+      expected_value: 22
+      tolerance: null
+      element_identifier: zotu
+      evidence: intent
+      confidence: medium
+    - family: has_n_columns
+      intent: 22 outfmt-6 columns
+      expected_value: 22
+      tolerance: null
+      element_identifier: asv_lulucurated
+      evidence: intent
+      confidence: medium
+    - family: has_n_columns
+      intent: 22 outfmt-6 columns
+      expected_value: 22
+      tolerance: null
+      element_identifier: zotu_lulucurated
+      evidence: intent
+      confidence: medium
+  - workflow_label: lca_table
+    label_status: resolved
+    description: LCA taxonomy per OTU set (duplicates removed)
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_text
+      intent: LCA header from runAssign_collapsedTaxonomy.py
+      expected_value: numberOfUnq_BlastHits
+      tolerance: null
+      element_identifier: asv
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: LCA header from runAssign_collapsedTaxonomy.py
+      expected_value: numberOfUnq_BlastHits
+      tolerance: null
+      element_identifier: zotu
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: LCA header from runAssign_collapsedTaxonomy.py
+      expected_value: numberOfUnq_BlastHits
+      tolerance: null
+      element_identifier: asv_lulucurated
+      evidence: intent
+      confidence: high
+    - family: has_text
+      intent: LCA header from runAssign_collapsedTaxonomy.py
+      expected_value: numberOfUnq_BlastHits
+      tolerance: null
+      element_identifier: zotu_lulucurated
+      evidence: intent
+      confidence: high
+  - workflow_label: phyloseq_object
+    label_status: resolved
+    description: Filtered phyloseq RDS per OTU set
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_size
+      intent: non-empty RDS
+      expected_value: 0
+      tolerance:
+        kind: delta
+        magnitude: null
+        rationale: binary RDS; assert min size > 0 rather than exact bytes
+      element_identifier: asv
+      evidence: intent
+      confidence: medium
+    - family: has_size
+      intent: non-empty RDS
+      expected_value: 0
+      tolerance:
+        kind: delta
+        magnitude: null
+        rationale: binary RDS; assert min size > 0 rather than exact bytes
+      element_identifier: zotu
+      evidence: intent
+      confidence: medium
+    - family: has_size
+      intent: non-empty RDS
+      expected_value: 0
+      tolerance:
+        kind: delta
+        magnitude: null
+        rationale: binary RDS; assert min size > 0 rather than exact bytes
+      element_identifier: asv_lulucurated
+      evidence: intent
+      confidence: medium
+    - family: has_size
+      intent: non-empty RDS
+      expected_value: 0
+      tolerance:
+        kind: delta
+        magnitude: null
+        rationale: binary RDS; assert min size > 0 rather than exact bytes
+      element_identifier: zotu_lulucurated
+      evidence: intent
+      confidence: medium
+  - workflow_label: final_taxa
+    label_status: resolved
+    description: Proportionally filtered taxaFinal table per OTU set
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_text
+      intent: FAIRe taxaFinal header
+      expected_value: seq_id
+      tolerance: null
+      element_identifier: asv
+      evidence: intent
+      confidence: medium
+    - family: has_text
+      intent: FAIRe taxaFinal header
+      expected_value: seq_id
+      tolerance: null
+      element_identifier: zotu
+      evidence: intent
+      confidence: medium
+    - family: has_text
+      intent: FAIRe taxaFinal header
+      expected_value: seq_id
+      tolerance: null
+      element_identifier: asv_lulucurated
+      evidence: intent
+      confidence: medium
+    - family: has_text
+      intent: FAIRe taxaFinal header
+      expected_value: seq_id
+      tolerance: null
+      element_identifier: zotu_lulucurated
+      evidence: intent
+      confidence: medium
+  - workflow_label: filtered_otu_table
+    label_status: resolved
+    description: Proportionally filtered OTU table per OTU set
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_text
+      intent: a test sample column survives filtering
+      expected_value: simulated-reads
+      tolerance: null
+      element_identifier: asv
+      evidence: intent
+      confidence: low
+    - family: has_text
+      intent: a test sample column survives filtering
+      expected_value: simulated-reads
+      tolerance: null
+      element_identifier: zotu
+      evidence: intent
+      confidence: low
+    - family: has_text
+      intent: a test sample column survives filtering
+      expected_value: simulated-reads
+      tolerance: null
+      element_identifier: asv_lulucurated
+      evidence: intent
+      confidence: low
+    - family: has_text
+      intent: a test sample column survives filtering
+      expected_value: simulated-reads
+      tolerance: null
+      element_identifier: zotu_lulucurated
+      evidence: intent
+      confidence: low
+  - workflow_label: fastqc_html
+    label_status: resolved
+    description: FastQC HTML per read file
+    output_kind: collection
+    collection_shape: list:paired
+    assertion_intent:
+    - family: has_text
+      intent: FastQC report
+      expected_value: FastQC
+      tolerance: null
+      element_identifier: 12S_simulated-reads
+      evidence: intent
+      confidence: medium
+unresolved:
+- kind: fixture
+  description: taxonomy_lineage fixture is the full 401 MB rankedlineage.dmp inside a dated NCBI zip; the test needs it extracted (and ideally subset to the DB's taxids).
+  blocking: true
+  suggested_resolution: Extract rankedlineage.dmp to test-data/ at staging time; subset with blastdbcmd -entry all -outfmt %T when BLAST+ is available.
+- kind: assertion
+  description: Outputs depend on denoising 50 simulated read pairs per sample; ASV/ZOTU counts and taxonomy are not predictable without a run, so assertions are structural.
+  blocking: false
+  suggested_resolution: After a first green run, replace structural checks with has_n_lines / has_line assertions on lca_table and asv_table taken from that run.
+omissions:
+- target: rv_primer
+  reason: conf/test.config sets no rv_primer; the workflow default CGCTGTTATCCCTADRGTAACT does not occur in the test R2 reads (assay-specific reverse primers), so R2 primers stay untrimmed exactly as in
+    the source test.
+  category: other
+- target: phyloseq_object contents
+  reason: binary RDS; only size asserted
+  category: weak-output
+warnings:
+- code: no-upstream-expected-outputs
+  message: OceanOmics-amplicon-nf defines no nf-test or snapshot; profile:test supplies inputs only.
+  path: summary-nextflow.test_candidates[0].outputs
+- code: source-test-not-runnable-as-declared
+  message: Declared samplesheet fastq URLs 404 and its header fails SAMPLESHEET_CHECK; fixtures were corrected (see test-data-refs provenance).
+  path: test-data-refs.json

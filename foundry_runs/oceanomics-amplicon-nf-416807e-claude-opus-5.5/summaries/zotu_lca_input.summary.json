@@ -1,0 +1,270 @@
+{
+  "schema_version": 1,
+  "tool_id": "tp_awk_tool",
+  "tool_version": "9.11+galaxy0",
+  "cache_key": "b79d5bd57bc06e6143ff1f5e420a8306ce4377b78c2936fea08cc110302f0b20",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/bgruening~text_processing~tp_awk_tool/versions/9.11+galaxy0",
+    "cached_at": "2026-11-10T03:55:58.440Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/b79d5bd57bc06e6143ff1f5e420a8306ce4377b78c2936fea08cc110302f0b20.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "tp_awk_tool",
+    "version": "9.11+galaxy0",
+    "name": "Text reformatting",
+    "description": "with awk",
+    "inputs": [
+      {
+        "name": "infile",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "File to process",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "txt"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "code",
+        "parameter_type": "gx_text",
+        "hidden": false,
+        "label": "AWK Program",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "text",
+        "area": false,
+        "value": null,
+        "default_options": [],
+        "validators": []
+      },
+      {
+        "name": "variables",
+        "parameter_type": "gx_repeat",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "repeat",
+        "parameters": [
+          {
+            "name": "value",
+            "parameter_type": "gx_text",
+            "hidden": false,
+            "label": "Value",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "text",
+            "area": false,
+            "value": null,
+            "default_options": [],
+            "validators": [
+              {
+                "type": "regex",
+                "message": "Value '%s' does not match regular expression '[a-zA-Z0-9 .]+'",
+                "implicit": false,
+                "negate": false,
+                "expression": "[a-zA-Z0-9 .]+"
+              }
+            ]
+          }
+        ],
+        "min": 0,
+        "max": null
+      }
+    ],
+    "outputs": [
+      {
+        "name": "outfile",
+        "label": null,
+        "hidden": false,
+        "type": "data",
+        "format": "data",
+        "format_source": "infile",
+        "metadata_source": "infile",
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.5281/zenodo.1419255"
+      }
+    ],
+    "license": null,
+    "profile": "23.1",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n**What it does**\n\nThis tool runs the unix **awk** command on the selected data file.\n\n.. class:: infomark\n\n**TIP:**\n\nThis tool uses the **extended regular** expression syntax (not the perl syntax).\n**\\\\d**, **\\\\w**, **\\\\s** etc. are **not** supported.\n\n\n**Further reading**\n\n- Awk by Example (http://www.ibm.com/developerworks/linux/library/l-awk1/index.html)\n- Long AWK tutorial (http://www.grymoire.com/Unix/Awk.html)\n\n-----\n\n**AWK programs**\n\nMost AWK programs consist of **patterns** (i.e. rules that match lines of text) and **actions** (i.e. commands to execute when a pattern matches a line).\n\nThe basic form of AWK program is::\n\n    pattern { action 1; action 2; action 3; }\n\n**Variables**\n\nIn order to allow parametrization in workflows, the tool allows to specify values for variables that can be used in AWK program.\nthat will be named **VAR1**, **VAR2**, ...\n\n\n**Pattern Examples**\n\n- **$2 == \"chr3\"**  will match lines whose second column is the string 'chr3'\n- **$5-$4>23**  will match lines that after subtracting the value of the fourth column from the value of the fifth column, gives value alrger than 23.\n- **/AG..AG/** will match lines that contain the regular expression **AG..AG** (meaning the characeters AG followed by any two characeters followed by AG). (This is the way to specify regular expressions on the entire line, similar to GREP.)\n- **$7 ~ /A{4}U/**  will match lines whose seventh column contains 4 consecutive A's followed by a U. (This is the way to specify regular expressions on a specific field.)\n- **10000 < $4 && $4 < 20000** will match lines whose fourth column value is larger than 10,000 but smaller than 20,000\n- **BEGIN** will be executed once only, before the first input record is read.\n- If no pattern is specified, all lines match (meaning the **action** part will be executed on all lines).\n\n\n\n**Action Examples**\n\n- **{ print }** or **{ print $0 }**   will print the entire input line (the line that matched in **pattern**). **$0** is a special marker meaning 'the entire line'.\n- **{ print $1, $4, $5 }** will print only the first, fourth and fifth fields of the input line.\n- **{ print $4, $5-$4 }** will print the fourth column and the difference between the fifth and fourth column. (If the fourth column was start-position in the input file, and the fifth column was end-position - the output file will contain the start-position, and the length).\n- **{ FS = \",\" }** can be used to change the field separator (delimeter) for parsing the input file.\n- If no action part is specified (not even the curly brackets) - the default action is to print the entire line.\n\n\n**AWK's Regular Expression Syntax**\n\nThe select tool searches the data for lines containing or not containing a match to the given pattern. A Regular Expression is a pattern descibing a certain amount of text.\n\n- **( ) { } [ ] . * ? + \\ ^ $** are all special characters. **\\\\** can be used to \"escape\" a special character, allowing that special character to be searched for.\n- **^** matches the beginning of a string(but not an internal line).\n- **(** .. **)** groups a particular pattern.\n- **{** n or n, or n,m **}** specifies an expected number of repetitions of the preceding pattern.\n\n  - **{n}** The preceding item is matched exactly n times.\n  - **{n,}** The preceding item ismatched n or more times.\n  - **{n,m}** The preceding item is matched at least n times but not more than m times.\n\n- **[** ... **]** creates a character class. Within the brackets, single characters can be placed. A dash (-) may be used to indicate a range such as **a-z**.\n- **.** Matches any single character except a newline.\n- ***** The preceding item will be matched zero or more times.\n- **?** The preceding item is optional and matched at most once.\n- **+** The preceding item will be matched one or more times.\n- **^** has two meaning:\n  - matches the beginning of a line or string.\n  - indicates negation in a character class. For example, [^...] matches every character except the ones inside brackets.\n- **$** matches the end of a line or string.\n- **\\|** Separates alternate possibilities.\n\n\n  "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "infile": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [],
+            "properties": {
+              "value": {
+                "type": "string",
+                "pattern": "(^$|^[a-zA-Z0-9 .]+)"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [
+        "infile"
+      ],
+      "properties": {
+        "infile": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "code": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "variables": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [],
+                "properties": {
+                  "value": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "(^$|^[a-zA-Z0-9 .]+)"
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "__class__"
+                        ],
+                        "properties": {
+                          "__class__": {
+                            "type": "string",
+                            "enum": [
+                              "ConnectedValue"
+                            ]
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

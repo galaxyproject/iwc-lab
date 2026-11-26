@@ -1,0 +1,392 @@
+{
+  "schema_version": 1,
+  "tool_id": "dada2_removeBimeraDenovo",
+  "tool_version": "1.38.0+galaxy2",
+  "cache_key": "8a10d60bba48de5de24d35ae2e2b1b622692e5f5e6ff0778bebad3e607591c77",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~dada2_removebimeradenovo~dada2_removeBimeraDenovo/versions/1.38.0+galaxy2",
+    "cached_at": "2026-11-10T03:50:54.238Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/8a10d60bba48de5de24d35ae2e2b1b622692e5f5e6ff0778bebad3e607591c77.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "dada2_removeBimeraDenovo",
+    "version": "1.38.0+galaxy2",
+    "name": "dada2: removeBimeraDenovo",
+    "description": "Remove bimeras from collections of unique sequences",
+    "inputs": [
+      {
+        "name": "unqs",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "sequence table",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "dada2_dada",
+          "dada2_mergepairs",
+          "dada2_sequencetable"
+        ],
+        "multiple": false,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "method",
+        "parameter_type": "gx_select",
+        "hidden": false,
+        "label": "Method",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "select",
+        "options": [
+          {
+            "label": "check samples independently for bimeras and make a consensus decision on each sequence variant",
+            "value": "consensus",
+            "selected": false
+          },
+          {
+            "label": "pool samples for bimera identification",
+            "value": "pooled",
+            "selected": false
+          },
+          {
+            "label": "check samples independently for bimeras and remove (0-out) sequence variants from samples independently",
+            "value": "per-sample",
+            "selected": false
+          }
+        ],
+        "multiple": false,
+        "validators": []
+      },
+      {
+        "name": "advanced",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "minFoldParentOverAbundance",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Minimum parent abundance relative to the candidate chimera",
+            "help": "Default: 1.5 for consensus on a sequence table; 2 otherwise. Leave empty to preserve the default for the input type and method. A value of 2 requires candidate parents to be at least twice as abundant.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "float",
+            "value": null,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "minParentAbundance",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Minimum absolute parent abundance",
+            "help": "Default: 2 for consensus on a sequence table; 8 otherwise. Leave empty to preserve the default for the input type and method.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "integer",
+            "value": null,
+            "min": 0,
+            "max": null,
+            "validators": []
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "stable_uniques",
+        "label": "${tool.name} on ${on_string}",
+        "hidden": false,
+        "type": "data",
+        "format": "dada2_uniques",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "nonchim.uniques",
+        "precreate_directory": false
+      },
+      {
+        "name": "stable_mergepairs",
+        "label": "${tool.name} on ${on_string}: mergePairs",
+        "hidden": false,
+        "type": "data",
+        "format": "dada2_mergepairs",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "nonchim.mergepairs",
+        "precreate_directory": false
+      },
+      {
+        "name": "stable_sequencetable",
+        "label": "${tool.name} on ${on_string}: sequencetable",
+        "hidden": false,
+        "type": "data",
+        "format": "dada2_sequencetable",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "nonchim.mergepairs",
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1038/nmeth.3869"
+      }
+    ],
+    "license": null,
+    "profile": "24.2",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "dada2",
+        "type": "bio.tools"
+      },
+      {
+        "value": "dada2",
+        "type": "bioconductor"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\nDescription\n...........\n\nThis tool can be used to remove chimeric sequences, i.e. sequences that can be constructed by combining a left-segment and a right-segment from two more abundant “parent” sequences.. Two methods to identify chimeras are supported: Identification from pooled sequences and identification by consensus across samples.\n\n- from **pooled** sequences: Each sequence is evaluated against a set of \"parents\" drawn from the sequence collection that are sufficiently more abundant than the sequence being evaluated. Sequences that are bimera are removed, i.e. a two-parent chimera, in which the left side is made up of one parent sequence, and the right-side made up of a second parent sequence.\n- by **consensus**: In short, bimeric sequences are flagged on a sample-by-sample basis. Then, a vote is performed for each sequence across all samples in which it appeared. If the sequence is flagged in a sufficiently high fraction of samples, it is identified as a bimera. A logical vector is returned, with an entry for each sequence in the table indicating whether it was identified as bimeric by this consensus procedure.\n\n**Parent abundance thresholds**: The relative and absolute thresholds control which sequences can be considered parents of a candidate chimera. The DADA2 defaults are 1.5 and 2 for consensus on a sequence table; otherwise they are 2 and 8 (including individual dada and mergePairs inputs). Leaving a field empty preserves the default for the input type and method.\n\n**Note**: pooled should only be used in combination with pooled denoising.\n\nUsage\n.....\n\n**Input**\n\n- the results of makeSequenceTable (note that also the results of dada, and mergePairs are accepted)\n\n**Output**\n\nA data set of type:\n- dada2_sequenceTable (resp. dada2_mergepairs) if the input is of type dada2_sequenceTable (resp. dada2_mergepairs)\n- dada2_uniques otherwise\n\nDetails\n.......\n\nThe frequency of chimeric sequences varies substantially from dataset to dataset, and depends on on factors including experimental procedures and sample complexity. Here chimeras make up about 21% of the merged sequence variants, but when we account for the abundances of those variants we see they account for only about 4% of the merged sequence reads.\n\nConsiderations for your own data: Most of your reads should remain after chimera removal (it is not uncommon for a majority of sequence variants to be removed though). If most of your reads were removed as chimeric, upstream processing may need to be revisited.\nIn almost all cases this is caused by primer sequences with ambiguous nucleotides that were not removed prior to beginning the DADA2 pipeline.\nYou can check for present primer sequences with the tool `dada2: primer check`\n\n\n\nOverview\n........\n\nThe intended use of the dada2 tools for paired sequencing data is shown in the following image.\n\n.. image:: pairpipe.png\n\nNote: In particular for the analysis of paired collections the collections should be sorted lexicographical\nbefore the analysis.\n\nFor single end data you the steps \"Unzip collection\" and \"mergePairs\" are not necessary.\n\nMore information may be found on the dada2 homepage:: https://benjjneb.github.io/dada2/index.html (in particular tutorials) or the documentation of dada2's R package https://bioconductor.org/packages/release/bioc/html/dada2.html (in particular the pdf which contains the full documentation of all parameters)\n    \n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "unqs": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "consensus",
+            "pooled",
+            "per-sample"
+          ]
+        },
+        "advanced": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "minFoldParentOverAbundance": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "minParentAbundance": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a non-negative number",
+                  "title": "greaterThanOrEqualTo(0)",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "unqs"
+      ],
+      "properties": {
+        "unqs": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "method": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "consensus",
+                "pooled",
+                "per-sample"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "advanced": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "minFoldParentOverAbundance": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "minParentAbundance": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Int",
+                          "description": "a non-negative number",
+                          "title": "greaterThanOrEqualTo(0)",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

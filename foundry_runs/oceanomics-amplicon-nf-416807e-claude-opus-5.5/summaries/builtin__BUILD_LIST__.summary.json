@@ -1,0 +1,386 @@
+{
+  "schema_version": 1,
+  "tool_id": "__BUILD_LIST__",
+  "tool_version": "1.2.0",
+  "cache_key": "7b51915fd3e2446593d3ded047c1e1c0bf676abc19b190ae7f835447e36f5e51",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/__BUILD_LIST__/versions/1.2.0",
+    "cached_at": "2026-11-10T03:49:02.189Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/7b51915fd3e2446593d3ded047c1e1c0bf676abc19b190ae7f835447e36f5e51.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "__BUILD_LIST__",
+    "version": "1.2.0",
+    "name": "Build list",
+    "description": "from individual datasets or existing collections",
+    "inputs": [
+      {
+        "name": "datasets",
+        "parameter_type": "gx_repeat",
+        "hidden": false,
+        "label": null,
+        "help": "If collections are provided they should contain the same number of items (see case 'c' in the figure below).",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "repeat",
+        "parameters": [
+          {
+            "name": "input",
+            "parameter_type": "gx_data",
+            "hidden": false,
+            "label": "Input Dataset",
+            "help": "If you are using this tool to combine multiple collections, they need to contain the same number of datasets (see case 'c' in the figure below)",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "data",
+            "extensions": [
+              "data"
+            ],
+            "multiple": false,
+            "min": null,
+            "max": null,
+            "url_default": null
+          },
+          {
+            "name": "id_cond",
+            "parameter_type": "gx_conditional",
+            "hidden": false,
+            "label": null,
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "conditional",
+            "test_parameter": {
+              "name": "id_select",
+              "parameter_type": "gx_select",
+              "hidden": false,
+              "label": "Label to use",
+              "help": null,
+              "argument": null,
+              "is_dynamic": false,
+              "optional": false,
+              "type": "select",
+              "options": [
+                {
+                  "label": "Index",
+                  "value": "idx",
+                  "selected": true
+                },
+                {
+                  "label": "Identifier",
+                  "value": "identifier",
+                  "selected": false
+                },
+                {
+                  "label": "Manual",
+                  "value": "manual",
+                  "selected": false
+                }
+              ],
+              "multiple": false,
+              "validators": []
+            },
+            "whens": [
+              {
+                "discriminator": "idx",
+                "parameters": [],
+                "is_default_when": true
+              },
+              {
+                "discriminator": "identifier",
+                "parameters": [],
+                "is_default_when": false
+              },
+              {
+                "discriminator": "manual",
+                "parameters": [
+                  {
+                    "name": "identifier",
+                    "parameter_type": "gx_text",
+                    "hidden": false,
+                    "label": "Identifier",
+                    "help": null,
+                    "argument": null,
+                    "is_dynamic": false,
+                    "optional": true,
+                    "type": "text",
+                    "area": false,
+                    "value": null,
+                    "default_options": [],
+                    "validators": []
+                  }
+                ],
+                "is_default_when": false
+              }
+            ]
+          }
+        ],
+        "min": null,
+        "max": null
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output",
+        "label": "${on_string} (as list)",
+        "hidden": false,
+        "type": "collection",
+        "collection_type": "list",
+        "collection_type_source": null,
+        "collection_type_from_rules": null,
+        "structured_like": null,
+        "discover_datasets": []
+      }
+    ],
+    "citations": [],
+    "license": null,
+    "profile": "16.01",
+    "edam_operations": [
+      "operation_2409"
+    ],
+    "edam_topics": [],
+    "xrefs": [],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\n\n========\nSynopsis\n========\n\nBuilds a new list collection from individual datasets or collections.\n\n===========\nDescription\n===========\n\nThis tool combines individual datasets or collections into a new collection. The simplest scenario is building a new collection from individual datasets (case **A** in the image below). You can merge a collection with individual dataset(s). In this case (see **B** in the image below) the individual dataset(s) will be merged with each element of the input collection to create a nested collection. Finally, two or more collections can be merged together creating a nested collection (case **C** in the image below).\n\n.. class:: warningmark\n\n**Note**: When merging collections (e.g., case **C** below) the input collection **must** have equal number of elements.\n\n------\n\n.. image:: ${static_path}/images/tools/collection_ops/build_list.svg\n  :alt: Build list operation\n  :width: 800\n\n-------\n\n.. class:: infomark\n\nThis tool will create new history datasets copied from your input collections but your quota usage will not increase.\n\n  "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "datasets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [],
+            "properties": {
+              "input": {
+                "$id": "/schemas/never",
+                "not": {},
+                "title": "never"
+              },
+              "id_cond": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "required": [],
+                    "properties": {
+                      "id_select": {
+                        "type": "string",
+                        "enum": [
+                          "idx"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "id_select"
+                    ],
+                    "properties": {
+                      "id_select": {
+                        "type": "string",
+                        "enum": [
+                          "identifier"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "id_select"
+                    ],
+                    "properties": {
+                      "id_select": {
+                        "type": "string",
+                        "enum": [
+                          "manual"
+                        ]
+                      },
+                      "identifier": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "required": [],
+      "properties": {
+        "datasets": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [],
+                "properties": {
+                  "input": {
+                    "type": "object",
+                    "required": [
+                      "__class__"
+                    ],
+                    "properties": {
+                      "__class__": {
+                        "type": "string",
+                        "enum": [
+                          "ConnectedValue"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "id_cond": {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "required": [],
+                            "properties": {
+                              "id_select": {
+                                "type": "string",
+                                "enum": [
+                                  "idx"
+                                ]
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "id_select"
+                            ],
+                            "properties": {
+                              "id_select": {
+                                "type": "string",
+                                "enum": [
+                                  "identifier"
+                                ]
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "id_select"
+                            ],
+                            "properties": {
+                              "id_select": {
+                                "type": "string",
+                                "enum": [
+                                  "manual"
+                                ]
+                              },
+                              "identifier": {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "__class__"
+                                    ],
+                                    "properties": {
+                                      "__class__": {
+                                        "type": "string",
+                                        "enum": [
+                                          "ConnectedValue"
+                                        ]
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "__class__"
+                        ],
+                        "properties": {
+                          "__class__": {
+                            "type": "string",
+                            "enum": [
+                              "ConnectedValue"
+                            ]
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

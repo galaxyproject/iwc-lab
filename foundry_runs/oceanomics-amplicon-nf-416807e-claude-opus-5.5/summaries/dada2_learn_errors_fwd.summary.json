@@ -1,0 +1,771 @@
+{
+  "schema_version": 1,
+  "tool_id": "dada2_learnErrors",
+  "tool_version": "1.38.0+galaxy2",
+  "cache_key": "6ce8b34c950542468c0b191d19cedad83ea4859f4be382c69fbf50af998fc080",
+  "source": {
+    "kind": "toolshed",
+    "label": "api",
+    "url": "https://toolshed.g2.bx.psu.edu/api/tools/iuc~dada2_learnerrors~dada2_learnErrors/versions/1.38.0+galaxy2",
+    "cached_at": "2026-11-10T03:50:12.160Z"
+  },
+  "artifacts": {
+    "parsed_tool_path": ".tool-cache/6ce8b34c950542468c0b191d19cedad83ea4859f4be382c69fbf50af998fc080.json",
+    "raw_tool_source_path": null
+  },
+  "parsed_tool": {
+    "id": "dada2_learnErrors",
+    "version": "1.38.0+galaxy2",
+    "name": "dada2: learnErrors",
+    "description": "Learn Error rates",
+    "inputs": [
+      {
+        "name": "fls",
+        "parameter_type": "gx_data",
+        "hidden": false,
+        "label": "Short read data",
+        "help": "forward or reverse reads should be processed separately",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "data",
+        "extensions": [
+          "fastq",
+          "fastq.gz"
+        ],
+        "multiple": true,
+        "min": null,
+        "max": null,
+        "url_default": null
+      },
+      {
+        "name": "nbases",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "Magnitude of number of bases to use for learning",
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "integer",
+        "value": 8,
+        "min": 0,
+        "max": null,
+        "validators": []
+      },
+      {
+        "name": "seed",
+        "parameter_type": "gx_integer",
+        "hidden": false,
+        "label": "Random seed",
+        "help": "Controls which samples are selected when Randomize samples is enabled and the learning budget uses only a subset of multiple input samples. A seed does not affect sample selection for a single sample or when all samples are used. Leave blank for default random-number-generator behavior. Reproducibility also requires the same input order and software version.",
+        "argument": null,
+        "is_dynamic": false,
+        "optional": true,
+        "type": "integer",
+        "value": null,
+        "min": 0,
+        "max": 2147483647,
+        "validators": []
+      },
+      {
+        "name": "advanced",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "errfoo",
+            "parameter_type": "gx_select",
+            "hidden": false,
+            "label": "Error function",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "select",
+            "options": [
+              {
+                "label": "loess: Use a loess fit to estimate error rates from transition counts",
+                "value": "loessErrfun",
+                "selected": false
+              },
+              {
+                "label": "noqual: Estimate error rates for each type of transition while ignoring quality scores.",
+                "value": "noqualErrfun",
+                "selected": false
+              },
+              {
+                "label": "PacBio: Estimate error rates from transition counts in PacBio CCS data.",
+                "value": "PacBioErrfun",
+                "selected": false
+              },
+              {
+                "label": "BinnedQualErrfun: Use piecewise linear fit to estimate error rates from transition counts derived from binned quality score data. ",
+                "value": "BinnedQualErrfun",
+                "selected": false
+              }
+            ],
+            "multiple": false,
+            "validators": []
+          },
+          {
+            "name": "quality_bins",
+            "parameter_type": "gx_text",
+            "hidden": false,
+            "label": "Quality bins",
+            "help": "Quality bins to be used for BinnedQualErrfun",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": true,
+            "type": "text",
+            "area": false,
+            "value": null,
+            "default_options": [],
+            "validators": [
+              {
+                "type": "regex",
+                "message": "Must be a comma separate list of numbers",
+                "implicit": false,
+                "negate": false,
+                "expression": "|([0-9]+(,[0-9]+)+)"
+              }
+            ]
+          },
+          {
+            "name": "randomize",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Randomize samples",
+            "help": "Pick samples at random, otherwise samples are read in the provided order until enough reads are obtained (default).",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "TRUE",
+            "falsevalue": "FALSE"
+          },
+          {
+            "name": "maxconsist",
+            "parameter_type": "gx_integer",
+            "hidden": false,
+            "label": "Maximum number of times to step through the selfconsistency loop",
+            "help": "If convergence was not reached in MAX_CONSIST steps, the estimated error rates in the last step are returned.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "integer",
+            "value": 10,
+            "min": 0,
+            "max": null,
+            "validators": []
+          },
+          {
+            "name": "omegac",
+            "parameter_type": "gx_float",
+            "hidden": false,
+            "label": "Threshold at which unique sequences inferred to contain errors are corrected",
+            "help": "For reasons of convergence, and because it is more conservative, it is recommended to set this value to 0, which means that all reads are counted and contribute to estimating the error rates.",
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "float",
+            "value": 0,
+            "min": 0,
+            "max": null,
+            "validators": []
+          }
+        ]
+      },
+      {
+        "name": "plotopt",
+        "parameter_type": "gx_section",
+        "hidden": false,
+        "label": null,
+        "help": null,
+        "argument": null,
+        "is_dynamic": false,
+        "optional": false,
+        "type": "section",
+        "parameters": [
+          {
+            "name": "obs",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Plot observed error rates",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": true,
+            "truevalue": "TRUE",
+            "falsevalue": "FALSE"
+          },
+          {
+            "name": "err_out",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Plot output error rates",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": true,
+            "truevalue": "TRUE",
+            "falsevalue": "FALSE"
+          },
+          {
+            "name": "err_in",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Plot input error rates",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": false,
+            "truevalue": "TRUE",
+            "falsevalue": "FALSE"
+          },
+          {
+            "name": "nominalQ",
+            "parameter_type": "gx_boolean",
+            "hidden": false,
+            "label": "Plot expected error rates",
+            "help": null,
+            "argument": null,
+            "is_dynamic": false,
+            "optional": false,
+            "type": "boolean",
+            "value": true,
+            "truevalue": "TRUE",
+            "falsevalue": "FALSE"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "errors",
+        "label": "${tool.name} on ${on_string}",
+        "hidden": false,
+        "type": "data",
+        "format": "dada2_errorrates",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": null,
+        "precreate_directory": false
+      },
+      {
+        "name": "plot",
+        "label": "${tool.name} on ${on_string}: error rates plot",
+        "hidden": false,
+        "type": "data",
+        "format": "pdf",
+        "format_source": null,
+        "metadata_source": null,
+        "discover_datasets": [],
+        "from_work_dir": "plot.pdf",
+        "precreate_directory": false
+      }
+    ],
+    "citations": [
+      {
+        "type": "doi",
+        "content": "10.1038/nmeth.3869"
+      }
+    ],
+    "license": null,
+    "profile": "24.2",
+    "edam_operations": [],
+    "edam_topics": [],
+    "xrefs": [
+      {
+        "value": "dada2",
+        "type": "bio.tools"
+      },
+      {
+        "value": "dada2",
+        "type": "bioconductor"
+      }
+    ],
+    "help": {
+      "format": "restructuredtext",
+      "content": "\nDescription\n...........\n\nError rates are learned by alternating between sample inference and error rate estimation until convergence. Additionally a plot is generated that shows the observed frequency of each transition (eg. A->C) as a function of the associated quality score, the final estimated error rates (if they exist), the initial input rates, and the expected error rates under the nominal definition of quality scores.\n\nIn addition a plot is generated (with plotErrors) that shows the observed frequency of each transition (eg. A->C) as a function of the associated quality score. Also the final estimated error rates (if they exist) are shown. Optionally also the initial input rates and the expected error rates under the nominal definition of quality scores can be added to the plot.\n\nUsage\n.....\n\n**Input** are the FASTQ dataset containing the filtered and trimmed reads of the samples.\n\n**Output** a dataset with type *dada2_errorrates* (which is a RData file containing the output of dada2's learnErrors function) and a **plot** showing the error rates for each possible transition (A→C, A→G,...)\n\n- Points are the observed error rates for each consensus quality score.\n- The black line shows the estimated error rates after convergence of the machine-learning algorithm.\n- The red line shows the error rates expected under the nominal definition of the Q-score.\n\nThe learned error rates are input the the *dada2: dada* tool.\n\nDetails\n.......\n\nThe learnErrors method learns a parametric error model from the data, by alternating estimation of the error rates and inference of sample composition until they converge on a jointly consistent solution. As in many machine-learning problems, the algorithm must begin with an initial guess, for which the maximum possible error rates in this data are used (the error rates if only the most abundant sequence is correct and all the rest are errors).\n\nIt is expected that the estimated error rates (black lines in the plot) are in a good fit to the observed rates (points in the plot), and that the error rates drop with increased quality. Try to increase the **number of bases to use for learning** if this is not the case.\n\nError functions:\n\n- loessErrfun: accepts a matrix of observed transitions, with each transition corresponding to a row (eg. row 2 = A->C) and each column to a quality score (eg. col 31 = Q30). It returns a matrix of estimated error rates of the same shape. Error rates are estimates by a loess fit of the observed rates of each transition as a function of the quality score. Self-transitions (i.e. A->A) are taken to be the left-over probability.\n- noqualErrfun: accepts a matrix of observed transitions, groups together all observed transitions regardless of quality scores, and estimates the error rate for that transition as the observed fraction of those transitions. The effect is that quality scores will be effectively ignored.\n- PacBioErrfun: This function accepts a matrix of observed transitions from PacBio CCS amplicon sequencing data, with each transition corresponding to a row (eg. row 2 = A->C) and each column to a quality score (eg. col 31 = Q30). It returns a matrix of estimated error rates of the same shape. Error rates are estimates by loessErrfun for quality scores 0-92, and individually by the maximum likelihood estimate for the maximum quality score of 93.\n\n\nOverview\n........\n\nThe intended use of the dada2 tools for paired sequencing data is shown in the following image.\n\n.. image:: pairpipe.png\n\nNote: In particular for the analysis of paired collections the collections should be sorted lexicographical\nbefore the analysis.\n\nFor single end data you the steps \"Unzip collection\" and \"mergePairs\" are not necessary.\n\nMore information may be found on the dada2 homepage:: https://benjjneb.github.io/dada2/index.html (in particular tutorials) or the documentation of dada2's R package https://bioconductor.org/packages/release/bioc/html/dada2.html (in particular the pdf which contains the full documentation of all parameters)\n    \n    "
+    }
+  },
+  "input_schemas": {
+    "workflow_step": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [],
+      "properties": {
+        "fls": {
+          "$id": "/schemas/never",
+          "not": {},
+          "title": "never"
+        },
+        "nbases": {
+          "$ref": "#/$defs/Int",
+          "description": "a non-negative number",
+          "title": "greaterThanOrEqualTo(0)",
+          "minimum": 0
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int",
+              "description": "a number less than or equal to 2147483647",
+              "title": "lessThanOrEqualTo(2147483647)",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "advanced": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "errfoo": {
+              "type": "string",
+              "enum": [
+                "loessErrfun",
+                "noqualErrfun",
+                "PacBioErrfun",
+                "BinnedQualErrfun"
+              ]
+            },
+            "quality_bins": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "(^$|^|([0-9]+(,[0-9]+)+))"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "randomize": {
+              "type": "boolean"
+            },
+            "maxconsist": {
+              "$ref": "#/$defs/Int",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            },
+            "omegac": {
+              "type": "number",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "plotopt": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "obs": {
+              "type": "boolean"
+            },
+            "err_out": {
+              "type": "boolean"
+            },
+            "err_in": {
+              "type": "boolean"
+            },
+            "nominalQ": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_step_linked": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$defs": {
+        "Int": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int"
+        }
+      },
+      "type": "object",
+      "required": [
+        "fls"
+      ],
+      "properties": {
+        "fls": {
+          "type": "object",
+          "required": [
+            "__class__"
+          ],
+          "properties": {
+            "__class__": {
+              "type": "string",
+              "enum": [
+                "ConnectedValue"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "nbases": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Int",
+              "description": "a non-negative number",
+              "title": "greaterThanOrEqualTo(0)",
+              "minimum": 0
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Int",
+                  "description": "a number less than or equal to 2147483647",
+                  "title": "lessThanOrEqualTo(2147483647)",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "advanced": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "errfoo": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "loessErrfun",
+                        "noqualErrfun",
+                        "PacBioErrfun",
+                        "BinnedQualErrfun"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "quality_bins": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "(^$|^|([0-9]+(,[0-9]+)+))"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "randomize": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "maxconsist": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Int",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "omegac": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "description": "a non-negative number",
+                      "title": "greaterThanOrEqualTo(0)",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "plotopt": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [],
+              "properties": {
+                "obs": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "err_out": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "err_in": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "nominalQ": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "__class__"
+                      ],
+                      "properties": {
+                        "__class__": {
+                          "type": "string",
+                          "enum": [
+                            "ConnectedValue"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "__class__"
+              ],
+              "properties": {
+                "__class__": {
+                  "type": "string",
+                  "enum": [
+                    "ConnectedValue"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "warnings": []
+}

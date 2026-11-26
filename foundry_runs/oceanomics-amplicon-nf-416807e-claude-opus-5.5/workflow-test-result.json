@@ -1,0 +1,92 @@
+{
+  "status": "fail",
+  "attempt": 5,
+  "workflow": "galaxy-workflow.gxwf.yml",
+  "test_file": "galaxy-workflow.gxwf-tests.yml",
+  "static_validation": {
+    "command": "gxwf validate-tests galaxy-workflow.gxwf-tests.yml --workflow galaxy-workflow.gxwf.yml",
+    "result": "OK"
+  },
+  "galaxy_mode": "external_galaxy",
+  "galaxy_url": "https://test.galaxyproject.org/",
+  "galaxy_version": "27.0",
+  "galaxy_branch": null,
+  "credentials": "user API key (non-admin, unprivileged-tools granted) read from ~/.galaxy-test-api-key; not recorded here",
+  "command": "uvx --from planemo==0.75.47 planemo test --engine external_galaxy --galaxy_url https://test.galaxyproject.org/ --galaxy_user_key <redacted> --no_shed_install --test_output_json test-run/planemo-test-output.json --test_output test-run/planemo-report.html --polling_backoff 1 --test_timeout 10800 galaxy-workflow.gxwf.yml",
+  "planemo_exit_code": null,
+  "planemo_note": "planemo test started 2026-11-11T02:23Z. Its --test_timeout never fired (laptop sleep suspended it), so it was stopped by hand on 2026-11-12 after the invocation stalled with nothing active; its terminal log is test-run/planemo.attempt5-stopped.log. The structured result was then produced from the finished invocation with the command in scoring_command (exit 1).",
+  "scoring_command": "uvx --from planemo==0.75.47 planemo workflow_test_on_invocation --galaxy_url https://test.galaxyproject.org/ --galaxy_user_key <redacted> --test_timeout 300 --test_output_json test-run/planemo-test-output.attempt5.json --test_output test-run/planemo-report.attempt5.html galaxy-workflow.gxwf-tests.yml 80211d01bf2a8c51",
+  "staging": {
+    "tools": "no shed install",
+    "workflow": "imported (fixes: attempt 2 lca '$(' comment; attempt 3 __MERGE_COLLECTION__ repeat instances; attempt 4 three ubuntu:20.04 user tools moved to quay.io/biocontainers/gawk:5.1.0--2, version 1.0.1)",
+    "test_data": "uploaded by planemo into history b1251ce3b0e2e90f540007441c057f89"
+  },
+  "invocation_id": "80211d01bf2a8c51",
+  "history_id": "b1251ce3b0e2e90f540007441c057f89",
+  "workflow_id": "d8d3a949248b3e4e",
+  "planemo_structured_result": {
+    "summary": {"num_tests": 1, "num_errors": 1, "num_failures": 0, "num_skips": 0},
+    "status": "error",
+    "execution_problem": "Failed to run workflow, at least one job is in [error] state."
+  },
+  "invocation": {
+    "state": "ready (stalled: downstream jobs paused, nothing active)",
+    "messages": [],
+    "steps": {"scheduled": 61, "new": 12},
+    "jobs": {"ok": 43, "error": 4, "paused": 8},
+    "unscheduled_steps": ["relabel_curated_tables", "relabel_curated_fasta", "merge_lca_tables", "merge_fasta_sets", "relabel_curated_blast", "nbc", "merge_blast_sets", "lca", "lca_dedup", "phyloseq", "flag_length", "proportional_filter"]
+  },
+  "swapped_tools_ran": {
+    "oceanomics_fastq_relabel": "ok (2 jobs, step relabel_reads)",
+    "oceanomics_dada2_final_outputs": "ok (step asv_final_outputs; its input sequence table was empty)",
+    "oceanomics_zotu_table_with_sequences": "ok (step zotu_table_with_seq)"
+  },
+  "failed_jobs": [
+    {
+      "job_id": "4f3b88ae38e4648f",
+      "tool_id": "oceanomics_lulu_curation",
+      "step": "lulu",
+      "exit_code": null,
+      "command_line": null,
+      "dataset_misc_info": "Failed to find a container when required, contact Galaxy admin.",
+      "container": "mahsamousavi/lulu:2019",
+      "cause": "known gap: Docker Hub image refused by the server's container policy"
+    },
+    {
+      "job_id": "8df4c1ff4ef8b03b",
+      "tool_id": "dada2_seqCounts 1.38.0+galaxy2",
+      "step": "dada2_seq_counts",
+      "exit_code": 1,
+      "stderr": "Error in read.table(...): no lines available in input",
+      "cause": "removeBimeraDenovo sequence table is empty (same as attempt 4)"
+    },
+    {
+      "job_id": "884d77606cc3c382",
+      "tool_id": "ncbi_makeblastdb 2.16.0+galaxy1",
+      "step": "lulu_makeblastdb",
+      "element": "ASV set",
+      "exit_code": 1,
+      "stderr": "BLAST Database creation error: No sequences added",
+      "cause": "empty ASV FASTA from the empty DADA2 table"
+    },
+    {
+      "job_id": "559ac618c710583f",
+      "tool_id": "oceanomics_blastn_v5db",
+      "step": "blastn",
+      "element": "ASV set",
+      "exit_code": 1,
+      "stderr": "Warning: [blastn] Query is Empty! BLAST query/options error: Invalid input format for BLAST Archive.",
+      "cause": "empty ASV FASTA query from the empty DADA2 table"
+    }
+  ],
+  "paused_steps": ["lulu_match_list", "lulu", "lulu_fasta", "lulu_curated_ids", "curate_blast"],
+  "upstream_observation": "removeBimeraDenovo (1.38.0+galaxy2) again wrote an empty sequence table from the one-ASV fixture, as in attempt 4.",
+  "artifacts": {
+    "planemo_log": "test-run/planemo.attempt5-stopped.log",
+    "scoring_log": "test-run/planemo.attempt5-on-invocation.log",
+    "planemo_json": "test-run/planemo-test-output.attempt5.json",
+    "planemo_html": "test-run/planemo-report.attempt5.html"
+  },
+  "failure_modality": "job-failure",
+  "next_reference_surface": "Galaxy job API"
+}

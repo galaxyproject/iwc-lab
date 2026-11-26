@@ -1,0 +1,249 @@
+class: GalaxyUserTool
+id: oceanomics_phyloseq_build
+version: 1.0.0
+name: OceanOmics phyloseq object
+description: merge OTU table, LCA and NBC results with sample metadata into a phyloseq object
+license: MIT
+container: adbennett/phyloseq_readr:v1.0
+configfiles:
+- filename: script.R
+  content: |2
+
+    suppressPackageStartupMessages(library(phyloseq))
+    suppressPackageStartupMessages(library(readr))
+    suppressPackageStartupMessages(library(stringr))
+
+    #........................................................................
+    # Prepare merged data
+    #........................................................................
+
+    lca_tab = tryCatch({
+        read.table("$(inputs.lca_table.path)", sep="\t", header=TRUE, check.names = FALSE)
+    }, error = function(e) {
+        lca_tab <- read_tsv("$(inputs.lca_table.path)")
+    })
+    otu_tab <- read.table("$(inputs.otu_table.path)", sep="\t", header=TRUE, check.names = FALSE)
+    nbc_tab <- read.table("$(inputs.nbc_table.path)", sep="\t", header=TRUE)
+    meta    <- read.csv("$(inputs.metadata.path)", header=TRUE)
+
+    upper_prefix                  <- toupper(colnames(otu_tab)[1])
+    upper_prefix                  <- str_split_1(upper_prefix, "_")[1]
+    colnames(otu_tab)[1]          <- upper_prefix
+    colnames(lca_tab)[8]          <- upper_prefix
+    colnames(nbc_tab)[2]          <- upper_prefix
+    colnames(lca_tab)             <- sub("_T\\d+$", "", colnames(lca_tab))
+
+    otu_tab <- merge(otu_tab, nbc_tab, by = upper_prefix)
+
+    # Filter if filter table has been provided
+    if (file.exists("$(inputs.filter_table ? inputs.filter_table.path : '')")) {
+        filt_tab <- read.table("$(inputs.filter_table ? inputs.filter_table.path : '')", sep=",", header=TRUE, na.strings = c("NA", "na", "Na", "nA"))
+
+        for (i in 1:nrow(filt_tab)) {
+            level <- filt_tab[i, "level"]
+            name  <- filt_tab[i, "name"]
+
+            if (is.na(name)) {
+                lca_tab <- subset(lca_tab, !(is.na(lca_tab[[level]])))
+            } else {
+                lca_tab <- subset(lca_tab, !(lca_tab[[level]] == name) | is.na(lca_tab[[level]]))
+            }
+        }
+    }
+
+    otu_nbc    <- otu_tab[, c(upper_prefix, paste0(upper_prefix, "_sequence"), "Gene", "Genus.prediction", "Genus.score", "Species.prediction", "Species.score")]
+
+    # Get the ASVs that are missing blast results
+    otu_tab_asvs <- otu_tab[[upper_prefix]]
+    lca_tab_asvs <- lca_tab[[upper_prefix]]
+    missing_asvs <- setdiff(otu_tab_asvs, lca_tab_asvs)
+
+    df_missing_asvs <- otu_tab[otu_tab[[upper_prefix]] %in% missing_asvs, ]
+    if (nrow(df_missing_asvs) > 0) {
+        for (i in 1:nrow(df_missing_asvs)) {
+            curr_index = nrow(lca_tab) + 1
+            lca_tab[curr_index, ] <- NA
+            for (y in colnames(df_missing_asvs)) {
+                value <- df_missing_asvs[i, y]
+                reformated_col <- sub("_T1", "", y)
+
+                if (reformated_col %in% colnames(lca_tab)) {
+                    lca_tab[curr_index, reformated_col] <- value
+                }
+            }
+        }
+    }
+
+    merged_tab           <- merge(lca_tab, otu_nbc, by = upper_prefix, all.x = TRUE)
+    colnames(merged_tab) <- sub(" ", ".", colnames(merged_tab))
+    taxa                 <- merged_tab
+    otu                  <- merged_tab
+    seq_tab              <- merged_tab
+
+    #........................................................................
+    # Prepare metadata
+    #........................................................................
+
+    meta             <- as.data.frame(meta)
+    rownames(meta)   <- meta$samp_name
+    meta$samp_name     <- NULL
+
+
+    #........................................................................
+    # Prepare taxa data
+    #........................................................................
+
+    taxa["LCA"] <- ""
+    if (paste0("$(inputs.otu_table.element_identifier)", "_length") %in% colnames(taxa)) {
+        taxa <- taxa[, c(upper_prefix, "domain", "phylum", "class", "order", "family", "genus", "species", "LCA", paste0("$(inputs.otu_table.element_identifier)", "_length"), "numberOfUnq_BlastHits", "%ID", "Gene", "Genus.prediction", "Genus.score", "Species.prediction", "Species.score", paste0(upper_prefix, "_sequence"))]
+    } else {
+        if (paste0(upper_prefix, "_sequence.x") %in% colnames(taxa)) {
+            taxa <- taxa[, c(upper_prefix, "domain", "phylum", "class", "order", "family", "genus", "species", "LCA", "numberOfUnq_BlastHits", "%ID", "Gene", "Genus.prediction", "Genus.score", "Species.prediction", "Species.score", paste0(upper_prefix, "_sequence.x"))]
+            colnames(taxa)[17] <- paste0(upper_prefix, "_sequence")
+        } else {
+            taxa <- taxa[, c(upper_prefix, "domain", "phylum", "class", "order", "family", "genus", "species", "LCA", "numberOfUnq_BlastHits", "%ID", "Gene", "Genus.prediction", "Genus.score", "Species.prediction", "Species.score", paste0(upper_prefix, "_sequence"))]
+        }
+    }
+
+    taxa     <- as.data.frame(taxa)
+
+    # Add LCA column
+    levels <- c("species", "genus", "family", "order", "class", "phylum", "domain")
+    for (row in 1:nrow(taxa)) {
+        LCA      <- "NA"
+        level_ID <- 1
+        while((LCA == "dropped" | LCA == "" | LCA == "NA" | is.na(LCA)) & (level_ID < 8)) {
+            LCA      <- taxa[row, levels[level_ID]]
+            level_ID <- level_ID + 1
+
+        }
+        taxa[row, "LCA"] <- LCA
+    }
+
+    write.table(taxa, file = paste0("$(inputs.otu_table.element_identifier)", "_final_taxa.tsv"), sep = "\t", quote=FALSE)
+
+    rownames(taxa)              <- taxa[[upper_prefix]]
+    taxa[[upper_prefix]]        <- NULL
+    taxa$numberOfUnq_BlastHits <- as.numeric(taxa$numberOfUnq_BlastHits)
+    taxa                        <- as.matrix(taxa)
+
+
+    #........................................................................
+    # Prepare otu data
+    #........................................................................
+
+    otu           <- as.data.frame(otu)
+    rownames(otu) <- otu[[upper_prefix]]
+    if (paste0("$(inputs.otu_table.element_identifier)", "_length") %in% colnames(otu)) {
+        otu[,c(upper_prefix, 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'queryCoverage', paste0("$(inputs.otu_table.element_identifier)", "_length"), 'length', 'numberOfUnq_BlastHits', '%ID', 'Gene', 'Genus.prediction', 'Genus.score', 'Species.prediction', 'Species.score', paste0(upper_prefix, "_sequence"), 'species_in_LCA', 'sources')] <- list(NULL)
+    } else {
+        if (paste0(upper_prefix, "_sequence.x") %in% colnames(otu)) {
+            otu[,c(upper_prefix, 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'queryCoverage', 'length', 'numberOfUnq_BlastHits', '%ID', 'Gene', 'Genus.prediction', 'Genus.score', 'Species.prediction', 'Species.score', paste0(upper_prefix, "_sequence.x"), paste0(upper_prefix, "_sequence.y"), 'species_in_LCA', 'sources')] <- list(NULL)
+        } else {
+            otu[,c(upper_prefix, 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'queryCoverage', 'length', 'numberOfUnq_BlastHits', '%ID', 'Gene', 'Genus.prediction', 'Genus.score', 'Species.prediction', 'Species.score', paste0(upper_prefix, "_sequence"), 'species_in_LCA', 'sources')] <- list(NULL)
+        }
+    }
+
+    #........................................................................
+    # Create phylogenetic tree
+    #........................................................................
+
+    #if (length(seq_tab[[paste0(upper_prefix, "_sequence")]]) >= 3) {
+        ## Phylogenetic tree code based on code from
+        ## https://ucdavis-bioinformatics-training.github.io/2021-May-Microbial-Community-Analysis/data_reduction/02-dada2
+        #DNA_set = DNAStringSet(seq_tab[[paste0(upper_prefix, "_sequence")]])
+        #names(DNA_set) = paste0(seq_tab[[upper_prefix]])
+
+
+        #phang_align <- phyDat(as(alignment, "matrix"), type="DNA")
+        #dm          <- dist.ml(phang_align)
+        #treeNJ      <- NJ(dm)
+
+        #fit    <- pml(treeNJ, data=phang_align)
+        #fitGTR <- update(fit, k=4, inv=0.2)
+    #}
+
+
+    #........................................................................
+    # Create phyloseq object
+    #........................................................................
+
+    cols_to_drop <- c(
+        "sequencing_run", "assay",
+        "fw_no", "rv_no",
+        "fw_index", "rv_index",
+        "fw_primer", "rv_primer",
+        "fastq_1", "fastq_2",
+        "plate", "well"
+    )
+    meta_tmp <- meta
+    for (col in cols_to_drop) {
+        if(col %in% colnames(meta)) {
+            meta <- meta[ , !(names(meta) %in% col)]
+        }
+    }
+    # This is to avoid a bug in cases where meta has one or zero columns
+    if (! is.data.frame(meta)) {
+        meta <- meta_tmp
+    }
+
+    OTU    <- otu_table(otu, taxa_are_rows = TRUE)
+    TAX    <- tax_table(taxa)
+    META   <- sample_data(meta)
+
+    if (length(seq_tab[[paste0(upper_prefix, "_sequence")]]) >= 3) {
+        #TREE   <- phy_tree(fitGTR$tree)
+        #physeq <- phyloseq(OTU, TAX, META, TREE)
+        physeq <- phyloseq(OTU, TAX, META)
+    } else {
+        physeq <- phyloseq(OTU, TAX, META)
+    }
+
+    saveRDS(physeq, file = paste0("$(inputs.otu_table.element_identifier)", "_phyloseq.rds"))
+
+    # Version information
+    writeLines(c("\"PHYLOSEQ\":", paste0("    R: ", paste0(R.Version()[c("major","minor")], collapse = ".")),paste0("    phyloseq: ", packageVersion("phyloseq"))), "versions.yml")
+shell_command: |
+  Rscript script.R && mv *_phyloseq.rds phyloseq.rds && mv *_final_taxa.tsv final_taxa.tsv
+inputs:
+- name: otu_table
+  type: data
+  format:
+  - tabular
+  label: ASV/ZOTU table with <PREFIX>_sequence column (element identifier = OTU set)
+- name: lca_table
+  type: data
+  format:
+  - tabular
+  label: Deduplicated LCA table
+- name: nbc_table
+  type: data
+  format:
+  - tabular
+  label: Naive Bayes classifier table
+- name: metadata
+  type: data
+  format:
+  - csv
+  label: Sample metadata CSV with a samp_name column
+- name: filter_table
+  type: data
+  format:
+  - csv
+  label: Optional taxa exclusion table (level,name)
+  optional: true
+outputs:
+- name: phyloseq_rds
+  type: data
+  format: rdata
+  from_work_dir: phyloseq.rds
+  label: phyloseq object
+- name: final_taxa
+  type: data
+  format: tabular
+  from_work_dir: final_taxa.tsv
+  label: Final taxa table
+help:
+  format: markdown
+  content: |
+    Port of OceanOmics-amplicon-nf PHYLOSEQ; R script embedded from modules/local/phyloseq/main.nf with Nextflow variables mapped to tool inputs.

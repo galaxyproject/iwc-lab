@@ -1,0 +1,54 @@
+class: GalaxyUserTool
+id: oceanomics_lulu_curation
+version: 1.0.0
+name: LULU post-clustering curation (OceanOmics)
+description: curate an ASV/ZOTU table with LULU using a self-BLAST match list
+license: MIT
+container: mahsamousavi/lulu:2019
+configfiles:
+  - filename: run_lulu.R
+    content: |
+      suppressPackageStartupMessages(library(lulu))
+      prefix <- "$(inputs.table.element_identifier)"
+      seqcol <- paste0(toupper(prefix), "_sequence")
+      otutab <- read.table("$(inputs.table.path)", header = TRUE, check.names = FALSE, sep = "\t", as.is = TRUE, row.names = 1)
+      matchlist <- read.table("$(inputs.match_list.path)", header = FALSE, as.is = TRUE, stringsAsFactors = FALSE)
+      sequence <- data.frame(names = rownames(otutab), sequence = otutab[, c(seqcol)])
+      otutab[, c(seqcol)] <- list(NULL)
+      curated_result <- lulu(otutab, matchlist, minimum_match = $(inputs.minimum_match))
+      curated_table <- curated_result$curated_table
+      curated_table$'#ID' <- rownames(curated_table)
+      curated_table <- curated_table[, c(ncol(curated_table), 1:(ncol(curated_table) - 1))]
+      curated_table[, seqcol] <- sequence$sequence[match(rownames(curated_table), sequence$names)]
+      write.table(curated_table, "curated_table.tab", sep = "\t", quote = FALSE, row.names = FALSE)
+      write.table(curated_result$otu_map, "lulu_map.tab", sep = "\t")
+shell_command: Rscript run_lulu.R
+inputs:
+  - name: table
+    type: data
+    format: [tabular]
+    label: ASV/ZOTU table with <PREFIX>_sequence column (element identifier asv or zotu)
+  - name: match_list
+    type: data
+    format: [tabular]
+    label: Self-BLAST match list (qseqid sseqid pident)
+  - name: minimum_match
+    type: integer
+    value: 84
+    label: Minimum match (%)
+outputs:
+  - name: curated_table
+    type: data
+    format: tabular
+    from_work_dir: curated_table.tab
+    label: LULU curated table
+  - name: lulu_map
+    type: data
+    format: tabular
+    from_work_dir: lulu_map.tab
+    label: LULU OTU map
+help:
+  format: markdown
+  content: |
+    Port of OceanOmics-amplicon-nf LULU. The OTU-set name (asv or zotu) is read from the collection element
+    identifier and selects the `ASV_sequence` / `ZOTU_sequence` column, which is passed through to the curated table.
