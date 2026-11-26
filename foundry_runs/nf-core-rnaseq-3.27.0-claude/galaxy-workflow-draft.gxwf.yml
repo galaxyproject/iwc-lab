@@ -1,0 +1,1286 @@
+class: GalaxyWorkflowDraft
+label: nf-core/rnaseq 3.27.0 (Galaxy translation draft)
+doc: 'gxformat2 draft emitted by nextflow-summary-to-galaxy-template (phase 6, run rnaseq-to-galaxy)
+
+  from summary-nextflow.json, the phase-2 reference-data brief, phase-3 interface brief,
+
+  phase-4 data-flow brief, and phase-5 IWC comparison (nearest exemplar
+
+  transcriptomics/rnaseq-pe/rnaseq-pe). Topology is settled: inputs, outputs, step set,
+
+  edge graph, and when: guards are final. Wrapper tier is evidence-gated per step:
+
+  Identity-pinned (fastp, rna_star, featurecounts, multiqc, pick_value — from the exemplar)
+
+  or Deferred (tool_id TODO) with _plan_* planning fields. All _plan_* fields and TODO
+
+  sentinels must be resolved by the per-step loop before this becomes runnable gxformat2.
+
+  '
+inputs:
+  samplesheet:
+    type: collection
+    collection_type: sample_sheet:paired_or_unpaired
+    optional: false
+    doc: Sample sheet; element identifier = source 'sample' column value (per-sample axis).
+  reference_fasta:
+    type: data
+    format:
+    - fasta
+    optional: true
+    doc: Reference genome FASTA. Practically-required core with annotation_gtf or annotation_gff.
+  annotation_gtf:
+    type: data
+    format:
+    - gtf
+    optional: true
+    doc: Gene annotation GTF (or annotation_gff). One of the two is required for alignment runs.
+  annotation_gff:
+    type: data
+    format:
+    - gff3
+    optional: true
+    doc: Gene annotation GFF3 alternative to annotation_gtf.
+  gene_bed:
+    type: data
+    format:
+    - bed
+    optional: true
+    doc: Gene BED; optional explicit input, else derived in-tool/by consumer.
+  transcriptome_fasta:
+    type: data
+    format:
+    - fasta
+    optional: true
+    doc: Transcriptome FASTA; required for pseudo-alignment-only runs.
+  additional_fasta:
+    type: data
+    format:
+    - fasta
+    optional: true
+    doc: Extra sequences (e.g. GFP) concatenated into the reference.
+  bbsplit_index:
+    type: data
+    optional: true
+    doc: Pre-built BBMap BBSplit index; else built from bbsplit_ref_fastas.
+  kraken_db:
+    type: data
+    optional: true
+    doc: Kraken2 database (required-when contaminant_screening in kraken2, kraken2_bracken).
+  rrna_fastas:
+    type: collection
+    collection_type: list
+    format:
+    - fasta
+    optional: true
+    doc: rRNA database FASTAs (replaces source ribo_database_manifest path-list; required-when remove_ribo_rna).
+  bbsplit_ref_fastas:
+    type: collection
+    collection_type: list
+    format:
+    - fasta
+    optional: true
+    doc: BBSplit reference FASTAs (replaces source bbsplit_fasta_list; required-when not skip_bbsplit).
+  sylph_dbs:
+    type: collection
+    collection_type: list
+    optional: true
+    doc: Sylph .syf databases (required-when contaminant_screening == sylph).
+  sylph_taxonomies:
+    type: collection
+    collection_type: list
+    format:
+    - tabular
+    optional: true
+    doc: Sylph taxonomy files (required-when contaminant_screening == sylph).
+  multiqc_config:
+    type: data
+    optional: true
+    doc: MultiQC YAML config.
+  multiqc_logo:
+    type: data
+    optional: true
+    doc: MultiQC logo image.
+  multiqc_methods_description:
+    type: data
+    optional: true
+    doc: MultiQC methods description YAML/text.
+  aligner:
+    type: string
+    optional: false
+    default: star_salmon
+    restrictions:
+    - star_salmon
+    - star_rsem
+    - hisat2
+    - bowtie2_salmon
+    doc: Alignment branch selector.
+  pseudo_aligner:
+    type: string
+    optional: true
+    restrictions:
+    - salmon
+    - kallisto
+    doc: Optional pseudo-aligner alongside alignment (or standalone with skip_alignment).
+  trimmer:
+    type: string
+    optional: false
+    default: trimgalore
+    restrictions:
+    - trimgalore
+    - fastp
+    doc: Trimming branch selector.
+  remove_ribo_rna:
+    type: boolean
+    optional: true
+    doc: Enable rRNA filtering branch.
+  ribo_removal_tool:
+    type: string
+    optional: false
+    default: sortmerna
+    restrictions:
+    - sortmerna
+    - ribodetector
+    - bowtie2
+    doc: rRNA removal tool (nested enum under remove_ribo_rna).
+  contaminant_screening:
+    type: string
+    optional: true
+    restrictions:
+    - kraken2
+    - kraken2_bracken
+    - sylph
+    doc: Contaminant screening branch selector.
+  contaminant_screening_input:
+    type: string
+    optional: false
+    default: unmapped
+    restrictions:
+    - trimmed
+    - unmapped
+    - trim_only
+    - raw
+    doc: Which reads contaminant screening consumes.
+  bracken_precision:
+    type: string
+    optional: false
+    default: S
+    restrictions:
+    - D
+    - P
+    - C
+    - O
+    - F
+    - G
+    - S
+    doc: Bracken precision (kraken2_bracken route).
+  with_umi:
+    type: boolean
+    optional: true
+    doc: UMI processing branch selector.
+  umi_dedup_tool:
+    type: string
+    optional: false
+    default: umitools
+    restrictions:
+    - umitools
+    - umicollapse
+    doc: UMI dedup tool (nested enum under with_umi).
+  umitools_bc_pattern:
+    type: string
+    optional: true
+    doc: UMI barcode pattern (required when with_umi — gxformat2 cannot express conditional requiredness).
+  umitools_bc_pattern2:
+    type: string
+    optional: true
+    doc: UMI barcode pattern for read 2.
+  umitools_extract_method:
+    type: string
+    optional: false
+    default: string
+    restrictions:
+    - string
+    - regex
+    doc: UMI extract method.
+  umitools_grouping_method:
+    type: string
+    optional: false
+    default: directional
+    restrictions:
+    - unique
+    - percentile
+    - cluster
+    - adjacency
+    - directional
+    doc: UMI dedup grouping method.
+  umitools_umi_separator:
+    type: string
+    optional: true
+    doc: UMI separator character.
+  umi_discard_read:
+    type: int
+    optional: true
+    doc: Discard R2 entirely if it contains only UMI.
+  umitools_dedup_stats:
+    type: boolean
+    optional: true
+    doc: Produce UMI-tools dedup stats.
+  umitools_dedup_primary_only:
+    type: boolean
+    optional: true
+    doc: Dedup primary alignments only.
+  skip_umi_extract:
+    type: boolean
+    optional: true
+    doc: Skip UMI extraction (dedup still runs when with_umi).
+  use_rustqc:
+    type: boolean
+    optional: false
+    default: false
+    doc: Use RustQC instead of FastQC.
+  prokaryotic:
+    type: boolean
+    optional: true
+    doc: Prokaryotic mode (promoted despite hidden flag — alters STAR parameters).
+  skip_alignment:
+    type: boolean
+    optional: true
+    doc: Skip alignment branch (pseudo-aligner standalone).
+  skip_trimming:
+    type: boolean
+    optional: true
+    doc: Skip trimming branch.
+  skip_pseudo_alignment:
+    type: boolean
+    optional: true
+    doc: Skip pseudo-alignment branch.
+  skip_quantification_merge:
+    type: boolean
+    optional: true
+    doc: Skip the count-matrix merge reductions.
+  skip_markduplicates:
+    type: boolean
+    optional: true
+    doc: Skip markdup branch.
+  skip_bigwig:
+    type: boolean
+    optional: true
+    doc: Skip bedgraph-to-bigwig coverage conversion.
+  skip_stringtie:
+    type: boolean
+    optional: true
+    doc: Skip StringTie assembly branch.
+  skip_fastqc:
+    type: boolean
+    optional: true
+    doc: Skip raw FastQC.
+  skip_preseq:
+    type: boolean
+    optional: false
+    default: true
+    doc: Skip Preseq complexity QC.
+  skip_dupradar:
+    type: boolean
+    optional: false
+    default: false
+    doc: Skip DupRadar.
+  skip_qualimap:
+    type: boolean
+    optional: false
+    default: false
+    doc: Skip QualiMap.
+  skip_rseqc:
+    type: boolean
+    optional: false
+    default: false
+    doc: Skip RSeQC module suite.
+  skip_biotype_qc:
+    type: boolean
+    optional: false
+    default: false
+    doc: Skip biotype QC.
+  skip_deseq2_qc:
+    type: boolean
+    optional: false
+    default: false
+    doc: Skip DESeq2 QC.
+  skip_multiqc:
+    type: boolean
+    optional: true
+    doc: Skip MultiQC report.
+  skip_qc:
+    type: boolean
+    optional: true
+    doc: Skip all QC.
+  skip_bbsplit:
+    type: boolean
+    optional: false
+    default: true
+    doc: Skip BBSplit binning.
+  gtf_extra_attributes:
+    type: string
+    optional: false
+    default: gene_name
+    doc: Extra GTF attributes to keep.
+  gtf_group_features:
+    type: string
+    optional: false
+    default: gene_id
+    doc: GTF feature grouping key.
+  featurecounts_group_type:
+    type: string
+    optional: false
+    default: gene_biotype
+    doc: featureCounts biotype grouping.
+  featurecounts_feature_type:
+    type: string
+    optional: false
+    default: exon
+    doc: featureCounts feature type.
+  gencode:
+    type: boolean
+    optional: true
+    doc: Input annotation is GENCODE (transcript_fasta parsing variant).
+  gffread_transcript_fasta:
+    type: boolean
+    optional: true
+    doc: Use gffread for transcriptome FASTA derivation.
+  min_trimmed_reads:
+    type: int
+    optional: false
+    default: 10000
+    doc: Minimum trimmed reads per sample (failure gate).
+  min_mapped_reads:
+    type: float
+    optional: false
+    default: 5
+    doc: Minimum percent mapped per sample (failure gate).
+  deseq2_vst:
+    type: boolean
+    optional: false
+    default: true
+    doc: Use VST in DESeq2 QC.
+  rseqc_modules:
+    type: string
+    optional: true
+    doc: Comma-separated RSeQC modules (tool-step decides string vs repeatable).
+  pseudo_aligner_kmer_size:
+    type: int
+    optional: false
+    default: 31
+    doc: Salmon/Kallisto kmer size.
+  salmon_quant_libtype:
+    type: string
+    optional: true
+    doc: Salmon library type override (16-value enum in source).
+  kallisto_quant_fraglen:
+    type: int
+    optional: false
+    default: 200
+    doc: Kallisto fragment length.
+  kallisto_quant_fraglen_sd:
+    type: int
+    optional: false
+    default: 200
+    doc: Kallisto fragment length SD.
+  stranded_threshold:
+    type: float
+    optional: false
+    default: 0.8
+    doc: Strandedness inference threshold (stranded call).
+  unstranded_threshold:
+    type: float
+    optional: false
+    default: 0.1
+    doc: Strandedness inference threshold (unstranded call).
+  stringtie_ignore_gtf:
+    type: boolean
+    optional: true
+    doc: StringTie de-novo mode (ignore reference GTF).
+  star_ignore_sjdbgtf:
+    type: boolean
+    optional: true
+    doc: 'STAR: do not use GTF for splice junctions.'
+  seq_center:
+    type: string
+    optional: true
+    doc: Sequencing center (RG header).
+  seq_platform:
+    type: string
+    optional: true
+    doc: Sequencing platform (RG header).
+  multiqc_title:
+    type: string
+    optional: true
+    doc: MultiQC report title.
+  extra_trimgalore_args:
+    type: string
+    optional: true
+    doc: Free-text extra args; collapse into wrapper params at implement time.
+  extra_fastp_args:
+    type: string
+    optional: true
+    doc: Free-text extra args; collapse into wrapper params at implement time.
+  extra_star_align_args:
+    type: string
+    optional: true
+    doc: Free-text extra args; collapse into wrapper params at implement time.
+  extra_hisat2_align_args:
+    type: string
+    optional: true
+    doc: Free-text extra args; collapse into wrapper params at implement time.
+  extra_bowtie2_align_args:
+    type: string
+    optional: true
+    doc: Free-text extra args; collapse into wrapper params at implement time.
+  extra_salmon_index_args:
+    type: string
+    optional: true
+    doc: Free-text extra args; collapse into wrapper params at implement time.
+  extra_salmon_quant_args:
+    type: string
+    optional: true
+    doc: Free-text extra args; collapse into wrapper params at implement time.
+  extra_kallisto_quant_args:
+    type: string
+    optional: true
+    doc: Free-text extra args; collapse into wrapper params at implement time.
+  extra_fqlint_args:
+    type: string
+    optional: false
+    default: --disable-validator P001
+    doc: fq_lint args.
+outputs:
+- id: multiqc_report
+  outputSource: multiqc/html_report
+  format: html
+  doc: MultiQC aggregate report (smoke checkpoint).
+- id: gene_counts
+  outputSource: gene_counts_fan_in/data_param
+  format: tsv
+  doc: Merged gene count matrix (content checkpoint).
+- id: gene_tpm
+  outputSource: tximport/gene_level_values
+  format: tsv
+- id: transcript_counts
+  outputSource: tximport/gene_level_values
+  format: tsv
+- id: aligned_bams
+  outputSource: aligned_bams_fan_in/data_param
+  format: bam
+  doc: Per-sample aligned (and deduped, when enabled) BAM collection.
+- id: bam_stats
+  outputSource: bam_stats_fan_in/data_param
+  format: tabular
+  doc: Per-sample samtools stats (per-sample content checkpoint).
+- id: star_alignment_log
+  outputSource: align_star/output_log
+  format: tabular
+  doc: Per-sample STAR Log.final.out (per-sample content checkpoint; star branch only).
+- id: salmon_quant
+  outputSource: quantify_salmon/output_quant
+  format: tabular
+  doc: Per-sample Salmon quant.sf as list collection (named-wrapper-outputs disposition).
+- id: coverage_bigwigs
+  outputSource: bedgraphtobigwig/out_file1
+  format: bigwig
+  doc: Per-sample scaled coverage bigWigs (star branch).
+- id: deseq2_qc_plots
+  outputSource: deseq2_qc/plots
+  doc: DESeq2 QC plots PDF.
+- id: deseq2_pca_values
+  outputSource: deseq2_qc/vst_out
+  format: tabular
+  doc: DESeq2 PCA values (stable summary checkpoint).
+- id: pipeline_versions
+  outputSource: versions_collect/TODO_versions
+  format: txt
+  doc: Collected software versions.
+steps:
+  build_bbsplit_index:
+    label: Build BBSplit index from FASTA collection
+    when: not skip_bbsplit and bbsplit_index is null
+    in:
+      primary_ref: reference_fasta
+      other_refs: bbsplit_ref_fastas
+    out:
+    - id: index_tarball
+    run:
+      class: GalaxyUserTool
+      id: bbsplit_index_builder
+      version: 1.0.0
+      name: BBSplit index builder
+      description: Build a BBMap BBSplit reference index from a primary genome FASTA plus named contaminant
+        FASTAs (only-build-index mode of nf-core/rnaseq BBMAP_BBSPLIT).
+      license: MIT
+      container: community.wave.seqera.io/library/bbmap_pigz:07416fe99b090fa9
+      help:
+        format: markdown
+        content: 'Builds the BBMap index that BBSplit bins reads against. The primary reference
+
+          is the genome FASTA; each additional FASTA becomes a named non-primary
+
+          reference (name derived from the file basename, standing in for the source
+
+          pipeline''s two-column short_name,path list). The index directory is tarred
+
+          so it can travel as a single Galaxy dataset, matching how the source accepts
+
+          a user-provided .tar.gz bbsplit index.
+
+          '
+      configfiles:
+      - filename: build_index.sh
+        content: "set -euo pipefail\nmkdir -p bbsplit_build\nbbsplit.sh -Xmx3072M \\\n  ref_primary='$(inputs.primary_ref.path)'\
+          \ \\\n  $(inputs.other_refs.map((r) => `ref_${r.path.split('/').pop().replace(/\\.(fasta|fa|fna|fsa)(\\\
+          .gz)?$/i, '')}='${r.path}'`).join(' ')) \\\n  path=bbsplit_build \\\n  threads=\\${GALAXY_SLOTS:-1}\n\
+          find bbsplit_build/ref/genome -name summary.txt 2>/dev/null | while read -r summary_file; do\n\
+          \  src=\"\\$(grep '^source' \"\\$summary_file\" | cut -f2- -d\\$'\\t' | sed 's|.*/bbsplit_build|bbsplit_index|')\"\
+          \n  sed \"s|^source.*|source\\t\\$src|\" \"\\$summary_file\" > \"\\${summary_file}.tmp\" &&\
+          \ mv \"\\${summary_file}.tmp\" \"\\$summary_file\"\ndone\nmv bbsplit_build bbsplit_index\ntar\
+          \ -cf bbsplit_index.tar bbsplit_index\n"
+      shell_command: bash build_index.sh
+      inputs:
+      - name: primary_ref
+        type: data
+        format:
+        - fasta
+        label: Primary genome FASTA
+      - name: other_refs
+        type: data
+        multiple: true
+        format:
+        - fasta
+        label: Additional reference FASTAs (file basenames become reference names)
+      outputs:
+      - name: index_tarball
+        type: data
+        format: binary
+        from_work_dir: bbsplit_index.tar
+        label: BBSplit index (tar)
+  derive_reference_fai:
+    label: Derive FASTA index (faidx)
+    when: reference_fasta is not null
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_faidx/samtools_faidx
+    in:
+      input: reference_fasta
+    out:
+    - id: output
+    tool_version: 1.22+galaxy1
+    state: {}
+  derive_chrom_sizes:
+    label: Derive chromosome sizes from fai
+    when: reference_fasta is not null
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool
+    in:
+      infile: derive_reference_fai/output
+    out:
+    - id: outfile
+    tool_version: 9.11+galaxy0
+    state:
+      code: cut -f1,2
+  fastqc_raw:
+    label: Raw FASTQ QC per sample (FastQC-like)
+    when: not skip_fastqc and not skip_qc
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc
+    in:
+      input_file: samplesheet
+    out:
+    - id: html_file
+    - id: text_file
+    tool_version: 0.74+galaxy1
+    state: {}
+  trim_trimgalore:
+    label: Trim reads (Trim Galore flavor)
+    when: trimmer == 'trimgalore' and not skip_trimming
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/trim_galore/trim_galore
+    in:
+      singlePaired|input_mate_pairs: samplesheet
+    out:
+    - id: trimmed_reads_paired_collection
+    - id: trimmed_reads_unpaired_collection
+    - id: report_file
+    tool_version: 2.3.0+galaxy0
+    state:
+      singlePaired:
+        sPaired: paired_collection
+  trim_fastp:
+    label: Trim reads (fastp flavor)
+    when: trimmer == 'fastp' and not skip_trimming
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/fastp/fastp
+    tool_version: 1.4.0+galaxy0
+    in:
+      single_paired|paired_input: samplesheet
+    out:
+    - id: output_paired_coll
+    - id: report_html
+    state:
+      single_paired:
+        single_paired_selector: paired_collection
+  trimmed_reads:
+    label: Resolve trimmed reads (branch fan-in)
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+    tool_version: 0.2.0
+    in:
+      style_cond|type_cond|pick_from_0|value: trim_trimgalore/trimmed_reads_paired_collection
+      style_cond|type_cond|pick_from_1|value: trim_fastp/output_paired_coll
+    out:
+    - id: data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+  umi_extract:
+    label: Extract UMIs to headers
+    when: with_umi and not skip_umi_extract
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/umi_tools_extract/umi_tools_extract
+    in:
+      input_type_cond|input_readpair: trimmed_reads/data_param
+      input_type_cond|bc_pattern: umitools_bc_pattern
+      input_type_cond|bc_pattern2: umitools_bc_pattern2
+    out:
+    - id: out_paired_collection
+    tool_version: 1.1.6+galaxy0
+    state:
+      input_type_cond:
+        input_type: paired_collection
+      extract_method_cond:
+        extract_method: string
+  rrna_filter_sortmerna:
+    label: Filter rRNA (SortMeRNA flavor)
+    when: remove_ribo_rna and ribo_removal_tool == 'sortmerna'
+    tool_id: toolshed.g2.bx.psu.edu/repos/rnateam/sortmerna/bg_sortmerna
+    in:
+      sequencing_type|reads: umi_extract/out_paired_collection
+      databases_type|database_name: rrna_fastas
+    out:
+    - id: unaligned_forward
+    - id: unaligned_reverse
+    tool_version: 7.1.0+galaxy0
+    state:
+      sequencing_type:
+        sequencing_type_selector: paired_collection
+      databases_type:
+        databases_selector: history
+      aligned_fastx:
+        aligned_fastx_selector: --fastx
+  rrna_filter_ribodetector:
+    label: Filter rRNA (Ribodetector flavor)
+    when: remove_ribo_rna and ribo_removal_tool == 'ribodetector'
+    tool_id: TODO
+    in:
+      TODO_reads: umi_extract/out_paired_collection
+      TODO_fasta: rrna_fastas
+    out:
+    - id: TODO_filtered
+    _plan_state: 'NO SHED WRAPPER (searches empty for ribodetector). UDT authoring candidate: ribodetector
+      -i FASTQ --rrna rrna_fastas with CPU-thread config; or keep this flavor dropped and document sortmerna/bowtie2
+      as the supported rRNA routes.'
+    _plan_in: reads + rRNA FASTAs.
+    _plan_out: non-rRNA reads collection -> rrna_filtered_reads pick_from_1.
+  rrna_filter_bowtie2:
+    label: Filter rRNA (Bowtie2 flavor)
+    when: remove_ribo_rna and ribo_removal_tool == 'bowtie2'
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/bowtie2/bowtie2
+    out:
+    - id: output_unaligned_read_pairs
+    in:
+      library|input_1: umi_extract/out_paired_collection
+      reference_genome|own_file: concat_rrna_fastas/out_file1
+    tool_version: 2.5.5+galaxy0
+    state:
+      library:
+        type: paired_collection
+      reference_genome:
+        source: history
+  contaminant_screen:
+    label: Contaminant screening (Kraken2/Sylph)
+    when: contaminant_screening is not null
+    tool_id: TODO
+    in:
+      TODO_reads: rrna_filtered_reads/data_param
+      TODO_db: kraken_db
+      TODO_sylph_dbs: sylph_dbs
+      TODO_sylph_tax: sylph_taxonomies
+      TODO_precision: bracken_precision
+      TODO_which: contaminant_screening_input
+    out:
+    - id: TODO_report
+    _plan_state: NO SHED WRAPPER for fastq_screen, kraken2+bracken, or sylph+treatment (searches confirmed
+      empty; only domain-specific hits like refseq_masher). UDT authoring candidate for the fastq_screen
+      flavor (simplest, single-db mode); kraken/sylph flavors would each need their own.
+    _plan_context: source CONTAMINANT_SCREENING subworkflow.
+    _plan_in: reads + db(s).
+    _plan_out: per-sample screen reports -> multiqc (results repeat, software fastq_screen/kraken).
+  bbsplit_bin:
+    label: BBSplit read binning
+    when: not skip_bbsplit
+    tool_id: TODO
+    in:
+      TODO_reads: rrna_filtered_reads/data_param
+      TODO_index: bbsplit_index_resolved/data_param
+    out:
+    - id: TODO_binned
+    _plan_state: 'NO SHED WRAPPER for bbsplit binning (iuc/bbtools_bbmap is the bbmap aligner only). UDT
+      authoring candidate: bbsplit.sh in=name.fastq ref=... path=bbsplit_index (the tarball from bbsplit_index_builder),
+      paired-aware, bins -> out_fastq per ref (ambiguous/discard modes per source params).'
+    _plan_in: reads + built/user bbsplit index.
+    _plan_out: per-ref binned FASTQ collections; ambiguous stream optional.
+  strandedness_infer:
+    label: Infer strandedness per sample (auto)
+    tool_id: TODO
+    in:
+      TODO_reads: rrna_filtered_reads/data_param
+      TODO_transcriptome: transcriptome_fasta
+    out:
+    - id: TODO_strandedness_table
+    _plan_state: 'COLLAPSED 3-PROCESS CHAIN (source FASTQ_SUBSAMPLE_FQ_SALMON + salmon + gatc custom inference):
+      no single wrapper. Middle stage resolvable as bgruening/salmon (qtype=reads, history fasta <- transcriptome_fasta,
+      subsampled input); subsample and the gatc inference have no wrappers. Note: nilesh/rseqc_infer_experiment
+      5.0.3+galaxy0 exists as a weaker alternative idiom (BAM+bed based, post-alignment, not the source
+      method).'
+    _plan_context: source FASTQ_SUBSAMPLE_FQ_SALMON; the phase-5 exemplar comparison found no corpus idiom
+      for per-sample strandedness inference; expect author-galaxy-tool-wrapper fallthrough.
+    _plan_in: reads collection + salmon index.
+    _plan_out: strandedness table -> metadata_bridge.
+  metadata_bridge:
+    label: Sample-sheet metadata bridge (strandedness table)
+    tool_id: TODO
+    in:
+      TODO_samplesheet: samplesheet
+      TODO_inferred: strandedness_infer/TODO_strandedness_table
+    out:
+    - id: TODO_metadata_table
+    _plan_state: PER-SAMPLE PARAM JOIN (samplesheet x inferred strandedness -> per-step strand param)
+      has no gxformat2 affordance (blocking ledger entry). Exemplar idiom iuc/map_param_value 0.2.0 maps
+      a WORKFLOW-LEVEL param only (e.g. text "stranded - forward" -> featurecounts -s 1) — the non-auto
+      route. The auto/inferred route stays unbindable.
+    _plan_context: 'capability 21; candidates __SAMPLE_SHEET_TO_TABULAR__-style built-in or rules-DSL
+      add_column_from_sample_sheet_index. COMPUTABILITY GAP: the bridge produces a per-sample table, but
+      featurecounts and quantify_salmon are map-over steps taking ONE strandedness/libtype param — per-sample
+      values cannot bind to a map-over param in v1 (see blocking ledger entry).'
+    _plan_in: samplesheet + optional inferred table.
+    _plan_out: workflow-level strand param -> featurecounts strand_specificity (manual route only).
+  align_star:
+    label: Align reads with STAR (star branch)
+    when: (aligner == 'star_salmon' or aligner == 'star_rsem') and not skip_alignment
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/rgrnastar/rna_star
+    tool_version: 2.7.11b+galaxy1
+    in:
+      singlePaired|input: rrna_filtered_reads/data_param
+      refGenomeSource|genomeFastaFiles: reference_fasta
+      refGenomeSource|GTFconditional|sjdbGTFfile: annotation_gtf
+    out:
+    - id: mapped_reads
+    - id: transcriptome_mapped_reads
+    - id: reads_per_gene
+    - id: output_log
+    - id: splice_junctions
+    - id: signal_unique_str1
+    - id: signal_unique_str2
+    state:
+      singlePaired:
+        sPaired: paired_collection
+      refGenomeSource:
+        geneSource: history
+        GTFconditional:
+          useGTF: true
+  align_hisat2:
+    label: Align reads with HISAT2 (hisat2 branch)
+    when: aligner == 'hisat2' and not skip_alignment
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/hisat2/hisat2
+    in:
+      library|input_1: rrna_filtered_reads/data_param
+      reference_genome|history_item: reference_fasta
+    out:
+    - id: output_alignments
+    - id: summary_file
+    tool_version: 2.2.3+galaxy1
+    state:
+      library:
+        type: paired_collection
+      reference_genome:
+        source: history
+  align_bowtie2:
+    label: Align reads with Bowtie2 (bowtie2_salmon branch)
+    when: aligner == 'bowtie2_salmon' and not skip_alignment
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/bowtie2/bowtie2
+    in:
+      library|input_1: rrna_filtered_reads/data_param
+      reference_genome|own_file: transcriptome_fasta
+    out:
+    - id: output
+    - id: mapping_stats
+    tool_version: 2.5.5+galaxy0
+    state:
+      library:
+        type: paired_collection
+      reference_genome:
+        source: history
+  aligned_bams_fan_in:
+    label: Resolve aligned BAMs (aligner branch fan-in)
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+    tool_version: 0.2.0
+    in:
+      style_cond|type_cond|pick_from_0|value: align_star/mapped_reads
+      style_cond|type_cond|pick_from_1|value: align_hisat2/output_alignments
+      style_cond|type_cond|pick_from_2|value: align_bowtie2/output
+    out:
+    - id: data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+  bam_stats_fan_in:
+    label: Resolve BAM stats (aligner branch fan-in)
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+    tool_version: 0.2.0
+    in:
+      style_cond|type_cond|pick_from_0|value: align_star/output_log
+      style_cond|type_cond|pick_from_1|value: align_hisat2/summary_file
+      style_cond|type_cond|pick_from_2|value: align_bowtie2/mapping_stats
+    out:
+    - id: data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+  markdup_umi:
+    label: Dedup with UMI awareness
+    when: with_umi and not skip_markduplicates
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/umi_tools_dedup/umi_tools_dedup
+    in:
+      input: aligned_bams_fan_in/data_param
+    out:
+    - id: output
+    - id: output_stats
+    tool_version: 1.1.6+galaxy0
+    state: {}
+  markdup_picard:
+    label: Mark duplicates (Picard-style)
+    when: not with_umi and not skip_markduplicates
+    tool_id: toolshed.g2.bx.psu.edu/repos/devteam/picard/picard_MarkDuplicatesWithMateCigar
+    in:
+      inputFile: aligned_bams_fan_in/data_param
+    out:
+    - id: outFile
+    - id: metrics_file
+    tool_version: 3.1.1.0
+    state: {}
+  dedup_bams_fan_in:
+    label: Resolve deduped BAMs
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+    tool_version: 0.2.0
+    in:
+      style_cond|type_cond|pick_from_0|value: markdup_umi/output
+      style_cond|type_cond|pick_from_1|value: markdup_picard/outFile
+    out:
+    - id: data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+  quantify_rsem:
+    label: Quantify with RSEM (rsem route)
+    when: aligner == 'star_rsem'
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/rsem_calculate_expression/rsem_calculate_expression
+    in:
+      alignments: align_star/transcriptome_mapped_reads
+      reference|genome: reference_fasta
+      reference|gtf: annotation_gtf
+    out:
+    - id: genes_results
+    - id: isoforms_results
+    - id: log
+    tool_version: 1.3.3+galaxy0
+    state:
+      reference:
+        source: genome
+      library:
+        layout: paired
+  rsem_merge_counts:
+    label: Merge RSEM counts into matrix
+    when: aligner == 'star_rsem' and not skip_quantification_merge
+    tool_id: TODO
+    in:
+      TODO_counts: quantify_rsem/genes_results
+    out:
+    - id: TODO_matrix
+    _plan_state: 'NO DIRECT WRAPPER for per-sample RSEM genes_results merge into a matrix. Candidate idiom:
+      bgruening tp_awk_tool aggregation over the collection, or an R step. The tximport wrapper covers
+      the salmon/kallisto route only (its input_source select is single-valued per invocation — route-switch
+      is a workflow-level duplication, see ledger).'
+    _plan_out: gene count matrix -> gene_counts_fan_in pick_from_1.
+  quantify_salmon:
+    label: Quantify with Salmon (pseudo-aligner route)
+    when: (pseudo_aligner == 'salmon' or aligner == 'bowtie2_salmon') and not skip_pseudo_alignment
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/salmon/salmon
+    in:
+      quant_type|input: rrna_filtered_reads/data_param
+      quant_type|refTranscriptSource|s_index: transcriptome_fasta
+      geneMap: annotation_gtf
+    out:
+    - id: output_quant
+    - id: output_gene_quant
+    tool_version: 1.10.3+galaxy1
+    state:
+      quant_type:
+        qtype: reads
+        refTranscriptSource:
+          TranscriptSource: history
+  quantify_kallisto:
+    label: Quantify with Kallisto (pseudo-aligner route)
+    when: pseudo_aligner == 'kallisto' and not skip_pseudo_alignment
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/kallisto_quant/kallisto_quant
+    in:
+      reference_transcriptome|reference: transcriptome_fasta
+      single_paired|reads: rrna_filtered_reads/data_param
+    out:
+    - id: abundance_h5
+    - id: abundance_tab
+    tool_version: 0.48.0+galaxy1
+    state:
+      reference_transcriptome:
+        reference_transcriptome_source: history
+      single_paired:
+        single_paired_selector: paired_collection
+  tximport:
+    label: Merge quants with tximport (reduction)
+    when: pseudo_aligner is not null and not skip_quantification_merge
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/tximport/tximport
+    in:
+      counts_file: quantify_salmon/output_quant
+    out:
+    - id: gene_level_values
+    tool_version: 1.30.0
+    state:
+      input_source_selector:
+        input_source: salmon
+  gene_counts_fan_in:
+    label: Resolve gene counts matrix (quant route fan-in)
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+    tool_version: 0.2.0
+    in:
+      style_cond|type_cond|pick_from_0|value: tximport/gene_level_values
+      style_cond|type_cond|pick_from_1|value: rsem_merge_counts/TODO_matrix
+    out:
+    - id: data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+  featurecounts:
+    label: Count features per sample (strandedness-aware)
+    when: not skip_alignment
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/featurecounts/featurecounts
+    tool_version: 2.1.1+galaxy3
+    in:
+      alignment: dedup_bams_fan_in/data_param
+      anno|reference_gene_sets: annotation_gtf
+    out:
+    - id: output_medium
+    - id: output_summary
+    state:
+      anno:
+        anno_select: history
+      pe_parameters:
+        paired_end_status: PE_fragments
+  rseqc_suite:
+    label: RSeQC module suite per sample
+    when: not skip_rseqc and not skip_qc
+    tool_id: TODO
+    in:
+      TODO_bams: dedup_bams_fan_in/data_param
+      TODO_bed: gene_bed
+      TODO_modules: rseqc_modules
+    out:
+    - id: TODO_reports
+    _plan_state: 'COLLAPSED SUITE: source BAM_RSEQC runs bam_stat, infer_experiment, inner_distance, junction_annotation,
+      read_distribution, read_duplication, tin. Individual wrappers exist in nilesh/rseqc (rseqc_infer_experiment
+      5.0.3+galaxy0 cached; siblings by same naming) — implement tier must expand this one step into ~6-7
+      steps, each mapped over the BAM collection, then re-aggregate for multiqc (software rseqc).'
+    _plan_in: BAM collection + gene BED.
+    _plan_out: per-module report collections -> flatten_bam_qc.
+  bedclip:
+    label: Clip bedgraph to chromosome lengths
+    when: not skip_bigwig and (aligner == 'star_salmon' or aligner == 'star_rsem')
+    tool_id: toolshed.g2.bx.psu.edu/repos/rmarenco/bedclip/bedclip
+    in:
+      ref_genome: derive_chrom_sizes/outfile
+      bed_file: align_star/signal_unique_str1
+    out:
+    - id: bed_clipped
+    tool_version: 0.1.0
+    state: {}
+  bedgraphtobigwig:
+    label: Convert clipped bedgraph to bigWig
+    when: not skip_bigwig and (aligner == 'star_salmon' or aligner == 'star_rsem')
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/ucsc_wigtobigwig/ucsc_wigtobigwig
+    in:
+      hist_or_builtin|input1: bedclip/bed_clipped
+      hist_or_builtin|chromfile: derive_chrom_sizes/outfile
+    out:
+    - id: out_file1
+    tool_version: 502+galaxy0
+    state:
+      hist_or_builtin:
+        genome_type_select: history
+  stringtie:
+    label: Assemble transcripts per sample (StringTie)
+    when: not skip_stringtie and not skip_alignment
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/stringtie/stringtie
+    in:
+      input_options|input_bam: dedup_bams_fan_in/data_param
+      guide|guide_source: annotation_gtf
+    out:
+    - id: output_gtf
+    tool_version: 3.0.3+galaxy3
+    state:
+      input_options:
+        input_mode: short_reads
+      guide:
+        use_guide: 'yes'
+  stringtie_merge:
+    label: Merge StringTie assemblies (reduction)
+    when: not skip_stringtie and not skip_alignment
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/stringtie/stringtie_merge
+    in:
+      input_gtf: stringtie/output_gtf
+      guide_gff: annotation_gtf
+    out:
+    - id: out_gtf
+    tool_version: 3.0.3+galaxy3
+    state: {}
+  flatten_fastqc:
+    label: Flatten raw-QC artifacts
+    tool_id: __FLATTEN__
+    tool_version: 1.0.0
+    in:
+      input: fastqc_raw/html_file
+    out:
+    - id: output
+    state:
+      join_identifier: _
+  flatten_trim:
+    label: Flatten trimming artifacts
+    tool_id: __FLATTEN__
+    tool_version: 1.0.0
+    in:
+      input: trim_trimgalore/report_file
+    out:
+    - id: output
+    state:
+      join_identifier: _
+  flatten_align_stats:
+    label: Flatten alignment artifacts
+    tool_id: __FLATTEN__
+    tool_version: 1.0.0
+    in:
+      input: bam_stats_fan_in/data_param
+    out:
+    - id: output
+    state:
+      join_identifier: _
+  flatten_bam_qc:
+    label: Flatten BAM-QC artifacts
+    tool_id: __FLATTEN__
+    tool_version: 1.0.0
+    in:
+      input: rseqc_suite/TODO_reports
+    out:
+    - id: output
+    state:
+      join_identifier: _
+  multiqc:
+    label: Aggregate QC reports (MultiQC)
+    when: not skip_multiqc and not skip_qc
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc
+    tool_version: 1.35+galaxy5
+    in:
+      results_0|software_cond|output_0|type|input: flatten_fastqc/output
+      results_1|software_cond|input: flatten_trim/output
+      results_2|software_cond|output_0|type|input: flatten_align_stats/output
+      results_3|software_cond|output_0|type|input: flatten_bam_qc/output
+      results_4|software_cond|input: featurecounts/output_summary
+      title: multiqc_title
+    out:
+    - id: html_report
+    - id: stats
+    state:
+      results:
+      - software_cond:
+          software: fastqc
+      - software_cond:
+          software: cutadapt
+      - software_cond:
+          software: star
+      - software_cond:
+          software: rseqc
+      - software_cond:
+          software: featureCounts
+  deseq2_qc:
+    label: DESeq2 QC on merged counts
+    when: not skip_deseq2_qc
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/deseq2/deseq2
+    in:
+      select_data|count_matrix_file: gene_counts_fan_in/data_param
+      select_data|sample_sheet: samplesheet
+    out:
+    - id: plots
+    - id: vst_out
+    tool_version: 2.11.40.8+galaxy6
+    state:
+      select_data:
+        how: count_matrix
+  versions_collect:
+    label: Collect software versions (reduction)
+    tool_id: TODO
+    in:
+      TODO_versions: multiqc/stats
+    out:
+    - id: TODO_versions
+    _plan_state: 'NO WORKFLOW-STEP EQUIVALENT in Galaxy: tool versions live in job metrics, not datasets.
+      MultiQC already aggregates software versions into its report (html_report/stats). Recommend kind:dropped
+      at implement tier; kept here only to carry the outputSource.'
+    _plan_context: source versions topic-channel aggregation; per-step version capture is a tool-step
+      concern (Medium confidence).
+    _plan_out: pipeline_versions output is redundant with multiqc stats.
+  bbsplit_index_resolved:
+    label: Resolve BBSplit index (input or built)
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+    tool_version: 0.2.0
+    in:
+      style_cond|type_cond|pick_from_0|value: bbsplit_index
+      style_cond|type_cond|pick_from_1|value: build_bbsplit_index/index_tarball
+    out:
+    - id: data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+  seqkit_prefix_rrna:
+    label: Prefix rRNA FASTA headers (seqkit replace)
+    when: remove_ribo_rna and ribo_removal_tool == 'bowtie2'
+    tool_id: TODO
+    in:
+      TODO_fastx: rrna_fastas
+    out:
+    - id: TODO_fastx
+    _plan_state: 'NO SHED WRAPPER for seqkit replace (iuc repo has only grep/head/split2). UDT candidate:
+      seqkit replace -p "^(.+)" -r "{fbn}_$1" (source conf/modules/qc_trim_filter.config).'
+    _plan_context: 'source SEQKIT_REPLACE via conf/modules/qc_trim_filter.config withName ext.args; Tool
+      Shed has NO seqkit_replace wrapper (searches seqkit/seqkit replace/replace variants: miss) — author
+      a generic GalaxyUserTool wrapping seqkit replace with pattern/replacement params; container community.wave.seqera.io/library/seqkit:2.13.0--05c0a96bf9fb2751.'
+    _plan_in: one FASTA (map-over rrna_fastas list collection).
+    _plan_out: prefixed FASTA collection -> seqkit_u2t_rrna.
+  seqkit_u2t_rrna:
+    label: Convert U to T in rRNA FASTAs (seqkit replace)
+    when: remove_ribo_rna and ribo_removal_tool == 'bowtie2'
+    tool_id: TODO
+    in:
+      TODO_fastx: seqkit_prefix_rrna/TODO_fastx
+    out:
+    - id: TODO_fastx
+    _plan_state: 'NO SHED WRAPPER (same as prefix step). UDT candidate: seqkit replace --by-seq -p "[Uu]"
+      -r "T".'
+    _plan_context: source SEQKIT_REPLACE_U2T; same authored seqkit-replace UDT as seqkit_prefix_rrna (sibling
+      pin).
+    _plan_in: prefixed FASTA collection.
+    _plan_out: U->T converted FASTAs -> concat_rrna_fastas (tp_cat).
+  concat_rrna_fastas:
+    label: Concatenate rRNA FASTAs into one database
+    when: remove_ribo_rna and ribo_removal_tool == 'bowtie2'
+    tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_cat
+    in:
+      inputs: seqkit_u2t_rrna/TODO_fastx
+    out:
+    - id: out_file1
+    tool_version: 9.11+galaxy0
+    state: {}
+  rrna_filtered_reads:
+    label: Resolve rrna-filtered reads (branch fan-in)
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value
+    tool_version: 0.2.0
+    in:
+      style_cond|type_cond|pick_from_0|value: rrna_filter_sortmerna/unaligned_forward
+      style_cond|type_cond|pick_from_1|value: rrna_filter_ribodetector/TODO_filtered
+      style_cond|type_cond|pick_from_2|value: rrna_filter_bowtie2/output_unaligned_read_pairs
+    out:
+    - id: data_param
+    state:
+      style_cond:
+        pick_style: first
+        type_cond:
+          param_type: data
+comments:
+- type: frame
+  title: Reference preparation
+  contains_steps:
+  - build_bbsplit_index
+  - derive_reference_fai
+  - derive_chrom_sizes
+  - bbsplit_index_resolved
+- type: frame
+  title: Reads QC / trim / filter
+  contains_steps:
+  - fastqc_raw
+  - trim_trimgalore
+  - trim_fastp
+  - trimmed_reads
+  - umi_extract
+  - rrna_filter_sortmerna
+  - rrna_filter_ribodetector
+  - rrna_filter_bowtie2
+  - contaminant_screen
+  - bbsplit_bin
+  - strandedness_infer
+  - metadata_bridge
+  - seqkit_prefix_rrna
+  - seqkit_u2t_rrna
+  - concat_rrna_fastas
+  - rrna_filtered_reads
+- type: frame
+  title: Alignment
+  contains_steps:
+  - align_star
+  - align_hisat2
+  - align_bowtie2
+  - aligned_bams_fan_in
+  - bam_stats_fan_in
+  - markdup_umi
+  - markdup_picard
+  - dedup_bams_fan_in
+- type: frame
+  title: Quantification
+  contains_steps:
+  - quantify_rsem
+  - rsem_merge_counts
+  - quantify_salmon
+  - quantify_kallisto
+  - tximport
+  - gene_counts_fan_in
+- type: frame
+  title: BAM QC and coverage
+  contains_steps:
+  - featurecounts
+  - rseqc_suite
+  - bedclip
+  - bedgraphtobigwig
+  - stringtie
+  - stringtie_merge
+- type: frame
+  title: Reporting
+  contains_steps:
+  - flatten_fastqc
+  - flatten_trim
+  - flatten_align_stats
+  - flatten_bam_qc
+  - multiqc
+  - deseq2_qc
+  - versions_collect

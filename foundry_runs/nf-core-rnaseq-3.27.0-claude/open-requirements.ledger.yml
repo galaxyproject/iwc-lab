@@ -1,0 +1,843 @@
+entries:
+- id: igenomes-key-no-galaxy-data-table
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  resolved_by: nextflow-summary-to-galaxy-interface
+  unmet: A Galaxy-side genome-key selector equivalent to the source's params.genome iGenomes catalogue
+    lookup
+  missing: v1 posture forbids new Galaxy data tables (dbkey-keyed or generic .loc); no admin-managed reference
+    cache exists on a stock Galaxy, and the iGenomes base (s3://ngi-igenomes/) is not a user-uploadable
+    dataset
+  note: 'The interface brief pins the full per-asset surface as explicit inputs (reference_fasta, annotation_gtf,
+    annotation_gff, gene_bed, transcriptome_fasta, additional_fasta, hisat2_splicesites, the nine index
+    inputs, kraken_db, and the QC-DB collections), so the shape question this entry tracked is settled:
+    no key selector and no data table. The constraint survives: no downstream Mold may reintroduce a data
+    table or an S3-path string input to ''fix'' the missing key.'
+- id: rebuild-unverified-positive-form
+  status: open
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: Verified rebuild-on-absence behavior for the pipeline's pre-built indexes and derived annotation
+    assets
+  missing: summary-nextflow reference_rebuilds[] is empty for nf-core/rnaseq because its PREPARE_GENOME
+    uses the positive-form idiom (if <asset> { unpack } else if (fasta_provided) { build }) that the detector
+    does not match (galaxyproject/foundry#229 follow-ups)
+  note: Rebuild claims in nextflow-galaxy-reference-data.md rest on call-graph corroboration only (paired
+    UNTAR_*_INDEX / *_BUILD / *_GENOMEGENERATE calls plus the fasta_provided take). implement-galaxy-tool-step
+    must verify the chosen wrapper actually supports build-on-absence before relying on it.
+- id: path-list-inputs-not-portable
+  status: resolved
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  resolved_by: nextflow-summary-to-galaxy-interface
+  step: null
+  unmet: A Galaxy-side representation for reference inputs that are files of local filesystem paths (ribo_database_manifest,
+    bbsplit_fasta_list)
+  missing: a path-list file uploaded as a dataset cannot resolve its contents on a stock Galaxy; the recommended
+    list-collection-of-FASTA translation has no wired producer yet
+  note: 'The interface brief pins the representation: rrna_fastas and bbsplit_ref_fastas as optional list
+    collections of FASTA datasets whose element identifiers carry the reference names the source read
+    from the path-list files. Wiring them into the SortMeRNA / BBSplit index builds remains data-flow
+    work. The residual default-manifest loss is carried separately in rrna-default-db-no-portable-equivalent.'
+- id: contaminant-db-conditional-requiredness
+  status: open
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  unmet: Required-when-conditional inputs for the QC database pick-list (kraken_db, sylph_db, sylph_taxonomy,
+    rRNA-removal assets)
+  missing: gxformat2 has no clean conditional-requiredness affordance; these databases cannot be rebuilt
+    on absence so they are hard user inputs when their gating enum (contaminant_screening, remove_ribo_rna,
+    ribo_removal_tool, skip_bbsplit) selects the branch
+  note: Surfaced as optional data inputs with documented gating conditions in the brief; recorded as a
+    validation loss. No downstream Mold can close this within v1 gxformat2.
+- id: bam-start-rows-unrepresented
+  status: open
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: A Galaxy input shape for samplesheet rows that start from BAM (genome_bam / transcriptome_bam
+    columns) instead of FASTQ
+  missing: sample_sheets[0] carries optional genome_bam and transcriptome_bam path columns alongside fastq_1/fastq_2,
+    but no Galaxy sample_sheet variant expresses paired-FASTQ-or-optional-BAM rows in one collection;
+    sample_sheet:record slots are single datasets and cannot hold a read pair
+  note: v1 interface models FASTQ rows only (sample_sheet:paired_or_unpaired). A BAM-start tier (e.g.
+    a separate list collection of BAMs keyed by sample identifier) is a deferred interface addition, not
+    a silent drop; the data-flow Mold must not wire BAM rows into the FASTQ path.
+- id: umi-bc-pattern-conditional-requiredness
+  status: open
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: Required-when-conditional scalar input for umitools_bc_pattern (and umitools_bc_pattern2) when
+    with_umi is enabled
+  missing: gxformat2 has no conditional-requiredness affordance; the source requires the UMI pattern only
+    inside the with_umi branch, which the summary's conditionals[] does not record (1 of ~26 guards extracted)
+  note: Surfaced as optional string inputs with gated documentation in the interface brief. Same v1 validation
+    loss as contaminant-db-conditional-requiredness; nothing downstream can close it within v1 gxformat2.
+- id: rrna-default-db-no-portable-equivalent
+  status: open
+  raised_by: nextflow-summary-to-galaxy-interface
+  unmet: The default rRNA database set the source ships as assets/rrna-db-defaults.txt (params.ribo_database_manifest
+    default)
+  missing: the manifest contents are local filesystem paths; on a stock Galaxy there is no bundled default,
+    so remove_ribo_rna enabled without user-supplied rrna_fastas has no data to build the SortMeRNA index
+    from
+  note: Split out of the resolved path-list-inputs-not-portable entry so the representation win and the
+    default-loss stay separately visible. Either the rrna_fastas input becomes effectively required when
+    remove_ribo_rna is set, or a default bundle must be sourced; no downstream Mold can conjure the source's
+    bundled FASTAs.
+- id: sentieon-parabricks-accelerators-dropped
+  status: open
+  kind: dropped
+  raised_by: nextflow-summary-to-galaxy-interface
+  units: 2 of 3 STAR alignment backends (use_sentieon_star, use_parabricks_star; Sentieon RSEM variants
+    likewise excluded) plus Parabricks MarkDuplicates
+  because: Sentieon and Parabricks are proprietary licensed accelerators with no freely installable Galaxy
+    wrapper; no tool search was run in this phase, so this reason is uncited and must be treated as a
+    debt, not a finding
+  unmet: Accelerated STAR / MarkDuplicates / RSEM execution paths equivalent to the source's commercial
+    backends
+  missing: the Galaxy translation runs the open-source STAR / Picard / RSEM routes only; speed, not scientific
+    output, is affected
+  note: ''
+- id: multi-run-sample-merge-no-collection-carrier
+  status: open
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  unmet: A Galaxy-side carrier for the source's multi-run FASTQ merge (checkSamplesAfterGrouping + CAT_FASTQ
+    groupTuple on meta.id) where several samplesheet rows share one sample id and are concatenated into
+    one merged _1/_2 read pair
+  missing: sample_sheet:paired_or_unpaired requires a unique element identifier per row, so a repeated
+    sample id has no input-side representation, and Galaxy has no join-like operator that concatenates
+    multiple collection elements with the same key into one paired element
+  note: v1 data flow maps one samplesheet row per sample and drops the merge tier; the fixture's five
+    samples are all single-run so no test row exercises the loss. A future tier could take a list:list
+    keyed by sample and concatenate per group, but no IWC exemplar anchors that shape and this entry carries
+    the obligation rather than a silent drop.
+- id: per-sample-strandedness-param-unbindable
+  status: open
+  raised_by: nextflow-summary-to-galaxy-template
+  unmet: Per-sample strandedness consumption by featureCounts (-s) and Salmon (--libType) when the sample
+    sheet carries mixed strandedness values
+  missing: the metadata bridge (metadata-reattachment-bridge decision) produces one per-sample tabular
+    keyed by element identifier, but featureCounts and Salmon are map-over steps whose strandedness argument
+    is a single workflow-level param; gxformat2 has no affordance to bind a per-row value from a tabular
+    to a map-over step param, and no IWC exemplar anchors one (corpus is workflow-level per iwc-strandedness-workflow-level-precedent)
+  note: 'Blocking for scientifically-correct quantification on mixed-strandedness inputs, not for workflow
+    executability (a workflow-level collapse runs, miscounting reverse-stranded samples). Resolution options
+    for the expert: workflow-level strandedness collapse (IWC idiom; loses the source''s per-sample capability),
+    when:-split per strandedness value into parallel step copies, or a rules/expression-tool reroute per
+    value. advance-galaxy-draft-step must pick one before concretizing featurecounts and quantify_salmon;
+    the draft keeps the bridge and binds the strandedness port as TODO with this entry referenced. Iteration
+    6 adds iuc/rsem_calculate_expression strandedness select (none/forward/reverse) to the affected ports.'
+- id: kallisto-route-not-wired-into-tximport
+  status: open
+  raised_by: nextflow-summary-to-galaxy-template
+  unmet: A count-matrix merge for the kallisto pseudo-aligner route parallel to the salmon tximport merge
+  missing: the source wires TXIMETA_TXIMPORT for the salmon route only, and the data-flow brief carried
+    that asymmetry; the draft's tximport step consumes quantify_salmon outputs, so a kallisto-only run
+    produces abundance collections but no gene_counts matrix (gene_counts_fan_in would receive no value
+    on that route)
+  note: Deferred as a faithful-to-source asymmetry rather than silently wired; the per-step loop or the
+    expert must decide between an additional kallisto merge step or documenting the route as counts-less.
+- id: bbsplit-built-index-unwired
+  status: resolved
+  raised_by: implement-galaxy-tool-step
+  resolved_by: repair-galaxy-draft-topology
+  step: build_bbsplit_index
+  unmet: The phase-6 draft wired build_bbsplit_index output to no consumer and wired bbsplit_bin only
+    to the optional bbsplit_index input; the build step also lacked the primary genome FASTA input the
+    source passes (prepare_genome_indices feeds ch_fasta as primary_ref).
+  missing: No fan-in resolver between user-supplied and workflow-built bbsplit index, unlike every other
+    heavy index in the draft.
+  note: Closed by add-step (bbsplit_index_resolved pick_value fan-in, identity-pinned) + rewire (bbsplit_bin
+    TODO_index -> bbsplit_index_resolved/TODO_value) + implement input wiring (primary_ref <- reference_fasta).
+    The bbsplit index travels as a tar dataset, matching the source accepting a .tar.gz bbsplit_index
+    param.
+- id: bowtie2-prebuilt-index-unconsumable
+  status: open
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: bowtie2_index and bowtie2_rrna_index workflow inputs plus build_bowtie2_index / bowtie2_index_resolved
+    / build_bowtie2_rrna_index steps
+  because: devteam/bowtie2 2.5.5+galaxy0 reference_genome conditional exposes only source=indexed (built-in
+    .loc genome, violates no-galaxy-data-tables) or source=history with own_file FASTA (builds in-tool
+    per invocation); no input port accepts a prebuilt index dataset and no output emits one. No generic
+    standalone bowtie2-build wrapper exists in the Tool Shed (searches "bowtie2 build index"/"bowtie2
+    build" return only QIIME-domain wrappers and the mapper itself).
+  unmet: 'Build-once bowtie2 index shared across samples (source: BOWTIE2_BUILD from transcript FASTA,
+    consumed by BOWTIE2_ALIGN)'
+  missing: No Tool Shed wrapper can consume or emit a standalone bowtie2 index; the Galaxy translation
+    builds the index in-tool per sample from the history transcriptome FASTA, which the mapping note treats
+    as the in-tool default (deviation tolerable for transcriptome-scale FASTA).
+  note: 'Interface narrowing recorded per repair protocol. Also corrected: the bowtie2_salmon route aligns
+    against the TRANSCRIPTOME, not the genome (source prepare_genome_indices section 7); align_bowtie2
+    _plan rewired to transcriptome_fasta. The rrna flavor of the entry was folded here (same wrapper port
+    evidence).'
+- id: reads-path-fan-in-starvation
+  status: open
+  raised_by: repair-galaxy-draft-topology
+  unmet: Reads pass-through semantics when every gated branch on the reads path is skipped (skip_trimming,
+    no remove_ribo_rna, no with_umi)
+  missing: the source reassigns ch_filtered_reads = ch_reads and lets later branches pass through; the
+    Galaxy translation wires pick_value fan-ins (trimmed_reads, rrna_filtered_reads, dedup_bams_fan_in)
+    whose inputs are all when-gated — when every source step is skipped the fan-in receives no input and
+    downstream steps starve instead of receiving the unfiltered reads
+  note: 'Known Sentinel-filtering hazard from the phase-4 brief, now concrete. Candidate resolutions:
+    expression-tool pass-through steps per gate, or unconditional trim/filter steps with no-op modes.
+    Cannot be closed within the when-guard + pick_value idiom alone; flagged for the implement loop and
+    terminal validation.'
+- id: hisat2-prebuilt-index-unconsumable
+  status: open
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: hisat2_index and hisat2_splicesites workflow inputs, hisat2_build_memory control, plus build_hisat2_index
+    / hisat2_index_resolved steps
+  because: iuc/hisat2 2.2.3+galaxy1 reference_genome conditional exposes only source=indexed (built-in
+    .loc genome, violates no-galaxy-data-tables) or source=history with history_item restricted to extensions
+    [fasta] — no port accepts a prebuilt index dataset and no output emits one; the only standalone builder
+    in the Shed (iuc/data_manager_hisat2_index_builder) is a data manager that installs into admin data
+    tables.
+  unmet: 'Build-once HISAT2 index with splicesites shared across samples (source: HISAT2_BUILD from FASTA+GTF+splicesites)'
+  missing: Galaxy translation builds in-tool per sample from the history FASTA; splice-site awareness
+    moves from build time (--ss into hisat2-build) to align time (wrapper known_splice_gtf <- annotation_gtf),
+    a close but not identical route.
+  note: Third index-builder removal after bbsplit (authored) and bowtie2 (dropped) — the workflow-tier-build
+    posture is unrealizable for every aligner wrapper inspected so far. hisat2_build_memory dropped with
+    the build step (runtime hint, no remaining role).
+- id: kallisto-prebuilt-index-unconsumable
+  status: open
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: kallisto_index workflow input plus build_kallisto_index / kallisto_index_resolved steps
+  because: iuc/kallisto_quant 0.48.0+galaxy1 reference_transcriptome conditional exposes only source=indexed
+    (built-in .loc) or source=history with reference restricted to extensions [fasta]; no prebuilt-index
+    port; only standalone builder is iuc/data_manager_kallisto_index_builder (admin data-table world).
+  unmet: 'Build-once kallisto index shared across samples (source: KALLISTO_INDEX from transcript FASTA)'
+  missing: 'In-tool per-sample build from the history transcriptome FASTA (tolerable: transcriptome-scale
+    index, fast build).'
+  note: Fourth consecutive index-builder removal (bbsplit authored; bowtie2 x2, hisat2, kallisto dropped)
+    — see discovery index-builder-wrapper-pattern.
+- id: rsem-prebuilt-index-unconsumable
+  status: open
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: rsem_index workflow input plus build_rsem_index / rsem_index_resolved steps
+  because: iuc/rsem/rsem_calculate_expression 1.3.3+galaxy0 reference conditional exposes genome|source=cached
+    (.loc) or genome|source=history (fasta+gtf, prepare-reference in-tool); no port accepts a prebuilt
+    rsem reference dataset. The one index-emitting wrapper found (jjohnson/rsem/rsem_prepare_reference
+    1.1.17) outputs format rsem_ref but is single-owner, ancient (RSEM 1.1.17 vs source 1.3.3+), and its
+    output feeds no current consumer wrapper.
+  unmet: 'Build-once RSEM reference shared across samples (source: RSEM_PREPAREREFERENCE from FASTA+GTF)'
+  missing: In-tool per-sample prepare-reference from history FASTA+GTF.
+  note: 'Fifth index-builder resolution. Mitigation: iuc wrapper takes alignments (BAM) directly for the
+    star_rsem route and outputs genes_results/isoforms_results as named outputs, so quantify_rsem is fully
+    wrapper-coverable.'
+- id: salmon-prebuilt-index-unconsumable
+  status: open
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: salmon_index workflow input plus build_salmon_index / salmon_index_resolved steps
+  because: bgruening/salmon 1.10.3+galaxy1 refTranscriptSource conditional exposes TranscriptSource=indexed
+    (.loc) or history (single fasta dataset, index built in-tool); no prebuilt-index input port; strandedness_infer
+    loses its shared index and runs its own in-tool-build salmon invocation.
+  unmet: 'Build-once Salmon index shared across samples and the strandedness inference pass (source: SALMON_INDEX
+    from transcript FASTA)'
+  missing: In-tool per-sample build from history transcriptome FASTA for both quantify_salmon and strandedness_infer.
+  note: 'Mitigating win: the wrapper exposes output_quant (quant.sf) and output_gene_quant (quant.genes.sf)
+    as named outputs, confirming the phase-4 salmon-quant-extracted-named-outputs disposition — the planned
+    placeholder extract step is unnecessary.'
+- id: sortmerna-prebuilt-index-unconsumable
+  status: open
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: sortmerna_index workflow input plus build_sortmerna_index step
+  because: rnateam/sortmerna/bg_sortmerna 7.1.0+galaxy0 databases_type conditional offers only cached
+    (built-in public rRNA DBs, .loc-backed, violates no-galaxy-data-tables) or history (user FASTAs, indexed
+    in-tool on every launch); no prebuilt-index port — fifth instance of index-builder-wrapper-pattern.
+    The user-provided sortmerna_index input is equally unconsumable and is dropped.
+  unmet: 'Build-once SortMeRNA index shared across samples (source: SORTMERNA_INDEX --index 1, then --idx-dir),
+    and the optional user-supplied index.'
+  missing: Per-sample/per-launch in-tool index build from history rrna_fastas.
+  note: 'Mitigation: caching within one invocation still exists (the wrapper indexes once per job, not
+    per database file); the loss is cross-sample and cross-run reuse.'
+- id: star-prebuilt-index-unconsumable
+  status: open
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: star_index workflow input plus build_star_index / star_index_resolved steps
+  because: iuc/rgrnastar/rna_star 2.7.11b+galaxy1 refGenomeSource conditional offers geneSource=indexed
+    (.loc built-ins, violates no-galaxy-data-tables) or history (genomeFastaFiles + optional GTF, genomeGenerate
+    in-tool per invocation); no prebuilt STAR index port — sixth and final instance of index-builder-wrapper-pattern,
+    closing out the heavy-index posture.
+  unmet: Build-once STAR index shared across samples and per-run sjdbOverhang/read-length tuning (source
+    STAR_ALIGN build path).
+  missing: Per-sample in-tool genomeGenerate from history reference_fasta + annotation_gtf.
+  note: 'Mitigating wins: the wrapper exposes transcriptome_mapped_reads (the source --quantMode TranscriptomeSAM
+    artifact RSEM consumes) and signal_unique_str1/2 bedGraphs (coverage step inputs) as named outputs,
+    so the STAR branch needs no extraction glue.'
+- id: ribodetector-no-wrapper
+  status: open
+  kind: capability-gap
+  raised_by: advance-galaxy-draft-step
+  units: rrna_filter_ribodetector step
+  because: No Tool Shed wrapper for RiboDetector (searches empty).
+  unmet: ribodetector rRNA-removal flavor of the remove_ribo_rna branch.
+  missing: UDT authoring or flavor drop (sortmerna/bowtie2 flavors are resolved).
+- id: contaminant-screen-no-wrapper
+  status: open
+  kind: capability-gap
+  raised_by: advance-galaxy-draft-step
+  units: contaminant_screen step plus kraken_db / sylph_dbs / sylph_taxonomies inputs
+  because: No fastq_screen, kraken2+bracken, or sylph+treatment wrappers found in the Tool Shed (only
+    unrelated hits).
+  unmet: contaminant_screening branch.
+  missing: UDT authoring (fastq_screen flavor simplest).
+- id: bbsplit-binning-no-wrapper
+  status: open
+  kind: capability-gap
+  raised_by: advance-galaxy-draft-step
+  units: bbsplit_bin step
+  because: iuc/bbtools_bbmap wraps bbmap the aligner only; no bbsplit binning wrapper exists.
+  unmet: BBSplit read-binning consumer of the authored bbsplit_index_builder UDT output.
+  missing: Second UDT (bbsplit splitter) — the index builder alone now has no runnable consumer.
+- id: strandedness-inference-unwrapped
+  status: open
+  kind: capability-gap
+  raised_by: advance-galaxy-draft-step
+  units: strandedness_infer step
+  because: Source is a 3-process chain (subsample, salmon, gatc custom inference); only the salmon middle
+    has a wrapper.
+  unmet: auto strandedness inference as in source.
+  missing: 2 UDTs or 1 UDT + salmon wrapper; rseqc_infer_experiment is a weaker post-alignment alternative.
+- id: interface-missing-strandedness-override
+  status: open
+  kind: interface-gap
+  raised_by: advance-galaxy-draft-step
+  units: workflow interface
+  because: Source params.strandedness (forward/reverse/auto) has no Galaxy input; only the auto route
+    (strandedness_infer) was modeled, and that route is itself unbindable per-sample.
+  unmet: Manual strandedness override feeding featurecounts -s / salmon libType via the map_param_value
+    idiom (exemplar-corroborated).
+  missing: A strandedness select input + iuc/map_param_value step; would partially discharge per-sample-strandedness-param-unbindable
+    for the manual route.
+- id: rseqc-suite-collapsed
+  status: open
+  kind: capability-gap
+  raised_by: advance-galaxy-draft-step
+  units: rseqc_suite step
+  because: Source BAM_RSEQC is 6-7 separate modules; nilesh/rseqc has individual wrappers (rseqc_infer_experiment
+    5.0.3+galaxy0 cached as proof) but the draft carries one collapsed step.
+  unmet: Per-module RSeQC QC.
+  missing: Implement-tier expansion into ~6-7 mapped steps + re-aggregation.
+- id: rsem-merge-and-tximport-route-switch
+  status: open
+  kind: capability-gap
+  raised_by: advance-galaxy-draft-step
+  units: rsem_merge_counts, tximport
+  because: tximport input_source is single-valued per invocation (salmon pinned); no per-sample RSEM merge
+    wrapper exists.
+  unmet: Every quantification route terminating in gene_counts on one path.
+  missing: Route-conditional duplication of tximport or awk-based merge; related to kallisto-route-not-wired-into-tximport.
+- id: multiqc-config-logo-unwirable
+  status: open
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: multiqc_config, multiqc_logo workflow inputs
+  because: 'iuc/multiqc 1.35+galaxy5 exposes no config-file or logo port (inputs: results repeat, title,
+    comment, flat, export, png_plots only).'
+  unmet: Custom MultiQC configuration and logo.
+  missing: Title-only customization wired.
+- id: versions-collect-no-equivalent
+  status: open
+  kind: dropped
+  raised_by: advance-galaxy-draft-step
+  units: versions_collect step + pipeline_versions output
+  because: Galaxy records tool versions in job metrics; MultiQC aggregates them in-report. No workflow-step
+    equivalent of nf-core versions.yml.
+  unmet: versions.yml artifact.
+  missing: Drop at implement tier; multiqc/stats carries the equivalent information.
+- id: star-str2-coverage-dropped
+  status: open
+  kind: narrowed
+  raised_by: advance-galaxy-draft-step
+  units: bedclip bedgraph input
+  because: Source clips+converts both per-strand bedGraphs; single bedclip wiring takes signal_unique_str1
+    only (str2 exposed on align_star but unwired).
+  unmet: Reverse-strand coverage bigWigs.
+  missing: Duplicate bedclip+bedgraphtobigwig pair for str2 at implement tier.
+- id: test-scope-default-candidate
+  status: resolved
+  kind: decision
+  raised_by: nextflow-to-test-data
+  units: test_selection scope choice over 55 candidates
+  because: 'Phase-1 summary left test_selection needs-scope-choice (finding 6). Chose tests/default.nf-test
+    Params: default (effective profile: test, real mode): smallest complete real-data candidate - covers
+    samplesheet, genome, GTF/GFF, transcriptome, additional-fasta, bbsplit list, kraken db, ribo manifest.'
+  unmet: null
+  missing: null
+  note: 'Scope comparison done over candidate scope/execution mode/input coverage, not profile name (per
+    skill step 2). The "- stub" twin was rejected: same inputs but stub execution mode. BAM-input and
+    contaminant-screening candidates cover routes the draft has deferred or narrowed.'
+- id: deseq2-qc-factor-metadata-missing
+  status: open
+  kind: interface-gap
+  raised_by: implement-galaxy-workflow-test
+  units: workflow interface
+  because: The interface carries the samplesheet as a reads collection; per-sample factor metadata
+    (condition columns) exists nowhere as a workflow input, and the metadata-bridge route is blocked by
+    per-sample-strandedness-param-unbindable.
+  unmet: DESeq2 QC (source module SUBWORKFLOW_CORE_DESEQ2_QC) in the concrete workflow.
+  missing: A per-sample tabular (sample, condition) input wired to iuc/deseq2 2.11.40.8+galaxy6's
+    select_data|sample_sheet port; deseq2_qc excluded from galaxy-workflow.gxwf.yml and its expected
+    output moved to test-plan omissions.
+- id: bam-stats-doc-wiring-mismatch
+  status: open
+  kind: fidelity-gap
+  raised_by: implement-galaxy-workflow-test
+  units: workflow outputs
+  because: 'The bam_stats output is documented (source samtools stats per sample) but the concrete
+    wiring carries STAR Log.final.out; samtools_stats 1.17+galaxy1 is cached and validated but consumed
+    by no step on the default route.'
+  unmet: True samtools stats artifacts as the bam_stats output.
+  missing: A samtools_stats step wired to MarkDuplicates BAMs and a fan-in replacing the STAR log wiring;
+    deferred with the doc mismatch recorded (FOUNDRY-ISSUES #48) rather than silently relabeled.
+
+discoveries:
+- id: reference-consumption-split
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: 'summary subworkflows[]: PREPARE_GENOME_REFERENCES (subworkflows/local/prepare_genome_references/main.nf)
+    consumes the coordinated annotation bundle; PREPARE_GENOME_INDICES (subworkflows/local/prepare_genome_indices/main.nf)
+    consumes the pre-built index params via a take block that includes every *_index param plus fasta_provided;
+    RNASEQ (workflows/rnaseq/main.nf) receives the resolved per-index channels (ch_star_index, ch_salmon_index,
+    ...).'
+  impact: 'The Galaxy translation''s reference tier mirrors this split: user-facing annotation inputs,
+    then one index-resolution tier feeding per-sample alignment/quantification.'
+- id: all-reference-assets-optional-in-summary
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: 'Every entry in reference_assets[] has required: false; the only workflow-level conditional
+    (!params.skip_alignment && !params.bam_csi_index) gates checkMaxContigSize, not reference data; no
+    required_runtime channel covers reference params.'
+  impact: Effective requiredness of the FASTA+GTF/GFF core is an assumption carried in the brief, not
+    a summary-verified fact. The interface Mold should not treat all seven bundle inputs as equivalently
+    optional.
+- id: reference-assets-contains-cli-plumbing-false-positive
+  raised_by: nextflow-summary-to-galaxy-reference-data
+  evidence: 'reference_assets[] includes pipelines_testdata_base_path (asset_kind other, used_by [], evidence
+    confidence medium) — a hidden nf-core test-data base-URL param (params[] entry: hidden: true, schema_group
+    ''Generic options'').'
+  impact: Excluded from the Galaxy reference surface in the brief. Recorded so later Molds do not resurrect
+    it as a reference input.
+- id: branch-evidence-partial
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: workflow.conditionals[] carries exactly 1 guard (!params.skip_alignment && !params.bam_csi_index,
+    gating checkMaxContigSize) while the source has ~26; summary warnings[] carries 'workflow graph extraction
+    is intentionally partial in resolver v1'. Every processes[].publish_dir is also null (78 of 78).
+  impact: Interface decisions about skip_* flags, save_* toggles, and branch-gated inputs rest on param
+    descriptions, enums, and workflow.edges[] rather than guard evidence. Output-exposure decisions rest
+    on process output patterns, not publishDir intent. Downstream Molds must not treat the branch-free
+    DAG as the source's real control flow, and impact assessments in the excluded-params table are medium
+    confidence for this reason.
+- id: samplesheet-materialization-not-in-channels
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: workflow.channels[] has a single entry (ch_samplesheet, construct 'value', from_param null)
+    whose source references params.input only verbatim; the samplesheetToList call lives in the RNASEQ
+    subworkflow body (listed in subworkflows[].calls) and produces no workflow.channels[] entry, so the
+    params note's from_param O(1) join finds nothing and the substring-matching fallback is required to
+    bind params.input.
+  impact: The interface Mold bound the sample sheet via sample_sheets[] (nf-schema discovery) plus the
+    fallback; pipelines whose sample sheet is discovered only via a subworkflow-body samplesheetToList
+    with no nf-schema entry would leave the binding unresolved under the current procedure.
+- id: interface-surface-scale
+  raised_by: nextflow-summary-to-galaxy-interface
+  evidence: params[] has 130 entries; after exclusion classes (publish, notification, runtime UX, CLI
+    plumbing, institutional config, hidden reference plumbing, proprietary accelerators) roughly 50 scalar
+    controls plus 20 data/collection inputs survive as the faithful Galaxy surface.
+  impact: The interface is faithful but heavy; any curated-subset reduction is a brief change for the
+    expert, not a decision a downstream Mold may make unilaterally.
+- id: per-sample-axis-fixture-verified
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: 'The ''Params: default'' test snapshot stable_paths carry fastqc/raw/{sample}_raw_{1,2}_fastqc.html
+    for exactly five samples (RAP1_IAA_30M_REP1, RAP1_UNINDUCED_REP1, RAP1_UNINDUCED_REP2, WT_REP1, WT_REP2),
+    each unique per artifact family; _1/_2 appear together only on RAP1_IAA_30M_REP1, WT_REP1, WT_REP2,
+    so the suffixes are mates, and the two RAP1_UNINDUCED reps are single-end. The samplesheet CSVs themselves
+    are remote URLs not carried in the summary.'
+  impact: Element identifier discipline for every per-sample collection in the data flow rests on sample-id
+    uniqueness verified against this fixture, not on the schema's uniqueness rule; the mate rule (suffix
+    = mate only when every numbered row is paired) holds here.
+- id: multiqc-bundle-loose-join-and-transpose
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: 'MULTIQC_RNASEQ takes ch_multiqc_files (built up as ch_multiqc_files.transpose() in FASTQ_QC_TRIM_FILTER_SETSTRANDEDNESS)
+    plus ch_per_sample_bundle_raw, a [id, meta, f1, f2, ...] channel grown by successive .join(..., remainder:
+    true) calls; the operators note classifies transpose and join-with-remainder as user-review triggers
+    with no Galaxy recipe.'
+  impact: The data flow replaces the transpose with per-family flatten keyed by element identifier and
+    drops the loose-join bundle, feeding MultiQC the flattened union; both dispositions are flagged for
+    user review in the brief's open questions because the note offers no recipe, only the trigger.
+- id: versions-topic-channel
+  raised_by: nextflow-summary-to-galaxy-data-flow
+  evidence: The source aggregates per-process software versions through a versions topic channel consumed
+    by softwareVersionsToYAML (listed in the RNASEQ subworkflow calls), producing the pipeline_versions
+    output.
+  impact: In Galaxy there is no channel/topic primitive; version capture becomes a per-step output concern
+    (tool-step Mold) plus one reduction step over the collected version texts. The data flow records the
+    reduction as a capability need at Medium confidence because per-step version emission is not a data-flow
+    decision.
+- id: iwc-strandedness-workflow-level-precedent
+  raised_by: compare-against-iwc-exemplar
+  evidence: IWC transcriptomics/rnaseq-pe/rnaseq-pe (nearest exemplar, Medium confidence) parameterizes
+    strandedness as one workflow-level enum input fanned to featureCounts/StringTie/Cufflinks via map_param_value;
+    no inspected IWC RNA-seq workflow carries per-sample strandedness.
+  impact: The interface/data-flow per-sample strandedness bridge (sample-sheet tabular join into collection
+    flow) is a deliberate divergence with no corpus precedent; keep it, flag for user review, expect the
+    least-proven part of the draft to be the bridge wiring.
+- id: iwc-cached-genome-precedent
+  raised_by: compare-against-iwc-exemplar
+  evidence: rnaseq-pe feeds rna_star genomeDir from a restricted string input naming a Galaxy-cached genome
+    (compose_text_param companion); indexes come from the data-manager world, not in-workflow builds.
+  impact: 'Template should wire STAR (and other index consumers) against a conditional reference source:
+    cached-genome param as happy path, build-on-absence subgraph as fallback — extends the phase-2 build-on-absence
+    posture without replacing it.'
+- id: bowtie2-salmon-branch-omitted-in-data-flow
+  raised_by: nextflow-summary-to-galaxy-template
+  evidence: The interface brief pins aligner restrictions [star_salmon, star_rsem, hisat2, bowtie2_salmon],
+    but the data-flow brief's Tier 3 wires only the STAR and HISAT2 branches; no bowtie2 alignment step
+    or bowtie2 index resolution appears anywhere in phase 4's brief, and no ledger entry records dropping
+    it.
+  impact: The template restored the branch (align_bowtie2, build_bowtie2_index, bowtie2_index_resolved);
+    no pipeline mechanism checks brief-to-brief consistency, so an executor that trusted the data-flow
+    brief''s tier list verbatim would have shipped an interface enum value with no implementing branch.
+- id: draft-format-maps-not-lists
+  raised_by: nextflow-summary-to-galaxy-template
+  evidence: The draft validator accepts GalaxyWorkflowDraft inputs and steps only as maps keyed by id
+    (native format2 uses a list for steps and either form for inputs); the format note shows the map form
+    only by example, and a wrong shape surfaces as a raw zod schema dump (113KB message for one mis-shaped
+    inputs list) rather than a field-pointer.
+  impact: First-validation failures on shape are unusable without post-processing; recorded for the issue
+    log and future template authoring.
+- id: rrna-bowtie2-route-is-six-step-subgraph
+  raised_by: repair-galaxy-draft-topology
+  evidence: 'source FASTQ_REMOVE_RRNA bowtie2 branch: SEQKIT_REPLACE (prefix), SEQKIT_REPLACE_U2T, collectFile
+    to rrna_combined_dna.fasta, BOWTIE2_BUILD, SE bowtie2 --un-gz path, PE bowtie2 -> samtools view -f
+    12 -> samtools fastq; the phase-4 brief modeled this as ONE capability.'
+  impact: The data-flow brief capability abstraction under-specifies compound source subgraphs; the per-step
+    loop discovers them only at implement time. A similar expansion is likely for contaminant_screening
+    and strandedness_inference (both collapsed multi-process chains).
+- id: index-builder-wrapper-pattern
+  raised_by: advance-galaxy-draft-step
+  evidence: 'devteam/bowtie2 2.5.5+galaxy0, iuc/hisat2 2.2.3+galaxy1, iuc/kallisto_quant 0.48.0+galaxy1
+    all expose reference conditionals with exactly two cases: indexed (built-in .loc genome, requires
+    admin data tables) or history (single FASTA dataset, index built in-tool per invocation); none accepts
+    or emits a prebuilt index dataset; the only standalone index builders in the Shed are data managers.
+    BBSplit has no wrapper at all.'
+  impact: The phase-2 workflow-tier-build-for-heavy-indexes posture is unimplementable for every aligner/quantifier
+    inspected; the real Galaxy idiom is in-tool build from history FASTA (per-sample rebuild) or admin-managed
+    cached genomes. The interface now carries only STAR/Salmon/RSEM index inputs pending their wrapper
+    inspection — expect the same pattern there.- id: format2-state-key-misencoded-at-compile
+  discovered_by: validate-galaxy-workflow
+  summary: The phase-10 compiled galaxy-workflow.gxwf.yml used `tool_state:` on all 14 steps where
+    format2 requires `state:`; default gxwf validate reported 0 encoding errors and exit 0 for the
+    same file, only --strict-encoding flagged it (14 errors, exit 2).
+  disposition: fixed-in-artifact (14-key sed rename in phase 11); strict re-validation green. Third
+    member of the gxwf-validate false-green family (with #44/#45 findings on exit-0-with-skip).
+  evidence:
+  - FOUNDRY-ISSUES.md #49
+- id: connection-source-label-key-mismatch
+  discovered_by: validate-galaxy-workflow
+  summary: Five connections cited steps by map key where label differed (MarkDuplicates, chrom sizes);
+    gxwf validate --connections reported source_step NaN yet connection_report.valid=true / exit 0,
+    and gxwf convert emitted the five as id:null input_connections (exit 0) - they would drop at import.
+  disposition: fixed-in-artifact (two labels aligned with keys in phase 11); 0 skipped connections,
+    converted .ga has 0 null connections. Validator false-greens recorded for upstream filing.
+  evidence:
+  - FOUNDRY-ISSUES.md #50
+- id: planemo-format2-shed-install-silent-skip
+  discovered_by: run-workflow-test
+  summary: planemo 0.75.48 managed-Galaxy workflow tests against .gxwf.yml never install Tool
+    Shed repositories (load_shed_repos only handles .ga via ephemeris; the else-branch reads
+    tool_shed_repository blocks that authored format2 never has), silently, despite --shed_install
+    defaulting on. Invocation then fails HTTP 400 "required tools are not installed".
+  disposition: worked around in-run by converting to .ga and injecting tool_shed_repository blocks
+    with changesets fetched from the Tool Shed version API for the 14 pinned tool versions; upstream
+    defect recorded as FOUNDRY-ISSUES.md #51 for filing.
+  evidence:
+  - FOUNDRY-ISSUES.md #51
+- id: galaxy-ephemeris-install-path-zero-retry
+  discovered_by: run-workflow-test
+  summary: A single Tool Shed connect timeout inside Galaxy repository install (repository_dependency_manager,
+    urllib URLError Errno 110, HTTP 500) cascades into an ephemeris AssertionError in wait_for_install
+    and aborts the whole planemo test run, discarding all repos installed up to that point. Failing
+    repo differed per attempt (fastqc, stringtie, samtools_faidx) - trigger is network timing, not content.
+  disposition: worked around partially via --shed_data_dir persistence (7/14 repos retained); full
+    resumption blocked by attempt cap and network stability. Upstream defect recorded as
+    FOUNDRY-ISSUES.md #52.
+  evidence:
+  - FOUNDRY-ISSUES.md #52
+  - planemo-test-run3.log
+  - planemo-test-run4.log
+
+- id: versionless-tool-id-uninvokable-exact-default
+  discovered_by: run-workflow-test
+  summary: .ga workflows whose tool steps carry versionless tool_ids (as gxwf convert emits, with the
+    version only in tool_version) are un-invokable against a Galaxy that has every tool installed:
+    the invocation API's require_exact_tool_versions defaults to True and toolbox.get_tool(exact=True)
+    only accepts ids that are literal keys of _tools_by_id - Tool Shed tools are keyed by their full
+    versioned guid. Neither planemo nor bioblend sets the flag.
+  disposition: worked around in-run by rewriting all 14 tool_ids to <tool_id>/<tool_version> in
+    galaxy-workflow.ga; upstream defect recorded as FOUNDRY-ISSUES.md #53.
+  evidence:
+  - FOUNDRY-ISSUES.md #53
+- id: filtered-output-not-reachable-from-state
+  discovered_by: run-workflow-test
+  summary: A step can declare an output in out:/connections that its own state filters out of existence
+    (trim_galore report_file requires params.settingsType=custom and params.report=true; wrapper default
+    false). gxwf validate --strict --connections and Galaxy import both pass; first failure is the
+    invocation scheduler (output_not_found).
+  disposition: fixed-in-artifact (params/trimming blocks added to Trim Galore state in both artifacts);
+    recorded as FOUNDRY-ISSUES.md #55.
+  evidence:
+  - FOUNDRY-ISSUES.md #55
+- id: mdwmc-chosen-over-markduplicates
+  discovered_by: run-workflow-test
+  summary: The translation picked picard_MarkDuplicatesWithMateCigar where nf-core/rnaseq invokes
+    picard MarkDuplicates; MDWMC rejects coordinate-sorted STAR BAMs with unmapped reads at the end
+    (Records out of order: -1 < 1).
+  disposition: fixed-in-artifact (step retargeted to picard_MarkDuplicates, same repo/changeset/ports);
+    recorded as FOUNDRY-ISSUES.md #56.
+  evidence:
+  - FOUNDRY-ISSUES.md #56
+- id: gtffilter-step-not-translated
+  discovered_by: run-workflow-test
+  summary: nf-core's CUSTOM_GTFFILTER (drops records with empty transcript_id, replaces the GTF channel
+    for all downstream consumers) was not translated; salmon's geneMap parsing dies on the empty-tid
+    record deliberately present in the test GTF.
+  disposition: fixed-in-artifact (new GTF filter awk step wired to all six GTF consumers in both
+    artifacts); recorded as FOUNDRY-ISSUES.md #57.
+  evidence:
+  - FOUNDRY-ISSUES.md #57
+- id: bedclip-conda-env-broken-libmysqlclient
+  discovered_by: run-workflow-test
+  summary: rmarenco/bedclip 0.1.0 requirements resolve ucsc-*-332 builds that link
+    libmysqlclient.so.18 while the mulled env installs mysql-libs 8.x (.so.21) - faToTwoBit/twoBitInfo/
+    bedClip all exit 127 out of the box.
+  disposition: worked around in-environment (libmysqlclient.so.18 copied from the mysql-connector-c
+    6.1.11 package cache into the mulled env lib/); upstream defect recorded as FOUNDRY-ISSUES.md #58.
+  evidence:
+  - FOUNDRY-ISSUES.md #58
+- id: shell-code-in-awk-param-silent-empty-output
+  discovered_by: run-workflow-test
+  summary: tp_awk_tool's code param authored as shell (cut -f1,2) parses as a never-true gawk range
+    pattern - job green, output empty; downstream bedclip/wigtobigwig would consume an empty chrom.sizes.
+  disposition: fixed-in-artifact (code replaced with {print $1 "\t" $2} in both artifacts); recorded
+    as FOUNDRY-ISSUES.md #59.
+  evidence:
+  - FOUNDRY-ISSUES.md #59
+
+- id: job-work-dir-accumulates-in-tmpfs-kills-star-with-opaque-error
+  discovered_by: run-workflow-test
+  summary: Galaxy daemon's job_working_directory on a 24 GB tmpfs accumulated ~18 GB of stale
+    completed-job work dirs across test attempts; STAR genomeGenerate died writing SAindex with
+    the tool's own FILE* error text, not an ENOSPC signal. Ecosystem/environment defect, no
+    artifact changes.
+  disposition: environment-cleaned (stale work dirs removed, datasets under files/ untouched);
+    recorded as FOUNDRY-ISSUES.md #65. Recommendation: enable Galaxy's cleanup job or place
+    job_working_directory on real disk for daemon use.
+  evidence:
+  - FOUNDRY-ISSUES.md #65
+
+- id: collection-output-test-without-element-tests-demands-path
+  discovered_by: run-workflow-test
+  summary: planemo's for_collections selects the collection checker only via the element_tests
+    key; a class: Collection + element_count declaration without element_tests falls through to
+    the single-file path and fails post-run with "No path specified for expected output file".
+  disposition: fixed-in-artifact (element_tests added to salmon_quant and coverage_bigwigs in
+    both test files); recorded as FOUNDRY-ISSUES.md #66.
+  evidence:
+  - FOUNDRY-ISSUES.md #66
+
+decisions:
+
+decisions:
+- id: no-galaxy-data-tables
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: Surface every reference asset as an explicit optional Galaxy data input; introduce no dbkey-keyed
+    or generic .loc data tables.
+  rationale: 'v1 posture from nextflow-to-galaxy-reference-data-mapping: data tables require admin install
+    and break the portability-first stance; a translated workflow must run on a stock Galaxy with user-uploaded
+    inputs.'
+  evidence:
+  - igenomes-key-no-galaxy-data-table
+- id: igenomes-key-dropped-from-surface
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: Do not carry params.genome (nor igenomes_base / igenomes_ignore, both hidden) into the Galaxy
+    interface; the workflow surface starts at the resolved per-asset paths.
+  rationale: The key resolves through an admin-curated catalogue with no Galaxy equivalent under the no-data-tables
+    posture; the mapping note pins that the Galaxy surface for key-expanded bundles starts at per-asset
+    paths, not the key. Summary carries no getGenomeAttribute-derived params for this pipeline, so there
+    are no resolved key-expanded paths to inherit either.
+  evidence:
+  - igenomes-key-no-galaxy-data-table
+- id: workflow-tier-build-for-heavy-indexes
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: 'Deviate from the default in-tool rebuild posture for the heavy aligner/pseudo-aligner indexes
+    (star, hisat2, salmon, kallisto, bowtie2, rsem, bbsplit, sortmerna, bowtie2_rrna): optional explicit
+    index input plus a single workflow-tier build-on-absence step mirroring PREPARE_GENOME_INDICES.'
+  rationale: These indexes are consumed by per-sample map-outs (ALIGN_STAR, FASTQ_ALIGN_HISAT2, ALIGN_BOWTIE2,
+    QUANTIFY_*), so in-tool rebuild would re-execute once per sample — far above the mapping note's ~3-rebuild
+    deviation threshold (STAR genome generation is hours per sample). Cheap derived assets (fai, gene_bed,
+    transcript_fasta, splicesites) keep the in-tool default.
+  evidence:
+  - reference-consumption-split
+  - rebuild-unverified-positive-form
+- id: path-lists-become-fasta-collections
+  decided_by: nextflow-summary-to-galaxy-reference-data
+  decision: Treat ribo_database_manifest and bbsplit_fasta_list as list collections of FASTA datasets
+    in the target interface, not as uploaded path-list files.
+  rationale: Their contents are local filesystem paths that cannot resolve on a stock Galaxy; the collection
+    shape feeds the same SortMeRNA/BBSplit index builds the source performs.
+  evidence:
+  - path-list-inputs-not-portable
+- id: reads-as-sample-sheet-paired-or-unpaired
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Model params.input as a single required collection input 'samplesheet' with collection_type
+    sample_sheet:paired_or_unpaired; the sample column becomes the element identifier, strandedness a
+    restricted string column, seq_platform/seq_center optional strings, percent_mapped an optional float;
+    fastq elements typed fastqsanger(.gz).
+  rationale: sample_sheets[0] (nf-schema, assets/schema_input.json) pins required fastq_1 plus optional
+    fastq_2 path columns with .f(ast)?q(.gz) patterns — the galaxy-sample-sheet-collections mapping makes
+    this exactly the paired_or_unpaired variant, and per-row strandedness metadata must survive into the
+    alignment steps (classifyStrand / salmon lib type).
+  evidence:
+  - samplesheet-materialization-not-in-channels
+- id: reference-inputs-pinned
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Pin the phase-2 per-asset table as named Galaxy inputs (reference_fasta, annotation_gtf, annotation_gff,
+    gene_bed, transcriptome_fasta, additional_fasta, hisat2_splicesites, star_index, hisat2_index, rsem_index,
+    salmon_index, kallisto_index, bowtie2_index, bbsplit_index, sortmerna_index, bowtie2_rrna_index, kraken_db,
+    rrna_fastas, bbsplit_ref_fastas, sylph_dbs, sylph_taxonomies, multiqc_config, multiqc_logo, multiqc_methods_description),
+    all optional at the gxformat2 level with the FASTA+GTF/GFF core and branch-gated requiredness stated
+    in doc text.
+  rationale: Inherits no-galaxy-data-tables, igenomes-key-dropped-from-surface, workflow-tier-build-for-heavy-indexes,
+    and path-lists-become-fasta-collections from phase 2; gxformat2 cannot express the gtf-or-gff disjunction
+    or required-when-conditional gating, so those stay documented losses rather than fabricated enforcement.
+  evidence:
+  - igenomes-key-no-galaxy-data-table
+  - path-list-inputs-not-portable
+- id: save-flags-become-explicit-outputs
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Drop all ten save_* publish toggles from the interface and replace them with an explicit workflow
+    output set (multiqc_report, gene_counts, gene_tpm, transcript_counts, aligned_bams, bam_stats, star_alignment_log,
+    salmon_quant, coverage_bigwigs, deseq2_qc_plots, deseq2_pca_values, pipeline_versions).
+  rationale: 'Per the control-param note, pure publishDir toggles are excluded and Galaxy output exposure
+    becomes a workflow-design choice; the explicit table keeps the useful intermediates (BAMs, stats,
+    logs) permanently addressable for tests instead of behind flags. Caveat: with conditionals[] near-empty,
+    whether any save_* also adds a tool argument could not be fully traced.'
+  evidence:
+  - branch-evidence-partial
+- id: prokaryotic-promoted-to-input
+  decided_by: nextflow-summary-to-galaxy-interface
+  decision: Expose hidden params.prokaryotic as a public boolean input despite its nf-schema hidden flag.
+  rationale: 'The control-param note''s impact rule promotes params that change scientific output: prokaryotic
+    is referenced outside publishDir (edge params.prokaryotic ?: false into PREPARE_GENOME_REFERENCES)
+    and alters alignment parameters for bacterial/archaeal data. Hidden alone is not an exclusion ground
+    when the impact assessment says problematic.'
+  evidence:
+  - branch-evidence-partial
+- id: per-sample-collections-keyed-by-sample-id
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Key every per-sample collection on the samplesheet's sample column value (element identifier),
+    with forward/reverse roles inside each paired_or_unpaired element; drop the multi-run merge tier (obligation
+    carried in multi-run-sample-merge-no-collection-carrier).
+  rationale: 'The skill''s identifier procedure requires source-own names checked against the source test''s
+    rows: sample ids are unique per dataset and _1/_2 are mates only on paired rows in the fixture, and
+    the source''s own output prefixes ("${prefix}" = meta.id) already use the sample id.'
+  evidence:
+  - per-sample-axis-fixture-verified
+- id: enum-branches-as-when-gated-subworkflows
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Translate the aligner / pseudo_aligner / trimmer / ribo_removal_tool / markdup enum branches
+    as when:-gated subgraphs at the source's subworkflow boundaries (ALIGN_STAR vs FASTQ_ALIGN_HISAT2,
+    trimgalore vs fastp, sortmerna vs ribodetector, umi-dedup vs picard-markdup), with pick_value(first_non_null
+    / first_or_skip) fan-ins on compatible branch outputs and sentinel filtering before unconditional
+    consumers.
+  rationale: 'The conditional note''s heuristics fire on every axis: the boundaries are the source''s
+    own subworkflows, the branches are tool-swaps with narrow take/emit interfaces, and the cascade between
+    selection and consumption is short; with workflow.conditionals[] carrying 1 of ~26 guards, enums plus
+    subworkflow take-blocks are the only branch evidence.'
+  evidence:
+  - branch-evidence-partial
+- id: index-fan-in-first-non-null
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Wire each heavy index consumer to pick_value(first_non_null(explicit index input, build step
+    output)) where the build step is when:-gated on the selecting enum and an empty index input; rrna_fastas
+    and bbsplit_ref_fastas list collections feed the sortmerna / bbsplit / bowtie2_rrna build steps directly.
+  rationale: Implements phase-2's workflow-tier-build-for-heavy-indexes decision as the conditional-route-between-alternative-outputs
+    pattern; this also completes the wiring the resolved path-list-inputs-not-portable entry left open.
+  evidence:
+  - reference-consumption-split
+  - workflow-tier-build-for-heavy-indexes
+- id: salmon-quant-extracted-named-outputs
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Resolve the SALMON_QUANT per-sample directory shape by requiring the quantification step to
+    expose quant.sf and quant.genes.sf as named outputs (wrapper-level file selection), yielding two per-sample
+    list collections; a placeholder extract step is the declared fallback if no wrapper supports it.
+  rationale: Galaxy list collections hold datasets, not directories; the interface flagged this as its
+    open question 4 and left the decision to the data flow. Naming outputs at the wrapper is the smaller
+    workflow than a directory-extract transform and keeps the salmon_quant interface output addressable
+    per sample.
+  evidence:
+  - per-sample-axis-fixture-verified
+- id: metadata-reattachment-bridge
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Re-attach per-row metadata (strandedness primarily; percent_mapped for the checkSamplesAfterGrouping
+    threshold) after map-over steps via the sample-sheet-to-tabular bridge or rules-DSL add_column_from_sample_sheet_index,
+    joined to mapped outputs by element identifier, instead of relying on collection metadata propagation.
+  rationale: The sample-sheet note is explicit that column_definitions metadata does not survive Galaxy
+    map-over; featureCounts' -s flag and salmon's lib-type argument both consume per-sample strandedness
+    in the source.
+  evidence:
+  - per-sample-axis-fixture-verified
+- id: multiqc-consumes-flattened-union
+  decided_by: nextflow-summary-to-galaxy-data-flow
+  decision: Feed MultiQC a flattened union of the per-family QC artifact collections (list:list families
+    flattened once at the fan-in), replacing the source's ch_multiqc_files.transpose() and dropping the
+    ch_per_sample_bundle_raw loose-join bundle.
+  rationale: 'transpose and join(remainder: true) are user-review triggers in the operators note with
+    no Galaxy recipe; since every artifact family is keyed by the same sample-id axis and MultiQC consumes
+    files individually, flatten-by-identifier is representation-equivalent for the consumer. Flagged for
+    user review in the brief''s open questions rather than presented as settled.'
+  evidence:
+  - multiqc-bundle-loose-join-and-transpose
+- id: bowtie2-salmon-branch-restored
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: Restore the bowtie2_salmon aligner branch in the draft (align_bowtie2 + build_bowtie2_index
+    + bowtie2_index_resolved fan-in) despite its omission from the data-flow brief.
+  rationale: The interface brief pins the enum value and the source pipeline implements it; the data-flow
+    brief's tier list is incomplete rather than a decision to drop (no ledger entry or user-review flag
+    records a drop), so restoration is fidelity, not invention.
+  evidence:
+  - bowtie2-salmon-branch-omitted-in-data-flow
+- id: identity-pins-from-iwc-exemplar
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: Emit fastp (trim_fastp), rna_star (align_star), featurecounts (featurecounts), multiqc (multiqc)
+    and all pick_value fan-in steps as Identity-pinned (concrete tool_id from the phase-5 exemplar, tool_version
+    TODO, ports and state deferred) rather than fully Deferred.
+  rationale: Phase 5 validated these exact tool IDs against the IWC corpus and the exemplar subgraph;
+    the draft contract's Identity-pinned tier exists for exactly this evidence level, and it shrinks the
+    per-step loop's discovery surface without pre-deciding versions or ports.
+  evidence:
+  - iwc-strandedness-workflow-level-precedent
+  - iwc-cached-genome-precedent
+- id: cached-genome-happy-path-declined
+  decided_by: nextflow-summary-to-galaxy-template
+  decision: Keep build-on-absence as the only index-resolution route in the draft; do not add a cached-genome
+    restricted-string input as a happy path alongside it.
+  rationale: The phase-5 routing suggestion (conditional cached-genome source) conflicts with the pinned
+    no-galaxy-data-tables posture and the phase-3 interface (all reference assets as explicit user inputs);
+    introducing a cached-genome param would require an admin-installed data-manager genome and reopen
+    a settled decision. Recorded so the divergence from the routing note is visible rather than silent.
+  evidence:
+  - iwc-cached-genome-precedent
+  - no-galaxy-data-tables
+- id: bowtie2-in-tool-index-build
+  decided_by: repair-galaxy-draft-topology
+  decision: align_bowtie2 uses devteam/bowtie2 with reference_genome|source=history, own_file <- transcriptome_fasta;
+    the index chain (input, build step, resolver) is removed.
+  rationale: The maintained wrapper builds in-tool from a history FASTA per sample; replacing it with
+    two authored tools (tar-index builder + tar-consuming aligner) would discard a maintained wrapper
+    for a build-once optimization that matters only for large references, and bowtie2 indexes a transcriptome
+    here.
+  evidence:
+  - bowtie2-prebuilt-index-unconsumable

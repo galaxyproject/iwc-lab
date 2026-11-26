@@ -1,0 +1,865 @@
+{
+   "a_galaxy_workflow": "true",
+   "format-version": "0.1",
+   "name": "nf-core/rnaseq 3.27.0 default-route projection (star_salmon + trimgalore + salmon)",
+   "annotation": "Concrete projection of galaxy-workflow-draft.gxwf.yml for the default test route: trimmer=trimgalore, aligner=star_salmon, pseudo_aligner=salmon, PE reads, no UMI, no rRNA removal, no BBSplit, markduplicates on. Deferred steps (capability gaps, see open-requirements.ledger.yml) and degenerate fan-ins are collapsed to the taken branch. 12 of the draft outputs are reachable; deseq2_qc needs factor metadata the interface does not carry.",
+   "tags": [],
+   "uuid": "3bf87cac-8699-44ae-8b07-91991f9c1d88",
+   "steps": {
+      "0": {
+         "id": 0,
+         "type": "data_collection_input",
+         "label": "PE reads",
+         "name": "PE reads",
+         "annotation": "Paired-end RNA-seq reads (per-sample pairs)",
+         "tool_state": {
+            "name": "PE reads",
+            "optional": false,
+            "collection_type": "list:paired"
+         },
+         "position": {
+            "left": 0,
+            "top": 0
+         },
+         "input_connections": {},
+         "inputs": [
+            {
+               "name": "PE reads",
+               "description": ""
+            }
+         ],
+         "outputs": [],
+         "workflow_outputs": [],
+         "post_job_actions": {}
+      },
+      "1": {
+         "id": 1,
+         "type": "data_input",
+         "label": "Genome FASTA",
+         "name": "Genome FASTA",
+         "annotation": "Reference genome FASTA (indexes built in-tool)",
+         "tool_state": {
+            "name": "Genome FASTA",
+            "optional": false,
+            "format": [
+               "fasta"
+            ]
+         },
+         "position": {
+            "left": 10,
+            "top": 10
+         },
+         "input_connections": {},
+         "inputs": [
+            {
+               "name": "Genome FASTA",
+               "description": ""
+            }
+         ],
+         "outputs": [],
+         "workflow_outputs": [],
+         "post_job_actions": {}
+      },
+      "2": {
+         "id": 2,
+         "type": "data_input",
+         "label": "Annotation GTF",
+         "name": "Annotation GTF",
+         "annotation": "Gene annotation GTF",
+         "tool_state": {
+            "name": "Annotation GTF",
+            "optional": false,
+            "format": [
+               "gtf"
+            ]
+         },
+         "position": {
+            "left": 20,
+            "top": 20
+         },
+         "input_connections": {},
+         "inputs": [
+            {
+               "name": "Annotation GTF",
+               "description": ""
+            }
+         ],
+         "outputs": [],
+         "workflow_outputs": [],
+         "post_job_actions": {}
+      },
+      "3": {
+         "id": 3,
+         "type": "data_input",
+         "label": "Transcriptome FASTA",
+         "name": "Transcriptome FASTA",
+         "annotation": "Transcriptome FASTA (salmon history mode)",
+         "tool_state": {
+            "name": "Transcriptome FASTA",
+            "optional": false,
+            "format": [
+               "fasta"
+            ]
+         },
+         "position": {
+            "left": 30,
+            "top": 30
+         },
+         "input_connections": {},
+         "inputs": [
+            {
+               "name": "Transcriptome FASTA",
+               "description": ""
+            }
+         ],
+         "outputs": [],
+         "workflow_outputs": [],
+         "post_job_actions": {}
+      },
+      "4": {
+         "id": 4,
+         "type": "tool",
+         "label": "FastQC raw",
+         "name": "toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.74+galaxy1",
+         "tool_version": "0.74+galaxy1",
+         "tool_state": {
+            "__page__": 0
+         },
+         "input_connections": {
+            "input_file": [
+               {
+                  "id": 0,
+                  "output_name": "output"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 40,
+            "top": 40
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [],
+         "tool_shed_repository": {
+            "changeset_revision": "2c64fded1286",
+            "name": "fastqc",
+            "owner": "devteam",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "5": {
+         "id": 5,
+         "type": "tool",
+         "label": "Trim Galore",
+         "name": "toolshed.g2.bx.psu.edu/repos/bgruening/trim_galore/trim_galore",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/bgruening/trim_galore/trim_galore/2.3.0+galaxy0",
+         "tool_version": "2.3.0+galaxy0",
+         "tool_state": {
+            "__page__": 0,
+            "singlePaired": {
+               "sPaired": "paired_collection"
+            },
+            "params": {
+               "settingsType": "custom",
+               "report": true
+            },
+            "trimming": {
+               "settingsType": "default"
+            }
+         },
+         "input_connections": {
+            "singlePaired|input_mate_pairs": [
+               {
+                  "id": 0,
+                  "output_name": "output"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 50,
+            "top": 50
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [],
+         "tool_shed_repository": {
+            "changeset_revision": "7462caed7065",
+            "name": "trim_galore",
+            "owner": "bgruening",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "6": {
+         "id": 6,
+         "type": "tool",
+         "label": "STAR alignment",
+         "name": "toolshed.g2.bx.psu.edu/repos/iuc/rgrnastar/rna_star",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/rgrnastar/rna_star/2.7.11b+galaxy1",
+         "tool_version": "2.7.11b+galaxy1",
+         "tool_state": {
+            "__page__": 0,
+            "singlePaired": {
+               "sPaired": "paired_collection"
+            },
+            "refGenomeSource": {
+               "geneSource": "history",
+               "GTFconditional": {
+                  "GTFselect": "with-gtf"
+               }
+            },
+            "outWig": {
+               "outWigType": "bedGraph"
+            }
+         },
+         "input_connections": {
+            "singlePaired|input": [
+               {
+                  "id": 5,
+                  "output_name": "trimmed_reads_paired_collection"
+               }
+            ],
+            "refGenomeSource|genomeFastaFiles": [
+               {
+                  "id": 1,
+                  "output_name": "output"
+               }
+            ],
+            "refGenomeSource|GTFconditional|sjdbGTFfile": [
+               {
+                  "id": 18,
+                  "output_name": "outfile"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 60,
+            "top": 60
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [
+            {
+               "output_name": "output_log",
+               "label": "bam_stats"
+            }
+         ],
+         "tool_shed_repository": {
+            "changeset_revision": "d8d32326fbfb",
+            "name": "rgrnastar",
+            "owner": "iuc",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "7": {
+         "id": 7,
+         "type": "tool",
+         "label": "MarkDuplicates",
+         "name": "toolshed.g2.bx.psu.edu/repos/devteam/picard/picard_MarkDuplicates",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/devteam/picard/picard_MarkDuplicates/3.1.1.0",
+         "tool_version": "3.1.1.0",
+         "tool_state": {
+            "__page__": 0
+         },
+         "input_connections": {
+            "inputFile": [
+               {
+                  "id": 6,
+                  "output_name": "mapped_reads"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 70,
+            "top": 70
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [
+            {
+               "output_name": "outFile",
+               "label": "aligned_bams"
+            }
+         ],
+         "tool_shed_repository": {
+            "changeset_revision": "bdd173c2d3e3",
+            "name": "picard",
+            "owner": "devteam",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "8": {
+         "id": 8,
+         "type": "tool",
+         "label": "salmon quant",
+         "name": "toolshed.g2.bx.psu.edu/repos/bgruening/salmon/salmon",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/bgruening/salmon/salmon/1.10.3+galaxy1",
+         "tool_version": "1.10.3+galaxy1",
+         "tool_state": {
+            "__page__": 0,
+            "quant_type": {
+               "qtype": "reads",
+               "refTranscriptSource": {
+                  "TranscriptSource": "history"
+               },
+               "input": {
+                  "single_or_paired": {
+                     "single_or_paired_opts": "paired_collection"
+                  }
+               }
+            }
+         },
+         "input_connections": {
+            "quant_type|input|single_or_paired|input_1": [
+               {
+                  "id": 5,
+                  "output_name": "trimmed_reads_paired_collection"
+               }
+            ],
+            "quant_type|refTranscriptSource|s_index|fasta": [
+               {
+                  "id": 3,
+                  "output_name": "output"
+               }
+            ],
+            "geneMap": [
+               {
+                  "id": 18,
+                  "output_name": "outfile"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 80,
+            "top": 80
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [
+            {
+               "output_name": "output_quant",
+               "label": "salmon_quant"
+            },
+            {
+               "output_name": "output_gene_quant",
+               "label": "salmon_gene_quant"
+            }
+         ],
+         "tool_shed_repository": {
+            "changeset_revision": "0080a42718be",
+            "name": "salmon",
+            "owner": "bgruening",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "9": {
+         "id": 9,
+         "type": "tool",
+         "label": "tximport gene counts",
+         "name": "toolshed.g2.bx.psu.edu/repos/iuc/tximport/tximport",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/tximport/tximport/1.30.0",
+         "tool_version": "1.30.0",
+         "tool_state": {
+            "__page__": 0,
+            "input_source_selector": {
+               "input_source": "salmon"
+            },
+            "gene_id_source_selector": {
+               "gene_id_source": "external_file",
+               "gff_source_selector": {
+                  "gff_source": "history",
+                  "gff_tx2gene_selector": {
+                     "mapping_file_option": "gff_gtf"
+                  }
+               }
+            }
+         },
+         "input_connections": {
+            "counts_file": [
+               {
+                  "id": 8,
+                  "output_name": "output_quant"
+               }
+            ],
+            "gene_id_source_selector|gff_source_selector|gff_tx2gene_selector|own_gff": [
+               {
+                  "id": 18,
+                  "output_name": "outfile"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 90,
+            "top": 90
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [
+            {
+               "output_name": "gene_level_values",
+               "label": "gene_counts"
+            }
+         ],
+         "tool_shed_repository": {
+            "changeset_revision": "6d005443b243",
+            "name": "tximport",
+            "owner": "iuc",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "10": {
+         "id": 10,
+         "type": "tool",
+         "label": "featureCounts",
+         "name": "toolshed.g2.bx.psu.edu/repos/iuc/featurecounts/featurecounts",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/featurecounts/featurecounts/2.1.1+galaxy3",
+         "tool_version": "2.1.1+galaxy3",
+         "tool_state": {
+            "__page__": 0,
+            "anno": {
+               "anno_select": "history"
+            },
+            "pe_parameters": {
+               "paired_end_status": "PE_fragments"
+            }
+         },
+         "input_connections": {
+            "alignment": [
+               {
+                  "id": 7,
+                  "output_name": "outFile"
+               }
+            ],
+            "anno|reference_gene_sets": [
+               {
+                  "id": 18,
+                  "output_name": "outfile"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 100,
+            "top": 100
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [],
+         "tool_shed_repository": {
+            "changeset_revision": "ce3c9c1ac7ca",
+            "name": "featurecounts",
+            "owner": "iuc",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "11": {
+         "id": 11,
+         "type": "tool",
+         "label": "samtools faidx",
+         "name": "toolshed.g2.bx.psu.edu/repos/iuc/samtools_faidx/samtools_faidx",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/samtools_faidx/samtools_faidx/1.22+galaxy1",
+         "tool_version": "1.22+galaxy1",
+         "tool_state": {
+            "__page__": 0
+         },
+         "input_connections": {
+            "input": [
+               {
+                  "id": 1,
+                  "output_name": "output"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 110,
+            "top": 110
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [],
+         "tool_shed_repository": {
+            "changeset_revision": "78d6d62d4ce4",
+            "name": "samtools_faidx",
+            "owner": "iuc",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "12": {
+         "id": 12,
+         "type": "tool",
+         "label": "chrom sizes",
+         "name": "toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0",
+         "tool_version": "9.11+galaxy0",
+         "tool_state": {
+            "__page__": 0,
+            "code": "{print $1 \"\\t\" $2}"
+         },
+         "input_connections": {
+            "infile": [
+               {
+                  "id": 11,
+                  "output_name": "output"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 120,
+            "top": 120
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [],
+         "tool_shed_repository": {
+            "changeset_revision": "30b60202d990",
+            "name": "text_processing",
+            "owner": "bgruening",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "13": {
+         "id": 13,
+         "type": "tool",
+         "label": "bedclip",
+         "name": "toolshed.g2.bx.psu.edu/repos/rmarenco/bedclip/bedclip",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/rmarenco/bedclip/bedclip/0.1.0",
+         "tool_version": "0.1.0",
+         "tool_state": {
+            "__page__": 0
+         },
+         "input_connections": {
+            "bed_file": [
+               {
+                  "id": 6,
+                  "output_name": "signal_unique_str1"
+               }
+            ],
+            "ref_genome": [
+               {
+                  "id": 1,
+                  "output_name": "output"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 130,
+            "top": 130
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [],
+         "tool_shed_repository": {
+            "changeset_revision": "3275f20f1368",
+            "name": "bedclip",
+            "owner": "rmarenco",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "14": {
+         "id": 14,
+         "type": "tool",
+         "label": "bedGraphToBigWig",
+         "name": "toolshed.g2.bx.psu.edu/repos/iuc/ucsc_wigtobigwig/ucsc_wigtobigwig",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/ucsc_wigtobigwig/ucsc_wigtobigwig/502+galaxy0",
+         "tool_version": "502+galaxy0",
+         "tool_state": {
+            "__page__": 0,
+            "hist_or_builtin": {
+               "genome_type_select": "history"
+            }
+         },
+         "input_connections": {
+            "hist_or_builtin|input1": [
+               {
+                  "id": 13,
+                  "output_name": "bed_clipped"
+               }
+            ],
+            "hist_or_builtin|chromfile": [
+               {
+                  "id": 12,
+                  "output_name": "outfile"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 140,
+            "top": 140
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [
+            {
+               "output_name": "out_file1",
+               "label": "coverage_bigwigs"
+            }
+         ],
+         "tool_shed_repository": {
+            "changeset_revision": "99390cf2f6a9",
+            "name": "ucsc_wigtobigwig",
+            "owner": "iuc",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "15": {
+         "id": 15,
+         "type": "tool",
+         "label": "StringTie assembly",
+         "name": "toolshed.g2.bx.psu.edu/repos/iuc/stringtie/stringtie",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/stringtie/stringtie/3.0.3+galaxy3",
+         "tool_version": "3.0.3+galaxy3",
+         "tool_state": {
+            "__page__": 0,
+            "input_options": {
+               "input_mode": "short_reads"
+            },
+            "guide": {
+               "use_guide": "yes",
+               "guide_source": {
+                  "guide_gff_select": "history"
+               }
+            }
+         },
+         "input_connections": {
+            "input_options|input_bam": [
+               {
+                  "id": 7,
+                  "output_name": "outFile"
+               }
+            ],
+            "guide|guide_source|ref_hist": [
+               {
+                  "id": 18,
+                  "output_name": "outfile"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 150,
+            "top": 150
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [
+            {
+               "output_name": "output_gtf",
+               "label": "stringtie_gtfs"
+            }
+         ],
+         "tool_shed_repository": {
+            "changeset_revision": "ff365aa70906",
+            "name": "stringtie",
+            "owner": "iuc",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "16": {
+         "id": 16,
+         "type": "tool",
+         "label": "StringTie merge",
+         "name": "toolshed.g2.bx.psu.edu/repos/iuc/stringtie/stringtie_merge",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/stringtie/stringtie_merge/3.0.3+galaxy3",
+         "tool_version": "3.0.3+galaxy3",
+         "tool_state": {
+            "__page__": 0
+         },
+         "input_connections": {
+            "input_gtf": [
+               {
+                  "id": 15,
+                  "output_name": "output_gtf"
+               }
+            ],
+            "guide_gff": [
+               {
+                  "id": 18,
+                  "output_name": "outfile"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 160,
+            "top": 160
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [
+            {
+               "output_name": "out_gtf",
+               "label": "stringtie_merged"
+            }
+         ],
+         "tool_shed_repository": {
+            "changeset_revision": "ff365aa70906",
+            "name": "stringtie",
+            "owner": "iuc",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "17": {
+         "id": 17,
+         "type": "tool",
+         "label": "MultiQC",
+         "name": "toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc",
+         "annotation": "",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5",
+         "tool_version": "1.35+galaxy5",
+         "tool_state": {
+            "__page__": 0,
+            "results": [
+               {
+                  "software_cond": {
+                     "software": "fastqc",
+                     "output": [
+                        {}
+                     ]
+                  }
+               },
+               {
+                  "software_cond": {
+                     "software": "cutadapt"
+                  }
+               },
+               {
+                  "software_cond": {
+                     "software": "star",
+                     "output": [
+                        {
+                           "type": {
+                              "type": "log"
+                           }
+                        }
+                     ]
+                  }
+               },
+               {
+                  "software_cond": {
+                     "software": "picard",
+                     "output": [
+                        {
+                           "type": "markdups"
+                        }
+                     ]
+                  }
+               },
+               {
+                  "software_cond": {
+                     "software": "featureCounts"
+                  }
+               }
+            ]
+         },
+         "input_connections": {
+            "results_0|software_cond|output_0|input": [
+               {
+                  "id": 4,
+                  "output_name": "text_file"
+               }
+            ],
+            "results_1|software_cond|input": [
+               {
+                  "id": 5,
+                  "output_name": "report_file"
+               }
+            ],
+            "results_2|software_cond|output_0|type|input": [
+               {
+                  "id": 6,
+                  "output_name": "output_log"
+               }
+            ],
+            "results_3|software_cond|output_0|input": [
+               {
+                  "id": 7,
+                  "output_name": "metrics_file"
+               }
+            ],
+            "results_4|software_cond|input": [
+               {
+                  "id": 10,
+                  "output_name": "output_summary"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 170,
+            "top": 170
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [
+            {
+               "output_name": "html_report",
+               "label": "multiqc_report"
+            }
+         ],
+         "tool_shed_repository": {
+            "changeset_revision": "94b6bea727ae",
+            "name": "multiqc",
+            "owner": "iuc",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      },
+      "18": {
+         "id": 18,
+         "type": "tool",
+         "label": "GTF filter",
+         "name": "toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool",
+         "annotation": "Drop records with empty transcript_id (nf-core CUSTOM_GTFFILTER equivalent)",
+         "tool_id": "toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0",
+         "tool_version": "9.11+galaxy0",
+         "tool_state": {
+            "__page__": 0,
+            "code": "/transcript_id \"[^\"]+\"/"
+         },
+         "input_connections": {
+            "infile": [
+               {
+                  "id": 2,
+                  "output_name": "output"
+               }
+            ]
+         },
+         "post_job_actions": {},
+         "position": {
+            "left": 40,
+            "top": 420
+         },
+         "inputs": [],
+         "outputs": [],
+         "workflow_outputs": [],
+         "tool_shed_repository": {
+            "changeset_revision": "30b60202d990",
+            "name": "text_processing",
+            "owner": "bgruening",
+            "tool_shed": "toolshed.g2.bx.psu.edu"
+         }
+      }
+   }
+}

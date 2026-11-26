@@ -1,0 +1,197 @@
+run_record_version: 1
+pipeline: nextflow-to-galaxy
+run_slug: rnaseq-to-galaxy
+harness_name: pipeline-nextflow-to-galaxy
+source_revision: 5
+assembly_sha256: 13eee555defeab7c71ff22b7bfbf5d6c75fa4d962de231aaf7ebf8b358fcffa2
+foundry_head: 94ce4ea20107680b467d03e8889b63689774e325
+started_at: '2026-11-10T15:05:00Z'
+finished_at: '2026-11-12T12:45:00Z'
+status: completed
+completion_note: 'All 13 phases discharged. Final runtime verdict: not-run (environmental network
+  blocker on tool installation, 4 attempts capped); workflow itself validates green on every
+  static gate and was accepted by Galaxy import on every attempt. See workflow-test-result.json
+  and workflow-debug-report.md.'
+source:
+  pipeline: nf-core/rnaseq
+  version: 3.27.0
+  path: /home/user/biohack/rnaseq
+  git_commit: 95dbcd9
+phases:
+- n: 1
+  kind: mold
+  skill: summarize-nextflow
+  status: done
+  artifacts:
+  - id: summary-nextflow
+    file: summary-nextflow.json
+    at: 2026-11-10 15:09:00+00:00
+- n: 2
+  kind: mold
+  skill: nextflow-summary-to-galaxy-reference-data
+  status: done
+  artifacts:
+  - id: nextflow-galaxy-reference-data
+    file: nextflow-galaxy-reference-data.md
+    at: 2026-11-10 15:48:00+00:00
+  - id: open-requirements-ledger
+    file: open-requirements.ledger.yml
+    at: 2026-11-10 15:50:00+00:00
+- n: 3
+  kind: mold
+  skill: nextflow-summary-to-galaxy-interface
+  status: done
+  artifacts:
+  - id: nextflow-galaxy-interface
+    file: nextflow-galaxy-interface.md
+    at: 2026-11-11 09:35:00+00:00
+  - id: open-requirements-ledger
+    file: open-requirements.ledger.yml
+    at: 2026-11-11 09:37:00+00:00
+- n: 4
+  kind: mold
+  skill: nextflow-summary-to-galaxy-data-flow
+  status: done
+  artifacts:
+  - id: nextflow-galaxy-data-flow
+    file: nextflow-galaxy-data-flow.md
+    at: 2026-11-11 11:30:00+00:00
+  - id: open-requirements-ledger
+    file: open-requirements.ledger.yml
+    at: 2026-11-11 11:32:00+00:00
+- n: 5
+  kind: mold
+  skill: compare-against-iwc-exemplar
+  status: done
+  artifacts:
+  - id: iwc-comparison-notes
+    file: iwc-comparison-notes.md
+    at: 2026-11-11 13:05:00+00:00
+  - id: iwc-exemplar-gxformat2
+    file: iwc-exemplar.gxwf.yml
+    at: 2026-11-11 12:55:00+00:00
+  - id: open-requirements-ledger
+    file: open-requirements.ledger.yml
+    at: 2026-11-11 13:06:00+00:00
+- n: 6
+  kind: mold
+  skill: nextflow-summary-to-galaxy-template
+  status: done
+  artifacts:
+  - id: galaxy-workflow-draft
+    file: galaxy-workflow-draft.gxwf.yml
+    at: 2026-11-11 15:55:00+00:00
+    validation: 'gxwf draft-validate: 0 structure / 0 topology / 0 semantic errors,
+      0 warnings; survey 260 TODO sentinels, 52 _plan_* steps; --concrete --offline:
+      projection empty (all concrete-component upstreams deferred)'
+  - id: open-requirements-ledger
+    file: open-requirements.ledger.yml
+    at: 2026-11-11 15:56:00+00:00
+- n: 7
+  kind: mold
+  skill: advance-galaxy-draft-step
+  status: done
+  artifacts:
+  - id: galaxy-workflow-draft
+    file: galaxy-workflow-draft.gxwf.yml
+    at: '2026-11-11T16:40:00Z'
+    note: 'completed in batch mode (operator-mandated): 14 iterations total (1 implement
+      + 8 index-chain repairs + 4 wiring batches + 1 deferral pass); 36 steps Resolved,
+      11 Deferred with documented capability gaps; validation green throughout'
+  - id: open-requirements-ledger
+    file: open-requirements.ledger.yml
+    at: 2026-11-11 17:31:00+00:00
+  iterations: 14
+- n: 8
+  kind: branch
+  pattern: test-data-resolution
+  status: done
+  selected: 'find-test-data (test-data-resolution branch: nextflow-to-test-data first
+    leg, then find-test-data)'
+  artifacts:
+  - id: test-data-refs
+    file: test-data-refs.json
+    at: '2026-11-11T17:05:00Z'
+    validation: 'foundry validate-test-data-refs: valid; 9 resolved (8 declared fixtures
+      + 1 derived gene_bed), 4 honest gaps (sylph x2, bbsplit_index optional/unexercised,
+      see reasons)'
+- n: 9
+  kind: mold
+  skill: nextflow-test-to-galaxy-test-plan
+  status: done
+  artifacts:
+  - id: galaxy-test-plan
+    file: galaxy-test-plan.yml
+    at: '2026-11-11T18:55:00Z'
+    validation: 'foundry validate-galaxy-workflow-test-plan: valid (after amendment for the concrete
+      projection: deseq2_qc_plots/gene_bed/rrna_fastas moved to omissions, gene_counts corrected from
+      collection to merged dataset - tximport counts_file is a multiple input)'
+- n: 10
+  kind: mold
+  skill: implement-galaxy-workflow-test
+  status: done
+  artifacts:
+  - id: concrete-workflow
+    file: galaxy-workflow.gxwf.yml
+    at: '2026-11-11T19:40:00Z'
+    validation: 'gxwf validate (format2): 14/14 steps ok, 0 structure / 0 encoding errors (fixed after
+      4 connection-key/encoding defects: STAR GTFselect discriminator, salmon section-wrapped conditional,
+      stringtie guide nesting, multiqc per-software repeat shapes)'
+  - id: workflow-tests
+    file: galaxy-workflow.gxwf-tests.yml
+    at: '2026-11-11T19:45:00Z'
+    validation: 'gxwf validate-tests --workflow galaxy-workflow.gxwf.yml: valid, cross-check clean (all
+      4 job inputs known, assertions resolve to declared outputs)'
+  - id: staged-test-data
+    file: test-data/
+    at: '2026-11-11T19:45:00Z'
+    validation: 3 PE samples (WT_REP1, WT_REP2, RAP1_IAA_30M_REP1), genome.fasta, genes_with_empty_tid.gtf,
+      transcriptome.fasta
+- n: 11
+  kind: mold
+  skill: validate-galaxy-workflow
+  status: done
+  artifacts:
+  - id: galaxy-workflow-validation-result
+    file: galaxy-workflow-validation-result.json
+    at: '2026-11-12T10:20:00Z'
+    validation: 'gxwf validate --json --strict --connections --cache-dir tool-cache: 14/14 steps ok,
+      0 structure/encoding errors, 0 skipped connections, connection_report.valid=true (after two
+      in-phase repairs: 14x tool_state->state key rename, 2 label/key alignments); native .ga
+      conversion cross-check clean (0 null connections)'
+- n: 12
+  kind: mold
+  skill: run-workflow-test
+  status: done
+  artifacts:
+  - id: workflow-test-result
+    file: workflow-test-result.json
+    at: '2026-11-13T09:40:00Z'
+    validation: 'status: pass (closed set pass|fail|test-definition-missing|not-run), final verdict
+      after resume: 12 attempts total. Attempts 1-4 (ephemeral planemo Galaxy) exit 1 - Tool Shed
+      network instability + zero-retry install path (#51/#52). Attempts 5-12 (rectify-and-rerun
+      directive against a persistent Galaxy daemon on 127.0.0.1:9210): every failure root-caused,
+      cured, and documented as FOUNDRY-ISSUES.md #53-#66. Attempt 12: all 1 test(s) executed
+      passed - 19/19 steps scheduled, 36/36 jobs ok, 9/9 output assertions satisfied.'
+  - id: planemo-run-logs
+    file: planemo-test.log + planemo-test-run{2,3,4,6,7,8,9,10,11,12}.log
+    at: '2026-11-13T09:26:00Z'
+    note: evidence for all executed attempts; attempt-12 log ends "All 1 test(s) executed passed /
+      galaxy-workflow.ga_0: passed / EXIT: 0". Structured report workflow-test-output.json
+      (status success, invocation 1519dce9cb4cf6f8) + HTML report workflow-test-output.html.
+- n: 13
+  kind: mold
+  skill: debug-galaxy-workflow-output
+  status: done
+  artifacts:
+  - id: workflow-debug-report
+    file: workflow-debug-report.md
+    at: '2026-11-13T09:45:00Z'
+    validation: 'debug targets materialized during the attempt-5+ resume: 14 numbered findings
+      (#53-#66) each with root cause, cure, upstream-vs-our-artifact classification, and upstream
+      candidates - including Galaxy invocation API exact-version semantics (#53), wrapper
+      output-filter reachability (#55), translation gaps vs nf-core (#56 MarkDuplicates variant,
+      #57 CUSTOM_GTFFILTER), conda packaging defect (#58), authoring semantics traps (#59 awk,
+      #61 format, #62 fastqc raw-vs-html, #64 picard type select), operational rules (#63
+      API-key newest-wins, #65 tmpfs job-work-dir exhaustion), and planemo collection-test schema
+      (#66). Test now passes; debug loop closed.'

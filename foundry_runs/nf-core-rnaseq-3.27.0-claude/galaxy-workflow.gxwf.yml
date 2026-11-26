@@ -1,0 +1,309 @@
+class: GalaxyWorkflow
+label: nf-core/rnaseq 3.27.0 default-route projection (star_salmon + trimgalore + salmon)
+doc: 'Concrete projection of galaxy-workflow-draft.gxwf.yml for the default test route: trimmer=trimgalore,
+  aligner=star_salmon, pseudo_aligner=salmon, PE reads, no UMI, no rRNA removal, no BBSplit, markduplicates
+  on. Deferred steps (capability gaps, see open-requirements.ledger.yml) and degenerate fan-ins are collapsed
+  to the taken branch. 12 of the draft outputs are reachable; deseq2_qc needs factor metadata the interface
+  does not carry.'
+inputs:
+  PE reads:
+    type: collection
+    collection_type: list:paired
+    optional: false
+    doc: Paired-end RNA-seq reads (per-sample pairs)
+  Genome FASTA:
+    type: data
+    optional: false
+    format: [fasta]
+    doc: Reference genome FASTA (indexes built in-tool)
+  Annotation GTF:
+    type: data
+    optional: false
+    format: [gtf]
+    doc: Gene annotation GTF
+  Transcriptome FASTA:
+    type: data
+    optional: false
+    format: [fasta]
+    doc: Transcriptome FASTA (salmon history mode)
+outputs:
+- id: multiqc_report
+  outputSource: MultiQC/html_report
+  doc: MultiQC aggregate report.
+- id: gene_counts
+  outputSource: tximport gene counts/gene_level_values
+  doc: Merged gene count matrix (tximport).
+- id: aligned_bams
+  outputSource: MarkDuplicates/outFile
+  doc: Per-sample aligned+deduped BAMs.
+- id: bam_stats
+  outputSource: STAR alignment/output_log
+  doc: Per-sample STAR Log.final.out.
+- id: salmon_quant
+  outputSource: salmon quant/output_quant
+  doc: Per-sample quant.sf collection.
+- id: salmon_gene_quant
+  outputSource: salmon quant/output_gene_quant
+  doc: Per-sample quant.genes.sf collection.
+- id: coverage_bigwigs
+  outputSource: bedGraphToBigWig/out_file1
+  doc: Forward-strand coverage bigWigs (str1 wiring).
+- id: stringtie_gtfs
+  outputSource: StringTie assembly/output_gtf
+  doc: Per-sample StringTie assemblies.
+- id: stringtie_merged
+  outputSource: StringTie merge/out_gtf
+  doc: Merged transcript GTF.
+steps:
+- id: FastQC raw
+  label: FastQC raw
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc
+  tool_version: 0.74+galaxy1
+  in:
+  - id: input_file
+    source: PE reads
+  out:
+  - id: html_file
+  - id: text_file
+  state: {}
+- id: Trim Galore
+  label: Trim Galore
+  tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/trim_galore/trim_galore
+  tool_version: 2.3.0+galaxy0
+  in:
+  - id: singlePaired|input_mate_pairs
+    source: PE reads
+  out:
+  - id: trimmed_reads_paired_collection
+  - id: report_file
+  state:
+    singlePaired:
+      sPaired: paired_collection
+    params:
+      settingsType: custom
+      report: true
+    trimming:
+      settingsType: default
+- id: GTF filter
+  label: GTF filter
+  tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool
+  tool_version: 9.11+galaxy0
+  in:
+  - id: infile
+    source: Annotation GTF
+  out:
+  - id: outfile
+  state:
+    code: '/transcript_id "[^"]+"/'
+  doc: Drop records with empty transcript_id (nf-core CUSTOM_GTFFILTER equivalent).
+- id: STAR alignment
+  label: STAR alignment
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/rgrnastar/rna_star
+  tool_version: 2.7.11b+galaxy1
+  in:
+  - id: singlePaired|input
+    source: Trim Galore/trimmed_reads_paired_collection
+  - id: refGenomeSource|genomeFastaFiles
+    source: Genome FASTA
+  - id: refGenomeSource|GTFconditional|sjdbGTFfile
+    source: GTF filter/outfile
+  out:
+  - id: mapped_reads
+  - id: transcriptome_mapped_reads
+  - id: reads_per_gene
+  - id: output_log
+  - id: splice_junctions
+  - id: signal_unique_str1
+  state:
+    singlePaired:
+      sPaired: paired_collection
+    refGenomeSource:
+      geneSource: history
+      GTFconditional:
+        GTFselect: with-gtf
+    outWig:
+      outWigType: bedGraph
+- id: MarkDuplicates
+  label: MarkDuplicates
+  tool_id: toolshed.g2.bx.psu.edu/repos/devteam/picard/picard_MarkDuplicates
+  tool_version: 3.1.1.0
+  in:
+  - id: inputFile
+    source: STAR alignment/mapped_reads
+  out:
+  - id: outFile
+  - id: metrics_file
+  state: {}
+- id: salmon quant
+  label: salmon quant
+  tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/salmon/salmon
+  tool_version: 1.10.3+galaxy1
+  in:
+  - id: quant_type|input|single_or_paired|input_1
+    source: Trim Galore/trimmed_reads_paired_collection
+  - id: quant_type|refTranscriptSource|s_index|fasta
+    source: Transcriptome FASTA
+  - id: geneMap
+    source: GTF filter/outfile
+  out:
+  - id: output_quant
+  - id: output_gene_quant
+  state:
+    quant_type:
+      qtype: reads
+      input:
+        single_or_paired:
+          single_or_paired_opts: paired_collection
+      refTranscriptSource:
+        TranscriptSource: history
+- id: tximport gene counts
+  label: tximport gene counts
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/tximport/tximport
+  tool_version: 1.30.0
+  in:
+  - id: counts_file
+    source: salmon quant/output_quant
+  - id: gene_id_source_selector|gff_source_selector|gff_tx2gene_selector|own_gff
+    source: GTF filter/outfile
+  out:
+  - id: gene_level_values
+  state:
+    input_source_selector:
+      input_source: salmon
+    gene_id_source_selector:
+      gene_id_source: external_file
+      gff_source_selector:
+        gff_source: history
+        gff_tx2gene_selector:
+          mapping_file_option: gff_gtf
+- id: featureCounts
+  label: featureCounts
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/featurecounts/featurecounts
+  tool_version: 2.1.1+galaxy3
+  in:
+  - id: alignment
+    source: MarkDuplicates/outFile
+  - id: anno|reference_gene_sets
+    source: GTF filter/outfile
+  out:
+  - id: output_medium
+  - id: output_summary
+  state:
+    anno:
+      anno_select: history
+    pe_parameters:
+      paired_end_status: PE_fragments
+- id: samtools faidx
+  label: samtools faidx
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/samtools_faidx/samtools_faidx
+  tool_version: 1.22+galaxy1
+  in:
+  - id: input
+    source: Genome FASTA
+  out:
+  - id: output
+  state: {}
+- id: chrom sizes
+  label: chrom sizes
+  tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool
+  tool_version: 9.11+galaxy0
+  in:
+  - id: infile
+    source: samtools faidx/output
+  out:
+  - id: outfile
+  state:
+    code: '{print $1 "\t" $2}'
+- id: bedclip
+  label: bedclip
+  tool_id: toolshed.g2.bx.psu.edu/repos/rmarenco/bedclip/bedclip
+  tool_version: 0.1.0
+  in:
+  - id: bed_file
+    source: STAR alignment/signal_unique_str1
+  - id: ref_genome
+    source: Genome FASTA
+  out:
+  - id: bed_clipped
+  state: {}
+- id: bedGraphToBigWig
+  label: bedGraphToBigWig
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/ucsc_wigtobigwig/ucsc_wigtobigwig
+  tool_version: 502+galaxy0
+  in:
+  - id: hist_or_builtin|input1
+    source: bedclip/bed_clipped
+  - id: hist_or_builtin|chromfile
+    source: chrom sizes/outfile
+  out:
+  - id: out_file1
+  state:
+    hist_or_builtin:
+      genome_type_select: history
+- id: StringTie assembly
+  label: StringTie assembly
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/stringtie/stringtie
+  tool_version: 3.0.3+galaxy3
+  in:
+  - id: input_options|input_bam
+    source: MarkDuplicates/outFile
+  - id: guide|guide_source|ref_hist
+    source: GTF filter/outfile
+  out:
+  - id: output_gtf
+  state:
+    input_options:
+      input_mode: short_reads
+    guide:
+      use_guide: 'yes'
+      guide_source:
+        guide_gff_select: history
+- id: StringTie merge
+  label: StringTie merge
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/stringtie/stringtie_merge
+  tool_version: 3.0.3+galaxy3
+  in:
+  - id: input_gtf
+    source: StringTie assembly/output_gtf
+  - id: guide_gff
+    source: GTF filter/outfile
+  out:
+  - id: out_gtf
+  state: {}
+- id: MultiQC
+  label: MultiQC
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc
+  tool_version: 1.35+galaxy5
+  in:
+  - id: results_0|software_cond|output_0|input
+    source: FastQC raw/text_file
+  - id: results_1|software_cond|input
+    source: Trim Galore/report_file
+  - id: results_2|software_cond|output_0|type|input
+    source: STAR alignment/output_log
+  - id: results_3|software_cond|output_0|input
+    source: MarkDuplicates/metrics_file
+  - id: results_4|software_cond|input
+    source: featureCounts/output_summary
+  out:
+  - id: html_report
+  - id: stats
+  state:
+    results:
+    - software_cond:
+        software: fastqc
+        output:
+        - {}
+    - software_cond:
+        software: cutadapt
+    - software_cond:
+        software: star
+        output:
+        - type:
+            type: log
+    - software_cond:
+        software: picard
+        output:
+        - type: markdups
+    - software_cond:
+        software: featureCounts

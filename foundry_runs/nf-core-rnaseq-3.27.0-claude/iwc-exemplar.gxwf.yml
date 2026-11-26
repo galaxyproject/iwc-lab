@@ -1,0 +1,739 @@
+class: GalaxyWorkflow
+label: 'RNA-Seq Analysis: Paired-End Read Processing and Quantification (relevant subgraph)'
+doc: 'Bounded subgraph extracted per compare-against-iwc-exemplar: paired FASTQ collection -> fastp ->
+  rna_star (cached built-in genome) -> featurecounts (strandedness via map_param_value, gated by boolean
+  when) -> counts subworkflow (pick_value) -> MultiQC -> pick_value outputs. Excludes coverage bigwig
+  subgraphs, More QC, StringTie/Cufflinks FPKM, and the extra-QC MultiQC branch (pick_from_1 pruned from
+  the pick_value steps).'
+inputs:
+- id: Collection paired FASTQ files
+  type: collection
+  collection_type: list:paired
+  optional: false
+  fields: null
+  column_definitions: null
+  doc: Should be a list of paired-end RNA-seq fastqs
+- id: Forward adapter
+  type: string
+  optional: true
+  doc: 'This is optional. Fastp will use overlapping. If you want to specify, for Nextera use: CTGTCTCTTATACACATCTCCGAGCCCACGAGAC,
+    for TruSeq: GATCGGAAGAGCACACGTCTGAACTCCAGTCAC or AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC'
+- id: Reverse adapter
+  type: string
+  optional: true
+  doc: 'This is optional. Fastp will use overlapping. If you want to specify, for Nextera use: CTGTCTCTTATACACATCTGACGCTGCCGACGA,
+    for TruSeq: GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT or AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT'
+- id: Reference genome
+  type: string
+  optional: false
+  restrictOnConnections: true
+  doc: Select the reference genome
+- id: GTF file of annotation
+  type: data
+  optional: false
+  doc: GTF compatible with the reference genome. Mind the UCSC/Ensembl differences in chromosome naming.
+- id: Strandedness
+  type: string
+  optional: false
+  restrictions:
+  - stranded - forward
+  - stranded - reverse
+  - unstranded
+  doc: For stranded RNA, reverse means that the read is complementary to the coding sequence, forward
+    means that the read is in the same orientation as the coding sequence
+- id: Use featureCounts for generating count tables
+  type: boolean
+  optional: false
+  doc: Use featureCounts tool instead of RNA STAR?
+outputs:
+- id: Mapped Reads
+  outputSource: 'STAR: map and count and coverage splitted/mapped_reads'
+- id: Counts Table
+  outputSource: _unlabeled_step_25/Counts Table
+- id: MultiQC HTML report
+  outputSource: MultiQC HTML report/data_param
+- id: MultiQC stats
+  outputSource: MultiQC stats/data_param
+steps:
+- id: _unlabeled_step_11
+  tool_id: __FLATTEN__
+  tool_version: 1.0.0
+  in:
+  - id: input
+    source: Collection paired FASTQ files
+  out:
+  - id: output
+    hide: true
+  tool_state:
+    input:
+      __class__: ConnectedValue
+    join_identifier: _
+  uuid: dddbd652-fe4f-42c8-a2ff-bdc259d4928c
+- id: remove adapters + bad quality bases
+  label: remove adapters + bad quality bases
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/fastp/fastp/1.4.0+galaxy0
+  tool_version: 1.4.0+galaxy0
+  tool_shed_repository:
+    changeset_revision: 4990e6f1348f
+    name: fastp
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: single_paired|adapter_trimming_options|adapter_sequence1
+    source: Forward adapter
+  - id: single_paired|adapter_trimming_options|adapter_sequence2
+    source: Reverse adapter
+  - id: single_paired|paired_input
+    source: Collection paired FASTQ files
+  out:
+  - id: output_paired_coll
+    hide: true
+  - id: report_json
+    hide: true
+  tool_state:
+    duplicated_reads:
+      handling_options:
+        eval_dups: --dont_eval_duplication
+        __current_case__: 0
+    filter_options:
+      quality_filtering_options:
+        disable_quality_filtering: false
+        qualified_quality_phred: '30'
+        unqualified_percent_limit: null
+        n_base_limit: null
+      length_filtering_options:
+        disable_length_filtering: false
+        length_required: '15'
+        length_limit: null
+      low_complexity_filter:
+        enable_low_complexity_filter: false
+        complexity_threshold: null
+    output_options:
+      report_html: false
+      report_json: true
+    overrepresented_sequence_analysis:
+      overrepresentation_analysis: false
+      overrepresentation_sampling: null
+    read_mod_options:
+      polyg_tail_trimming:
+        trimming_select: ''
+        __current_case__: 1
+        poly_g_min_len: null
+      polyx_tail_trimming:
+        polyx_trimming_select: ''
+        __current_case__: 1
+      umi_processing:
+        umi: false
+        umi_loc: null
+        umi_len: null
+        umi_prefix: null
+      cutting_by_quality_options:
+        cut_front_select:
+          cut_front: ''
+          __current_case__: 1
+        cut_tail_select:
+          cut_tail: ''
+          __current_case__: 1
+        cut_right_select:
+          cut_right: ''
+          __current_case__: 1
+      base_correction_options:
+        correction: false
+    single_paired:
+      single_paired_selector: paired_collection
+      __current_case__: 1
+      paired_input:
+        __class__: ConnectedValue
+      merge_reads:
+        merge: ''
+        __current_case__: 1
+      adapter_trimming_options:
+        disable_adapter_trimming: false
+        adapter_sequence1:
+          __class__: ConnectedValue
+        adapter_sequence2:
+          __class__: ConnectedValue
+        detect_adapter_for_pe: false
+      global_trimming_options:
+        trim_front1: null
+        trim_tail1: null
+        trim_front2: null
+        trim_tail2: null
+  uuid: 80d855a6-7a77-46e9-9124-9dd3d9d72cc1
+- id: No extra QC
+  label: No extra QC
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/map_param_value/map_param_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: 022a635f2283
+    name: map_param_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_param_type|input_param
+    source: Generate additional QC reports
+  out:
+  - id: output_param_boolean
+    hide: true
+  tool_state:
+    input_param_type:
+      type: boolean
+      __current_case__: 3
+      input_param:
+        __class__: ConnectedValue
+      mappings:
+      - __index__: 0
+        from: false
+        to: 'true'
+    output_param_type: boolean
+    unmapped:
+      on_unmapped: default
+      __current_case__: 2
+      default_value: 'false'
+  uuid: a407fbdd-8cde-48dd-a8a1-0bbb3da06ee9
+- id: get reference_genome as text parameter
+  label: get reference_genome as text parameter
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/compose_text_param/compose_text_param/0.1.1
+  tool_version: 0.1.1
+  tool_shed_repository:
+    changeset_revision: e188c9826e0f
+    name: compose_text_param
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: components_0|param_type|component_value
+    source: Reference genome
+  out:
+  - id: out1
+    hide: true
+  tool_state:
+    components:
+    - __index__: 0
+      param_type:
+        select_param_type: text
+        __current_case__: 0
+        component_value:
+          __class__: ConnectedValue
+  uuid: bcceb886-0592-4b3f-8b39-26fe79caeb62
+- id: Get featureCounts strandedness parameter
+  label: Get featureCounts strandedness parameter
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/map_param_value/map_param_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: 022a635f2283
+    name: map_param_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: input_param_type|input_param
+    source: Strandedness
+  out:
+  - id: output_param_text
+    hide: true
+  tool_state:
+    input_param_type:
+      type: text
+      __current_case__: 0
+      input_param:
+        __class__: ConnectedValue
+      mappings:
+      - __index__: 0
+        from: stranded - forward
+        to: '1'
+      - __index__: 1
+        from: stranded - reverse
+        to: '2'
+      - __index__: 2
+        from: unstranded
+        to: '0'
+    output_param_type: text
+    unmapped:
+      on_unmapped: fail
+      __current_case__: 1
+  uuid: 72d7d4d1-d1be-481c-b2a1-1e85192b2661
+- id: 'STAR: map and count and coverage splitted'
+  label: 'STAR: map and count and coverage splitted'
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/rgrnastar/rna_star/2.7.11b+galaxy1
+  tool_version: 2.7.11b+galaxy1
+  tool_shed_repository:
+    changeset_revision: 6e8618432bea
+    name: rgrnastar
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: refGenomeSource|GTFconditional|genomeDir
+    source: Reference genome
+  - id: refGenomeSource|GTFconditional|sjdbGTFfile
+    source: GTF file of annotation
+  - id: singlePaired|input
+    source: remove adapters + bad quality bases/output_paired_coll
+  out:
+  - id: output_log
+    hide: true
+  - id: reads_per_gene
+    hide: true
+    rename: Reads per gene from STAR
+  - id: signal_unique_str1
+    hide: true
+  - id: signal_unique_str2
+    hide: true
+  - id: signal_uniquemultiple_str1
+    hide: true
+  - id: signal_uniquemultiple_str2
+    hide: true
+  - id: splice_junctions
+    hide: true
+  - id: mapped_reads
+    rename: Mapped Reads
+  tool_state:
+    algo:
+      params:
+        settingsType: full
+        __current_case__: 3
+        seed:
+          seedSearchStartLmax: '50'
+          seedSearchStartLmaxOverLread: '1.0'
+          seedSearchLmax: '0'
+          seedMultimapNmax: '10000'
+          seedPerReadNmax: '1000'
+          seedPerWindowNmax: '50'
+          seedNoneLociPerWindow: '10'
+        align:
+          alignIntronMin: '20'
+          alignIntronMax: '1000000'
+          alignMatesGapMax: '1000000'
+          alignSJoverhangMin: '8'
+          alignSJstitchMismatchNmax:
+            alignSJstitchMismatchNmax1: '0'
+            alignSJstitchMismatchNmax2: '-1'
+            alignSJstitchMismatchNmax3: '0'
+            alignSJstitchMismatchNmax4: '0'
+          alignSJDBoverhangMin: '1'
+          alignSplicedMateMapLmin: '0'
+          alignSplicedMateMapLminOverLmate: '0.66'
+          alignWindowsPerReadNmax: '10000'
+          alignTranscriptsPerWindowNmax: '100'
+          alignTranscriptsPerReadNmax: '10000'
+          alignEndsType: Local
+          peOverlapNbasesMin: '0'
+          peOverlapMMp: '0.01'
+        chim_settings:
+          chimSegmentMin: '12'
+          chimScoreMin: '0'
+          chimScoreDropMax: '20'
+          chimScoreSeparation: '10'
+          chimScoreJunctionNonGTAG: '-1'
+          chimJunctionOverhangMin: '20'
+          chimSegmentReadGapMax: '0'
+          chimFilter: true
+          chimMainSegmentMultNmax: '10'
+          chimMultimapNmax: '1'
+          chimMultimapScoreRange: '1'
+        junction_limits:
+          limitOutSJoneRead: '1000'
+          limitOutSJcollapsed: '1000000'
+          limitSjdbInsertNsj: '1000000'
+    chimOutType: ''
+    filter:
+      basic_filters:
+      - exclude_unmapped
+      output_params2:
+        output_select2: 'yes'
+        __current_case__: 0
+        outFilterType: true
+        outFilterMultimapScoreRange: '1'
+        outFilterMultimapNmax: '20'
+        outFilterMismatchNmax: '999'
+        outFilterMismatchNoverLmax: '0.3'
+        outFilterMismatchNoverReadLmax: '0.04'
+        outFilterScoreMin: '0'
+        outFilterScoreMinOverLread: '0.66'
+        outFilterMatchNmin: '0'
+        outFilterMatchNminOverLread: '0.66'
+        outSAMmultNmax: '-1'
+        outSAMtlen: '1'
+    oformat:
+      outSAMattributes:
+      - NH
+      - HI
+      - AS
+      - nM
+      HI_offset: '1'
+      outSAMprimaryFlag: OneBestScore
+      outSAMmapqUnique: '255'
+      wasp_conditional:
+        waspOutputMode: ''
+        __current_case__: 1
+    outWig:
+      outWigType: bedGraph
+      __current_case__: 1
+      outWigTypeSecondWord: ''
+      outWigStrand: true
+      outWigReferencesPrefix: '-'
+      outWigNorm: true
+    perf:
+      outBAMsortingBinsN: '50'
+      winAnchorMultimapNmax: '50'
+    refGenomeSource:
+      geneSource: indexed
+      __current_case__: 0
+      GTFconditional:
+        GTFselect: without-gtf-with-gtf
+        __current_case__: 1
+        genomeDir:
+          __class__: ConnectedValue
+        sjdbGTFfile:
+          __class__: ConnectedValue
+        sjdbGTFfeatureExon: exon
+        sjdbOverhang: '100'
+        quantmode_output:
+          quantMode: GeneCounts
+          __current_case__: 1
+    singlePaired:
+      sPaired: paired_collection
+      __current_case__: 2
+      input:
+        __class__: ConnectedValue
+    twopass:
+      twopassMode: None
+      __current_case__: 0
+      twopass_read_subset: ''
+      sj_precalculated: ''
+  uuid: be1a277d-6d0d-4aaf-acea-9735426932b0
+- id: _unlabeled_step_21
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/featurecounts/featurecounts/2.1.1+galaxy1
+  tool_version: 2.1.1+galaxy1
+  tool_shed_repository:
+    changeset_revision: 37d067694d40
+    name: featurecounts
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: alignment
+    source: 'STAR: map and count and coverage splitted/mapped_reads'
+  - id: anno|reference_gene_sets
+    source: GTF file of annotation
+  - id: strand_specificity
+    source: Get featureCounts strandedness parameter/output_param_text
+  - id: when
+    source: Use featureCounts for generating count tables
+  out:
+  - id: output_short
+    hide: true
+  - id: output_summary
+    hide: true
+  tool_state:
+    alignment:
+      __class__: ConnectedValue
+    anno:
+      anno_select: history
+      __current_case__: 2
+      reference_gene_sets:
+        __class__: ConnectedValue
+      gff_feature_type: exon
+      gff_feature_attribute: gene_id
+      summarization_level: false
+    extended_parameters:
+      multifeatures:
+        multifeat: ''
+        __current_case__: 0
+      exon_exon_junction_read_counting_enabled:
+        count_exon_exon_junction_reads: ''
+        __current_case__: 1
+      long_reads: false
+      by_read_group: false
+      largest_overlap: false
+      min_overlap: '1'
+      frac_overlap: '0'
+      frac_overlap_feature: '0'
+      read_extension_5p: '0'
+      read_extension_3p: '0'
+      read_reduction: ''
+      R: false
+    format: tabdel_short
+    include_feature_length_file: false
+    pe_parameters:
+      paired_end_status: PE_fragments
+      __current_case__: 2
+      check_distance_enabled:
+        P: 'false'
+        __current_case__: 1
+      only_both_ends: false
+      exclude_chimerics: true
+    read_filtering_parameters:
+      mapping_quality: '0'
+      splitonly: ''
+      primary: false
+      ignore_dup: false
+    strand_specificity:
+      __class__: ConnectedValue
+  when: $(inputs.when)
+  uuid: 5a03b546-eb3f-4e99-b845-24c8f54ed183
+- id: _unlabeled_step_25
+  run:
+    class: GalaxyWorkflow
+    label: Process Count files
+    doc: null
+    inputs:
+    - id: Strandness param
+      type: string
+      optional: false
+      restrictions:
+      - stranded - forward
+      - stranded - reverse
+      - unstranded
+      doc: For stranded RNA, reverse means that the read is complementary to the coding sequence, forward
+        means that the read is in the same orientation as the coding sequence
+    - id: RNA STAR count tables
+      type: collection
+      collection_type: list
+      optional: false
+      fields: null
+      column_definitions: null
+      doc: Count tables collection from RNA STAR
+    - id: featureCounts count table
+      type: collection
+      collection_type: list
+      optional: true
+      fields: null
+      column_definitions: null
+      doc: Count tables collection from featureCounts
+    outputs:
+    - id: Counts Table
+      outputSource: Counts table/data_param
+    steps:
+    - id: awk command from strand for STAR counts
+      label: awk command from strand for STAR counts
+      tool_id: toolshed.g2.bx.psu.edu/repos/iuc/map_param_value/map_param_value/0.2.0
+      tool_version: 0.2.0
+      tool_shed_repository:
+        changeset_revision: 022a635f2283
+        name: map_param_value
+        owner: iuc
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: input_param_type|input_param
+        source: Strandness param
+      out:
+      - id: output_param_text
+        hide: true
+      tool_state:
+        input_param_type:
+          type: text
+          __current_case__: 0
+          input_param:
+            __class__: ConnectedValue
+          mappings:
+          - __index__: 0
+            from: stranded - forward
+            to: NR>4{print $1"\t"$3}
+          - __index__: 1
+            from: stranded - reverse
+            to: NR>4{print $1"\t"$4}
+          - __index__: 2
+            from: unstranded
+            to: NR>4{print $1"\t"$2}
+        output_param_type: text
+        unmapped:
+          on_unmapped: fail
+          __current_case__: 1
+      uuid: 2b9a5ca1-e974-450b-99b3-3fcce531154b
+    - id: Extract gene counts
+      label: Extract gene counts
+      tool_id: toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0
+      tool_version: 9.11+galaxy0
+      tool_shed_repository:
+        changeset_revision: 30b60202d990
+        name: text_processing
+        owner: bgruening
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: code
+        source: awk command from strand for STAR counts/output_param_text
+      - id: infile
+        source: RNA STAR count tables
+      out:
+      - id: outfile
+        hide: true
+        rename: HTS count like output
+      tool_state:
+        code:
+          __class__: ConnectedValue
+        infile:
+          __class__: ConnectedValue
+        variables: []
+      uuid: 34922bd3-4676-4f7d-8e05-af0ef0c1efa4
+    - id: Counts table
+      label: Counts table
+      doc: 'Counts Table '
+      tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+      tool_version: 0.2.0
+      tool_shed_repository:
+        changeset_revision: b19e21af9c52
+        name: pick_value
+        owner: iuc
+        tool_shed: toolshed.g2.bx.psu.edu
+      in:
+      - id: style_cond|type_cond|pick_from_0|value
+        source: featureCounts count table
+      - id: style_cond|type_cond|pick_from_1|value
+        source: Extract gene counts/outfile
+      out:
+      - id: data_param
+        rename: Counts Table
+      tool_state:
+        style_cond:
+          pick_style: first
+          __current_case__: 0
+          type_cond:
+            param_type: data
+            __current_case__: 4
+            pick_from:
+            - __index__: 0
+              value:
+                __class__: ConnectedValue
+            - __index__: 1
+              value:
+                __class__: ConnectedValue
+      uuid: d87cdd15-8b7c-4498-a818-7369ee4e006a
+    tags: []
+    uuid: b4899ccd-5709-45f3-b1ed-3212515fd08b
+    license: MIT
+  in:
+  - id: RNA STAR count tables
+    source: 'STAR: map and count and coverage splitted/reads_per_gene'
+  - id: Strandness param
+    source: Strandedness
+  - id: featureCounts count table
+    source: _unlabeled_step_21/output_short
+  out: []
+  uuid: d2ce20a9-5c27-4353-8311-9d52f53322dd
+- id: MultiQC without extra QC
+  label: MultiQC without extra QC
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+  tool_version: 1.35+galaxy5
+  tool_shed_repository:
+    changeset_revision: 94b6bea727ae
+    name: multiqc
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: results_0|software_cond|input
+    source: remove adapters + bad quality bases/report_json
+  - id: results_1|software_cond|output_0|type|input
+    source: 'STAR: map and count and coverage splitted/output_log'
+  - id: results_1|software_cond|output_1|type|input
+    source: 'STAR: map and count and coverage splitted/reads_per_gene'
+  - id: results_2|software_cond|input
+    source: _unlabeled_step_21/output_summary
+  - id: when
+    source: No extra QC/output_param_boolean
+  out:
+  - id: html_report
+    hide: true
+  - id: stats
+    hide: true
+  tool_state:
+    comment: ''
+    export: false
+    flat: false
+    image_content_input:
+      __class__: RuntimeValue
+    png_plots: false
+    results:
+    - __index__: 0
+      software_cond:
+        software: fastp
+        __current_case__: 8
+        input:
+          __class__: ConnectedValue
+    - __index__: 1
+      software_cond:
+        software: star
+        __current_case__: 29
+        output:
+        - __index__: 0
+          type:
+            type: log
+            __current_case__: 0
+            input:
+              __class__: ConnectedValue
+        - __index__: 1
+          type:
+            type: genecounts
+            __current_case__: 1
+            input:
+              __class__: ConnectedValue
+    - __index__: 2
+      software_cond:
+        software: featureCounts
+        __current_case__: 10
+        input:
+          __class__: ConnectedValue
+    title: ''
+  when: $(inputs.when)
+  uuid: 8e104453-589d-4a27-bd0d-4fc25ca17a31
+- id: MultiQC HTML report
+  label: MultiQC HTML report
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: b19e21af9c52
+    name: pick_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: style_cond|type_cond|pick_from_0|value
+    source: MultiQC without extra QC/html_report
+  - id: style_cond|type_cond|pick_from_1|value
+    source: null
+  out:
+  - id: data_param
+    rename: MultiQC HTML report
+  tool_state:
+    style_cond:
+      pick_style: only
+      __current_case__: 3
+      type_cond:
+        param_type: data
+        __current_case__: 4
+        pick_from:
+        - __index__: 0
+          value:
+            __class__: ConnectedValue
+        - __index__: 1
+          value:
+            __class__: ConnectedValue
+  uuid: 97fed5c4-2969-4e7f-82db-4b67c2ef049c
+- id: MultiQC stats
+  label: MultiQC stats
+  tool_id: toolshed.g2.bx.psu.edu/repos/iuc/pick_value/pick_value/0.2.0
+  tool_version: 0.2.0
+  tool_shed_repository:
+    changeset_revision: b19e21af9c52
+    name: pick_value
+    owner: iuc
+    tool_shed: toolshed.g2.bx.psu.edu
+  in:
+  - id: style_cond|type_cond|pick_from_0|value
+    source: MultiQC without extra QC/stats
+  - id: style_cond|type_cond|pick_from_1|value
+    source: null
+  out:
+  - id: data_param
+    rename: MultiQC stats
+  tool_state:
+    style_cond:
+      pick_style: only
+      __current_case__: 3
+      type_cond:
+        param_type: data
+        __current_case__: 4
+        pick_from:
+        - __index__: 0
+          value:
+            __class__: ConnectedValue
+        - __index__: 1
+          value:
+            __class__: ConnectedValue
+  uuid: d5c77346-1cc7-46fe-8abc-fd28935026a5

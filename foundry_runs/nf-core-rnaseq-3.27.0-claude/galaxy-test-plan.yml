@@ -1,0 +1,203 @@
+plan_version: '1'
+source:
+  kind: galaxy
+  name: nf-core/rnaseq 3.27.0
+  derived_from: test-evidence
+  notes: 'Translated from tests/default.nf-test Params: default (effective profile: test, real mode).
+    Snapshot evidence is name-only for pipeline outputs (md5 tokens cover multiqc report internals only);
+    assertions are therefore fixture-derived (staged sample set) or intent (wrapper-named outputs).'
+workflow:
+  title: rnaseq-to-galaxy draft (GalaxyWorkflowDraft), executed via concrete default-route projection
+  label_source: draft
+  notes: Labels read from galaxy-workflow-draft.gxwf.yml inputs/outputs maps (36 steps Resolved, 11 Deferred);
+    the executable artifact is galaxy-workflow.gxwf.yml (14-step default-route projection). The plan asserts
+    only outputs present in the concrete projection.
+test_cases:
+- id: default-star-salmon-smoke
+  doc: 'Default-route smoke test: paired reads subset of the declared test samplesheet through trim_galore,
+    STAR (history FASTA, in-tool index build), picard MarkDuplicates, salmon quant (history transcriptome
+    FASTA), tximport, featureCounts, bedclip+wigtobigwig coverage, and MultiQC aggregation.'
+  derived_from: mixed
+  provenance: 'tests/default.nf.test::Params: default'
+  job_inputs:
+  - workflow_label: samplesheet
+    label_status: resolved
+    description: 'PE subset of declared samplesheet_test.csv: WT_REP1 (SRR6357070), WT_REP2 (SRR6357072),
+      RAP1_IAA_30M_REP1 (SRR6357076) staged as list:paired.'
+    collection_shape: list:paired
+    datatype: fastqsanger.gz
+    fixture:
+      storage: remote-url
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/626c8fab639062eade4b10747e919341cbf9b41a/samplesheet/v3.10/samplesheet_test.csv
+      checksum: null
+      provenance: declared test-profile samplesheet; subset documented (mixed pairedness + duplicate names
+        unrepresentable in list:paired)
+  - workflow_label: reference_fasta
+    label_status: resolved
+    description: Test-profile genome FASTA (in-tool index builds).
+    collection_shape: null
+    datatype: fasta
+    fixture:
+      storage: remote-url
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/626c8fab639062eade4b10747e919341cbf9b41a/reference/genome.fasta
+      checksum: null
+      provenance: declared params.fasta
+  - workflow_label: annotation_gtf
+    label_status: resolved
+    description: Test-profile GTF (gunzip prep).
+    collection_shape: null
+    datatype: gtf
+    fixture:
+      storage: remote-url
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/626c8fab639062eade4b10747e919341cbf9b41a/reference/genes_with_empty_tid.gtf.gz
+      checksum: null
+      provenance: declared params.gtf; gunzip at staging
+  - workflow_label: transcriptome_fasta
+    label_status: resolved
+    description: Test-profile transcriptome FASTA (salmon history mode).
+    collection_shape: null
+    datatype: fasta
+    fixture:
+      storage: remote-url
+      location: https://raw.githubusercontent.com/nf-core/test-datasets/626c8fab639062eade4b10747e919341cbf9b41a/reference/transcriptome.fasta
+      checksum: null
+      provenance: declared params.transcript_fasta
+  expected_outputs:
+  - workflow_label: multiqc_report
+    label_status: resolved
+    description: Aggregated MultiQC HTML report.
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_file_size
+      intent: report produced and non-trivially sized
+      expected_value: 50000
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+    - family: file_ext
+      intent: html extension
+      expected_value: html
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: high
+  - workflow_label: gene_counts
+    label_status: resolved
+    description: Merged gene count matrix (tximport gene_level_values; counts_file is a multiple input,
+      so the salmon quant collection flattens into one run and one merged matrix).
+    output_kind: dataset
+    collection_shape: null
+    assertion_intent:
+    - family: has_file_size
+      intent: matrix produced with rows for staged-sample quant files
+      expected_value: 1000
+      tolerance: null
+      element_identifier: null
+      evidence: intent
+      confidence: medium
+  - workflow_label: aligned_bams
+    label_status: resolved
+    description: Per-sample STAR BAMs.
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_n_elements
+      intent: 'one BAM per staged sample (source snapshot: per-sample BAMs for every samplesheet row)'
+      expected_value: 3
+      tolerance: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: high
+    - family: has_element
+      intent: WT_REP1 element present
+      expected_value: null
+      tolerance: null
+      element_identifier: WT_REP1
+      evidence: fixture-derived
+      confidence: high
+  - workflow_label: salmon_quant
+    label_status: resolved
+    description: Per-sample salmon quant.sf (wrapper output_quant named output).
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_n_elements
+      intent: 'one quant.sf per staged sample (source snapshot: salmon/<sample>/quant.sf per sample)'
+      expected_value: 3
+      tolerance: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: high
+  - workflow_label: coverage_bigwigs
+    label_status: resolved
+    description: Forward-strand coverage bigWigs (draft narrows to str1; source emits forward+reverse+merged).
+    output_kind: collection
+    collection_shape: list
+    assertion_intent:
+    - family: has_n_elements
+      intent: one bigWig per staged sample (str1 only per narrowed wiring)
+      expected_value: 3
+      tolerance: null
+      element_identifier: null
+      evidence: fixture-derived
+      confidence: medium
+unresolved:
+- kind: collection-shape
+  description: Source samplesheet mixes PE and SE rows and repeats sample names (WT_REP1 x2, RAP1_UNINDUCED_REP2
+    x2); Galaxy list:paired cannot express either.
+  blocking: true
+  suggested_resolution: Stage PE-only 3-sample subset (done in this plan); a full-fidelity test needs
+    a record-typed samplesheet input or separate SE run.
+- kind: assertion
+  description: No upstream md5 tokens translate to Galaxy outputs (snapshot md5s cover multiqc report
+    internals); content-level checksums unavailable.
+  blocking: false
+  suggested_resolution: Existence/count/size assertions only (planemo-asserts-idioms tolerant checks).
+- kind: output-label
+  description: When-gated producers mean outputs appear only on the taken branch; pick_value fan-ins over
+    star/hisat2/bowtie2 must receive exactly one.
+  blocking: false
+  suggested_resolution: params aligner=star_salmon, pseudo_aligner=salmon, trimmer=trimgalore pinned in
+    the job.
+omissions:
+- target: deseq2_qc_plots output
+  reason: DESeq2 step excluded from the concrete projection - the interface carries a reads collection,
+    not the per-sample factor metadata (condition columns) the Galaxy deseq2 wrapper's sample_sheet
+    tabular requires (ledger deseq2-qc-factor-metadata-missing)
+  category: other
+- target: gene_bed job input
+  reason: consumed only by the deferred rseqc_suite (collapsed suite, not on the default concrete route)
+  category: out-of-scope
+- target: rrna_fastas job input
+  reason: rRNA filtering is off on the default route; the concrete projection omits the filter steps
+  category: out-of-scope
+- target: bbsplit_bin output
+  reason: producer deferred (no Shed wrapper for bbsplit binning)
+  category: out-of-scope
+- target: contaminant_screen report
+  reason: producer deferred (no wrapper)
+  category: out-of-scope
+- target: rseqc_suite reports
+  reason: collapsed suite not yet expanded to nilesh/rseqc steps
+  category: out-of-scope
+- target: reverse-strand bigWigs
+  reason: draft narrows coverage to signal_unique_str1 (ledger star-str2-coverage-dropped)
+  category: out-of-scope
+- target: pipeline_versions
+  reason: no Galaxy workflow-step equivalent (ledger versions-collect-no-equivalent); multiqc stats carries
+    versions
+  category: no-stable-checkpoint
+- target: content checksums on quant.sf / gene_counts
+  reason: wrapper-named outputs differ from source artifacts; upstream evidence is name-only
+  category: nondeterministic
+warnings:
+- code: no-upstream-expected-outputs
+  message: 'No assertion carries evidence=test-evidence: the nf-test snapshot records stable names/counts
+    for pipeline outputs but content md5s only for multiqc internals, which do not survive wrapper translation.'
+  path: 'tests/default.nf.test.snap:Params: default'
+- code: expression-derived-shape
+  message: samplesheet list:paired subset is a documented subsetting of the declared CSV (mixed pairedness,
+    duplicate sample names).
+  path: samplesheet_test.csv

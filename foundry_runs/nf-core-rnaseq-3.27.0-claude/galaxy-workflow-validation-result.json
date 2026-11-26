@@ -1,0 +1,78 @@
+{
+  "phase": 11,
+  "skill": "validate-galaxy-workflow",
+  "command": "npx --yes --package @galaxy-tool-util/cli@1.15.0 gxwf validate galaxy-workflow.gxwf.yml --json --strict --connections --cache-dir tool-cache",
+  "workflow_path": "galaxy-workflow.gxwf.yml",
+  "status": "pass",
+  "validation_sequence": [
+    {
+      "command": "npx --yes --package @galaxy-tool-util/cli@1.15.0 gxwf validate galaxy-workflow.gxwf.yml --json",
+      "exit_code": 0,
+      "result": "14/14 steps ok, 0 structure errors, 0 encoding errors (non-strict mode)"
+    },
+    {
+      "command": "npx --yes --package @galaxy-tool-util/cli@1.15.0 gxwf validate galaxy-workflow.gxwf.yml --json --strict --connections --cache-dir tool-cache",
+      "exit_code": 2,
+      "result": "14 encoding errors: every step uses \"tool_state\" instead of format2 \"state\"; 5 connections skipped with source_step NaN"
+    },
+    {
+      "command": "sed -i 's/^  tool_state:/  state:/' galaxy-workflow.gxwf.yml  # repair A (14 keys)",
+      "result": "format2 field misuse fixed"
+    },
+    {
+      "command": "sed -i (label: 'MarkDuplicates (picard)' -> 'MarkDuplicates'; label: 'chrom sizes (fai cut)' -> 'chrom sizes')  # repair B (2 labels)",
+      "result": "connection source labels aligned with step map keys"
+    },
+    {
+      "command": "npx --yes --package @galaxy-tool-util/cli@1.15.0 gxwf validate galaxy-workflow.gxwf.yml --json --strict --connections --cache-dir tool-cache",
+      "exit_code": 0,
+      "result": "PASS: 14/14 steps ok, 0 structure / 0 encoding errors, 0 warnings, 0 skipped connections, connection_report.valid=true"
+    },
+    {
+      "command": "npx --yes --package @galaxy-tool-util/cli@1.15.0 gxwf convert galaxy-workflow.gxwf.yml --to native --output /tmp/ph11-converted2.ga",
+      "exit_code": 0,
+      "result": "native .ga round-trip: 0 connections with null id (was 5 before repair B)"
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "error",
+      "message": "All 14 tool steps used the key \"tool_state\" instead of format2 \"state\". Default (non-strict) gxwf validate reported 0 encoding errors for the same file - only --strict-encoding flagged it.",
+      "field": "steps.*.tool_state -> steps.*.state",
+      "authoring_phase": 10 (implement-galaxy-workflow compile step),
+      "resolution": "fixed in phase 11 (sed rename, 14 occurrences); strict re-validation green",
+      "finding": "FOUNDRY-ISSUES.md #49"
+    },
+    {
+      "severity": "error",
+      "message": "5 connections referenced steps by map key where the step label differed (key 'MarkDuplicates' vs label 'MarkDuplicates (picard)'; key 'chrom sizes' vs label 'chrom sizes (fai cut)'). gxwf validate --connections reported source_step NaN for these; gxwf convert emitted input_connections with \"id\": null in the native .ga while still exiting 0.",
+      "steps": "featureCounts.alignment, StringTie assembly.input_options|input_bam, bedclip.ref_genome, bedGraphToBigWig.hist_or_builtin|chromfile, MultiQC.results_3|software_cond|output_0|input",
+      "authoring_phase": 10 (implement-galaxy-workflow compile step; label assignment)",
+      "resolution": "fixed in phase 11 by aligning the 2 labels with their keys; connections re-resolve (0 NaN, 0 null), full connection report green",
+      "finding": "FOUNDRY-ISSUES.md #50"
+    }
+  ],
+  "residual_runtime_risks": [
+    {
+      "risk": "STAR generates its genome index in-tool from the 234 KB test genome; real genomes would make this the slowest step, and STAR ~30GB RAM defaults may not fit small test containers.",
+      "proof_artifact": "planemo test job for STAR alignment step - wall time and exit status in planemo tool_test_output.json / galaxy job stderr"
+    },
+    {
+      "risk": "MultiQC per-software input port shapes (results_N|software_cond|... repeat nesting) were hand-fixed at compile (#45); a MultiQC version change could rename repeat sub-structure and silently drop an input.",
+      "proof_artifact": "MultiQC job stdout listing detected modules; multiqc_report output present in test run"
+    },
+    {
+      "risk": "bam_stats output is STAR's output_log relabelled (#48 - doc/wiring mismatch with source pipeline bam_stats); content is STAR log, not the source pipeline's bam_stats files.",
+      "proof_artifact": "bam_stats output content in test run (STAR Log.out vs source-pipeline bam_stats format)"
+    },
+    {
+      "risk": "trim_galore emits unpaired/hardtrim/mouse output collections that are not consumed; unconsumed collection outputs with zero elements can error in Galaxy collections framework.",
+      "proof_artifact": "Trim Galore job output collection element counts in test run"
+    },
+    {
+      "risk": "StringTie merge input_gtf receives the StringTie assembly output_gtf mapped over a list (non-reduced); Galaxy expects reduction for a multiple-input merge unless the input accepts collections natively.",
+      "proof_artifact": "StringTie merge job invocation in test run - if it receives a list:paired-style collection instead of flattened elements, it will fail to schedule"
+    }
+  ],
+  "notes": "Skill default contract satisfied: gxwf validate run with --json; diagnostics classified and routed to authoring phase 10; both defects repaired in-artifact and re-validated (strict + connections + native conversion cross-check). Default-mode false-green behavior (defects invisible without --strict / --connections) recorded as findings #49/#50."
+}
