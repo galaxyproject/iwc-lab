@@ -1,0 +1,1546 @@
+class: GalaxyWorkflow
+label: 'Metaboigniter: mzML quantification and compound identification'
+doc: This workflow performs paired MS1/MS12 LC-MS feature detection, cross-sample alignment, adduct annotation and feature linking with OpenMS, with optional requantification and SIRIUS/FingerID or MS2Query identification, to generate quantification and identification tables plus a MultiQC report. Input mzML files must be centroided and restricted to rows marked MS1 or MS12 in the source sample sheet; the separate-MS2 collection mode, in-workflow sample-sheet filtering, centroiding, unmapped-spectra identification and custom MS2Query training are not included.
+inputs:
+  quantification_samples:
+    type: collection
+    collection_type: list
+    format:
+    - mzml
+    optional: false
+    label: Centroided mzML samples (MS1 or MS12)
+    doc: 'Paired-mode collection of centroided mzML files: include only source rows at MS1 or MS12; each element ID must be the source sample identifier. MS12 files carry the MS2 spectra used later for identification.'
+  requantification:
+    type: boolean
+    default: false
+    label: Run requantification
+    doc: Detect and requantify features missing from the initial consensus using a library built from the linked features (source requantification branch).
+  identification:
+    type: boolean
+    default: false
+    label: Run compound identification
+    doc: Map MS2 spectra onto consensus features and run SIRIUS/FingerID and MS2Query (source identification branch). Requires MS12 samples.
+  polarity:
+    type: string
+    default: positive
+    restrictions:
+    - positive
+    - negative
+    label: Ionization polarity
+    doc: Polarity used for adduct decharging, MS2Query model selection and feature detection (source parameter polarity).
+  run_sirius:
+    type: boolean
+    default: false
+    label: Run SIRIUS search
+    doc: Run SIRIUS molecular formula and structure prediction on the mapped MS2 spectra. Only used when identification is enabled.
+  run_fingerid:
+    type: boolean
+    default: false
+    label: Run FingerID structure search
+    doc: Run CSI:FingerID structure search together with SIRIUS. Only used when SIRIUS is enabled.
+  run_ms2query:
+    type: boolean
+    default: false
+    label: Run MS2Query search
+    doc: Download the polarity-specific MS2Query models and score spectra against them. Only used when identification is enabled.
+outputs:
+- id: Quantification table
+  outputSource: Export quantification table/table
+- id: Requantified quantification table
+  outputSource: Export requantification table/table
+- id: Identified quantification table
+  outputSource: Export quantification and initial identification tables/results
+- id: Identified and requantified quantification table
+  outputSource: Export requantified quantification and identification tables/results
+- id: MultiQC report
+  outputSource: MultiQC report for quantification-only branch/html_report
+steps:
+  quantify:
+    label: Quantify centroided mzML samples
+    tool_id: toolshed.g2.bx.psu.edu/repos/galaxyp/openms_featurefindermetabo/FeatureFinderMetabo/3.1+galaxy0
+    tool_version: 3.1+galaxy0
+    in:
+      in: quantification_samples
+    out:
+    - id: out
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: galaxyp
+      name: openms_featurefindermetabo
+      changeset_revision: a49dde5a836e
+    state:
+      in:
+        __class__: ConnectedValue
+      algorithm:
+        common:
+          noise_threshold_int: 10
+          chrom_peak_snr: 3
+          chrom_fwhm: 5
+        mtd:
+          mass_error_ppm: 20
+          reestimate_mt_sd: true
+          quant_method: area
+          trace_termination_criterion: outlier
+          trace_termination_outliers: 5
+          min_sample_rate: 0.5
+          min_trace_length: 5
+          max_trace_length: -1
+        epd:
+          enabled: true
+          width_filtering: fixed
+          min_fwhm: 1
+          max_fwhm: 60
+          masstrace_snr_filtering: false
+        ffm:
+          local_rt_range: 10
+          local_mz_range: 6.5
+          charge_lower_bound: 1
+          charge_upper_bound: 1
+          report_summed_ints: false
+          enable_RT_filtering: true
+          isotope_filtering_model: metabolites (5% RMS)
+          mz_scoring_13C: false
+          use_smoothed_intensities: true
+          report_convex_hulls: false
+          remove_single_traces: false
+          mz_scoring_by_elements: false
+          elements: CHNOPS
+      adv_opts:
+        force: false
+        test: 'False'
+      OPTIONAL_OUTPUTS: []
+    doc: Detect and quantify features per sample with OpenMS FeatureFinderMetabo (source OPENMS_FEATUREFINDERMETABO), using the pipeline defaults for noise, trace and isotope filtering.
+  align_quantification_features:
+    label: Align quantified features across paired samples
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_mapaligner_poseclustering
+      version: 1.0.0
+      name: Metaboigniter MapAlignerPoseClustering
+      description: Align source FeatureFinderMetabo feature maps across paired mzML samples.
+      container: quay.io/biocontainers/openms:3.0.0--h8964181_0
+      shell_command: mkdir -p output && MapAlignerPoseClustering -in $(inputs.featurexml.map((input) => "'" + input.path + "'").join(" ")) -out $(inputs.featurexml.map((input) => "'output/" + input.element_identifier + ".featureXML'").join(" ")) -trafo_out $(inputs.featurexml.map((input) => "'output/" + input.element_identifier + ".trafoXML'").join(" "))
+      inputs:
+      - name: featurexml
+        type: data
+        format:
+        - featurexml
+        multiple: true
+      outputs:
+      - name: aligned_featurexml
+        type: collection
+        collection_type: list
+        discover_datasets:
+        - discover_via: pattern
+          directory: output
+          pattern: (?P<designation>.+)\.featureXML
+          format: featurexml
+      - name: trafoxml
+        type: collection
+        collection_type: list
+        discover_datasets:
+        - discover_via: pattern
+          directory: output
+          pattern: (?P<designation>.+)\.trafoXML
+          format: trafoxml
+    in:
+      featurexml: 7/out
+    out:
+    - id: aligned_featurexml
+    - id: trafoxml
+    doc: Align feature maps across samples with OpenMS MapAlignerPoseClustering and emit per-sample featureXML plus trafoXML (source OPENMS_MAPALIGNERPOSECLUSTERING, paired mode).
+  transform_quant_mzml:
+    label: Transform paired mzML retention times
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_maprttransformer
+      version: 1.0.0
+      name: Metaboigniter MapRTTransformer
+      description: Apply the per-sample retention-time transformation emitted by MapAlignerPoseClustering.
+      container: quay.io/biocontainers/openms:3.0.0--h8964181_0
+      shell_command: MapRTTransformer -in '$(inputs.mzml.path)' -out transformed.mzML -trafo_in '$(inputs.trafoxml.path)'
+      inputs:
+      - name: mzml
+        type: data
+        format:
+        - mzml
+      - name: trafoxml
+        type: data
+        format:
+        - trafoxml
+      outputs:
+      - name: aligned_mzml
+        type: data
+        format: mzml
+        from_work_dir: transformed.mzML
+    in:
+      mzml: quantification_samples
+      trafoxml: 8/trafoxml
+    out:
+    - id: aligned_mzml
+    doc: Apply each alignment trafoXML to its mzML with OpenMS MapRTTransformer so spectra and features share corrected retention times (source OPENMS_MAPRTTRANSFORMER).
+  annotate_initial_adduct:
+    label: Annotate initial feature maps with adducts
+    when: $((inputs.requantification !== true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_adduct_decharger
+      version: 1.0.0
+      name: Metaboigniter adduct decharger
+      description: Run the source workflow's OpenMS MetaboliteAdductDecharger process.
+      container: quay.io/biocontainers/openms:3.0.0--h8964181_0
+      shell_command: potential_adducts='H:+:0.6 Na:+:0.1 NH4:+:0.1 H-1O-1:+:0.1 H-3O-2:+:0.1'; negative_mode=''; if [ '$(inputs.polarity)' = 'negative' ]; then potential_adducts='H-1:-:0.8 H-3O-1:-:0.2'; negative_mode='-algorithm:MetaboliteFeatureDeconvolution:negative_mode'; fi; MetaboliteAdductDecharger -in '$(inputs.featurexml.path)' -out_fm annotated.featureXML -algorithm:MetaboliteFeatureDeconvolution:potential_adducts $potential_adducts $negative_mode -algorithm:MetaboliteFeatureDeconvolution:charge_min 1 -algorithm:MetaboliteFeatureDeconvolution:charge_max 1 -algorithm:MetaboliteFeatureDeconvolution:charge_span_max 1 -algorithm:MetaboliteFeatureDeconvolution:q_try feature -algorithm:MetaboliteFeatureDeconvolution:retention_max_diff 1.0 -algorithm:MetaboliteFeatureDeconvolution:retention_max_diff_local 1.0 -algorithm:MetaboliteFeatureDeconvolution:mass_max_diff 5 -algorithm:MetaboliteFeatureDeconvolution:unit ppm -algorithm:MetaboliteFeatureDeconvolution:max_neutrals 1 -algorithm:MetaboliteFeatureDeconvolution:use_minority_bound
+        true -algorithm:MetaboliteFeatureDeconvolution:max_minority_bound 1 -algorithm:MetaboliteFeatureDeconvolution:min_rt_overlap 0.66 -algorithm:MetaboliteFeatureDeconvolution:default_map_label 'decharged features'
+      inputs:
+      - name: featurexml
+        type: data
+        format:
+        - featurexml
+      - name: polarity
+        type: select
+        options:
+        - label: Positive
+          value: positive
+          selected: true
+        - label: Negative
+          value: negative
+      outputs:
+      - name: annotated_features
+        type: data
+        format: featurexml
+        from_work_dir: annotated.featureXML
+    in:
+      featurexml: 8/aligned_featurexml
+      polarity: polarity
+    out:
+    - id: annotated_features
+    doc: Annotate aligned feature maps with adducts and charge states using OpenMS MetaboliteAdductDecharger and the source polarity-specific adduct list (source OPENMS_METABOLITEADDUCTDECHARGER).
+  annotate_initial_c13:
+    label: Apply C13 feature detection to initial data
+    when: $((inputs.requantification !== true) && (inputs.identification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_c13_detection
+      version: 1.0.0
+      name: Metaboigniter C13 feature detection
+      description: Run the source PYOPENMS_C13DETECTION script on featureXML and its paired mzML.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: python c13detection.py --input_feature '$(inputs.featurexml.path)' --input_mzml '$(inputs.mzml.path)' --output_feature c13.featureXML
+      inputs:
+      - name: featurexml
+        type: data
+        format:
+        - featurexml
+      - name: mzml
+        type: data
+        format:
+        - mzml
+      outputs:
+      - name: annotated_features
+        type: data
+        format: featurexml
+        from_work_dir: c13.featureXML
+      configfiles:
+      - filename: c13detection.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nimport os\nimport numpy as np\nimport pandas as pd\nimport pyopenms as py\nimport argparse\n\n\ndef get_tol_window(val, tol, ppm):\n    if ppm:\n        left = val - val * tol * 1e-6\n        right = val / (1.0 - tol * 1e-6)\n    else:\n        left = val - tol\n        right = val + tol\n\n    return (left, right)\n\n\ndef get_highest_intensity_peak_in_mz_range(test_mz, spectrum, tolerance, ppm, rt_min, rt_max):\n    tolerance_window = get_tol_window(test_mz, tolerance, ppm)\n\n    peaks_in_window = spectrum.get2DPeakDataLong(rt_min, rt_max, tolerance_window[0], tolerance_window[1])\n\n    if len(peaks_in_window[0]) == 0:\n        return []\n\n    max_element = peaks_in_window[2].argmax()\n    return [peaks_in_window[1][max_element], peaks_in_window[2][max_element]]\n\n\ndef extract_precursor_isotope_pattern(precursor_mz, precursor_spectrum, iterations, charge, tolerance,\
+          \ rt_min, rt_max):\n    isotopes = []\n    ppm = True\n    isotope_tolerance = 1\n\n    peak = get_highest_intensity_peak_in_mz_range(precursor_mz, precursor_spectrum, tolerance, ppm, rt_min, rt_max)\n    if len(peak) > 0:\n        isotopes.append(peak)\n\n    # further isotope_traces with the mass error of 1 ppm\n    massdiff = 1.0033548378  # this is the C13C12_MASSDIFF_U\n\n    if charge != 0:\n        massdiff = massdiff / abs(charge)\n\n    while len(peak) > 0 and iterations > 0:\n        peak = get_highest_intensity_peak_in_mz_range(\n            peak[0] + massdiff, precursor_spectrum, isotope_tolerance, ppm, rt_min, rt_max\n        )\n        if len(peak) > 0:\n            isotopes.append(peak)\n\n        iterations -= 1\n\n    return isotopes  # return isotopes as pandas DataFrame\n\n\nparser = argparse.ArgumentParser(description=\"Mass Spectrometry Data Processing Tool\")\n\nparser.add_argument(\"--input_feature\", help=\"Path to consensus XML file\")\nparser.add_argument(\"\
+          --input_mzml\", help=\"Path to consensus XML file\")\n\nparser.add_argument(\"--ppm\", type=float, default=10, help=\"ppm for isotope detection\")\nparser.add_argument(\"--mz\", type=float, default=6.5, help=\"ppm for isotope detection\")\nparser.add_argument(\"--rt\", type=float, default=3, help=\"RT for isotope detection\")\nparser.add_argument(\"--iterations\", type=int, default=3, help=\"RT for isotope detection\")\nparser.add_argument(\"--polarity\", choices=[\"positive\", \"negative\"], default=\"positive\", help=\"Polarity of the data\")\n\nparser.add_argument(\"--output_feature\", help=\"Path to consensus XML file\")\n\n\nargs = parser.parse_args()\n\n\n## load feature files\nfeatures = py.FeatureMap()\npy.FeatureXMLFile().load(args.input_feature, features)\n\n## load mzMLfie\n\nexp = py.MSExperiment()\npy.MzMLFile().load(args.input_mzml, exp)\n\nexp.updateRanges(1)\nmax_rt_exp = exp.getMaxRT()\nmin_rt_exp = exp.getMinRT()\n\nmax_mz_exp = exp.getMaxMZ()\nmin_mz_exp = exp.getMinMZ()\n\
+          \n\nempty_protein_id = py.ProteinIdentification()\n\nempty_protein_id.setIdentifier(\"UNKNOWN_SEARCH_RUN_IDENTIFIER\")\nfeatures.setProteinIdentifications([empty_protein_id])\n\n\nall_ints = 0\nfor i in range(features.size()):\n    sl_feature = features[i]\n    sl_feature.setConvexHulls([])\n    sl_feature.setSubordinates([])\n    all_ints += sl_feature.getIntensity()\n    features[i] = sl_feature\n\n\nfor i in range(features.size()):\n    sl_feature = features[i]\n    sl_feature.setConvexHulls([])\n    sl_feature.setSubordinates([])\n    rt = sl_feature.getRT()\n    mz = sl_feature.getMZ()\n\n    charge_f = sl_feature.getCharge()\n    if args.polarity == \"positive\" and charge_f == 0:\n        charge_f = 1\n    elif args.polarity == \"negative\" and charge_f == 0:\n        charge_f = -1\n\n    rt_max = max_rt_exp if (rt + args.rt) > max_rt_exp else (rt + args.rt)\n    rt_min = min_rt_exp if (rt - args.rt) < min_rt_exp else (rt - args.rt)\n\n    mz_max = max_mz_exp if (mz + args.mz)\
+          \ > max_mz_exp else (mz + args.mz)\n    mz_min = min_mz_exp if (mz - args.mz) < min_mz_exp else (mz - args.mz)\n\n    iso = extract_precursor_isotope_pattern(mz, exp, args.iterations, charge_f, args.ppm, rt_min, rt_max)\n\n    peptide = py.PeptideIdentification()\n    peptide.setRT(rt)\n    peptide.setMZ(mz)\n    iso_mz = []\n    iso_in = []\n    if len(iso) > 0:\n        iso_mz = list([float(mz[0]) for mz in iso])\n        iso_in = [float(inte[1]) for inte in iso]\n\n    peptide.setMetaValue(\"isotope_calcdist_mz\", iso_mz)\n    peptide.setMetaValue(\"isotope_calcdist_int\", iso_in)\n\n    iso_mz = []\n    iso_in = []\n    if sl_feature.metaValueExists(\"masstrace_intensity\"):\n        iso_mz = sl_feature.getMetaValue(\"masstrace_centroid_mz\")\n        iso_in = sl_feature.getMetaValue(\"masstrace_intensity\")\n\n    peptide.setMetaValue(\"masstrace_intensity\", iso_in)\n    peptide.setMetaValue(\"masstrace_centroid_mz\", iso_mz)\n\n    peptide.setMetaValue(\"feature_quality\"\
+          , sl_feature.getOverallQuality())\n    peptide.setMetaValue(\"normalized_intensity\", (sl_feature.getIntensity() / all_ints))\n\n    peptide.setIdentifier(empty_protein_id.getIdentifier())\n\n    sl_feature.setPeptideIdentifications([peptide])\n    features[i] = sl_feature\n\npy.FeatureXMLFile().store(args.output_feature, features)"
+    in:
+      featurexml: 10/annotated_features
+      mzml: 9/aligned_mzml
+    out:
+    - id: annotated_features
+    doc: Run the source PyOpenMS C13 detection script on aligned featureXML and its paired mzML to annotate isotope patterns (source ANNOTATION C13 step).
+  link_initial:
+    label: Align and link initial features without identification
+    tool_id: toolshed.g2.bx.psu.edu/repos/galaxyp/openms_featurelinkerunlabeledkd/FeatureLinkerUnlabeledKD/3.1+galaxy0
+    tool_version: 3.1+galaxy0
+    when: $((inputs.requantification !== true) && (inputs.identification !== true))
+    in:
+      in_cond|in: 10/annotated_features
+    out:
+    - id: out
+    - id: ctd_out
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: galaxyp
+      name: openms_featurelinkerunlabeledkd
+      changeset_revision: 902d0f778dcf
+    state:
+      in_cond:
+        in_select: 'no'
+        in:
+          __class__: ConnectedValue
+      design:
+        __class__: ConnectedValue
+      keep_subelements: false
+      algorithm:
+        mz_unit: ppm
+        nr_partitions: 100
+        warp:
+          enabled: true
+          rt_tol: 100
+          mz_tol: 5
+          max_pairwise_log_fc: 0.5
+          min_rel_cc_size: 0.5
+          max_nr_conflicts: 0
+        link:
+          rt_tol: 30
+          mz_tol: 10
+          charge_merging: With_charge_zero
+          adduct_merging: Any
+        distance_RT:
+          exponent: 1
+          weight: 1
+        distance_MZ:
+          exponent: 2
+          weight: 1
+        distance_intensity:
+          exponent: 1
+          weight: 1
+          log_transform: enabled
+        LOWESS:
+          span: 0.666666666666667
+          num_iterations: 3
+          delta: -1
+          interpolation_type: cspline
+          extrapolation_type: four-point-linear
+      adv_opts:
+        force: false
+        test: 'False'
+      OPTIONAL_OUTPUTS: []
+    doc: Link annotated features across samples into consensus features with OpenMS FeatureLinkerUnlabeledKD without identification input (source OPENMS_FEATURELINKERUNLABELEDKD).
+  link_initial_identified:
+    label: Align and link initial identified features
+    tool_id: toolshed.g2.bx.psu.edu/repos/galaxyp/openms_featurelinkerunlabeledkd/FeatureLinkerUnlabeledKD/3.1+galaxy0
+    tool_version: 3.1+galaxy0
+    when: $((inputs.requantification !== true) && (inputs.identification === true))
+    in:
+      in_cond|in: 11/annotated_features
+    out:
+    - id: out
+    - id: ctd_out
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: galaxyp
+      name: openms_featurelinkerunlabeledkd
+      changeset_revision: 902d0f778dcf
+    state:
+      in_cond:
+        in_select: 'no'
+        in:
+          __class__: ConnectedValue
+      design:
+        __class__: ConnectedValue
+      keep_subelements: false
+      algorithm:
+        mz_unit: ppm
+        nr_partitions: 100
+        warp:
+          enabled: true
+          rt_tol: 100
+          mz_tol: 5
+          max_pairwise_log_fc: 0.5
+          min_rel_cc_size: 0.5
+          max_nr_conflicts: 0
+        link:
+          rt_tol: 30
+          mz_tol: 10
+          charge_merging: With_charge_zero
+          adduct_merging: Any
+        distance_RT:
+          exponent: 1
+          weight: 1
+        distance_MZ:
+          exponent: 2
+          weight: 1
+        distance_intensity:
+          exponent: 1
+          weight: 1
+          log_transform: enabled
+        LOWESS:
+          span: 0.666666666666667
+          num_iterations: 3
+          delta: -1
+          interpolation_type: cspline
+          extrapolation_type: four-point-linear
+      adv_opts:
+        force: false
+        test: 'False'
+      OPTIONAL_OUTPUTS: []
+    doc: Link annotated features across samples with OpenMS FeatureLinkerUnlabeledKD, carrying MS2/identification annotations into the consensus (source identified linking path).
+  link_initial_requant:
+    label: Link initial features before requantification
+    tool_id: toolshed.g2.bx.psu.edu/repos/galaxyp/openms_featurelinkerunlabeledkd/FeatureLinkerUnlabeledKD/3.1+galaxy0
+    tool_version: 3.1+galaxy0
+    when: $((inputs.requantification === true))
+    in:
+      in_cond|in: 8/aligned_featurexml
+    out:
+    - id: out
+    - id: ctd_out
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: galaxyp
+      name: openms_featurelinkerunlabeledkd
+      changeset_revision: 902d0f778dcf
+    state:
+      in_cond:
+        in_select: 'no'
+        in:
+          __class__: ConnectedValue
+      design:
+        __class__: ConnectedValue
+      keep_subelements: false
+      algorithm:
+        mz_unit: ppm
+        nr_partitions: 100
+        warp:
+          enabled: true
+          rt_tol: 100
+          mz_tol: 5
+          max_pairwise_log_fc: 0.5
+          min_rel_cc_size: 0.5
+          max_nr_conflicts: 0
+        link:
+          rt_tol: 30
+          mz_tol: 10
+          charge_merging: With_charge_zero
+          adduct_merging: Any
+        distance_RT:
+          exponent: 1
+          weight: 1
+        distance_MZ:
+          exponent: 2
+          weight: 1
+        distance_intensity:
+          exponent: 1
+          weight: 1
+          log_transform: enabled
+        LOWESS:
+          span: 0.666666666666667
+          num_iterations: 3
+          delta: -1
+          interpolation_type: cspline
+          extrapolation_type: four-point-linear
+      adv_opts:
+        force: false
+        test: 'False'
+      OPTIONAL_OUTPUTS: []
+    doc: Link initial features with OpenMS FeatureLinkerUnlabeledKD to provide the complete-feature set used to build the requantification library.
+  identify_initial:
+    label: Map MS2 spectra and prepare identification inputs
+    when: $((inputs.identification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_identification_prep
+      version: 1.0.0
+      name: Metaboigniter MS2 mapping and spectrum preparation
+      description: Map tandem spectra to consensus features and generate the source workflow MS and MGF inputs.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: python extract_mapping.py --consensus_input '$(inputs.consensusxml.path)' --mzml_file_paths $(inputs.ms2_files.map((input) => "'" + input.path + "'").join(" ")) --output mapped.consensusXML --mz_tolerance 20.0 --rt_tolerance 5.0 --annotate_ids_with_subelements --measure_from_subelements && python generate_ms_params.py --consensus_file_path mapped.consensusXML --mzml_file_paths $(inputs.ms2_files.map((input) => "'" + input.path + "'").join(" ")) --csv_output $(inputs.ms2_files.map((input, index) => "'unmapped_" + index + ".csv'").join(" ")) --ms_output identification.ms --mgf_output identification.mgf --ion_select all --ms1_data_from MS2 --normalized_intensity --iterations 3 --ppm_map 10 --polarity '$(inputs.polarity)'
+      inputs:
+      - name: consensusxml
+        type: data
+        format:
+        - consensusxml
+      - name: ms2_files
+        type: data
+        format:
+        - mzml
+        multiple: true
+      - name: polarity
+        type: select
+        options:
+        - label: Positive
+          value: positive
+          selected: true
+        - label: Negative
+          value: negative
+      outputs:
+      - name: mapped_consensus
+        type: data
+        format: consensusxml
+        from_work_dir: mapped.consensusXML
+      - name: ms_file
+        type: data
+        format: txt
+        from_work_dir: identification.ms
+      - name: mgf_file
+        type: data
+        format: mgf
+        from_work_dir: identification.mgf
+      configfiles:
+      - filename: extract_mapping.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nimport os\nimport pyopenms as py\nimport argparse\n\nparser = argparse.ArgumentParser(description=\"Maps MS2 to consensusXML including names\")\n\nparser.add_argument(\"--consensus_input\", type=str, help=\"The path to the consensus file\")\nparser.add_argument(\"--mzml_file_paths\", type=str, nargs=\"+\", help=\"The paths to the mzML files\")\nparser.add_argument(\"--output\", type=str, help=\"The path for output\")\nparser.add_argument(\"--rt_tolerance\", type=float, help=\"The retention time tolerance\")\nparser.add_argument(\"--mz_tolerance\", type=float, help=\"The m/z tolerance\")\nparser.add_argument(\"--annotate_ids_with_subelements\", action=\"store_true\", help=\"Annotate IDs with sub-elements\")\nparser.add_argument(\"--measure_from_subelements\", action=\"store_true\", help=\"Measure from sub-elements\")\nparser.add_argument(\"--ignore_charge\", action=\"\
+          store_true\", help=\"For feature/consensus maps: Assign an ID independently of whether its charge state matches that of the (consensus) feature.\")\n\n# Parse the arguments\nargs = parser.parse_args()\n\n# Now you can access your arguments as follows:\nconsensus_input = args.consensus_input\nmzml_file_paths = args.mzml_file_paths\noutput = args.output\nmz_tolerance = args.mz_tolerance\nrt_tolerance = args.rt_tolerance\nannotate_ids_with_subelements = args.annotate_ids_with_subelements\nmeasure_from_subelements = args.measure_from_subelements\nignore_charge = str(args.ignore_charge).lower()\n\nprotein_ids = []\npeptide_ids = []\n\nmapper = py.IDMapper()\n\n\nparameters = mapper.getParameters()\nparameters.setValue(\"rt_tolerance\", rt_tolerance)\nparameters.setValue(\"mz_tolerance\", mz_tolerance)\nparameters.setValue(\"ignore_charge\", ignore_charge)\n\nmapper.setParameters(parameters)\n\nconsensus_file = py.ConsensusXMLFile()\nconsensus_map = py.ConsensusMap()\nconsensus_file.load(consensus_input,\
+          \ consensus_map)\n\n\nfor i in range(len(mzml_file_paths)):\n    id_input = mzml_file_paths[i]\n    exp = py.MSExperiment()\n    py.MzMLFile().load(id_input, exp)\n    mapper.annotate(\n        consensus_map, peptide_ids, protein_ids, measure_from_subelements, annotate_ids_with_subelements, exp\n    )\n    id_name = os.path.basename(id_input)\n    for cons_i in range(consensus_map.size()):\n        feature = consensus_map[cons_i]\n        feature_pepts = feature.getPeptideIdentifications()\n        mod_peptides = []\n        for pept_id in feature_pepts:\n            if pept_id.metaValueExists(\"spectrum_index\"):\n                if pept_id.metaValueExists(\"id_file\") == False:\n                    pept_id.setMetaValue(\"id_file\", os.path.basename(id_input))\n                    pept_id.setMetaValue(\"id_file_index\", i)\n            mod_peptides.append(pept_id)\n        feature.setPeptideIdentifications(mod_peptides)\n        consensus_map[cons_i] = feature\n\n\nconsensus_file.store(output,\
+          \ consensus_map)"
+      - filename: generate_ms_params.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nimport os\nimport numpy as np\nimport pandas as pd\nimport pyopenms as py\nimport argparse\n\n\ndef get_tol_window(val, tol, ppm):\n    if ppm:\n        left = val - val * tol * 1e-6\n        right = val / (1.0 - tol * 1e-6)\n    else:\n        left = val - tol\n        right = val + tol\n\n    return (left, right)\n\n\ndef get_highest_intensity_peak_in_mz_range(test_mz, spectrum, tolerance, ppm):\n    tolerance_window = get_tol_window(test_mz, tolerance, ppm)\n\n    # Assume spectrum is a pandas DataFrame\n    mask = (spectrum[\"mz\"] >= tolerance_window[0]) & (spectrum[\"mz\"] <= tolerance_window[1])\n    peaks_in_window = spectrum[mask]\n\n    if peaks_in_window.empty:\n        return -1\n\n    # Get the index of the peak with max intensity\n    max_intensity_index = peaks_in_window[\"intensity\"].idxmax()\n\n    return max_intensity_index\n\n\ndef extract_precursor_isotope_pattern(precursor_mz,\
+          \ precursor_spectrum, iterations, charge, tolerance=10):\n    isotopes = []\n    ppm = True\n    isotope_tolerance = 1\n\n    peak_index = get_highest_intensity_peak_in_mz_range(precursor_mz, precursor_spectrum, tolerance, ppm)\n\n    if peak_index != -1:\n        peak = precursor_spectrum.loc[peak_index]\n        isotopes.append(peak)\n\n    # further isotope_traces with the mass error of 1 ppm\n    massdiff = 1.0033548378  # this is the C13C12_MASSDIFF_U\n\n    if charge != 0:\n        massdiff = massdiff / abs(charge)\n\n    while peak_index != -1 and iterations > 0:\n        peak_index = get_highest_intensity_peak_in_mz_range(\n            peak[\"mz\"] + massdiff, precursor_spectrum, isotope_tolerance, ppm\n        )\n        if peak_index != -1:\n            peak = precursor_spectrum.loc[peak_index]\n            isotopes.append(peak)\n\n        iterations -= 1\n\n    return pd.DataFrame(isotopes)  # return isotopes as pandas DataFrame\n\n\ndef to_adduct_string(ion_string,\
+          \ charge):\n    # Initialize an instance of EmpiricalFormula with ion_string\n    ef = py.EmpiricalFormula(ion_string)\n\n    charge_sign = \"+\" if charge >= 0 else \"-\"\n    s = \"[M\"\n\n    # Use a dictionary for sorting elements\n    sorted_elem_map = {}\n\n    for em in ef.getElementalComposition():\n        element_count = [em.decode(), ef.getElementalComposition()[em]]\n        e_symbol = element_count[0]\n        tmp = \"+\" if element_count[1] > 0 else \"-\"\n        tmp += str(abs(element_count[1])) if abs(element_count[1]) > 1 else \"\"\n        tmp += e_symbol\n        sorted_elem_map[e_symbol] = tmp\n\n    for sorted_e_cnt in sorted(sorted_elem_map.items()):\n        s += sorted_e_cnt[1]\n\n    s += \"]\"\n    s += str(abs(charge)) if abs(charge) > 1 else \"\"\n    s += charge_sign\n\n    return s\n\n\ndef change_extension_to(file_paths, ext):\n    return [os.path.splitext(file)[0] + ext for file in file_paths]\n\n\nparser = argparse.ArgumentParser(description=\"\
+          Mass Spectrometry Data Processing Tool\")\n\nparser.add_argument(\"--consensus_file_path\", help=\"Path to consensus XML file\")\nparser.add_argument(\"--mzml_file_paths\", nargs=\"+\", help=\"List of mzML file paths\")\nparser.add_argument(\n    \"--ion_select\", choices=[\"all\", \"merge\", \"most_intense\"], default=\"all\", help=\"Ion selection method\"\n)\nparser.add_argument(\"--use_feature_ionization\", action=\"store_true\", help=\"Flag to use feature ionization\")\n# parser.add_argument(\"--use_cons_mz\", action=\"store_true\", help=\"Flag to use consensus mz\")\nparser.add_argument(\"--ms1_data_from\", choices=[\"MS1\", \"best_MS1\", \"MS2\"], default=\"MS2\", help=\"Source for MS1 data\")\nparser.add_argument(\n    \"--feature_selection\", choices=[\"intensity\", \"quality\"], default=\"quality\", help=\"Feature selection method\"\n)\nparser.add_argument(\"--normalized_intensity\", action=\"store_true\", help=\"Flag to use normalized intensity\")\nparser.add_argument(\"\
+          --iterations\", type=float, default=3, help=\"Number of iterations\")\nparser.add_argument(\"--ppm_map\", type=float, default=20, help=\"PPM for mapping\")\nparser.add_argument(\"--polarity\", choices=[\"positive\", \"negative\"], default=\"positive\", help=\"Polarity of the data\")\n\nparser.add_argument(\"--csv_output\", nargs=\"+\", help=\"List of csv file paths\")\n\nparser.add_argument(\"--ms_output\", help=\"Path to msfile\")\n\n\nparser.add_argument(\"--mgf_output\", help=\"Path to mgf file\")\n\n\nargs = parser.parse_args()\n\n\nconsensus_file_path = args.consensus_file_path\nmzml_file_paths = args.mzml_file_paths\n\n\noutput = args.ms_output\noutput_mgf = args.mgf_output\noutputs_unampped = args.csv_output\n\n\nion_select = args.ion_select\n\n\nuse_feature_ionization = args.use_feature_ionization\nuse_cons_mz = True\n\nfeature_selection = args.feature_selection\nnormalized_intensity_flag = args.normalized_intensity\niterations = args.iterations\nppm_map = args.ppm_map\n\
+          \n\npolarity = args.polarity\n\n# os.chdir(\"<LOCAL_PATH>\")\n# args.consensus_file_path=\"Preprocessed_unfiltered.consensusXML\"\n\n\ndef getPrecursorSpectrum(spec_index, spectra, use_rt=True, rt=-1, only_rt=False):\n    spc = 0\n    if use_rt == False and only_rt == False:\n        for i in reversed(range(spec_index)):\n            spc = spectra.getSpectrum(i)\n            if spc.getMSLevel() == 1:\n                break\n    elif use_rt == True and only_rt == False:\n        for i in reversed(range(spec_index)):\n            spc1 = spectra.getSpectrum(i)\n            if spc1.getMSLevel() == 1:\n                break\n        for i in range(spec_index, spectra.getNrSpectra()):\n            spc2 = spectra.getSpectrum(i)\n            if spc2.getMSLevel() == 1:\n                break\n\n        if abs(spc1.getRT() - rt) < abs(spc2.getRT() - rt):\n            spc = spc1\n        else:\n            spc = spc2\n\
+          \    elif use_rt == True and only_rt == True:\n        rt_dif = 1000000\n        index_closest = -1\n        for i in range(spectra.getNrSpectra()):\n            spc1 = spectra.getSpectrum(i)\n            if abs(spc1.getRT() - rt) < rt_dif and spc1.getMSLevel() == 1:\n                index_closest = i\n                rt_dif = abs(spc1.getRT() - rt)\n        spc = spectra.getSpectrum(index_closest)\n    return spc\n\n\nconsensus_file = py.ConsensusXMLFile()\nconsensus_map = py.ConsensusMap()\nconsensus_file.load(consensus_file_path, consensus_map)\n\nspecs_list = [py.OnDiscMSExperiment() for _ in range(len(mzml_file_paths))]\nfeature_list = []\n\nfor map_index in range(len(mzml_file_paths)):\n    specs_list[map_index].openFile(mzml_file_paths[map_index], False)\n\n\nmap_index_rm = {path: [] for path in outputs_unampped}\n\n\n## there exist spectra\nexist_one_spectra = False\n## generate consensus MGF file\nf_mgf = open(output_mgf, \"w\")\nfor cons_i in range(consensus_map.size()):\n\
+          \    feature = consensus_map[cons_i]\n    feature_pepts_all = feature.getPeptideIdentifications()\n    all_file_names = []\n    feature_pepts = []\n    if len(feature_pepts_all) == 0:\n        continue\n    for pept_id in feature_pepts_all:\n        if pept_id.metaValueExists(\"spectrum_index\"):\n            # map_index = pept_id.getMetaValue(\"map_index\")\n            spec_index = pept_id.getMetaValue(\"spectrum_index\")\n            ms2_index = pept_id.getMetaValue(\"id_file_index\")\n            ms2_file_name = pept_id.getMetaValue(\"id_file\")\n            all_file_names.append(ms2_file_name + \"_\" + str(spec_index))\n            feature_pepts.append(pept_id)\n\n    if len(all_file_names) == 0:\n        continue\n\n    print(cons_i)\n    subset_dict = {}\n    for file, feature_s in zip(all_file_names, feature_pepts):\n        if file not in subset_dict:\n            subset_dict[file] = [feature_s]\n        else:\n            subset_dict[file].append(feature_s)\n\n    feature_charge\
+          \ = feature.getCharge()\n\n    charge_f = (\n        \"CHARGE=\" + str(1 if feature_charge == 0 else abs(feature_charge)) + (\"+\" if polarity == \"positive\" else \"-\")\n    )\n    mz_f = \"PEPMASS=\" + str(feature.getMZ())\n    rt_f = \"RTINSECONDS=\" + str(feature.getRT())\n    id_f = \"FEATURE_ID=e_\" + str(feature.getUniqueId())\n    level_f = \"MSLEVEL=2\"\n    scan_f = \"SCANS=\" + str(cons_i)\n\n    adduct_f = \"\"\n    if feature.metaValueExists(\"best ion\") == True:\n        adduct_f = feature.getMetaValue(\"best ion\")\n\n    IONMODE = polarity\n\n    for p in subset_dict.keys():\n        id_sel = subset_dict[p][0]\n        map_index = id_sel.getMetaValue(\"id_file_index\")\n        spec_index = id_sel.getMetaValue(\"spectrum_index\")\n        file_name = id_sel.getMetaValue(\"id_file\")\n        kk = specs_list[map_index].getSpectrum(spec_index)\n        ms2_peaks = kk.get_peaks()\n        if len(ms2_peaks[0]) == 0:\n            continue\n        exist_one_spectra\
+          \ = True\n        ms1_ms2_peaks = \"\"\n        for ms_2_i in range(len(ms2_peaks[0])):\n            ms1_ms2_peaks = ms1_ms2_peaks + str(ms2_peaks[0][ms_2_i]) + \" \" + str(ms2_peaks[1][ms_2_i]) + \"\\n\"\n\n        comb_ms2 = (\n            \"BEGIN IONS\"\n            + \"\\n\"\n            + scan_f\n            + \"\\n\"\n            + id_f\n            + \"\\n\"\n            + level_f\n            + \"\\n\"\n            + charge_f\n            + \"\\n\"\n            + mz_f\n            + \"\\n\"\n            + \"FILE_INDEX=\"\n            + str(map_index)\n            + \"\\n\"\n            + \"FILE_NAME=\"\n            + file_name\n            + \"\\n\"\n            + rt_f\n            + \"\\n\"\n            + ms1_ms2_peaks\n            + \"\\n\"\n            + \"END IONS\"\n            + \"\\n\"\n        )\n        f_mgf.write(comb_ms2)\n\nf_mgf.close()\n\n\n## generate consensus MS File\nf = open(output, \"w\")\nfor cons_i in range(consensus_map.size()):\n    feature = consensus_map[cons_i]\n\
+          \    feature_pepts_all = feature.getPeptideIdentifications()\n    all_file_names = []\n    if feature.getCharge() > 1 or feature.getCharge() < -1:\n        continue\n    if len(feature_pepts_all) == 0:\n        continue\n\n    masstrace_intensity = []\n    masstrace_centroid_mz = []\n    isotope_calcdist_mz = []\n    isotope_calcdist_int = []\n    feature_quality = []\n    map_index_meta = []\n    normalized_intensity = []\n    feature_pepts = []\n    ## extract spectrum\n    for pept_id in feature_pepts_all:\n        if pept_id.metaValueExists(\"spectrum_index\"):\n            # map_index = pept_id.getMetaValue(\"map_index\")\n            spec_index = pept_id.getMetaValue(\"spectrum_index\")\n            ms2_index = pept_id.getMetaValue(\"id_file_index\")\n            ms2_file_name = pept_id.getMetaValue(\"id_file\")\n            all_file_names.append(ms2_file_name + \"_\" + str(spec_index))\n            feature_pepts.append(pept_id)\n        elif pept_id.metaValueExists(\"masstrace_intensity\"\
+          ):\n            masstrace_intensity.append(pept_id.getMetaValue(\"masstrace_intensity\"))\n            masstrace_centroid_mz.append(pept_id.getMetaValue(\"masstrace_centroid_mz\"))\n            isotope_calcdist_mz.append(pept_id.getMetaValue(\"isotope_calcdist_mz\"))\n            isotope_calcdist_int.append(pept_id.getMetaValue(\"isotope_calcdist_int\"))\n            feature_quality.append(pept_id.getMetaValue(\"feature_quality\"))\n            map_index_meta.append(pept_id.getMetaValue(\"map_index\"))\n            normalized_intensity.append(pept_id.getMetaValue(\"normalized_intensity\"))\n\n    if len(all_file_names) == 0:\n        continue\n    subset_dict = dict(zip(all_file_names, feature_pepts))\n    selected_id = list(subset_dict.values())\n\n    empty_spectra = True\n    ms1_ms2_peaks = \"\"\n    all_precursor_charges = {}\n    all_inds = []\n    all_ids = []\n    for id_sel in selected_id:\n        map_index = id_sel.getMetaValue(\"id_file_index\")\n        spec_index\
+          \ = id_sel.getMetaValue(\"spectrum_index\")\n        kk = specs_list[map_index].getSpectrum(spec_index)\n        ms2_peaks = kk.get_peaks()\n        id_to_c = py.SpectrumLookup().extractScanNumber(\n            kk.getNativeID(), specs_list[map_index].getMetaData().getSourceFiles()[0].getNativeIDTypeAccession()\n        )\n        ms1_spec = getPrecursorSpectrum(spec_index, specs_list[map_index], use_rt=False, rt=kk.getRT(), only_rt=False)\n\n        ms1_peaks = ms1_spec.get_peaks()\n        map_index_rm[outputs_unampped[map_index]].append(spec_index)\n        if len(ms2_peaks) > 0:\n            empty_spectra = False\n        else:\n            continue\n\n        all_inds.append(spec_index)\n        all_ids.append(id_to_c)\n        collision = kk.getPrecursors()[0].getActivationEnergy()\n        pre_charge = kk.getPrecursors()[0].getCharge()\n        if pre_charge in all_precursor_charges:\n            all_precursor_charges[pre_charge] += 1\n        else:\n            all_precursor_charges[pre_charge]\
+          \ = 1\n\n        if isinstance(ms1_spec, int):\n            raise Exception(\n                \"No MS1 peak where found for ID: \" + str(spec_index) + \" in map: \" + mzml_file_paths[map_index]\n            )\n        ms1_ms2_peaks = ms1_ms2_peaks + \">ms1peaks\\n\"\n        for ms_1_i in range(len(ms1_peaks[0])):\n            ms1_ms2_peaks = ms1_ms2_peaks + str(ms1_peaks[0][ms_1_i]) + \" \" + str(ms1_peaks[1][ms_1_i]) + \"\\n\"\n        if collision == 0.0:\n            ms1_ms2_peaks = ms1_ms2_peaks + \">ms2peaks\\n\"\n        else:\n            ms1_ms2_peaks = ms1_ms2_peaks + \">collision\" + \" \" + str(collision) + \"\\n\"\n\n        for ms_2_i in range(len(ms2_peaks[0])):\n            ms1_ms2_peaks = ms1_ms2_peaks + str(ms2_peaks[0][ms_2_i]) + \" \" + str(ms2_peaks[1][ms_2_i]) + \"\\n\"\n\n    most_common_charge = max(all_precursor_charges, key=all_precursor_charges.get)\n\n    if empty_spectra == True:\n        continue\n\n    exist_one_spectra = True\n    all_precursor_charges\n\
+          \n    mz_trace = 0\n    int_trace = 0\n    output_ms_dt = \"\"\n\n    f_rt = feature.getRT()\n    f_mz = feature.getMZ()\n    f_int = feature.getIntensity()\n    charge_f = feature.getCharge()\n\n    ionization = \"\"\n    if feature.metaValueExists(\"best ion\") == True and use_feature_ionization == True:\n        ionization = \">ionization \" + feature.getMetaValue(\"best ion\")\n\n    charge_f = (1 if polarity == \"positive\" else -1) * (1 if charge_f == 0 else abs(charge_f))\n\n    # extract the top feature\n    int_of_features = [sub_feature.getIntensity() for sub_feature in feature.getFeatureList()]\n\n    maps_of_features = [sub_feature.getMapIndex() for sub_feature in feature.getFeatureList()]\n\n    ids_of_features = [sub_feature.getUniqueId() for sub_feature in feature.getFeatureList()]\n\n    index_of_the_best = \"\"\n    if args.feature_selection == \"intensity\":\n        index_of_the_best = maps_of_features.index(maps_of_features[int_of_features.index(max(int_of_features))])\n\
+          \        if normalized_intensity_flag:\n            index_of_the_best = normalized_intensity.index(max(normalized_intensity))\n    elif args.feature_selection == \"quality\":\n        index_of_the_best = feature_quality.index(max(feature_quality))\n\n    ## first check if mass trace isotope is there if not use the calced isotope\n\n    if len(masstrace_centroid_mz[index_of_the_best]) > 1:\n        iso_int = masstrace_intensity[index_of_the_best]\n        iso_mz = masstrace_centroid_mz[index_of_the_best]\n    else:\n        iso_int = isotope_calcdist_int[index_of_the_best]\n        iso_mz = isotope_calcdist_mz[index_of_the_best]\n\n    feature_id = ids_of_features[maps_of_features.index(map_index_meta[index_of_the_best])]\n\n    compound_id = (\n        \">compound \"\n        + \"_\"\n        + str(feature.getUniqueId())\n        + \"-\"\n        + str(all_ids[0])\n        + \"-\"\n        + \"-\"\n        + str(all_inds[0])\n        + \"--\"\n        + \"UNKOWN\"\n    )\n    parent_mass\
+          \ = \">parentmass \" + str(f_mz)\n    parent_rt = \">rt \" + str(f_rt)\n    comments = \"##best_feature_id \" + str(feature_id) + \"\\n\"\n\n    charge_cmp = \">charge \" + str(charge_f)\n    ms1_merged = \"\"\n    if len(iso_mz) > 0:\n        ms1_merged = \">ms1merged\\n\"\n        for i_iso in range(len(iso_mz)):\n            ms1_merged = ms1_merged + str(iso_mz[i_iso]) + \" \" + str(iso_int[i_iso]) + \"\\n\"\n    comb_ms2 = (\n        compound_id\n        + \"\\n\"\n        + parent_mass\n        + \"\\n\"\n        + ionization\n        + \"\\n\"\n        + charge_cmp\n        + \"\\n\"\n        + parent_rt\n        + \"\\n\"\n        + comments\n        + \"\\n\"\n        + ms1_merged\n        + \"\\n\"\n        + ms1_ms2_peaks\n        + \"\\n\"\n    )\n    f.write(comb_ms2)\n\nf.close()\n\n\nfor key, values in map_index_rm.items():\n    # Create a filename based on the key\n\n    # Write the values to the CSV file\n    with open(key, \"w\") as file:\n        # Write the header\n\
+          \        file.write(\"index\\n\")\n\n        # Write the values\n        for value in values:\n            file.write(str(value) + \"\\n\")\n\n#\n#\n# for ks in range(len(map_index_rm)):\n#\n#   if len(set(map_index_rm[list(map_index_rm.keys())[ks]]))>=specs_list[ks].getNrSpectra():\n#     continue\n#   f = open(outputs_unampped[ks], \"w\")\n#   f_mgf = open(outputs_unampped_mgf[ks], \"w\")\n#\n#   comb_ms2 = \"\"\n#   for i in range(specs_list[ks].getNrSpectra()):\n#     if map_index_rm[list(map_index_rm.keys())[ks]].count(i)==0:\n#       spec = specs_list[ks].getSpectrum(i)\n#       spectra = specs_list[ks].getMetaData()\n#\n#       # ainfo_sf_path = spectra.getSourceFiles()[0].getPathToFile();\n#       # ainfo_sf_filename = spectra.getSourceFiles()[0].getNameOfFile();\n#       # ainfo_sf_type = spectra.getSourceFiles()[0].getFileType();\n#       #\n#       # ainfo_native_id_accession = spectra.getSourceFiles()[0].getNativeIDTypeAccession();\n#       # ainfo_native_id_type =\
+          \ spectra.getSourceFiles()[0].getNativeIDType();\n#\n#       if spec.getMSLevel()==2:\n#         pre_kh = getPrecursorSpectrum(i,specs_list[ks],use_rt=False,rt=spec.getRT(),only_rt=False)\n#         precursor_mz=spec.getPrecursors()[0].getMZ()\n#         precursor_spectrum = pd.DataFrame(pre_kh.get_peaks()).T\n#         precursor_spectrum.columns=[\"mz\",\"intensity\"]\n#         charge_f = spec.getPrecursors()[0].getCharge()\n#         if polarity == \"positive\" and charge_f==0:\n#           charge_f = 1\n#         elif polarity == \"negative\" and charge_f==0:\n#           charge_f = -1\n#\n#         iso=extract_precursor_isotope_pattern(precursor_mz,precursor_spectrum,iterations,charge_f,ppm_map)\n#\n#         f_rt=pre_kh.getRT()\n#         f_mz=precursor_mz\n#\n#         native_id=spec.getNativeID()\n#         #scan_number = py.SpectrumLookup().extractScanNumber(native_id, ainfo_native_id_accession);\n#\n#         mz_trace = 0\n#         if len(iso)>0:\n#           mz_trace\
+          \ = iso[\"mz\"].to_list()\n#           int_trace = iso[\"intensity\"].to_list()\n#           f_mz=list(iso[\"mz\"])[0]\n#\n#         id_to_c = py.SpectrumLookup().extractScanNumber(spec.getNativeID(),specs_list[ks].getMetaData().getSourceFiles()[0].getNativeIDTypeAccession())\n#         compound_id= \">compound \" +  \"_\" + str(0)+\"-\" + str(id_to_c) + \"-\"+\"-\" + str(ks) + \"--\"+\"UNKOWN\"\n#         parent_mass = \">parentmass \" + str(f_mz)\n#         parent_rt = \">rt \" + str(f_rt)\n#         comments = \"##NativeID \" + spec.getNativeID() + \"\\n\"\n#\n#         charge_cmp = \">charge \" + str(charge_f)\n#\n#         charge_f_mgf = \"CHARGE=\" + str(1 if charge_f == 0 else abs(charge_f)) + (\"+\" if polarity==\"positive\" else \"-\")\n#         mz_f_mgf = \"PEPMASS=\" + str(f_mz)\n#         rt_f_mgf = \"RTINSECONDS=\" + str(f_rt)\n#         id_f_mgf = \"FEATURE_ID=e_\" + str(0)\n#         level_f_mgf= \"MSLEVEL=2\"\n#         scan_f_mgf = \"SCANS=\" + str(0)\n#\n#  \
+          \       ms1_merged = \"\"\n#         if mz_trace!=0:\n#           ms1_merged = \">ms1merged\\n\"\n#           for i_iso in range(len(mz_trace)):\n#             ms1_merged = ms1_merged + str(mz_trace[i_iso]) + \" \" + str(int_trace[i_iso]) + \"\\n\"\n#\n#\n#         ms2_peaks = spec.get_peaks()\n#         ms1_peaks=pre_kh.get_peaks()\n#         if len(ms2_peaks[0])>0:\n#           empty_spectra=False\n#           exist_one_spectra=True\n#         else:\n#           continue\n#\n#         collision = spec.getPrecursors()[0].getActivationEnergy()\n#\n#         ms1_ms2_peaks =  \">ms1peaks\\n\"\n#         for ms_1_i in range(len(ms1_peaks[0])):\n#           ms1_ms2_peaks = ms1_ms2_peaks + str(ms1_peaks[0][ms_1_i]) + \" \" + str(ms1_peaks[1][ms_1_i]) + \"\\n\"\n#         if collision == 0.0:\n#           ms1_ms2_peaks = ms1_ms2_peaks+\">ms2peaks\\n\"\n#         else:\n#           ms1_ms2_peaks = ms1_ms2_peaks+\">collision\"+\" \"+str(collision)+\"\\n\"\n#\n#         ms2_all_peaks =\
+          \ \"\"\n#         for ms_2_i in range(len(ms2_peaks[0])):\n#           ms1_ms2_peaks = ms1_ms2_peaks + str(ms2_peaks[0][ms_2_i]) +\" \" + str(ms2_peaks[1][ms_2_i]) + \"\\n\"\n#           ms2_all_peaks = ms2_all_peaks+ str(ms2_peaks[0][ms_2_i]) +\" \" + str(ms2_peaks[1][ms_2_i]) + \"\\n\"\n#\n#         comb_ms2 = compound_id + \"\\n\" +parent_mass + \"\\n\" + \"\\n\" + charge_cmp + \"\\n\" + parent_rt + \"\\n\" +comments+\"\\n\" + ms1_merged + \"\\n\" +ms1_ms2_peaks\n#\n#         comb_ms2_mgf = \"BEGIN IONS\" + \"\\n\" + \"\\n\" +id_f_mgf + \"\\n\" + level_f_mgf + \"\\n\" + charge_f_mgf + \"\\n\" +mz_f_mgf+\"\\n\" + \"FILE_INDEX=\"+str(ks) +\"\\n\" + \"FILE_NAME=\"+mzml_file_paths[ks]+\"\\n\"+rt_f_mgf+\"\\n\" +ms2_all_peaks\n#\n#         nl=f.write(comb_ms2)\n#         nl2 = f_mgf.write(comb_ms2_mgf)\n#   f.close()\n#   f_mgf.close()\n#"
+    in:
+      consensusxml: 13/out
+      ms2_files: 9/aligned_mzml
+      polarity: polarity
+    out:
+    - id: mapped_consensus
+    - id: ms_file
+    - id: mgf_file
+    state:
+      polarity:
+        __class__: ConnectedValue
+    doc: Map MS2 spectra onto consensus features and prepare SIRIUS/MS2Query search inputs with the source PyOpenMS mapping scripts (source identification mapping step).
+  identify_requantified:
+    label: Map MS2 spectra and prepare requantified identification inputs
+    when: $((inputs.identification === true) && (inputs.requantification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_identification_prep
+      version: 1.0.0
+      name: Metaboigniter MS2 mapping and spectrum preparation
+      description: Map tandem spectra to consensus features and generate the source workflow MS and MGF inputs.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: python extract_mapping.py --consensus_input '$(inputs.consensusxml.path)' --mzml_file_paths $(inputs.ms2_files.map((input) => "'" + input.path + "'").join(" ")) --output mapped.consensusXML --mz_tolerance 20.0 --rt_tolerance 5.0 --annotate_ids_with_subelements --measure_from_subelements && python generate_ms_params.py --consensus_file_path mapped.consensusXML --mzml_file_paths $(inputs.ms2_files.map((input) => "'" + input.path + "'").join(" ")) --csv_output $(inputs.ms2_files.map((input, index) => "'unmapped_" + index + ".csv'").join(" ")) --ms_output identification.ms --mgf_output identification.mgf --ion_select all --ms1_data_from MS2 --normalized_intensity --iterations 3 --ppm_map 10 --polarity '$(inputs.polarity)'
+      inputs:
+      - name: consensusxml
+        type: data
+        format:
+        - consensusxml
+      - name: ms2_files
+        type: data
+        format:
+        - mzml
+        multiple: true
+      - name: polarity
+        type: select
+        options:
+        - label: Positive
+          value: positive
+          selected: true
+        - label: Negative
+          value: negative
+      outputs:
+      - name: mapped_consensus
+        type: data
+        format: consensusxml
+        from_work_dir: mapped.consensusXML
+      - name: ms_file
+        type: data
+        format: txt
+        from_work_dir: identification.ms
+      - name: mgf_file
+        type: data
+        format: mgf
+        from_work_dir: identification.mgf
+      configfiles:
+      - filename: extract_mapping.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nimport os\nimport pyopenms as py\nimport argparse\n\nparser = argparse.ArgumentParser(description=\"Maps MS2 to consensusXML including names\")\n\nparser.add_argument(\"--consensus_input\", type=str, help=\"The path to the consensus file\")\nparser.add_argument(\"--mzml_file_paths\", type=str, nargs=\"+\", help=\"The paths to the mzML files\")\nparser.add_argument(\"--output\", type=str, help=\"The path for output\")\nparser.add_argument(\"--rt_tolerance\", type=float, help=\"The retention time tolerance\")\nparser.add_argument(\"--mz_tolerance\", type=float, help=\"The m/z tolerance\")\nparser.add_argument(\"--annotate_ids_with_subelements\", action=\"store_true\", help=\"Annotate IDs with sub-elements\")\nparser.add_argument(\"--measure_from_subelements\", action=\"store_true\", help=\"Measure from sub-elements\")\nparser.add_argument(\"--ignore_charge\", action=\"\
+          store_true\", help=\"For feature/consensus maps: Assign an ID independently of whether its charge state matches that of the (consensus) feature.\")\n\n# Parse the arguments\nargs = parser.parse_args()\n\n# Now you can access your arguments as follows:\nconsensus_input = args.consensus_input\nmzml_file_paths = args.mzml_file_paths\noutput = args.output\nmz_tolerance = args.mz_tolerance\nrt_tolerance = args.rt_tolerance\nannotate_ids_with_subelements = args.annotate_ids_with_subelements\nmeasure_from_subelements = args.measure_from_subelements\nignore_charge = str(args.ignore_charge).lower()\n\nprotein_ids = []\npeptide_ids = []\n\nmapper = py.IDMapper()\n\n\nparameters = mapper.getParameters()\nparameters.setValue(\"rt_tolerance\", rt_tolerance)\nparameters.setValue(\"mz_tolerance\", mz_tolerance)\nparameters.setValue(\"ignore_charge\", ignore_charge)\n\nmapper.setParameters(parameters)\n\nconsensus_file = py.ConsensusXMLFile()\nconsensus_map = py.ConsensusMap()\nconsensus_file.load(consensus_input,\
+          \ consensus_map)\n\n\nfor i in range(len(mzml_file_paths)):\n    id_input = mzml_file_paths[i]\n    exp = py.MSExperiment()\n    py.MzMLFile().load(id_input, exp)\n    mapper.annotate(\n        consensus_map, peptide_ids, protein_ids, measure_from_subelements, annotate_ids_with_subelements, exp\n    )\n    id_name = os.path.basename(id_input)\n    for cons_i in range(consensus_map.size()):\n        feature = consensus_map[cons_i]\n        feature_pepts = feature.getPeptideIdentifications()\n        mod_peptides = []\n        for pept_id in feature_pepts:\n            if pept_id.metaValueExists(\"spectrum_index\"):\n                if pept_id.metaValueExists(\"id_file\") == False:\n                    pept_id.setMetaValue(\"id_file\", os.path.basename(id_input))\n                    pept_id.setMetaValue(\"id_file_index\", i)\n            mod_peptides.append(pept_id)\n        feature.setPeptideIdentifications(mod_peptides)\n        consensus_map[cons_i] = feature\n\n\nconsensus_file.store(output,\
+          \ consensus_map)"
+      - filename: generate_ms_params.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nimport os\nimport numpy as np\nimport pandas as pd\nimport pyopenms as py\nimport argparse\n\n\ndef get_tol_window(val, tol, ppm):\n    if ppm:\n        left = val - val * tol * 1e-6\n        right = val / (1.0 - tol * 1e-6)\n    else:\n        left = val - tol\n        right = val + tol\n\n    return (left, right)\n\n\ndef get_highest_intensity_peak_in_mz_range(test_mz, spectrum, tolerance, ppm):\n    tolerance_window = get_tol_window(test_mz, tolerance, ppm)\n\n    # Assume spectrum is a pandas DataFrame\n    mask = (spectrum[\"mz\"] >= tolerance_window[0]) & (spectrum[\"mz\"] <= tolerance_window[1])\n    peaks_in_window = spectrum[mask]\n\n    if peaks_in_window.empty:\n        return -1\n\n    # Get the index of the peak with max intensity\n    max_intensity_index = peaks_in_window[\"intensity\"].idxmax()\n\n    return max_intensity_index\n\n\ndef extract_precursor_isotope_pattern(precursor_mz,\
+          \ precursor_spectrum, iterations, charge, tolerance=10):\n    isotopes = []\n    ppm = True\n    isotope_tolerance = 1\n\n    peak_index = get_highest_intensity_peak_in_mz_range(precursor_mz, precursor_spectrum, tolerance, ppm)\n\n    if peak_index != -1:\n        peak = precursor_spectrum.loc[peak_index]\n        isotopes.append(peak)\n\n    # further isotope_traces with the mass error of 1 ppm\n    massdiff = 1.0033548378  # this is the C13C12_MASSDIFF_U\n\n    if charge != 0:\n        massdiff = massdiff / abs(charge)\n\n    while peak_index != -1 and iterations > 0:\n        peak_index = get_highest_intensity_peak_in_mz_range(\n            peak[\"mz\"] + massdiff, precursor_spectrum, isotope_tolerance, ppm\n        )\n        if peak_index != -1:\n            peak = precursor_spectrum.loc[peak_index]\n            isotopes.append(peak)\n\n        iterations -= 1\n\n    return pd.DataFrame(isotopes)  # return isotopes as pandas DataFrame\n\n\ndef to_adduct_string(ion_string,\
+          \ charge):\n    # Initialize an instance of EmpiricalFormula with ion_string\n    ef = py.EmpiricalFormula(ion_string)\n\n    charge_sign = \"+\" if charge >= 0 else \"-\"\n    s = \"[M\"\n\n    # Use a dictionary for sorting elements\n    sorted_elem_map = {}\n\n    for em in ef.getElementalComposition():\n        element_count = [em.decode(), ef.getElementalComposition()[em]]\n        e_symbol = element_count[0]\n        tmp = \"+\" if element_count[1] > 0 else \"-\"\n        tmp += str(abs(element_count[1])) if abs(element_count[1]) > 1 else \"\"\n        tmp += e_symbol\n        sorted_elem_map[e_symbol] = tmp\n\n    for sorted_e_cnt in sorted(sorted_elem_map.items()):\n        s += sorted_e_cnt[1]\n\n    s += \"]\"\n    s += str(abs(charge)) if abs(charge) > 1 else \"\"\n    s += charge_sign\n\n    return s\n\n\ndef change_extension_to(file_paths, ext):\n    return [os.path.splitext(file)[0] + ext for file in file_paths]\n\n\nparser = argparse.ArgumentParser(description=\"\
+          Mass Spectrometry Data Processing Tool\")\n\nparser.add_argument(\"--consensus_file_path\", help=\"Path to consensus XML file\")\nparser.add_argument(\"--mzml_file_paths\", nargs=\"+\", help=\"List of mzML file paths\")\nparser.add_argument(\n    \"--ion_select\", choices=[\"all\", \"merge\", \"most_intense\"], default=\"all\", help=\"Ion selection method\"\n)\nparser.add_argument(\"--use_feature_ionization\", action=\"store_true\", help=\"Flag to use feature ionization\")\n# parser.add_argument(\"--use_cons_mz\", action=\"store_true\", help=\"Flag to use consensus mz\")\nparser.add_argument(\"--ms1_data_from\", choices=[\"MS1\", \"best_MS1\", \"MS2\"], default=\"MS2\", help=\"Source for MS1 data\")\nparser.add_argument(\n    \"--feature_selection\", choices=[\"intensity\", \"quality\"], default=\"quality\", help=\"Feature selection method\"\n)\nparser.add_argument(\"--normalized_intensity\", action=\"store_true\", help=\"Flag to use normalized intensity\")\nparser.add_argument(\"\
+          --iterations\", type=float, default=3, help=\"Number of iterations\")\nparser.add_argument(\"--ppm_map\", type=float, default=20, help=\"PPM for mapping\")\nparser.add_argument(\"--polarity\", choices=[\"positive\", \"negative\"], default=\"positive\", help=\"Polarity of the data\")\n\nparser.add_argument(\"--csv_output\", nargs=\"+\", help=\"List of csv file paths\")\n\nparser.add_argument(\"--ms_output\", help=\"Path to msfile\")\n\n\nparser.add_argument(\"--mgf_output\", help=\"Path to mgf file\")\n\n\nargs = parser.parse_args()\n\n\nconsensus_file_path = args.consensus_file_path\nmzml_file_paths = args.mzml_file_paths\n\n\noutput = args.ms_output\noutput_mgf = args.mgf_output\noutputs_unampped = args.csv_output\n\n\nion_select = args.ion_select\n\n\nuse_feature_ionization = args.use_feature_ionization\nuse_cons_mz = True\n\nfeature_selection = args.feature_selection\nnormalized_intensity_flag = args.normalized_intensity\niterations = args.iterations\nppm_map = args.ppm_map\n\
+          \n\npolarity = args.polarity\n\n# os.chdir(\"<LOCAL_PATH>\")\n# args.consensus_file_path=\"Preprocessed_unfiltered.consensusXML\"\n\n\ndef getPrecursorSpectrum(spec_index, spectra, use_rt=True, rt=-1, only_rt=False):\n    spc = 0\n    if use_rt == False and only_rt == False:\n        for i in reversed(range(spec_index)):\n            spc = spectra.getSpectrum(i)\n            if spc.getMSLevel() == 1:\n                break\n    elif use_rt == True and only_rt == False:\n        for i in reversed(range(spec_index)):\n            spc1 = spectra.getSpectrum(i)\n            if spc1.getMSLevel() == 1:\n                break\n        for i in range(spec_index, spectra.getNrSpectra()):\n            spc2 = spectra.getSpectrum(i)\n            if spc2.getMSLevel() == 1:\n                break\n\n        if abs(spc1.getRT() - rt) < abs(spc2.getRT() - rt):\n            spc = spc1\n        else:\n            spc = spc2\n\
+          \    elif use_rt == True and only_rt == True:\n        rt_dif = 1000000\n        index_closest = -1\n        for i in range(spectra.getNrSpectra()):\n            spc1 = spectra.getSpectrum(i)\n            if abs(spc1.getRT() - rt) < rt_dif and spc1.getMSLevel() == 1:\n                index_closest = i\n                rt_dif = abs(spc1.getRT() - rt)\n        spc = spectra.getSpectrum(index_closest)\n    return spc\n\n\nconsensus_file = py.ConsensusXMLFile()\nconsensus_map = py.ConsensusMap()\nconsensus_file.load(consensus_file_path, consensus_map)\n\nspecs_list = [py.OnDiscMSExperiment() for _ in range(len(mzml_file_paths))]\nfeature_list = []\n\nfor map_index in range(len(mzml_file_paths)):\n    specs_list[map_index].openFile(mzml_file_paths[map_index], False)\n\n\nmap_index_rm = {path: [] for path in outputs_unampped}\n\n\n## there exist spectra\nexist_one_spectra = False\n## generate consensus MGF file\nf_mgf = open(output_mgf, \"w\")\nfor cons_i in range(consensus_map.size()):\n\
+          \    feature = consensus_map[cons_i]\n    feature_pepts_all = feature.getPeptideIdentifications()\n    all_file_names = []\n    feature_pepts = []\n    if len(feature_pepts_all) == 0:\n        continue\n    for pept_id in feature_pepts_all:\n        if pept_id.metaValueExists(\"spectrum_index\"):\n            # map_index = pept_id.getMetaValue(\"map_index\")\n            spec_index = pept_id.getMetaValue(\"spectrum_index\")\n            ms2_index = pept_id.getMetaValue(\"id_file_index\")\n            ms2_file_name = pept_id.getMetaValue(\"id_file\")\n            all_file_names.append(ms2_file_name + \"_\" + str(spec_index))\n            feature_pepts.append(pept_id)\n\n    if len(all_file_names) == 0:\n        continue\n\n    print(cons_i)\n    subset_dict = {}\n    for file, feature_s in zip(all_file_names, feature_pepts):\n        if file not in subset_dict:\n            subset_dict[file] = [feature_s]\n        else:\n            subset_dict[file].append(feature_s)\n\n    feature_charge\
+          \ = feature.getCharge()\n\n    charge_f = (\n        \"CHARGE=\" + str(1 if feature_charge == 0 else abs(feature_charge)) + (\"+\" if polarity == \"positive\" else \"-\")\n    )\n    mz_f = \"PEPMASS=\" + str(feature.getMZ())\n    rt_f = \"RTINSECONDS=\" + str(feature.getRT())\n    id_f = \"FEATURE_ID=e_\" + str(feature.getUniqueId())\n    level_f = \"MSLEVEL=2\"\n    scan_f = \"SCANS=\" + str(cons_i)\n\n    adduct_f = \"\"\n    if feature.metaValueExists(\"best ion\") == True:\n        adduct_f = feature.getMetaValue(\"best ion\")\n\n    IONMODE = polarity\n\n    for p in subset_dict.keys():\n        id_sel = subset_dict[p][0]\n        map_index = id_sel.getMetaValue(\"id_file_index\")\n        spec_index = id_sel.getMetaValue(\"spectrum_index\")\n        file_name = id_sel.getMetaValue(\"id_file\")\n        kk = specs_list[map_index].getSpectrum(spec_index)\n        ms2_peaks = kk.get_peaks()\n        if len(ms2_peaks[0]) == 0:\n            continue\n        exist_one_spectra\
+          \ = True\n        ms1_ms2_peaks = \"\"\n        for ms_2_i in range(len(ms2_peaks[0])):\n            ms1_ms2_peaks = ms1_ms2_peaks + str(ms2_peaks[0][ms_2_i]) + \" \" + str(ms2_peaks[1][ms_2_i]) + \"\\n\"\n\n        comb_ms2 = (\n            \"BEGIN IONS\"\n            + \"\\n\"\n            + scan_f\n            + \"\\n\"\n            + id_f\n            + \"\\n\"\n            + level_f\n            + \"\\n\"\n            + charge_f\n            + \"\\n\"\n            + mz_f\n            + \"\\n\"\n            + \"FILE_INDEX=\"\n            + str(map_index)\n            + \"\\n\"\n            + \"FILE_NAME=\"\n            + file_name\n            + \"\\n\"\n            + rt_f\n            + \"\\n\"\n            + ms1_ms2_peaks\n            + \"\\n\"\n            + \"END IONS\"\n            + \"\\n\"\n        )\n        f_mgf.write(comb_ms2)\n\nf_mgf.close()\n\n\n## generate consensus MS File\nf = open(output, \"w\")\nfor cons_i in range(consensus_map.size()):\n    feature = consensus_map[cons_i]\n\
+          \    feature_pepts_all = feature.getPeptideIdentifications()\n    all_file_names = []\n    if feature.getCharge() > 1 or feature.getCharge() < -1:\n        continue\n    if len(feature_pepts_all) == 0:\n        continue\n\n    masstrace_intensity = []\n    masstrace_centroid_mz = []\n    isotope_calcdist_mz = []\n    isotope_calcdist_int = []\n    feature_quality = []\n    map_index_meta = []\n    normalized_intensity = []\n    feature_pepts = []\n    ## extract spectrum\n    for pept_id in feature_pepts_all:\n        if pept_id.metaValueExists(\"spectrum_index\"):\n            # map_index = pept_id.getMetaValue(\"map_index\")\n            spec_index = pept_id.getMetaValue(\"spectrum_index\")\n            ms2_index = pept_id.getMetaValue(\"id_file_index\")\n            ms2_file_name = pept_id.getMetaValue(\"id_file\")\n            all_file_names.append(ms2_file_name + \"_\" + str(spec_index))\n            feature_pepts.append(pept_id)\n        elif pept_id.metaValueExists(\"masstrace_intensity\"\
+          ):\n            masstrace_intensity.append(pept_id.getMetaValue(\"masstrace_intensity\"))\n            masstrace_centroid_mz.append(pept_id.getMetaValue(\"masstrace_centroid_mz\"))\n            isotope_calcdist_mz.append(pept_id.getMetaValue(\"isotope_calcdist_mz\"))\n            isotope_calcdist_int.append(pept_id.getMetaValue(\"isotope_calcdist_int\"))\n            feature_quality.append(pept_id.getMetaValue(\"feature_quality\"))\n            map_index_meta.append(pept_id.getMetaValue(\"map_index\"))\n            normalized_intensity.append(pept_id.getMetaValue(\"normalized_intensity\"))\n\n    if len(all_file_names) == 0:\n        continue\n    subset_dict = dict(zip(all_file_names, feature_pepts))\n    selected_id = list(subset_dict.values())\n\n    empty_spectra = True\n    ms1_ms2_peaks = \"\"\n    all_precursor_charges = {}\n    all_inds = []\n    all_ids = []\n    for id_sel in selected_id:\n        map_index = id_sel.getMetaValue(\"id_file_index\")\n        spec_index\
+          \ = id_sel.getMetaValue(\"spectrum_index\")\n        kk = specs_list[map_index].getSpectrum(spec_index)\n        ms2_peaks = kk.get_peaks()\n        id_to_c = py.SpectrumLookup().extractScanNumber(\n            kk.getNativeID(), specs_list[map_index].getMetaData().getSourceFiles()[0].getNativeIDTypeAccession()\n        )\n        ms1_spec = getPrecursorSpectrum(spec_index, specs_list[map_index], use_rt=False, rt=kk.getRT(), only_rt=False)\n\n        ms1_peaks = ms1_spec.get_peaks()\n        map_index_rm[outputs_unampped[map_index]].append(spec_index)\n        if len(ms2_peaks) > 0:\n            empty_spectra = False\n        else:\n            continue\n\n        all_inds.append(spec_index)\n        all_ids.append(id_to_c)\n        collision = kk.getPrecursors()[0].getActivationEnergy()\n        pre_charge = kk.getPrecursors()[0].getCharge()\n        if pre_charge in all_precursor_charges:\n            all_precursor_charges[pre_charge] += 1\n        else:\n            all_precursor_charges[pre_charge]\
+          \ = 1\n\n        if isinstance(ms1_spec, int):\n            raise Exception(\n                \"No MS1 peak where found for ID: \" + str(spec_index) + \" in map: \" + mzml_file_paths[map_index]\n            )\n        ms1_ms2_peaks = ms1_ms2_peaks + \">ms1peaks\\n\"\n        for ms_1_i in range(len(ms1_peaks[0])):\n            ms1_ms2_peaks = ms1_ms2_peaks + str(ms1_peaks[0][ms_1_i]) + \" \" + str(ms1_peaks[1][ms_1_i]) + \"\\n\"\n        if collision == 0.0:\n            ms1_ms2_peaks = ms1_ms2_peaks + \">ms2peaks\\n\"\n        else:\n            ms1_ms2_peaks = ms1_ms2_peaks + \">collision\" + \" \" + str(collision) + \"\\n\"\n\n        for ms_2_i in range(len(ms2_peaks[0])):\n            ms1_ms2_peaks = ms1_ms2_peaks + str(ms2_peaks[0][ms_2_i]) + \" \" + str(ms2_peaks[1][ms_2_i]) + \"\\n\"\n\n    most_common_charge = max(all_precursor_charges, key=all_precursor_charges.get)\n\n    if empty_spectra == True:\n        continue\n\n    exist_one_spectra = True\n    all_precursor_charges\n\
+          \n    mz_trace = 0\n    int_trace = 0\n    output_ms_dt = \"\"\n\n    f_rt = feature.getRT()\n    f_mz = feature.getMZ()\n    f_int = feature.getIntensity()\n    charge_f = feature.getCharge()\n\n    ionization = \"\"\n    if feature.metaValueExists(\"best ion\") == True and use_feature_ionization == True:\n        ionization = \">ionization \" + feature.getMetaValue(\"best ion\")\n\n    charge_f = (1 if polarity == \"positive\" else -1) * (1 if charge_f == 0 else abs(charge_f))\n\n    # extract the top feature\n    int_of_features = [sub_feature.getIntensity() for sub_feature in feature.getFeatureList()]\n\n    maps_of_features = [sub_feature.getMapIndex() for sub_feature in feature.getFeatureList()]\n\n    ids_of_features = [sub_feature.getUniqueId() for sub_feature in feature.getFeatureList()]\n\n    index_of_the_best = \"\"\n    if args.feature_selection == \"intensity\":\n        index_of_the_best = maps_of_features.index(maps_of_features[int_of_features.index(max(int_of_features))])\n\
+          \        if normalized_intensity_flag:\n            index_of_the_best = normalized_intensity.index(max(normalized_intensity))\n    elif args.feature_selection == \"quality\":\n        index_of_the_best = feature_quality.index(max(feature_quality))\n\n    ## first check if mass trace isotope is there if not use the calced isotope\n\n    if len(masstrace_centroid_mz[index_of_the_best]) > 1:\n        iso_int = masstrace_intensity[index_of_the_best]\n        iso_mz = masstrace_centroid_mz[index_of_the_best]\n    else:\n        iso_int = isotope_calcdist_int[index_of_the_best]\n        iso_mz = isotope_calcdist_mz[index_of_the_best]\n\n    feature_id = ids_of_features[maps_of_features.index(map_index_meta[index_of_the_best])]\n\n    compound_id = (\n        \">compound \"\n        + \"_\"\n        + str(feature.getUniqueId())\n        + \"-\"\n        + str(all_ids[0])\n        + \"-\"\n        + \"-\"\n        + str(all_inds[0])\n        + \"--\"\n        + \"UNKOWN\"\n    )\n    parent_mass\
+          \ = \">parentmass \" + str(f_mz)\n    parent_rt = \">rt \" + str(f_rt)\n    comments = \"##best_feature_id \" + str(feature_id) + \"\\n\"\n\n    charge_cmp = \">charge \" + str(charge_f)\n    ms1_merged = \"\"\n    if len(iso_mz) > 0:\n        ms1_merged = \">ms1merged\\n\"\n        for i_iso in range(len(iso_mz)):\n            ms1_merged = ms1_merged + str(iso_mz[i_iso]) + \" \" + str(iso_int[i_iso]) + \"\\n\"\n    comb_ms2 = (\n        compound_id\n        + \"\\n\"\n        + parent_mass\n        + \"\\n\"\n        + ionization\n        + \"\\n\"\n        + charge_cmp\n        + \"\\n\"\n        + parent_rt\n        + \"\\n\"\n        + comments\n        + \"\\n\"\n        + ms1_merged\n        + \"\\n\"\n        + ms1_ms2_peaks\n        + \"\\n\"\n    )\n    f.write(comb_ms2)\n\nf.close()\n\n\nfor key, values in map_index_rm.items():\n    # Create a filename based on the key\n\n    # Write the values to the CSV file\n    with open(key, \"w\") as file:\n        # Write the header\n\
+          \        file.write(\"index\\n\")\n\n        # Write the values\n        for value in values:\n            file.write(str(value) + \"\\n\")\n\n#\n#\n# for ks in range(len(map_index_rm)):\n#\n#   if len(set(map_index_rm[list(map_index_rm.keys())[ks]]))>=specs_list[ks].getNrSpectra():\n#     continue\n#   f = open(outputs_unampped[ks], \"w\")\n#   f_mgf = open(outputs_unampped_mgf[ks], \"w\")\n#\n#   comb_ms2 = \"\"\n#   for i in range(specs_list[ks].getNrSpectra()):\n#     if map_index_rm[list(map_index_rm.keys())[ks]].count(i)==0:\n#       spec = specs_list[ks].getSpectrum(i)\n#       spectra = specs_list[ks].getMetaData()\n#\n#       # ainfo_sf_path = spectra.getSourceFiles()[0].getPathToFile();\n#       # ainfo_sf_filename = spectra.getSourceFiles()[0].getNameOfFile();\n#       # ainfo_sf_type = spectra.getSourceFiles()[0].getFileType();\n#       #\n#       # ainfo_native_id_accession = spectra.getSourceFiles()[0].getNativeIDTypeAccession();\n#       # ainfo_native_id_type =\
+          \ spectra.getSourceFiles()[0].getNativeIDType();\n#\n#       if spec.getMSLevel()==2:\n#         pre_kh = getPrecursorSpectrum(i,specs_list[ks],use_rt=False,rt=spec.getRT(),only_rt=False)\n#         precursor_mz=spec.getPrecursors()[0].getMZ()\n#         precursor_spectrum = pd.DataFrame(pre_kh.get_peaks()).T\n#         precursor_spectrum.columns=[\"mz\",\"intensity\"]\n#         charge_f = spec.getPrecursors()[0].getCharge()\n#         if polarity == \"positive\" and charge_f==0:\n#           charge_f = 1\n#         elif polarity == \"negative\" and charge_f==0:\n#           charge_f = -1\n#\n#         iso=extract_precursor_isotope_pattern(precursor_mz,precursor_spectrum,iterations,charge_f,ppm_map)\n#\n#         f_rt=pre_kh.getRT()\n#         f_mz=precursor_mz\n#\n#         native_id=spec.getNativeID()\n#         #scan_number = py.SpectrumLookup().extractScanNumber(native_id, ainfo_native_id_accession);\n#\n#         mz_trace = 0\n#         if len(iso)>0:\n#           mz_trace\
+          \ = iso[\"mz\"].to_list()\n#           int_trace = iso[\"intensity\"].to_list()\n#           f_mz=list(iso[\"mz\"])[0]\n#\n#         id_to_c = py.SpectrumLookup().extractScanNumber(spec.getNativeID(),specs_list[ks].getMetaData().getSourceFiles()[0].getNativeIDTypeAccession())\n#         compound_id= \">compound \" +  \"_\" + str(0)+\"-\" + str(id_to_c) + \"-\"+\"-\" + str(ks) + \"--\"+\"UNKOWN\"\n#         parent_mass = \">parentmass \" + str(f_mz)\n#         parent_rt = \">rt \" + str(f_rt)\n#         comments = \"##NativeID \" + spec.getNativeID() + \"\\n\"\n#\n#         charge_cmp = \">charge \" + str(charge_f)\n#\n#         charge_f_mgf = \"CHARGE=\" + str(1 if charge_f == 0 else abs(charge_f)) + (\"+\" if polarity==\"positive\" else \"-\")\n#         mz_f_mgf = \"PEPMASS=\" + str(f_mz)\n#         rt_f_mgf = \"RTINSECONDS=\" + str(f_rt)\n#         id_f_mgf = \"FEATURE_ID=e_\" + str(0)\n#         level_f_mgf= \"MSLEVEL=2\"\n#         scan_f_mgf = \"SCANS=\" + str(0)\n#\n#  \
+          \       ms1_merged = \"\"\n#         if mz_trace!=0:\n#           ms1_merged = \">ms1merged\\n\"\n#           for i_iso in range(len(mz_trace)):\n#             ms1_merged = ms1_merged + str(mz_trace[i_iso]) + \" \" + str(int_trace[i_iso]) + \"\\n\"\n#\n#\n#         ms2_peaks = spec.get_peaks()\n#         ms1_peaks=pre_kh.get_peaks()\n#         if len(ms2_peaks[0])>0:\n#           empty_spectra=False\n#           exist_one_spectra=True\n#         else:\n#           continue\n#\n#         collision = spec.getPrecursors()[0].getActivationEnergy()\n#\n#         ms1_ms2_peaks =  \">ms1peaks\\n\"\n#         for ms_1_i in range(len(ms1_peaks[0])):\n#           ms1_ms2_peaks = ms1_ms2_peaks + str(ms1_peaks[0][ms_1_i]) + \" \" + str(ms1_peaks[1][ms_1_i]) + \"\\n\"\n#         if collision == 0.0:\n#           ms1_ms2_peaks = ms1_ms2_peaks+\">ms2peaks\\n\"\n#         else:\n#           ms1_ms2_peaks = ms1_ms2_peaks+\">collision\"+\" \"+str(collision)+\"\\n\"\n#\n#         ms2_all_peaks =\
+          \ \"\"\n#         for ms_2_i in range(len(ms2_peaks[0])):\n#           ms1_ms2_peaks = ms1_ms2_peaks + str(ms2_peaks[0][ms_2_i]) +\" \" + str(ms2_peaks[1][ms_2_i]) + \"\\n\"\n#           ms2_all_peaks = ms2_all_peaks+ str(ms2_peaks[0][ms_2_i]) +\" \" + str(ms2_peaks[1][ms_2_i]) + \"\\n\"\n#\n#         comb_ms2 = compound_id + \"\\n\" +parent_mass + \"\\n\" + \"\\n\" + charge_cmp + \"\\n\" + parent_rt + \"\\n\" +comments+\"\\n\" + ms1_merged + \"\\n\" +ms1_ms2_peaks\n#\n#         comb_ms2_mgf = \"BEGIN IONS\" + \"\\n\" + \"\\n\" +id_f_mgf + \"\\n\" + level_f_mgf + \"\\n\" + charge_f_mgf + \"\\n\" +mz_f_mgf+\"\\n\" + \"FILE_INDEX=\"+str(ks) +\"\\n\" + \"FILE_NAME=\"+mzml_file_paths[ks]+\"\\n\"+rt_f_mgf+\"\\n\" +ms2_all_peaks\n#\n#         nl=f.write(comb_ms2)\n#         nl2 = f_mgf.write(comb_ms2_mgf)\n#   f.close()\n#   f_mgf.close()\n#"
+    in:
+      consensusxml: 37/out
+      ms2_files: 9/aligned_mzml
+      polarity: polarity
+    out:
+    - id: mapped_consensus
+    - id: ms_file
+    - id: mgf_file
+    state:
+      polarity:
+        __class__: ConnectedValue
+    doc: Map MS2 spectra onto requantified consensus features and prepare SIRIUS/MS2Query search inputs (source requantified identification mapping step).
+  sirius_search_initial:
+    label: SIRIUS/FingerID search on initial consensus spectra
+    when: $((inputs.identification === true) && (inputs.run_sirius === true) && (inputs.requantification !== true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_sirius_search
+      version: 1.0.0
+      name: Metaboigniter SIRIUS search
+      description: Run the source pipeline siriussearch.sh command in its pinned SIRIUS 5.8.6 container.
+      container: quay.io/biocontainers/sirius-csifingerid:5.8.6--h3bb291f_0
+      shell_command: 'mkdir -p sirius_wd sirius_project && bash siriussearch.sh --input ''$(inputs.ms_file.path)'' --output sirius.tsv --outputfid fingerid.tsv --prfolder sirius_project --project_processors 1 --workspace sirius_wd $(inputs.run_fingerid ? "--runfid" : "")'
+      inputs:
+      - name: ms_file
+        type: data
+        format:
+        - txt
+      - name: run_fingerid
+        type: boolean
+        value: false
+      outputs:
+      - name: sirius_results
+        type: data
+        format: tabular
+        from_work_dir: sirius.tsv
+      - name: fingerid_results
+        type: data
+        format: tabular
+        from_work_dir: fingerid.tsv
+      configfiles:
+      - filename: siriussearch.sh
+        content: "#!/bin/bash\n\n# Function to convert argument names\nconvert_arg_name() {\n    echo \"$1\" | sed 's/_/-/g'\n}\n\n# Default values\nworkspace_sirius_default=\"./workspace\"\noutput_default=\"sirius.tsv\"\noutputfid_default=\"fingerid.tsv\"\nprfolder_default=\"./output\"\nproject_maxmz_default=-1\nproject_processors_default=1\nproject_loglevel_default=\"WARNING\"\nproject_ignore_formula_default=false\nsirius_ppm_max_default=10.0\nsirius_ppm_max_ms2_default=10.0\nsirius_tree_timeout_default=100\nsirius_compound_timeout_default=100\nsirius_no_recalibration_default=false\nsirius_no_isotope_score_default=false\nsirius_no_isotope_filter_default=false\nsirius_profile_default=\"default\"\nsirius_formulas_default=\"\"\nsirius_ions_enforced_default=\"\"\nsirius_candidates_default=10\nsirius_candidates_per_ion_default=1\nsirius_elements_considered_default=\"SBrClBSe\"\nsirius_elements_enforced_default=\"CHNOP\"\nsirius_ions_considered_default=\"[M+H]+,[M+K]+,[M+Na]+,[M+H-H2O]+,[M+H-H4O2]+,[M+NH4]+,[M-H]-,[M+Cl]-,[M-H2O-H]-,[M+Br]-\"\
+          \nsirius_db_default=\"\"\nrunfid_default=false\nrunpassatutto_default=false\nfingerid_db_default=\"\"\nsirius_solver_default=\"CLP\"\nemail_default=\"\"\npassword_default=\"\"\nexecutable_default=\"sirius\"\n\n# Initialize variables to defaults\nworkspace_sirius=$workspace_sirius_default\noutput=$output_default\noutputfid=$outputfid_default\nprfolder=$prfolder_default\nproject_maxmz=$project_maxmz_default\nproject_processors=$project_processors_default\nproject_loglevel=$project_loglevel_default\nproject_ignore_formula=$project_ignore_formula_default\nsirius_ppm_max=$sirius_ppm_max_default\nsirius_ppm_max_ms2=$sirius_ppm_max_ms2_default\nsirius_tree_timeout=$sirius_tree_timeout_default\nsirius_compound_timeout=$sirius_compound_timeout_default\nsirius_no_recalibration=$sirius_no_recalibration_default\nsirius_no_isotope_score=$sirius_no_isotope_score_default\nsirius_no_isotope_filter=$sirius_no_isotope_filter_default\nsirius_profile=$sirius_profile_default\nsirius_formulas=$sirius_formulas_default\n\
+          sirius_ions_enforced=$sirius_ions_enforced_default\nsirius_candidates=$sirius_candidates_default\nsirius_candidates_per_ion=$sirius_candidates_per_ion_default\nsirius_elements_considered=$sirius_elements_considered_default\nsirius_elements_enforced=$sirius_elements_enforced_default\nsirius_ions_considered=$sirius_ions_considered_default\nsirius_db=$sirius_db_default\nrunfid=$runfid_default\nrunpassatutto=$runpassatutto_default\nfingerid_db=$fingerid_db_default\nsirius_solver=$sirius_solver_default\nemail=$email_default\npassword=$password_default\nexecutable=$executable_default\n\n# Parse command line arguments\nwhile [ \"$#\" -gt 0 ]; do\n    case \"$1\" in\n        --input) input=\"$2\"; shift ;;\n        --output) output=\"$2\"; shift ;;\n        --outputfid) outputfid=\"$2\"; shift ;;\n        --prfolder) prfolder=\"$2\"; shift ;;\n        --project_maxmz) project_maxmz=\"$2\"; shift ;;\n        --project_processors) project_processors=\"$2\"; shift ;;\n        --project_loglevel)\
+          \ project_loglevel=\"$2\"; shift ;;\n        --project_ignore-formula) project_ignore_formula=true ;;\n        --sirius_ppm-max) sirius_ppm_max=\"$2\"; shift ;;\n        --sirius_ppm-max-ms2) sirius_ppm_max_ms2=\"$2\"; shift ;;\n        --sirius_tree-timeout) sirius_tree_timeout=\"$2\"; shift ;;\n        --sirius_compound-timeout) sirius_compound_timeout=\"$2\"; shift ;;\n        --sirius_no-recalibration) sirius_no_recalibration=true ;;\n        --sirius_no-isotope-score) sirius_no_isotope_score=true ;;\n        --sirius_no-isotope-filter) sirius_no_isotope_filter=true ;;\n        --sirius_profile) sirius_profile=\"$2\"; shift ;;\n        --sirius_formulas) sirius_formulas=\"$2\"; shift ;;\n        --sirius_ions-enforced) sirius_ions_enforced=\"$2\"; shift ;;\n        --sirius_candidates) sirius_candidates=\"$2\"; shift ;;\n        --sirius_candidates-per-ion) sirius_candidates_per_ion=\"$2\"; shift ;;\n        --sirius_elements-considered) sirius_elements_considered=\"$2\"; shift\
+          \ ;;\n        --sirius_elements-enforced) sirius_elements_enforced=\"$2\"; shift ;;\n        --sirius_ions-considered) sirius_ions_considered=\"$2\"; shift ;;\n        --sirius_db) sirius_db=\"$2\"; shift ;;\n        --runfid) runfid=true ;;\n        --runpassatutto) runpassatutto=true ;;\n        --fingerid_db) fingerid_db=\"$2\"; shift ;;\n        --sirius_solver) sirius_solver=\"$2\"; shift ;;\n        --email) email=\"$2\"; shift ;;\n        --password) password=\"$2\"; shift ;;\n        --executable) executable=\"$2\"; shift ;;\n        --workspace) workspace_sirius=\"$2\"; shift ;;\n        *) echo \"Unknown option: $1\"; exit 1 ;;\n    esac\n    shift\ndone\n\n# Login if email and password are provided\nif [ -n \"$email\" ] && [ -n \"$password\" ]; then\n$executable  --noCite --workspace \"$workspace_sirius\"  login --email=\"$email\" --password=\"$password\"\nfi\n\n# Construct command line\ncommand_line=\"$executable --noCite --workspace $workspace_sirius \"\n\n# Add project-related\
+          \ options if not default\nfor key in maxmz processors loglevel ignore_formula; do\n    varname=\"project_$key\"\n    default_varname=\"project_${key}_default\"\n    eval \"value=\\$$varname\"\n    eval \"default_value=\\$$default_varname\"\n    if [ \"$value\" != \"$default_value\" ]; then\n        arg_name=$(convert_arg_name \"$key\")\n        if [ \"$value\" = true ]; then\n            command_line+=\" --$arg_name\"\n        else\n            command_line+=\" --$arg_name $value\"\n        fi\n    fi\ndone\n\n# Add input and project folder if not default\nif [ \"$input\" != \"\" ]; then\n    command_line+=\" --input $input\"\nfi\nif [ \"$prfolder\" != \"$prfolder_default\" ]; then\n    command_line+=\" --project $prfolder\"\nfi\ncommand_line+=\" --no-compression sirius\"\n\n# Add sirius-related options if not default\nfor key in ppm_max ppm_max_ms2 tree_timeout compound_timeout no_recalibration no_isotope_score no_isotope_filter profile formulas ions_enforced candidates candidates_per_ion\
+          \ elements_considered elements_enforced ions_considered db solver; do\n    varname=\"sirius_$key\"\n    default_varname=\"sirius_${key}_default\"\n    eval \"value=\\$$varname\"\n    eval \"default_value=\\$$default_varname\"\n    if [ \"$value\" != \"$default_value\" ]; then\n        arg_name=$(convert_arg_name \"$key\")\n        if [ \"$value\" = true ]; then\n            command_line+=\" --$arg_name\"\n        else\n            command_line+=\" --$arg_name $value\"\n        fi\n    fi\ndone\n\n# Add boolean flags if not default\n\nif [ \"$runpassatutto\" != \"$runpassatutto_default\" ]; then\n    command_line+=\" passatutto\"\nfi\n\nif [ \"$runfid\" != \"$runfid_default\" ]; then\n    command_line+=\" fingerprint structure\"\nfi\n\n\n# Add fingerid-related options if not default\nif [ \"$fingerid_db\" != \"$fingerid_db_default\" ]; then\n    command_line+=\" --db $fingerid_db\"\nfi\n\ncommand_line+=\" write-summaries\"\n\n# Execute command\n#echo $command_line\neval $command_line\n\
+          \n# Define the function to list directories\nlist_directories() {\n    for i in \"$1\"/*; do\n        if [ -d \"$i\" ]; then\n            echo \"${i##*/}\"  # Extracts only the directory name\n        fi\n    done\n}\n\n# Extracts Spectrum MS Information\nextractSpectrumMSInfo() {\n    local sirius_spectrum_ms=\"$1/spectrum.ms\"\n    local ext_mz ext_rt ext_n_id\n\n    if [ -f \"$sirius_spectrum_ms\" ]; then\n        while IFS= read -r line; do\n            case \"$line\" in\n                \">parentmass\"*) ext_mz=$(echo \"$line\" | sed 's/>parentmass//g' | xargs) ;;\n                \">rt\"*) ext_rt=$(echo \"$line\" | sed 's/>rt//g' | sed 's/s//g' | xargs) ;;\n                \"##best_feature_id\"*) ext_n_id+=$(echo \"$line\" | sed 's/##best_feature_id//g' | xargs) ;;\n            esac\n        done < \"$sirius_spectrum_ms\"\n    else\n        echo \"File not found: $sirius_spectrum_ms\"\n        exit 1\n    fi\n\n    echo \"$ext_mz $ext_rt $ext_n_id\"\n}\n\n# Main processing\
+          \ logic\nprocess_files() {\n    local output_file=\"$1\"\n    local type=\"$2\"\n    local all_lines=()\n    local header_set=false\ntab=$(printf '\\t')\n    for target in $(list_directories \"$prfolder\"); do\n        IFS='-' read -ra parts <<< \"${target##*_}\"\n        local feature_id=${parts[0]}\n        local scan_index=${parts[1]}\n        local scan_id=${parts[3]}\n        local full_path=\"$prfolder/$target/${type}_candidates.tsv\"\n        local folder_path=\"$prfolder/$target\"\n        local spc_info=$(extractSpectrumMSInfo \"$folder_path\")\n        local ext_mz=$(echo $spc_info | cut -d ' ' -f 1)\n        local ext_rt=$(echo $spc_info | cut -d ' ' -f 2)\n        local ext_n_id=$(echo $spc_info | cut -d ' ' -f 3)\n\n        if [ -f \"$full_path\" ]; then\n            while IFS= read -r line || [ -n \"$line\" ]; do\n                if [ \"$header_set\" = false ]; then\n                    header=\"Feature_ID${tab}Scan_Index${tab}Scan_ID${tab}Spectra_RT${tab}Spectra_mz${tab}Best_Feature_ID${tab}$line\"\
+          \n                    all_lines+=(\"$header\")\n                    header_set=true\n                else\n                    new_line=\"$feature_id${tab}$scan_index${tab}$scan_id${tab}$ext_rt${tab}$ext_mz${tab}$ext_n_id${tab}$line\"\n                    all_lines+=(\"$new_line\")\n                fi\n            done < \"$full_path\"\n        fi\n    done\n\n    # Write to output file if there are lines to write\n    if [ ${#all_lines[@]} -gt 0 ]; then\n        printf \"%s\\n\" \"${all_lines[@]}\" > \"$output_file\"\n    else\n        echo \"No metabolites were detected\"\n    fi\n}\n\n# Run for sirius.tsv; emit a valid empty file when no compounds are found.\nprocess_files \"$output\" \"formula\"\n[ -f \"$output\" ] || : > \"$output\"\n\n# Run for fingerid.tsv if requested; preserve a declared output otherwise.\nif [ \"$runfid\" = true ]; then\n    process_files \"$outputfid\" \"structure\"\nfi\n[ -f \"$outputfid\" ] || : > \"$outputfid\""
+    in:
+      ms_file: 15/ms_file
+      run_fingerid: run_fingerid
+    state:
+      run_fingerid:
+        __class__: ConnectedValue
+    out:
+    - id: sirius_results
+    - id: fingerid_results
+    doc: Run SIRIUS and optional CSI:FingerID on mapped MS2 spectra using the source search parameters (source SIRIUSMAPPED).
+  sirius_search_requantified:
+    label: SIRIUS/FingerID search on requantified consensus spectra
+    when: $((inputs.identification === true) && (inputs.run_sirius === true) && (inputs.requantification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_sirius_search
+      version: 1.0.0
+      name: Metaboigniter SIRIUS search
+      description: Run the source pipeline siriussearch.sh command in its pinned SIRIUS 5.8.6 container.
+      container: quay.io/biocontainers/sirius-csifingerid:5.8.6--h3bb291f_0
+      shell_command: 'mkdir -p sirius_wd sirius_project && bash siriussearch.sh --input ''$(inputs.ms_file.path)'' --output sirius.tsv --outputfid fingerid.tsv --prfolder sirius_project --project_processors 1 --workspace sirius_wd $(inputs.run_fingerid ? "--runfid" : "")'
+      inputs:
+      - name: ms_file
+        type: data
+        format:
+        - txt
+      - name: run_fingerid
+        type: boolean
+        value: false
+      outputs:
+      - name: sirius_results
+        type: data
+        format: tabular
+        from_work_dir: sirius.tsv
+      - name: fingerid_results
+        type: data
+        format: tabular
+        from_work_dir: fingerid.tsv
+      configfiles:
+      - filename: siriussearch.sh
+        content: "#!/bin/bash\n\n# Function to convert argument names\nconvert_arg_name() {\n    echo \"$1\" | sed 's/_/-/g'\n}\n\n# Default values\nworkspace_sirius_default=\"./workspace\"\noutput_default=\"sirius.tsv\"\noutputfid_default=\"fingerid.tsv\"\nprfolder_default=\"./output\"\nproject_maxmz_default=-1\nproject_processors_default=1\nproject_loglevel_default=\"WARNING\"\nproject_ignore_formula_default=false\nsirius_ppm_max_default=10.0\nsirius_ppm_max_ms2_default=10.0\nsirius_tree_timeout_default=100\nsirius_compound_timeout_default=100\nsirius_no_recalibration_default=false\nsirius_no_isotope_score_default=false\nsirius_no_isotope_filter_default=false\nsirius_profile_default=\"default\"\nsirius_formulas_default=\"\"\nsirius_ions_enforced_default=\"\"\nsirius_candidates_default=10\nsirius_candidates_per_ion_default=1\nsirius_elements_considered_default=\"SBrClBSe\"\nsirius_elements_enforced_default=\"CHNOP\"\nsirius_ions_considered_default=\"[M+H]+,[M+K]+,[M+Na]+,[M+H-H2O]+,[M+H-H4O2]+,[M+NH4]+,[M-H]-,[M+Cl]-,[M-H2O-H]-,[M+Br]-\"\
+          \nsirius_db_default=\"\"\nrunfid_default=false\nrunpassatutto_default=false\nfingerid_db_default=\"\"\nsirius_solver_default=\"CLP\"\nemail_default=\"\"\npassword_default=\"\"\nexecutable_default=\"sirius\"\n\n# Initialize variables to defaults\nworkspace_sirius=$workspace_sirius_default\noutput=$output_default\noutputfid=$outputfid_default\nprfolder=$prfolder_default\nproject_maxmz=$project_maxmz_default\nproject_processors=$project_processors_default\nproject_loglevel=$project_loglevel_default\nproject_ignore_formula=$project_ignore_formula_default\nsirius_ppm_max=$sirius_ppm_max_default\nsirius_ppm_max_ms2=$sirius_ppm_max_ms2_default\nsirius_tree_timeout=$sirius_tree_timeout_default\nsirius_compound_timeout=$sirius_compound_timeout_default\nsirius_no_recalibration=$sirius_no_recalibration_default\nsirius_no_isotope_score=$sirius_no_isotope_score_default\nsirius_no_isotope_filter=$sirius_no_isotope_filter_default\nsirius_profile=$sirius_profile_default\nsirius_formulas=$sirius_formulas_default\n\
+          sirius_ions_enforced=$sirius_ions_enforced_default\nsirius_candidates=$sirius_candidates_default\nsirius_candidates_per_ion=$sirius_candidates_per_ion_default\nsirius_elements_considered=$sirius_elements_considered_default\nsirius_elements_enforced=$sirius_elements_enforced_default\nsirius_ions_considered=$sirius_ions_considered_default\nsirius_db=$sirius_db_default\nrunfid=$runfid_default\nrunpassatutto=$runpassatutto_default\nfingerid_db=$fingerid_db_default\nsirius_solver=$sirius_solver_default\nemail=$email_default\npassword=$password_default\nexecutable=$executable_default\n\n# Parse command line arguments\nwhile [ \"$#\" -gt 0 ]; do\n    case \"$1\" in\n        --input) input=\"$2\"; shift ;;\n        --output) output=\"$2\"; shift ;;\n        --outputfid) outputfid=\"$2\"; shift ;;\n        --prfolder) prfolder=\"$2\"; shift ;;\n        --project_maxmz) project_maxmz=\"$2\"; shift ;;\n        --project_processors) project_processors=\"$2\"; shift ;;\n        --project_loglevel)\
+          \ project_loglevel=\"$2\"; shift ;;\n        --project_ignore-formula) project_ignore_formula=true ;;\n        --sirius_ppm-max) sirius_ppm_max=\"$2\"; shift ;;\n        --sirius_ppm-max-ms2) sirius_ppm_max_ms2=\"$2\"; shift ;;\n        --sirius_tree-timeout) sirius_tree_timeout=\"$2\"; shift ;;\n        --sirius_compound-timeout) sirius_compound_timeout=\"$2\"; shift ;;\n        --sirius_no-recalibration) sirius_no_recalibration=true ;;\n        --sirius_no-isotope-score) sirius_no_isotope_score=true ;;\n        --sirius_no-isotope-filter) sirius_no_isotope_filter=true ;;\n        --sirius_profile) sirius_profile=\"$2\"; shift ;;\n        --sirius_formulas) sirius_formulas=\"$2\"; shift ;;\n        --sirius_ions-enforced) sirius_ions_enforced=\"$2\"; shift ;;\n        --sirius_candidates) sirius_candidates=\"$2\"; shift ;;\n        --sirius_candidates-per-ion) sirius_candidates_per_ion=\"$2\"; shift ;;\n        --sirius_elements-considered) sirius_elements_considered=\"$2\"; shift\
+          \ ;;\n        --sirius_elements-enforced) sirius_elements_enforced=\"$2\"; shift ;;\n        --sirius_ions-considered) sirius_ions_considered=\"$2\"; shift ;;\n        --sirius_db) sirius_db=\"$2\"; shift ;;\n        --runfid) runfid=true ;;\n        --runpassatutto) runpassatutto=true ;;\n        --fingerid_db) fingerid_db=\"$2\"; shift ;;\n        --sirius_solver) sirius_solver=\"$2\"; shift ;;\n        --email) email=\"$2\"; shift ;;\n        --password) password=\"$2\"; shift ;;\n        --executable) executable=\"$2\"; shift ;;\n        --workspace) workspace_sirius=\"$2\"; shift ;;\n        *) echo \"Unknown option: $1\"; exit 1 ;;\n    esac\n    shift\ndone\n\n# Login if email and password are provided\nif [ -n \"$email\" ] && [ -n \"$password\" ]; then\n$executable  --noCite --workspace \"$workspace_sirius\"  login --email=\"$email\" --password=\"$password\"\nfi\n\n# Construct command line\ncommand_line=\"$executable --noCite --workspace $workspace_sirius \"\n\n# Add project-related\
+          \ options if not default\nfor key in maxmz processors loglevel ignore_formula; do\n    varname=\"project_$key\"\n    default_varname=\"project_${key}_default\"\n    eval \"value=\\$$varname\"\n    eval \"default_value=\\$$default_varname\"\n    if [ \"$value\" != \"$default_value\" ]; then\n        arg_name=$(convert_arg_name \"$key\")\n        if [ \"$value\" = true ]; then\n            command_line+=\" --$arg_name\"\n        else\n            command_line+=\" --$arg_name $value\"\n        fi\n    fi\ndone\n\n# Add input and project folder if not default\nif [ \"$input\" != \"\" ]; then\n    command_line+=\" --input $input\"\nfi\nif [ \"$prfolder\" != \"$prfolder_default\" ]; then\n    command_line+=\" --project $prfolder\"\nfi\ncommand_line+=\" --no-compression sirius\"\n\n# Add sirius-related options if not default\nfor key in ppm_max ppm_max_ms2 tree_timeout compound_timeout no_recalibration no_isotope_score no_isotope_filter profile formulas ions_enforced candidates candidates_per_ion\
+          \ elements_considered elements_enforced ions_considered db solver; do\n    varname=\"sirius_$key\"\n    default_varname=\"sirius_${key}_default\"\n    eval \"value=\\$$varname\"\n    eval \"default_value=\\$$default_varname\"\n    if [ \"$value\" != \"$default_value\" ]; then\n        arg_name=$(convert_arg_name \"$key\")\n        if [ \"$value\" = true ]; then\n            command_line+=\" --$arg_name\"\n        else\n            command_line+=\" --$arg_name $value\"\n        fi\n    fi\ndone\n\n# Add boolean flags if not default\n\nif [ \"$runpassatutto\" != \"$runpassatutto_default\" ]; then\n    command_line+=\" passatutto\"\nfi\n\nif [ \"$runfid\" != \"$runfid_default\" ]; then\n    command_line+=\" fingerprint structure\"\nfi\n\n\n# Add fingerid-related options if not default\nif [ \"$fingerid_db\" != \"$fingerid_db_default\" ]; then\n    command_line+=\" --db $fingerid_db\"\nfi\n\ncommand_line+=\" write-summaries\"\n\n# Execute command\n#echo $command_line\neval $command_line\n\
+          \n# Define the function to list directories\nlist_directories() {\n    for i in \"$1\"/*; do\n        if [ -d \"$i\" ]; then\n            echo \"${i##*/}\"  # Extracts only the directory name\n        fi\n    done\n}\n\n# Extracts Spectrum MS Information\nextractSpectrumMSInfo() {\n    local sirius_spectrum_ms=\"$1/spectrum.ms\"\n    local ext_mz ext_rt ext_n_id\n\n    if [ -f \"$sirius_spectrum_ms\" ]; then\n        while IFS= read -r line; do\n            case \"$line\" in\n                \">parentmass\"*) ext_mz=$(echo \"$line\" | sed 's/>parentmass//g' | xargs) ;;\n                \">rt\"*) ext_rt=$(echo \"$line\" | sed 's/>rt//g' | sed 's/s//g' | xargs) ;;\n                \"##best_feature_id\"*) ext_n_id+=$(echo \"$line\" | sed 's/##best_feature_id//g' | xargs) ;;\n            esac\n        done < \"$sirius_spectrum_ms\"\n    else\n        echo \"File not found: $sirius_spectrum_ms\"\n        exit 1\n    fi\n\n    echo \"$ext_mz $ext_rt $ext_n_id\"\n}\n\n# Main processing\
+          \ logic\nprocess_files() {\n    local output_file=\"$1\"\n    local type=\"$2\"\n    local all_lines=()\n    local header_set=false\ntab=$(printf '\\t')\n    for target in $(list_directories \"$prfolder\"); do\n        IFS='-' read -ra parts <<< \"${target##*_}\"\n        local feature_id=${parts[0]}\n        local scan_index=${parts[1]}\n        local scan_id=${parts[3]}\n        local full_path=\"$prfolder/$target/${type}_candidates.tsv\"\n        local folder_path=\"$prfolder/$target\"\n        local spc_info=$(extractSpectrumMSInfo \"$folder_path\")\n        local ext_mz=$(echo $spc_info | cut -d ' ' -f 1)\n        local ext_rt=$(echo $spc_info | cut -d ' ' -f 2)\n        local ext_n_id=$(echo $spc_info | cut -d ' ' -f 3)\n\n        if [ -f \"$full_path\" ]; then\n            while IFS= read -r line || [ -n \"$line\" ]; do\n                if [ \"$header_set\" = false ]; then\n                    header=\"Feature_ID${tab}Scan_Index${tab}Scan_ID${tab}Spectra_RT${tab}Spectra_mz${tab}Best_Feature_ID${tab}$line\"\
+          \n                    all_lines+=(\"$header\")\n                    header_set=true\n                else\n                    new_line=\"$feature_id${tab}$scan_index${tab}$scan_id${tab}$ext_rt${tab}$ext_mz${tab}$ext_n_id${tab}$line\"\n                    all_lines+=(\"$new_line\")\n                fi\n            done < \"$full_path\"\n        fi\n    done\n\n    # Write to output file if there are lines to write\n    if [ ${#all_lines[@]} -gt 0 ]; then\n        printf \"%s\\n\" \"${all_lines[@]}\" > \"$output_file\"\n    else\n        echo \"No metabolites were detected\"\n    fi\n}\n\n# Run for sirius.tsv; emit a valid empty file when no compounds are found.\nprocess_files \"$output\" \"formula\"\n[ -f \"$output\" ] || : > \"$output\"\n\n# Run for fingerid.tsv if requested; preserve a declared output otherwise.\nif [ \"$runfid\" = true ]; then\n    process_files \"$outputfid\" \"structure\"\nfi\n[ -f \"$outputfid\" ] || : > \"$outputfid\""
+    in:
+      ms_file: 16/ms_file
+      run_fingerid: run_fingerid
+    state:
+      run_fingerid:
+        __class__: ConnectedValue
+    out:
+    - id: sirius_results
+    - id: fingerid_results
+    doc: Run SIRIUS and optional CSI:FingerID on requantified mapped MS2 spectra using the source search parameters (source SIRIUSMAPPED on the requantified branch).
+  ms2query_model_download:
+    label: Download polarity-specific MS2Query models
+    when: $((inputs.identification === true) && (inputs.run_ms2query === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_ms2query_model_download
+      version: 1.0.0
+      name: Metaboigniter MS2Query model downloader
+      description: Download the polarity-specific model files from the exact public URLs in the source pipeline.
+      container: quay.io/biocontainers/gnu-wget:1.18--h5bf99c6_5
+      shell_command: mkdir -p downloads && if [ '$(inputs.polarity)' = 'positive' ]; then bash download_models.sh model_positive.csv downloads; else bash download_models.sh model_negative.csv downloads; fi
+      inputs:
+      - name: polarity
+        type: select
+        options:
+        - label: Positive
+          value: positive
+          selected: true
+        - label: Negative
+          value: negative
+      outputs:
+      - name: model_files
+        type: collection
+        collection_type: list
+        discover_datasets:
+        - discover_via: pattern
+          directory: downloads
+          pattern: (?P<designation>.+)
+          format: data
+      configfiles:
+      - filename: download_models.sh
+        content: "#!/bin/bash\n\n# Check if correct number of arguments are provided\nif [ \"$#\" -ne 2 ]; then\n    echo \"Usage: $0 filename.csv output_folder\"\n    exit 1\nfi\n\n# File containing URLs\nCSV_FILE=\"$1\"\n\n# Directory where files will be downloaded\nDOWNLOAD_DIR=\"$2\"\n\n# Create the directory if it doesn't exist\nmkdir -p \"$DOWNLOAD_DIR\"\n\n# Skip the first line (header) and read each subsequent line from the CSV file\ntail -n +2 \"$CSV_FILE\" | while IFS= read -r url\ndo\n    # Download the file using wget or curl\n    wget -P \"$DOWNLOAD_DIR\" \"$url\" || curl -o \"${DOWNLOAD_DIR}/$(basename $url)\" \"$url\"\ndone"
+      - filename: model_positive.csv
+        content: 'model_files
+
+          https://zenodo.org/record/7947603/files/library_GNPS_15_12_2021_ms2ds_embeddings.pickle
+
+          https://zenodo.org/record/7947603/files/library_GNPS_15_12_2021_s2v_embeddings.pickle
+
+          https://zenodo.org/record/7947603/files/ms2ds_model_GNPS_15_12_2021.hdf5
+
+          https://zenodo.org/record/7947603/files/ms2query_library.sqlite
+
+          https://zenodo.org/record/7947603/files/ms2query_random_forest_model.onnx
+
+          https://zenodo.org/record/7947603/files/spec2vec_model_GNPS_15_12_2021.model
+
+          https://zenodo.org/record/7947603/files/spec2vec_model_GNPS_15_12_2021.model.syn1neg.npy
+
+          https://zenodo.org/record/7947603/files/spec2vec_model_GNPS_15_12_2021.model.wv.vectors.npy'
+      - filename: model_negative.csv
+        content: 'model_files
+
+          https://zenodo.org/record/7944658/files/negative_mode_15_12_2021.sqlite
+
+          https://zenodo.org/record/7944658/files/neg_GNPS_15_12_2021_ms2ds_model.hdf5
+
+          https://zenodo.org/record/7944658/files/neg_GNPS_15_12_2021_ms2query_random_forest_model.onnx
+
+          https://zenodo.org/record/7944658/files/neg_mode_GNPS_15_12_2021_ms2ds_embeddings.pickle
+
+          https://zenodo.org/record/7944658/files/neg_mode_GNPS_15_12_2021_s2v_embeddings.pickle
+
+          https://zenodo.org/record/7944658/files/neg_mode_spec2vec_model_GNPS_15_12_2021.model
+
+          https://zenodo.org/record/7944658/files/neg_mode_spec2vec_model_GNPS_15_12_2021.model.syn1neg.npy
+
+          https://zenodo.org/record/7944658/files/neg_mode_spec2vec_model_GNPS_15_12_2021.model.wv.vectors.npy'
+    in:
+      polarity: polarity
+    state:
+      polarity:
+        __class__: ConnectedValue
+    out:
+    - id: model_files
+    doc: Download the polarity-specific MS2Query model files declared by the source manifest (source MS2QUERY_MODELDOWNLOADER).
+  ms2query_search_initial:
+    label: MS2Query search on initial consensus spectra
+    when: $((inputs.identification === true) && (inputs.run_ms2query === true) && (inputs.requantification !== true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_ms2query_search
+      version: 1.0.0
+      name: Metaboigniter MS2Query search
+      description: Run the source MS2Query 1.2.3 command with the source polarity-specific model library.
+      container: quay.io/biocontainers/ms2query:1.2.3--pyhdfd78af_0
+      shell_command: mkdir -p model output && $(inputs.model_files.map((input) => "ln -s '" + input.path + "' model/").join(" && ")) && ms2query --spectra '$(inputs.mgf_file.path)' --library model/ --results output/
+      inputs:
+      - name: mgf_file
+        type: data
+        format:
+        - mgf
+      - name: model_files
+        type: data
+        format:
+        - data
+        multiple: true
+      outputs:
+      - name: result_files
+        type: collection
+        collection_type: list
+        discover_datasets:
+        - discover_via: pattern
+          directory: output
+          pattern: (?P<designation>.+)\.csv
+          format: csv
+    in:
+      mgf_file: 15/mgf_file
+      model_files: 19/model_files
+    out:
+    - id: result_files
+    doc: Score mapped MS2 spectra against the MS2Query models (source MS2QUERY_SEARCH).
+  ms2query_merge_initial:
+    label: Merge initial MS2Query result tables
+    when: $((inputs.identification === true) && (inputs.run_ms2query === true) && (inputs.requantification !== true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_ms2query_merge
+      version: 1.0.0
+      name: Metaboigniter MS2Query result merge
+      description: Source-derived Metaboigniter tool.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: mkdir -p inputs && $(inputs.result_files.map((input, index) => "cp '" + input.path + "' 'inputs/result_" + index + ".csv'").join(" && ")) && python conc_tsv.py --input_dir inputs/ --output_file ms2query.tsv --input_type csv --output_type tsv
+      inputs:
+      - name: result_files
+        type: data
+        format:
+        - csv
+        multiple: true
+      outputs:
+      - name: results
+        type: data
+        format: tabular
+        from_work_dir: ms2query.tsv
+      configfiles:
+      - filename: conc_tsv.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nimport argparse\nimport pandas as pd\nimport glob\nimport os\n\n\ndef adjust_indices_and_concatenate(input_dir, output_file, in_type, output_type):\n    # Get a list of all TSV files in the input directory\n    tsv_files = sorted(\n        glob.glob(os.path.join(input_dir, \"*.\" + in_type)),\n        key=lambda x: int(x.split(\"_part\")[-1].split(\".\")[0]) if \"_part\" in x else -1,\n    )\n\n    total_rows = 0\n    all_data = []\n    if in_type == \"csv\":\n        separator_in = \",\"\n    elif in_type == \"tsv\":\n        separator_in = \"\\t\"\n\n    if output_type == \"csv\":\n        separator_out = \",\"\n    elif output_type == \"tsv\":\n        separator_out = \"\\t\"\n\n    for tsv_file in tsv_files:\n        df = pd.read_csv(tsv_file, sep=separator_in)\n\n        # Adjust the indices\n        df.index = df.index + total_rows + 1\n\n        all_data.append(df)\n\
+          \        total_rows += df.shape[0]\n\n    # Concatenate all dataframes\n    result = pd.concat(all_data)\n\n    # Write the final output file\n    result.to_csv(output_file, sep=separator_out, index=False)\n\n\ndef main():\n    # Create the parser\n    parser = argparse.ArgumentParser(description=\"Adjust indices in TSV files and concatenate them.\")\n\n    # Add the arguments\n    parser.add_argument(\n        \"--input_dir\", metavar=\"input_dir\", type=str, help=\"the path to the input directory containing the TSV files\"\n    )\n\n    parser.add_argument(\"--input_type\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--output_type\", type=str, help=\"tsv or csv\")\n\n    parser.add_argument(\"--output_file\", metavar=\"output_file\", type=str, help=\"the path to the final output TSV file\")\n\n    # Execute the parse_args() method\n    args = parser.parse_args()\n\n    adjust_indices_and_concatenate(args.input_dir, args.output_file, args.input_type, args.output_type)\n\
+          \n\nif __name__ == \"__main__\":\n    main()"
+    in:
+      result_files: 20/result_files
+    out:
+    - id: results
+    doc: Merge the per-partition MS2Query result tables for the initial consensus (source MS2QUERY export/merge).
+  ms2query_search_requantified:
+    label: MS2Query search on requantified consensus spectra
+    when: $((inputs.identification === true) && (inputs.run_ms2query === true) && (inputs.requantification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_ms2query_search
+      version: 1.0.0
+      name: Metaboigniter MS2Query search
+      description: Run the source MS2Query 1.2.3 command with the source polarity-specific model library.
+      container: quay.io/biocontainers/ms2query:1.2.3--pyhdfd78af_0
+      shell_command: mkdir -p model output && $(inputs.model_files.map((input) => "ln -s '" + input.path + "' model/").join(" && ")) && ms2query --spectra '$(inputs.mgf_file.path)' --library model/ --results output/
+      inputs:
+      - name: mgf_file
+        type: data
+        format:
+        - mgf
+      - name: model_files
+        type: data
+        format:
+        - data
+        multiple: true
+      outputs:
+      - name: result_files
+        type: collection
+        collection_type: list
+        discover_datasets:
+        - discover_via: pattern
+          directory: output
+          pattern: (?P<designation>.+)\.csv
+          format: csv
+    in:
+      mgf_file: 16/mgf_file
+      model_files: 19/model_files
+    out:
+    - id: result_files
+    doc: Score requantified mapped MS2 spectra against the MS2Query models (source MS2QUERY_SEARCH on the requantified branch).
+  ms2query_merge_requantified:
+    label: Merge requantified MS2Query result tables
+    when: $((inputs.identification === true) && (inputs.run_ms2query === true) && (inputs.requantification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_ms2query_merge
+      version: 1.0.0
+      name: Metaboigniter MS2Query result merge
+      description: Source-derived Metaboigniter tool.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: mkdir -p inputs && $(inputs.result_files.map((input, index) => "cp '" + input.path + "' 'inputs/result_" + index + ".csv'").join(" && ")) && python conc_tsv.py --input_dir inputs/ --output_file ms2query.tsv --input_type csv --output_type tsv
+      inputs:
+      - name: result_files
+        type: data
+        format:
+        - csv
+        multiple: true
+      outputs:
+      - name: results
+        type: data
+        format: tabular
+        from_work_dir: ms2query.tsv
+      configfiles:
+      - filename: conc_tsv.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nimport argparse\nimport pandas as pd\nimport glob\nimport os\n\n\ndef adjust_indices_and_concatenate(input_dir, output_file, in_type, output_type):\n    # Get a list of all TSV files in the input directory\n    tsv_files = sorted(\n        glob.glob(os.path.join(input_dir, \"*.\" + in_type)),\n        key=lambda x: int(x.split(\"_part\")[-1].split(\".\")[0]) if \"_part\" in x else -1,\n    )\n\n    total_rows = 0\n    all_data = []\n    if in_type == \"csv\":\n        separator_in = \",\"\n    elif in_type == \"tsv\":\n        separator_in = \"\\t\"\n\n    if output_type == \"csv\":\n        separator_out = \",\"\n    elif output_type == \"tsv\":\n        separator_out = \"\\t\"\n\n    for tsv_file in tsv_files:\n        df = pd.read_csv(tsv_file, sep=separator_in)\n\n        # Adjust the indices\n        df.index = df.index + total_rows + 1\n\n        all_data.append(df)\n\
+          \        total_rows += df.shape[0]\n\n    # Concatenate all dataframes\n    result = pd.concat(all_data)\n\n    # Write the final output file\n    result.to_csv(output_file, sep=separator_out, index=False)\n\n\ndef main():\n    # Create the parser\n    parser = argparse.ArgumentParser(description=\"Adjust indices in TSV files and concatenate them.\")\n\n    # Add the arguments\n    parser.add_argument(\n        \"--input_dir\", metavar=\"input_dir\", type=str, help=\"the path to the input directory containing the TSV files\"\n    )\n\n    parser.add_argument(\"--input_type\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--output_type\", type=str, help=\"tsv or csv\")\n\n    parser.add_argument(\"--output_file\", metavar=\"output_file\", type=str, help=\"the path to the final output TSV file\")\n\n    # Execute the parse_args() method\n    args = parser.parse_args()\n\n    adjust_indices_and_concatenate(args.input_dir, args.output_file, args.input_type, args.output_type)\n\
+          \n\nif __name__ == \"__main__\":\n    main()"
+    in:
+      result_files: 22/result_files
+    out:
+    - id: results
+    doc: Merge the per-partition MS2Query result tables for the requantified consensus (source MS2QUERY export/merge).
+  export_quant:
+    label: Export quantification table
+    when: $((inputs.identification !== true) && (inputs.requantification !== true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_quant_export
+      version: 1.0.0
+      name: Metaboigniter quantification table export
+      description: Export the quantification matrix from OpenMS consensusXML using the source workflow's cleanup.py.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: python cleanup.py --input_consensus '$(inputs.consensusxml.path)' --output quantification.tsv
+      inputs:
+      - name: consensusxml
+        type: data
+        format:
+        - consensusxml
+      outputs:
+      - name: table
+        type: data
+        format: tsv
+        from_work_dir: quantification.tsv
+      configfiles:
+      - filename: cleanup.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nimport pandas as pd\nimport numpy as np\nfrom pyopenms import *\nimport sys\nimport csv\nimport argparse\n\n\ndef cleanup(input_cmap, output_tsv):\n    consensus_map = ConsensusMap()\n    ConsensusXMLFile().load(input_cmap, consensus_map)\n    df = consensus_map.get_df()\n    for cf in consensus_map:\n        if cf.metaValueExists(\"best ion\"):\n            df[\"adduct\"] = [cf.getMetaValue(\"best ion\") for cf in consensus_map]\n            break\n    df[\"feature_ids\"] = [[handle.getUniqueId() for handle in cf.getFeatureList()] for cf in consensus_map]\n    df = df.reset_index()\n    df = df.drop(columns=[\"sequence\"])\n    df.to_csv(output_tsv, sep=\"\\t\", index=False)\n    return df\n\n\ndef modify_tsv_column(input_file, output_file, old_column_name, new_column_name, new_position):\n    \"\"\"\n    Modify a TSV file: Rename a column and change its position.\n\
+          \n    :param input_file: Path to the input TSV file\n    :param output_file: Path to the output TSV file\n    :param old_column_name: Current name of the column to be changed\n    :param new_column_name: New name for the column\n    :param new_position: New position index for the column (0-based)\n    \"\"\"\n\n    with open(input_file, \"r\", newline=\"\", encoding=\"utf-8\") as infile, open(\n        output_file, \"w\", newline=\"\", encoding=\"utf-8\"\n    ) as outfile:\n        reader = csv.reader(infile, delimiter=\"\\t\")\n        writer = csv.writer(outfile, delimiter=\"\\t\")\n\n        headers = next(reader)\n\n        # Check if old column name exists\n        if old_column_name not in headers:\n            raise ValueError(f\"Column '{old_column_name}' not found in the TSV file.\")\n\n        # Rename the column\n        old_position = headers.index(old_column_name)\n        headers[old_position] = new_column_name\n\n        # Move the column to the new position\n  \
+          \      headers.insert(new_position, headers.pop(old_position))\n\n        writer.writerow(headers)\n\n        for row in reader:\n            # Rearrange the row data based on new headers\n            value_to_move = row.pop(old_position)\n            value_to_move = value_to_move.replace(\"e_\", \"\")\n            row.insert(new_position, value_to_move)\n\n            writer.writerow(row)\n\n\ndef main():\n    # Create the parser\n    parser = argparse.ArgumentParser(description=\"Output tsv files and fix identification columns\")\n\n    # Add the arguments\n    parser.add_argument(\n        \"--input_consensus\",\n        metavar=\"input_dir\",\n        type=str,\n        help=\"the path to the input directory containing the TSV files\",\n    )\n\n    parser.add_argument(\"--sirius_id\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--finger_id\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--ms2query_id\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"\
+          --sirius_file\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--finger_file\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--ms2query_file\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--output\", type=str, help=\"the path to the final output TSV file\")\n\n    # Execute the parse_args() method\n    args = parser.parse_args()\n\n    if args.sirius_file:\n        modify_tsv_column(args.sirius_file, args.sirius_id, \"Feature_ID\", \"id\", 0)\n\n    if args.finger_file:\n        modify_tsv_column(args.finger_file, args.finger_id, \"Feature_ID\", \"id\", 0)\n    if args.ms2query_file:\n        modify_tsv_column(args.ms2query_file, args.ms2query_id, \"feature_id\", \"id\", 0)\n\n    cleanup(args.input_consensus, args.output)\n\n\nif __name__ == \"__main__\":\n    main()"
+    in:
+      consensusxml: 12/out
+    out:
+    - id: table
+    doc: Export the linked consensus table in the source TSV layout with the PyOpenMS cleanup script (source PYOPENMS_EXPORTQUANTIFICATION).
+  export_requant:
+    label: Export requantification table
+    when: $((inputs.identification !== true) && (inputs.requantification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_quant_export
+      version: 1.0.0
+      name: Metaboigniter quantification table export
+      description: Export the quantification matrix from OpenMS consensusXML using the source workflow's cleanup.py.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: python cleanup.py --input_consensus '$(inputs.consensusxml.path)' --output quantification.tsv
+      inputs:
+      - name: consensusxml
+        type: data
+        format:
+        - consensusxml
+      outputs:
+      - name: table
+        type: data
+        format: tsv
+        from_work_dir: quantification.tsv
+      configfiles:
+      - filename: cleanup.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nimport pandas as pd\nimport numpy as np\nfrom pyopenms import *\nimport sys\nimport csv\nimport argparse\n\n\ndef cleanup(input_cmap, output_tsv):\n    consensus_map = ConsensusMap()\n    ConsensusXMLFile().load(input_cmap, consensus_map)\n    df = consensus_map.get_df()\n    for cf in consensus_map:\n        if cf.metaValueExists(\"best ion\"):\n            df[\"adduct\"] = [cf.getMetaValue(\"best ion\") for cf in consensus_map]\n            break\n    df[\"feature_ids\"] = [[handle.getUniqueId() for handle in cf.getFeatureList()] for cf in consensus_map]\n    df = df.reset_index()\n    df = df.drop(columns=[\"sequence\"])\n    df.to_csv(output_tsv, sep=\"\\t\", index=False)\n    return df\n\n\ndef modify_tsv_column(input_file, output_file, old_column_name, new_column_name, new_position):\n    \"\"\"\n    Modify a TSV file: Rename a column and change its position.\n\
+          \n    :param input_file: Path to the input TSV file\n    :param output_file: Path to the output TSV file\n    :param old_column_name: Current name of the column to be changed\n    :param new_column_name: New name for the column\n    :param new_position: New position index for the column (0-based)\n    \"\"\"\n\n    with open(input_file, \"r\", newline=\"\", encoding=\"utf-8\") as infile, open(\n        output_file, \"w\", newline=\"\", encoding=\"utf-8\"\n    ) as outfile:\n        reader = csv.reader(infile, delimiter=\"\\t\")\n        writer = csv.writer(outfile, delimiter=\"\\t\")\n\n        headers = next(reader)\n\n        # Check if old column name exists\n        if old_column_name not in headers:\n            raise ValueError(f\"Column '{old_column_name}' not found in the TSV file.\")\n\n        # Rename the column\n        old_position = headers.index(old_column_name)\n        headers[old_position] = new_column_name\n\n        # Move the column to the new position\n  \
+          \      headers.insert(new_position, headers.pop(old_position))\n\n        writer.writerow(headers)\n\n        for row in reader:\n            # Rearrange the row data based on new headers\n            value_to_move = row.pop(old_position)\n            value_to_move = value_to_move.replace(\"e_\", \"\")\n            row.insert(new_position, value_to_move)\n\n            writer.writerow(row)\n\n\ndef main():\n    # Create the parser\n    parser = argparse.ArgumentParser(description=\"Output tsv files and fix identification columns\")\n\n    # Add the arguments\n    parser.add_argument(\n        \"--input_consensus\",\n        metavar=\"input_dir\",\n        type=str,\n        help=\"the path to the input directory containing the TSV files\",\n    )\n\n    parser.add_argument(\"--sirius_id\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--finger_id\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--ms2query_id\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"\
+          --sirius_file\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--finger_file\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--ms2query_file\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--output\", type=str, help=\"the path to the final output TSV file\")\n\n    # Execute the parse_args() method\n    args = parser.parse_args()\n\n    if args.sirius_file:\n        modify_tsv_column(args.sirius_file, args.sirius_id, \"Feature_ID\", \"id\", 0)\n\n    if args.finger_file:\n        modify_tsv_column(args.finger_file, args.finger_id, \"Feature_ID\", \"id\", 0)\n    if args.ms2query_file:\n        modify_tsv_column(args.ms2query_file, args.ms2query_id, \"feature_id\", \"id\", 0)\n\n    cleanup(args.input_consensus, args.output)\n\n\nif __name__ == \"__main__\":\n    main()"
+    in:
+      consensusxml: 38/out
+    out:
+    - id: table
+    doc: Export the requantified consensus table in the source TSV layout (source PYOPENMS_EXPORTQUANTIFICATION on the requantification branch).
+  export_identified:
+    label: Export quantification and initial identification tables
+    when: $((inputs.identification === true) && (inputs.requantification !== true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_identification_export
+      version: 1.0.0
+      name: Metaboigniter identification result export
+      description: Use the source cleanup.py script to export quantification and normalize selected identification tables.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: 'python cleanup.py --input_consensus ''$(inputs.consensusxml.path)'' --output output_quantification.tsv $(inputs.sirius_file ? "--sirius_file ''" + inputs.sirius_file.path + "'' --sirius_id output_sirius.tsv" : "") $(inputs.fingerid_file ? "--finger_file ''" + inputs.fingerid_file.path + "'' --finger_id output_fingerid.tsv" : "") $(inputs.ms2query_file ? "--ms2query_file ''" + inputs.ms2query_file.path + "'' --ms2query_id output_ms2query.tsv" : "")'
+      inputs:
+      - name: consensusxml
+        type: data
+        format:
+        - consensusxml
+      - name: sirius_file
+        type: data
+        format:
+        - tabular
+        - tsv
+        optional: true
+      - name: fingerid_file
+        type: data
+        format:
+        - tabular
+        - tsv
+        optional: true
+      - name: ms2query_file
+        type: data
+        format:
+        - tabular
+        - tsv
+        optional: true
+      outputs:
+      - name: results
+        type: collection
+        collection_type: list
+        discover_datasets:
+        - discover_via: pattern
+          directory: .
+          pattern: (?:output_quantification|output_sirius|output_fingerid|output_ms2query)\.tsv
+          format: tabular
+      configfiles:
+      - filename: cleanup.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nimport pandas as pd\nimport numpy as np\nfrom pyopenms import *\nimport sys\nimport csv\nimport argparse\n\n\ndef cleanup(input_cmap, output_tsv):\n    consensus_map = ConsensusMap()\n    ConsensusXMLFile().load(input_cmap, consensus_map)\n    df = consensus_map.get_df()\n    for cf in consensus_map:\n        if cf.metaValueExists(\"best ion\"):\n            df[\"adduct\"] = [cf.getMetaValue(\"best ion\") for cf in consensus_map]\n            break\n    df[\"feature_ids\"] = [[handle.getUniqueId() for handle in cf.getFeatureList()] for cf in consensus_map]\n    df = df.reset_index()\n    df = df.drop(columns=[\"sequence\"])\n    df.to_csv(output_tsv, sep=\"\\t\", index=False)\n    return df\n\n\ndef modify_tsv_column(input_file, output_file, old_column_name, new_column_name, new_position):\n    \"\"\"\n    Modify a TSV file: Rename a column and change its position.\n\
+          \n    :param input_file: Path to the input TSV file\n    :param output_file: Path to the output TSV file\n    :param old_column_name: Current name of the column to be changed\n    :param new_column_name: New name for the column\n    :param new_position: New position index for the column (0-based)\n    \"\"\"\n\n    with open(input_file, \"r\", newline=\"\", encoding=\"utf-8\") as infile, open(\n        output_file, \"w\", newline=\"\", encoding=\"utf-8\"\n    ) as outfile:\n        reader = csv.reader(infile, delimiter=\"\\t\")\n        writer = csv.writer(outfile, delimiter=\"\\t\")\n\n        headers = next(reader)\n\n        # Check if old column name exists\n        if old_column_name not in headers:\n            raise ValueError(f\"Column '{old_column_name}' not found in the TSV file.\")\n\n        # Rename the column\n        old_position = headers.index(old_column_name)\n        headers[old_position] = new_column_name\n\n        # Move the column to the new position\n  \
+          \      headers.insert(new_position, headers.pop(old_position))\n\n        writer.writerow(headers)\n\n        for row in reader:\n            # Rearrange the row data based on new headers\n            value_to_move = row.pop(old_position)\n            value_to_move = value_to_move.replace(\"e_\", \"\")\n            row.insert(new_position, value_to_move)\n\n            writer.writerow(row)\n\n\ndef main():\n    # Create the parser\n    parser = argparse.ArgumentParser(description=\"Output tsv files and fix identification columns\")\n\n    # Add the arguments\n    parser.add_argument(\n        \"--input_consensus\",\n        metavar=\"input_dir\",\n        type=str,\n        help=\"the path to the input directory containing the TSV files\",\n    )\n\n    parser.add_argument(\"--sirius_id\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--finger_id\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--ms2query_id\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"\
+          --sirius_file\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--finger_file\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--ms2query_file\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--output\", type=str, help=\"the path to the final output TSV file\")\n\n    # Execute the parse_args() method\n    args = parser.parse_args()\n\n    if args.sirius_file:\n        modify_tsv_column(args.sirius_file, args.sirius_id, \"Feature_ID\", \"id\", 0)\n\n    if args.finger_file:\n        modify_tsv_column(args.finger_file, args.finger_id, \"Feature_ID\", \"id\", 0)\n    if args.ms2query_file:\n        modify_tsv_column(args.ms2query_file, args.ms2query_id, \"feature_id\", \"id\", 0)\n\n    cleanup(args.input_consensus, args.output)\n\n\nif __name__ == \"__main__\":\n    main()"
+    in:
+      consensusxml: 12/out
+      sirius_file: 17/sirius_results
+      fingerid_file: 17/fingerid_results
+      ms2query_file: 21/results
+    out:
+    - id: results
+    doc: Export quantification plus SIRIUS/FingerID and MS2Query identification tables for the initial consensus (source PYOPENMS_EXPORTIDENTIFICATION).
+  export_identified_requant:
+    label: Export requantified quantification and identification tables
+    when: $((inputs.identification === true) && (inputs.requantification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_identification_export
+      version: 1.0.0
+      name: Metaboigniter identification result export
+      description: Use the source cleanup.py script to export quantification and normalize selected identification tables.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: 'python cleanup.py --input_consensus ''$(inputs.consensusxml.path)'' --output output_quantification.tsv $(inputs.sirius_file ? "--sirius_file ''" + inputs.sirius_file.path + "'' --sirius_id output_sirius.tsv" : "") $(inputs.fingerid_file ? "--finger_file ''" + inputs.fingerid_file.path + "'' --finger_id output_fingerid.tsv" : "") $(inputs.ms2query_file ? "--ms2query_file ''" + inputs.ms2query_file.path + "'' --ms2query_id output_ms2query.tsv" : "")'
+      inputs:
+      - name: consensusxml
+        type: data
+        format:
+        - consensusxml
+      - name: sirius_file
+        type: data
+        format:
+        - tabular
+        - tsv
+        optional: true
+      - name: fingerid_file
+        type: data
+        format:
+        - tabular
+        - tsv
+        optional: true
+      - name: ms2query_file
+        type: data
+        format:
+        - tabular
+        - tsv
+        optional: true
+      outputs:
+      - name: results
+        type: collection
+        collection_type: list
+        discover_datasets:
+        - discover_via: pattern
+          directory: .
+          pattern: (?:output_quantification|output_sirius|output_fingerid|output_ms2query)\.tsv
+          format: tabular
+      configfiles:
+      - filename: cleanup.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nimport pandas as pd\nimport numpy as np\nfrom pyopenms import *\nimport sys\nimport csv\nimport argparse\n\n\ndef cleanup(input_cmap, output_tsv):\n    consensus_map = ConsensusMap()\n    ConsensusXMLFile().load(input_cmap, consensus_map)\n    df = consensus_map.get_df()\n    for cf in consensus_map:\n        if cf.metaValueExists(\"best ion\"):\n            df[\"adduct\"] = [cf.getMetaValue(\"best ion\") for cf in consensus_map]\n            break\n    df[\"feature_ids\"] = [[handle.getUniqueId() for handle in cf.getFeatureList()] for cf in consensus_map]\n    df = df.reset_index()\n    df = df.drop(columns=[\"sequence\"])\n    df.to_csv(output_tsv, sep=\"\\t\", index=False)\n    return df\n\n\ndef modify_tsv_column(input_file, output_file, old_column_name, new_column_name, new_position):\n    \"\"\"\n    Modify a TSV file: Rename a column and change its position.\n\
+          \n    :param input_file: Path to the input TSV file\n    :param output_file: Path to the output TSV file\n    :param old_column_name: Current name of the column to be changed\n    :param new_column_name: New name for the column\n    :param new_position: New position index for the column (0-based)\n    \"\"\"\n\n    with open(input_file, \"r\", newline=\"\", encoding=\"utf-8\") as infile, open(\n        output_file, \"w\", newline=\"\", encoding=\"utf-8\"\n    ) as outfile:\n        reader = csv.reader(infile, delimiter=\"\\t\")\n        writer = csv.writer(outfile, delimiter=\"\\t\")\n\n        headers = next(reader)\n\n        # Check if old column name exists\n        if old_column_name not in headers:\n            raise ValueError(f\"Column '{old_column_name}' not found in the TSV file.\")\n\n        # Rename the column\n        old_position = headers.index(old_column_name)\n        headers[old_position] = new_column_name\n\n        # Move the column to the new position\n  \
+          \      headers.insert(new_position, headers.pop(old_position))\n\n        writer.writerow(headers)\n\n        for row in reader:\n            # Rearrange the row data based on new headers\n            value_to_move = row.pop(old_position)\n            value_to_move = value_to_move.replace(\"e_\", \"\")\n            row.insert(new_position, value_to_move)\n\n            writer.writerow(row)\n\n\ndef main():\n    # Create the parser\n    parser = argparse.ArgumentParser(description=\"Output tsv files and fix identification columns\")\n\n    # Add the arguments\n    parser.add_argument(\n        \"--input_consensus\",\n        metavar=\"input_dir\",\n        type=str,\n        help=\"the path to the input directory containing the TSV files\",\n    )\n\n    parser.add_argument(\"--sirius_id\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--finger_id\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--ms2query_id\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"\
+          --sirius_file\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--finger_file\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--ms2query_file\", type=str, help=\"tsv or csv\")\n    parser.add_argument(\"--output\", type=str, help=\"the path to the final output TSV file\")\n\n    # Execute the parse_args() method\n    args = parser.parse_args()\n\n    if args.sirius_file:\n        modify_tsv_column(args.sirius_file, args.sirius_id, \"Feature_ID\", \"id\", 0)\n\n    if args.finger_file:\n        modify_tsv_column(args.finger_file, args.finger_id, \"Feature_ID\", \"id\", 0)\n    if args.ms2query_file:\n        modify_tsv_column(args.ms2query_file, args.ms2query_id, \"feature_id\", \"id\", 0)\n\n    cleanup(args.input_consensus, args.output)\n\n\nif __name__ == \"__main__\":\n    main()"
+    in:
+      consensusxml: 37/out
+      sirius_file: 18/sirius_results
+      fingerid_file: 18/fingerid_results
+      ms2query_file: 23/results
+    out:
+    - id: results
+    doc: Export quantification plus identification tables for the requantified consensus (source PYOPENMS_EXPORTIDENTIFICATION on the requantification branch).
+  collect_result_tables:
+    label: Collect active branch result tables
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_collect_result_tables
+      version: 1.0.0
+      name: Metaboigniter result table collector
+      description: Collect result tables from the single active quantification/identification branch for MultiQC.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: 'mkdir -p tables; $(inputs.quant_table ? "cp ''" + inputs.quant_table.path + "'' tables/quantification.tsv;" : "") $(inputs.requant_table ? "cp ''" + inputs.requant_table.path + "'' tables/requantified.tsv;" : "") $(inputs.identified_files ? inputs.identified_files.map((input, index) => "cp ''" + input.path + "'' ''tables/identified_" + index + ".tsv'';").join(" ") : "") $(inputs.identified_requant_files ? inputs.identified_requant_files.map((input, index) => "cp ''" + input.path + "'' ''tables/identified_requantified_" + index + ".tsv'';").join(" ") : "")'
+      inputs:
+      - name: quant_table
+        type: data
+        format:
+        - tabular
+        optional: true
+      - name: requant_table
+        type: data
+        format:
+        - tabular
+        optional: true
+      - name: identified_files
+        type: data
+        format:
+        - tabular
+        multiple: true
+        optional: true
+      - name: identified_requant_files
+        type: data
+        format:
+        - tabular
+        multiple: true
+        optional: true
+      outputs:
+      - name: tables
+        type: collection
+        collection_type: list
+        discover_datasets:
+        - discover_via: pattern
+          directory: tables
+          pattern: (?P<designation>.+)\.tsv
+          format: tabular
+    in:
+      quant_table: 24/table
+      requant_table: 25/table
+      identified_files: 26/results
+      identified_requant_files: 27/results
+    out:
+    - id: tables
+    doc: Collect the result tables of the active branch into one directory and rename them deterministically for the MultiQC step.
+  multiqc:
+    label: MultiQC report for quantification-only branch
+    tool_id: toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1.35+galaxy5
+    tool_version: 1.35+galaxy5
+    in:
+      results_0|software_cond|input: 28/tables
+    out:
+    - id: html_report
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: iuc
+      name: multiqc
+      changeset_revision: 94b6bea727ae
+    state:
+      results:
+      - software_cond:
+          software: custom_content
+          plot_type: table
+          section_name: Metaboigniter
+          title: Quantification results
+          description: Metaboigniter consensus feature quantification table.
+          input:
+            __class__: ConnectedValue
+      flat: false
+      export: false
+      png_plots: false
+    doc: Build the MultiQC report from the active branch's quantification table, added as a custom-content section.
+  split_consensus:
+    label: Split complete and missing consensus features
+    when: $((inputs.requantification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_split_consensus
+      version: 1.0.0
+      name: Metaboigniter consensus split
+      description: Wrapper derived from the pinned nf-core/metaboigniter 2.0.1 source.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: python split.py '$(inputs.consensusxml.path)' complete.consensusXML missing.consensusXML
+      inputs:
+      - name: consensusxml
+        type: data
+        format:
+        - consensusxml
+      outputs:
+      - name: complete
+        type: data
+        format: consensusxml
+        from_work_dir: complete.consensusXML
+      - name: missing
+        type: data
+        format: consensusxml
+        from_work_dir: missing.consensusXML
+      configfiles:
+      - filename: split.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nfrom pyopenms import *\nimport glob\nimport sys\n\n# Split the ConsensusMap into features that have no missing values,\n# and features that have at least one missing value;\n# requantify only the missing values.\n\n\ndef split(in_cmap, out_complete, out_missing):\n    # split ConsensusMap\n    consensus_map = ConsensusMap()\n    ConsensusXMLFile().load(in_cmap, consensus_map)\n\n    headers = consensus_map.getColumnHeaders()\n\n    complete = ConsensusMap(consensus_map)\n    complete.clear(False)\n    missing = ConsensusMap(consensus_map)\n    missing.clear(False)\n\n    for cf in consensus_map:\n        if len(cf.getFeatureList()) < len(headers):  # missing values\n            missing.push_back(cf)\n        else:\n            complete.push_back(cf)  # no missing values\n\n    ConsensusXMLFile().store(out_complete, complete)\n    ConsensusXMLFile().store(out_missing,\
+          \ missing)\n    return out_complete, out_missing\n\n\nif __name__ == \"__main__\":\n    split(sys.argv[1], sys.argv[2], sys.argv[3])"
+    in:
+      consensusxml: 14/out
+    out:
+    - id: complete
+    - id: missing
+    doc: Split consensus features into complete and missing-feature groups to drive requantification (source PYOPENMS_SPLITCONSENSUS).
+  reload_maps:
+    label: Reload maps for complete features
+    when: $((inputs.requantification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_reload_maps
+      version: 1.0.0
+      name: Metaboigniter reload feature maps
+      description: Wrapper derived from the pinned nf-core/metaboigniter 2.0.1 source.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: python reloadmaps.py '$(inputs.featurexml.path)' '$(inputs.consensusxml.path)' reloaded.featureXML
+      inputs:
+      - name: featurexml
+        type: data
+        format:
+        - featurexml
+      - name: consensusxml
+        type: data
+        format:
+        - consensusxml
+      outputs:
+      - name: complete_features
+        type: data
+        format: featurexml
+        from_work_dir: reloaded.featureXML
+      configfiles:
+      - filename: reloadmaps.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nfrom pyopenms import *\nimport glob\nimport sys\n\n\ndef reloadmaps(in_aligned, in_complete, out_complete):\n    # first load feature files in an OpenMS format\n    featurexml_files = glob.glob(in_aligned)\n    feature_maps = []\n    for featurexml_file in featurexml_files:\n        fmap = FeatureMap()\n        FeatureXMLFile().load(featurexml_file, fmap)\n        feature_maps.append(fmap)\n\n    consensus_map = ConsensusMap()\n    ConsensusXMLFile().load(in_complete, consensus_map)\n    to_keep_ids = [\n        item\n        for sublist in [[feature.getUniqueId() for feature in cf.getFeatureList()] for cf in consensus_map]\n        for item in sublist\n    ]\n\n    for fm in feature_maps:\n        fm_filterd = FeatureMap(fm)\n        fm_filterd.clear(False)\n        for f in fm:\n            if f.getUniqueId() in to_keep_ids:\n                fm_filterd.push_back(f)\n\
+          \        FeatureXMLFile().store(out_complete, fm_filterd)\n\n    return out_complete\n\n\nif __name__ == \"__main__\":\n    reloadmaps(sys.argv[1], sys.argv[2], sys.argv[3])"
+    in:
+      featurexml: 8/aligned_featurexml
+      consensusxml: 30/complete
+    out:
+    - id: complete_features
+    doc: Reload per-sample feature maps for the complete consensus features (source PYOPENMS_RELOADMAPS).
+  lib_builder:
+    label: Build requantification search library
+    when: $((inputs.requantification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_lib_builder
+      version: 1.0.0
+      name: Metaboigniter requantification library builder
+      description: Wrapper derived from the pinned nf-core/metaboigniter 2.0.1 source.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: python lib_generator.py --input '$(inputs.consensusxml.path)' --output library.tsv --polarity '$(inputs.polarity)'
+      inputs:
+      - name: consensusxml
+        type: data
+        format:
+        - consensusxml
+      - name: polarity
+        type: select
+        options:
+        - label: Positive
+          value: positive
+          selected: true
+        - label: Negative
+          value: negative
+      outputs:
+      - name: library_tsv
+        type: data
+        format: tabular
+        from_work_dir: library.tsv
+      configfiles:
+      - filename: lib_generator.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nimport pyopenms as po\nimport argparse\n\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--input\", help=\"input consensusXML file\")\nparser.add_argument(\"--output\", help=\"output tsv file\")\nparser.add_argument(\"--polarity\", choices=[\"positive\", \"negative\"], help=\"polarity\")\n\nargs = parser.parse_args()\n\ncmap = po.ConsensusMap()\npo.ConsensusXMLFile().load(args.input, cmap)\n\npolarity = \"+\"\n# set polarity\nif args.polarity == \"negative\":\n    polarity = \"-\"\n\n\ncmap.sortBySize()\ncolumn_headers = [\n    \"CompoundName\",\n    \"SumFormula\",\n    \"Mass\",\n    \"Charge\",\n    \"RetentionTime\",\n    \"RetentionTimeRange\",\n    \"IsoDistribution\",\n]\n\n\ndef mz_to_mass(mz, charge, polarity):\n    # Treat charge zero as one\n    if charge == 0:\n        charge = 1\n\n    mass = (mz * charge) - (charge * polarity * 1.007825)\n  \
+          \  return mass\n\n\ni = 0\nwith open(args.output, \"w\") as f:\n    f.write(\"\\t\".join(column_headers) + \"\\n\")\n    for cfeature in cmap:\n        int_info = [\"NA\" for number in range(len(column_headers))]\n        int_info[0] = \"feature_\" + str(i)\n        int_info[1] = \" \"\n\n        # set charge first\n        charge = cfeature.getCharge()\n        # set mass\n\n        int_info[2] = str(mz_to_mass(cfeature.getMZ(), charge, int(polarity + \"1\")))\n        if charge == 0:\n            charge = 1\n        int_info[3] = polarity + str(charge)\n        int_info[4] = str(cfeature.getRT())\n\n        int_info[5] = \"0\"\n        int_info[6] = \"0\"\n        i = i + 1\n        f.write(\"\\t\".join(int_info) + \"\\n\")"
+    in:
+      consensusxml: 30/missing
+      polarity: polarity
+    out:
+    - id: library_tsv
+    doc: Build the requantification search library from complete consensus features (source PYOPENMS_LIBBUILDER).
+  featurefindermetaboident:
+    label: Requantify missing features
+    when: $((inputs.requantification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_featurefindermetaboident
+      version: 1.0.0
+      name: Metaboigniter FeatureFinderMetaboIdent
+      description: Requantify missing features using the source module's FeatureFinderMetaboIdent command.
+      container: quay.io/biocontainers/openms:3.0.0--h8964181_0
+      shell_command: FeatureFinderMetaboIdent -id '$(inputs.library_tsv.path)' -in '$(inputs.mzml.path)' -out requantified.featureXML
+      inputs:
+      - name: mzml
+        type: data
+        format:
+        - mzml
+      - name: library_tsv
+        type: data
+        format:
+        - tabular
+      outputs:
+      - name: out
+        type: data
+        format: featurexml
+        from_work_dir: requantified.featureXML
+    in:
+      mzml: 9/aligned_mzml
+      library_tsv: 32/library_tsv
+    out:
+    - id: out
+    doc: Requantify features missing from the initial consensus with OpenMS FeatureFinderMetaboIdent (source OPENMS_FEATUREFINDERMETABOIDENT).
+  merge_requantified_features:
+    label: Merge original and requantified features
+    when: $((inputs.requantification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_merge_features
+      version: 1.0.0
+      name: Metaboigniter feature map merge
+      description: Wrapper derived from the pinned nf-core/metaboigniter 2.0.1 source.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: python merge.py --inputc '$(inputs.complete_features.path)' --inputr '$(inputs.requantified_features.path)' --output merged.featureXML
+      inputs:
+      - name: complete_features
+        type: data
+        format:
+        - featurexml
+      - name: requantified_features
+        type: data
+        format:
+        - featurexml
+      outputs:
+      - name: merged_features
+        type: data
+        format: featurexml
+        from_work_dir: merged.featureXML
+      configfiles:
+      - filename: merge.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nfrom pyopenms import *\nimport os\nimport glob\nimport sys\n\nimport argparse\n\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--inputc\", help=\"input complete featureXML file\")\nparser.add_argument(\"--inputr\", help=\"input requantified featureXML file\")\nparser.add_argument(\"--output\", help=\"output featureXML file\")\n\n\nargs = parser.parse_args()\nfm_ffm = FeatureMap()\nFeatureXMLFile().load(args.inputc, fm_ffm)\nfm_ffmid = FeatureMap()\nFeatureXMLFile().load(args.inputr, fm_ffmid)\nfor f in fm_ffmid:\n    fm_ffm.push_back(f)\nfm_ffm.setUniqueIds()\n\nFeatureXMLFile().store(args.output, fm_ffm)"
+    in:
+      complete_features: 31/complete_features
+      requantified_features: 33/out
+    out:
+    - id: merged_features
+    doc: Merge original and requantified feature maps into one featureXML (source PYOPENMS_MERGE).
+  annotate_requantified:
+    label: Annotate requantified feature maps with adducts
+    when: $((inputs.requantification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_adduct_decharger
+      version: 1.0.0
+      name: Metaboigniter adduct decharger
+      description: Run the source workflow's OpenMS MetaboliteAdductDecharger process.
+      container: quay.io/biocontainers/openms:3.0.0--h8964181_0
+      shell_command: potential_adducts='H:+:0.6 Na:+:0.1 NH4:+:0.1 H-1O-1:+:0.1 H-3O-2:+:0.1'; negative_mode=''; if [ '$(inputs.polarity)' = 'negative' ]; then potential_adducts='H-1:-:0.8 H-3O-1:-:0.2'; negative_mode='-algorithm:MetaboliteFeatureDeconvolution:negative_mode'; fi; MetaboliteAdductDecharger -in '$(inputs.featurexml.path)' -out_fm annotated.featureXML -algorithm:MetaboliteFeatureDeconvolution:potential_adducts $potential_adducts $negative_mode -algorithm:MetaboliteFeatureDeconvolution:charge_min 1 -algorithm:MetaboliteFeatureDeconvolution:charge_max 1 -algorithm:MetaboliteFeatureDeconvolution:charge_span_max 1 -algorithm:MetaboliteFeatureDeconvolution:q_try feature -algorithm:MetaboliteFeatureDeconvolution:retention_max_diff 1.0 -algorithm:MetaboliteFeatureDeconvolution:retention_max_diff_local 1.0 -algorithm:MetaboliteFeatureDeconvolution:mass_max_diff 5 -algorithm:MetaboliteFeatureDeconvolution:unit ppm -algorithm:MetaboliteFeatureDeconvolution:max_neutrals 1 -algorithm:MetaboliteFeatureDeconvolution:use_minority_bound
+        true -algorithm:MetaboliteFeatureDeconvolution:max_minority_bound 1 -algorithm:MetaboliteFeatureDeconvolution:min_rt_overlap 0.66 -algorithm:MetaboliteFeatureDeconvolution:default_map_label 'decharged features'
+      inputs:
+      - name: featurexml
+        type: data
+        format:
+        - featurexml
+      - name: polarity
+        type: select
+        options:
+        - label: Positive
+          value: positive
+          selected: true
+        - label: Negative
+          value: negative
+      outputs:
+      - name: annotated_features
+        type: data
+        format: featurexml
+        from_work_dir: annotated.featureXML
+    in:
+      featurexml: 34/merged_features
+      polarity: polarity
+    out:
+    - id: annotated_features
+    doc: Annotate requantified feature maps with adducts and charge states using MetaboliteAdductDecharger (source OPENMS_METABOLITEADDUCTDECHARGER, requantification branch).
+  annotate_requantified_c13:
+    label: Apply C13 feature detection to requantified data
+    when: $((inputs.requantification === true) && (inputs.identification === true))
+    run:
+      class: GalaxyUserTool
+      id: metaboigniter_c13_detection
+      version: 1.0.0
+      name: Metaboigniter C13 feature detection
+      description: Run the source PYOPENMS_C13DETECTION script on featureXML and its paired mzML.
+      container: quay.io/biocontainers/pyopenms:2.9.1--py311h9b8898c_3
+      shell_command: python c13detection.py --input_feature '$(inputs.featurexml.path)' --input_mzml '$(inputs.mzml.path)' --output_feature c13.featureXML
+      inputs:
+      - name: featurexml
+        type: data
+        format:
+        - featurexml
+      - name: mzml
+        type: data
+        format:
+        - mzml
+      outputs:
+      - name: annotated_features
+        type: data
+        format: featurexml
+        from_work_dir: c13.featureXML
+      configfiles:
+      - filename: c13detection.py
+        content: "#!/usr/bin/env python\n\n# Written by Payam Emami and Axel Walter and released under the MIT license.\n\nimport os\nimport numpy as np\nimport pandas as pd\nimport pyopenms as py\nimport argparse\n\n\ndef get_tol_window(val, tol, ppm):\n    if ppm:\n        left = val - val * tol * 1e-6\n        right = val / (1.0 - tol * 1e-6)\n    else:\n        left = val - tol\n        right = val + tol\n\n    return (left, right)\n\n\ndef get_highest_intensity_peak_in_mz_range(test_mz, spectrum, tolerance, ppm, rt_min, rt_max):\n    tolerance_window = get_tol_window(test_mz, tolerance, ppm)\n\n    peaks_in_window = spectrum.get2DPeakDataLong(rt_min, rt_max, tolerance_window[0], tolerance_window[1])\n\n    if len(peaks_in_window[0]) == 0:\n        return []\n\n    max_element = peaks_in_window[2].argmax()\n    return [peaks_in_window[1][max_element], peaks_in_window[2][max_element]]\n\n\ndef extract_precursor_isotope_pattern(precursor_mz, precursor_spectrum, iterations, charge, tolerance,\
+          \ rt_min, rt_max):\n    isotopes = []\n    ppm = True\n    isotope_tolerance = 1\n\n    peak = get_highest_intensity_peak_in_mz_range(precursor_mz, precursor_spectrum, tolerance, ppm, rt_min, rt_max)\n    if len(peak) > 0:\n        isotopes.append(peak)\n\n    # further isotope_traces with the mass error of 1 ppm\n    massdiff = 1.0033548378  # this is the C13C12_MASSDIFF_U\n\n    if charge != 0:\n        massdiff = massdiff / abs(charge)\n\n    while len(peak) > 0 and iterations > 0:\n        peak = get_highest_intensity_peak_in_mz_range(\n            peak[0] + massdiff, precursor_spectrum, isotope_tolerance, ppm, rt_min, rt_max\n        )\n        if len(peak) > 0:\n            isotopes.append(peak)\n\n        iterations -= 1\n\n    return isotopes  # return isotopes as pandas DataFrame\n\n\nparser = argparse.ArgumentParser(description=\"Mass Spectrometry Data Processing Tool\")\n\nparser.add_argument(\"--input_feature\", help=\"Path to consensus XML file\")\nparser.add_argument(\"\
+          --input_mzml\", help=\"Path to consensus XML file\")\n\nparser.add_argument(\"--ppm\", type=float, default=10, help=\"ppm for isotope detection\")\nparser.add_argument(\"--mz\", type=float, default=6.5, help=\"ppm for isotope detection\")\nparser.add_argument(\"--rt\", type=float, default=3, help=\"RT for isotope detection\")\nparser.add_argument(\"--iterations\", type=int, default=3, help=\"RT for isotope detection\")\nparser.add_argument(\"--polarity\", choices=[\"positive\", \"negative\"], default=\"positive\", help=\"Polarity of the data\")\n\nparser.add_argument(\"--output_feature\", help=\"Path to consensus XML file\")\n\n\nargs = parser.parse_args()\n\n\n## load feature files\nfeatures = py.FeatureMap()\npy.FeatureXMLFile().load(args.input_feature, features)\n\n## load mzMLfie\n\nexp = py.MSExperiment()\npy.MzMLFile().load(args.input_mzml, exp)\n\nexp.updateRanges(1)\nmax_rt_exp = exp.getMaxRT()\nmin_rt_exp = exp.getMinRT()\n\nmax_mz_exp = exp.getMaxMZ()\nmin_mz_exp = exp.getMinMZ()\n\
+          \n\nempty_protein_id = py.ProteinIdentification()\n\nempty_protein_id.setIdentifier(\"UNKNOWN_SEARCH_RUN_IDENTIFIER\")\nfeatures.setProteinIdentifications([empty_protein_id])\n\n\nall_ints = 0\nfor i in range(features.size()):\n    sl_feature = features[i]\n    sl_feature.setConvexHulls([])\n    sl_feature.setSubordinates([])\n    all_ints += sl_feature.getIntensity()\n    features[i] = sl_feature\n\n\nfor i in range(features.size()):\n    sl_feature = features[i]\n    sl_feature.setConvexHulls([])\n    sl_feature.setSubordinates([])\n    rt = sl_feature.getRT()\n    mz = sl_feature.getMZ()\n\n    charge_f = sl_feature.getCharge()\n    if args.polarity == \"positive\" and charge_f == 0:\n        charge_f = 1\n    elif args.polarity == \"negative\" and charge_f == 0:\n        charge_f = -1\n\n    rt_max = max_rt_exp if (rt + args.rt) > max_rt_exp else (rt + args.rt)\n    rt_min = min_rt_exp if (rt - args.rt) < min_rt_exp else (rt - args.rt)\n\n    mz_max = max_mz_exp if (mz + args.mz)\
+          \ > max_mz_exp else (mz + args.mz)\n    mz_min = min_mz_exp if (mz - args.mz) < min_mz_exp else (mz - args.mz)\n\n    iso = extract_precursor_isotope_pattern(mz, exp, args.iterations, charge_f, args.ppm, rt_min, rt_max)\n\n    peptide = py.PeptideIdentification()\n    peptide.setRT(rt)\n    peptide.setMZ(mz)\n    iso_mz = []\n    iso_in = []\n    if len(iso) > 0:\n        iso_mz = list([float(mz[0]) for mz in iso])\n        iso_in = [float(inte[1]) for inte in iso]\n\n    peptide.setMetaValue(\"isotope_calcdist_mz\", iso_mz)\n    peptide.setMetaValue(\"isotope_calcdist_int\", iso_in)\n\n    iso_mz = []\n    iso_in = []\n    if sl_feature.metaValueExists(\"masstrace_intensity\"):\n        iso_mz = sl_feature.getMetaValue(\"masstrace_centroid_mz\")\n        iso_in = sl_feature.getMetaValue(\"masstrace_intensity\")\n\n    peptide.setMetaValue(\"masstrace_intensity\", iso_in)\n    peptide.setMetaValue(\"masstrace_centroid_mz\", iso_mz)\n\n    peptide.setMetaValue(\"feature_quality\"\
+          , sl_feature.getOverallQuality())\n    peptide.setMetaValue(\"normalized_intensity\", (sl_feature.getIntensity() / all_ints))\n\n    peptide.setIdentifier(empty_protein_id.getIdentifier())\n\n    sl_feature.setPeptideIdentifications([peptide])\n    features[i] = sl_feature\n\npy.FeatureXMLFile().store(args.output_feature, features)"
+    in:
+      featurexml: 35/annotated_features
+      mzml: 9/aligned_mzml
+    out:
+    - id: annotated_features
+    doc: Run C13 isotope-pattern detection on requantified feature maps and their paired mzML (source ANNOTATION_REQ C13 step).
+  link_requantified:
+    label: Link requantified identified features
+    tool_id: toolshed.g2.bx.psu.edu/repos/galaxyp/openms_featurelinkerunlabeledkd/FeatureLinkerUnlabeledKD/3.1+galaxy0
+    tool_version: 3.1+galaxy0
+    when: $((inputs.requantification === true) && (inputs.identification === true))
+    in:
+      in_cond|in: 36/annotated_features
+    out:
+    - id: out
+    - id: ctd_out
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: galaxyp
+      name: openms_featurelinkerunlabeledkd
+      changeset_revision: 902d0f778dcf
+    state:
+      in_cond:
+        in_select: 'no'
+        in:
+          __class__: ConnectedValue
+      design:
+        __class__: ConnectedValue
+      keep_subelements: false
+      algorithm:
+        mz_unit: ppm
+        nr_partitions: 100
+        warp:
+          enabled: true
+          rt_tol: 100
+          mz_tol: 5
+          max_pairwise_log_fc: 0.5
+          min_rel_cc_size: 0.5
+          max_nr_conflicts: 0
+        link:
+          rt_tol: 30
+          mz_tol: 10
+          charge_merging: With_charge_zero
+          adduct_merging: Any
+        distance_RT:
+          exponent: 1
+          weight: 1
+        distance_MZ:
+          exponent: 2
+          weight: 1
+        distance_intensity:
+          exponent: 1
+          weight: 1
+          log_transform: enabled
+        LOWESS:
+          span: 0.666666666666667
+          num_iterations: 3
+          delta: -1
+          interpolation_type: cspline
+          extrapolation_type: four-point-linear
+      adv_opts:
+        force: false
+        test: 'False'
+      OPTIONAL_OUTPUTS: []
+    doc: Link requantified identified features across samples with FeatureLinkerUnlabeledKD (source LINKER_REQ identified path).
+  link_requantified_no_id:
+    label: Link requantified features without identification
+    tool_id: toolshed.g2.bx.psu.edu/repos/galaxyp/openms_featurelinkerunlabeledkd/FeatureLinkerUnlabeledKD/3.1+galaxy0
+    tool_version: 3.1+galaxy0
+    when: $((inputs.requantification === true) && (inputs.identification !== true))
+    in:
+      in_cond|in: 35/annotated_features
+    out:
+    - id: out
+    - id: ctd_out
+    tool_shed_repository:
+      tool_shed: toolshed.g2.bx.psu.edu
+      owner: galaxyp
+      name: openms_featurelinkerunlabeledkd
+      changeset_revision: 902d0f778dcf
+    state:
+      in_cond:
+        in_select: 'no'
+        in:
+          __class__: ConnectedValue
+      design:
+        __class__: ConnectedValue
+      keep_subelements: false
+      algorithm:
+        mz_unit: ppm
+        nr_partitions: 100
+        warp:
+          enabled: true
+          rt_tol: 100
+          mz_tol: 5
+          max_pairwise_log_fc: 0.5
+          min_rel_cc_size: 0.5
+          max_nr_conflicts: 0
+        link:
+          rt_tol: 30
+          mz_tol: 10
+          charge_merging: With_charge_zero
+          adduct_merging: Any
+        distance_RT:
+          exponent: 1
+          weight: 1
+        distance_MZ:
+          exponent: 2
+          weight: 1
+        distance_intensity:
+          exponent: 1
+          weight: 1
+          log_transform: enabled
+        LOWESS:
+          span: 0.666666666666667
+          num_iterations: 3
+          delta: -1
+          interpolation_type: cspline
+          extrapolation_type: four-point-linear
+      adv_opts:
+        force: false
+        test: 'False'
+      OPTIONAL_OUTPUTS: []
+    doc: Link requantified features without identification input with FeatureLinkerUnlabeledKD (source LINKER_REQ non-identification path).
+license: MIT
+release: '0.1'
+tags:
+- metabolomics
+- mass-spectrometry
+- lc-ms
+- openms
+- quantification
+- identification
+creator:
+- class: Person
+  name: Franziska Nicolaus
+  identifier: https://orcid.org/0009-0008-4238-4117
